@@ -3,12 +3,16 @@ Tests of the TweakUI plugin: it registers, its scripts and stylesheet are on Web
 settings (the data store, the API, settings.js and the settings page), and the themes (theme.css).
 """
 import json
+import math
+import os
+import shutil
 
 from django.contrib.auth.models import User
 from django.test import Client
 from rest_framework import status
 
 from app.plugins import disable_plugin, enable_plugin, get_plugin_by_name
+from app.models import Project, Task
 from app.plugins.data_store import UserDataStore
 from app.tests.classes import BootTestCase
 
@@ -20,7 +24,7 @@ def defaults(**changes):
     return dict({"show_modified_options": False, "enhanced_task_details": False, "task_details_times": True,
                  "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "movable_controls": False, "other_tasks": False,
-                 "show_theme_menu": True, "theme": "webodm"}, **changes)
+                 "source_frames_2d": False, "source_frames_3d": False, "show_theme_menu": True, "theme": "webodm"}, **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -65,7 +69,7 @@ class TestThePlugin(TweakUITestCase):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js"):
+                     "other_tasks.js", "source_frames.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
@@ -75,7 +79,7 @@ class TestThePlugin(TweakUITestCase):
 
     def test_the_scripts_and_stylesheet_are_served(self):
         for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js", "settings_page.js", "main.css", "theme.css"):
+                     "other_tasks.js", "source_frames.js", "settings_page.js", "main.css", "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
 
@@ -192,20 +196,23 @@ class TestSettingsPage(TweakUITestCase):
         self.assertIn('href="#map2d"', page)
         map2d = page[page.index('<section id="tweakui-map2d"'):]
         map2d = map2d[:map2d.index("</section>")]
-        for name in ("movable_controls", "other_tasks"):
+        for name in ("movable_controls", "other_tasks", "source_frames_2d"):
             self.assertIn('data-setting="%s">' % name, map2d)
             self.assertEqual(self.patch({name: True}).json()[name], True)
             self.assertEqual(self.script_settings(self.client)[name], True)
-        self.assertEqual(self.client.get(API).json(), defaults(movable_controls=True, other_tasks=True))
+        self.assertEqual(self.client.get(API).json(),
+                         defaults(movable_controls=True, other_tasks=True, source_frames_2d=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="other_tasks" checked')
 
-    def test_the_3d_map_category_has_no_settings_yet(self):
+    def test_the_3d_map_category_has_source_frames_off_by_default(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         self.assertIn('href="#map3d"', page)
         map3d = page[page.index('<section id="tweakui-map3d"'):]
         map3d = map3d[:map3d.index("</section>")]
-        self.assertIn("No settings yet.", map3d)
-        self.assertNotIn("data-setting", map3d)
+        self.assertNotIn("No settings yet.", map3d)
+        self.assertIn('data-setting="source_frames_3d">', map3d)
+        self.assertEqual(self.patch({"source_frames_3d": True}).json(), defaults(source_frames_3d=True))
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="source_frames_3d" checked')
 
     def test_the_dashboard_includes_the_task_details_script(self):
         self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")
@@ -307,3 +314,133 @@ class TestThemes(TweakUITestCase):
         self.assertEqual(themes[0]["swatch"][0], Setting.objects.first().theme.secondary)
         self.assertEqual(themes[1]["swatch"][0], PRESETS["catppuccin-latte"]["colors"]["secondary"])
         self.assertIsNone(self.script_value(Client().get("/plugins/tweakui/settings.js").content.decode(), "themes"))
+
+
+class TestSourceFrames(TweakUITestCase):
+    """Two cameras 100 m above flat ground (a DSM at 20 m), looking straight down, 30 m apart in x: each photo is
+    4000 x 3000 px with a focal of 0.8 (of its largest side), so it shows the ground 62.5 m either side in x"""
+    X, Y, EPSG = 500000.0, 4600000.0, 32616
+    DOWN = (math.pi, 0, 0)
+
+    def setUp(self):
+        super().setUp()
+        self.user = User.objects.get(username="testuser")
+        self.project = Project.objects.create(owner=self.user, name="Source Frames test")
+        self.task = Task.objects.create(project=self.project, name="Cameras", epsg=self.EPSG,
+                                        available_assets=["shots.geojson", "cameras.json", "dsm.tif"])
+        self.url = "/api/plugins/tweakui/frames/%s/%s" % (self.project.id, self.task.id)
+        os.makedirs(self.task.assets_path("odm_report"), exist_ok=True)
+        os.makedirs(self.task.assets_path("odm_dem"), exist_ok=True)
+        shots = {"type": "FeatureCollection", "features": [
+            self.shot("a.jpg", self.X, 1000), self.shot("b.jpg", self.X + 30, 1001)]}
+        with open(self.task.assets_path("odm_report", "shots.geojson"), "w") as f:
+            json.dump(shots, f)
+        with open(self.task.assets_path("cameras.json"), "w") as f:
+            json.dump({"test 4000 3000 brown 0.8": {"projection_type": "brown", "width": 4000, "height": 3000,
+                                                    "focal_x": 0.8, "focal_y": 0.8, "c_x": 0, "c_y": 0,
+                                                    "k1": 0, "k2": 0, "k3": 0, "p1": 0, "p2": 0}}, f)
+        self.write_dsm(20.0)
+
+    def tearDown(self):
+        path = self.task.task_path()
+        if os.path.isdir(path) and str(self.task.id) in path:
+            shutil.rmtree(path)
+        super().tearDown()
+
+    def shot(self, name, x, time):
+        return {"type": "Feature", "geometry": {"type": "Point", "coordinates": [0, 0, 120.0]},
+                "properties": {"filename": name, "camera": "v2 test 4000 3000 brown 0.8", "focal": 0.8,
+                               "width": 4000, "height": 3000, "capture_time": time,
+                               "translation": [x, self.Y, 120.0], "rotation": list(self.DOWN)}}
+
+    def write_dsm(self, height):
+        import numpy
+        import rasterio
+        from rasterio.transform import from_origin
+        with rasterio.open(self.task.assets_path("odm_dem", "dsm.tif"), "w", driver="GTiff", width=300, height=300,
+                           count=1, dtype="float32", crs="EPSG:%s" % self.EPSG, nodata=-9999.0,
+                           transform=from_origin(self.X - 150, self.Y + 150, 1, 1)) as dsm:
+            dsm.write(numpy.full((1, 300, 300), height, dtype="float32"))
+
+    def post(self, data, client=None, url=None):
+        return (client or self.client).post(url or self.url, json.dumps(data), content_type="application/json")
+
+    def lnglat(self, x, y):
+        from pyproj import Transformer
+        return list(Transformer.from_crs("EPSG:%s" % self.EPSG, "EPSG:4326", always_xy=True).transform(x, y))
+
+    def test_a_spots_photos_are_those_that_show_it_nearest_their_centre_first(self):
+        res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        found = res.json()["frames"]
+        self.assertEqual([f["filename"] for f in found], ["a.jpg", "b.jpg"])
+        # Below camera a: its photo's centre; 30 m from b at 100 m: 0.8 * 0.3 of the width left of its centre
+        self.assertEqual(found[0]["spot"], [0.5, 0.5])
+        self.assertAlmostEqual(found[1]["spot"][0], 0.5 - 0.8 * 0.3, places=3)
+        self.assertEqual(found[0]["capture_time"], 1000)
+        self.assertEqual(found[0]["altitude"], 120.0)
+        # 70 m from a (out of its photo), 40 m from b
+        found = self.post({"type": "Point", "coordinates": self.lnglat(self.X + 70, self.Y)}).json()["frames"]
+        self.assertEqual([f["filename"] for f in found], ["b.jpg"])
+        # Far away: none
+        self.assertEqual(self.post({"type": "Point", "coordinates": self.lnglat(self.X + 500, self.Y)}).json(),
+                         {"frames": []})
+
+    def test_the_ground_height_comes_from_the_dsm_else_the_point_clouds_mean_height(self):
+        # Ground 50 m higher: 70 m below the cameras, so 46 m from a is still in its photo (0.8 * 46 / 70 < 0.5 + ...)
+        self.write_dsm(50.0)
+        found = self.post({"type": "Point", "coordinates": self.lnglat(self.X + 40, self.Y)}).json()["frames"]
+        self.assertAlmostEqual(found[-1]["spot"][0], 0.5 + 0.8 * 40 / 70, places=3)
+        os.remove(self.task.assets_path("odm_dem", "dsm.tif"))
+        res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("no ground height", res.json()["detail"])
+        os.makedirs(self.task.assets_path("entwine_pointcloud"), exist_ok=True)
+        with open(self.task.assets_path("entwine_pointcloud", "ept.json"), "w") as f:
+            json.dump({"schema": [{"name": "Z", "mean": 50.0}]}, f)
+        found = self.post({"type": "Point", "coordinates": self.lnglat(self.X + 40, self.Y)}).json()["frames"]
+        self.assertAlmostEqual(found[-1]["spot"][0], 0.5 + 0.8 * 40 / 70, places=3)
+
+    def test_an_areas_photos_are_ordered_by_the_share_of_it_they_show(self):
+        x0, x1, y0, y1 = self.X - 50, self.X + 50, self.Y - 20, self.Y + 20
+        ring = [self.lnglat(x, y) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0))]
+        found = self.post({"type": "Polygon", "coordinates": [ring]}).json()["frames"]
+        self.assertEqual([f["filename"] for f in found], ["a.jpg", "b.jpg"])
+        # a shows all of it; b shows x from 30 - 62.5 m on: 82.5 of its 100 m
+        self.assertEqual(found[0]["share"], 1.0)
+        self.assertAlmostEqual(found[1]["share"], 0.825, delta=0.03)
+        # Its outline in a's photo: 50 m either side is 0.8 * 0.5 of the width, 20 m 0.8 * 0.2 of the width
+        outline = found[0]["outline"]
+        self.assertEqual(len(outline), 4)
+        self.assertAlmostEqual(min(p[0] for p in outline), 0.5 - 0.8 * 0.5, places=3)
+        self.assertAlmostEqual(max(p[1] for p in outline), 0.5 + 0.8 * 0.2 * 4000 / 3000, places=3)
+
+    def test_a_3d_pick_gives_its_own_height_in_the_tasks_coordinates(self):
+        # Picked on a roof 60 m below the cameras: 30 m from b is 0.8 * 30 / 60 from its centre
+        found = self.post({"type": "Point", "coordinates": [self.X, self.Y, 60.0], "crs": "task"}).json()["frames"]
+        self.assertAlmostEqual(found[1]["spot"][0], 0.5 - 0.8 * 0.5, places=3)
+        ring = [[self.X - 5, self.Y - 5, 20], [self.X + 5, self.Y - 5, 20], [self.X + 5, self.Y + 5, 20]]
+        found = self.post({"type": "Polygon", "coordinates": [ring], "crs": "task"}).json()["frames"]
+        self.assertEqual([f["share"] for f in found], [1.0, 1.0])
+        res = self.post({"type": "Point", "coordinates": [self.X, self.Y], "crs": "task"})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_bad_places_and_tasks_without_cameras_are_refused(self):
+        for data in ({}, {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}, {"type": "Point", "coordinates": "x"},
+                     {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 0]]]},
+                     {"type": "Point", "coordinates": [0, 0], "crs": "EPSG:4326"}):
+            self.assertEqual(self.post(data).status_code, status.HTTP_400_BAD_REQUEST, data)
+        self.task.available_assets = ["orthophoto.tif"]
+        self.task.save()
+        res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.json()["detail"], "This task has no cameras")
+
+    def test_only_those_who_can_see_the_task_find_its_photos(self):
+        point = {"type": "Point", "coordinates": self.lnglat(self.X, self.Y)}
+        self.assertEqual(self.post(point, client=self.login("testuser2")).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.post(point, client=Client()).status_code, status.HTTP_404_NOT_FOUND)
+        other = Project.objects.create(owner=self.user, name="Other")
+        url = "/api/plugins/tweakui/frames/%s/%s" % (other.id, self.task.id)
+        self.assertEqual(self.post(point, url=url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
