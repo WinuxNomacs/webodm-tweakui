@@ -13,8 +13,8 @@
 
 **Done**
 - **Theme sample** (request 20) — 2026-11-06, branch `theme-sample` (design below).
-  - Code: `templates/settings.html` (Settings > Themes: a "Sample" group between the intro and the swatches, in
-    place of the intro's screenshot thumbnail), `public/settings_page.js` (`inertSample`: its links and form do
+  - Code: `templates/settings.html` (Settings > Themes: a "Sample" group below the swatches, in place of the
+    intro's screenshot thumbnail), `public/settings_page.js` (`inertSample`: its links and form do
     nothing, so the category stays; Bootstrap's tooltip set up on the first hover, as WebODM's bundle loads after
     the script), `public/main.css` (two columns, one on a phone). README and `docs/themes.md` updated.
   - Tests: Jest 2 (the sample is inert; the tooltip); Jest 1 (`dev/`: every screenshot is shown by the settings or
@@ -747,7 +747,7 @@ The request (2026-11-06): in place of the Themes intro's thumbnail, a small form
 do nothing but show the current theme: dropdowns with items, labels, buttons, controls the settings page doesn't
 otherwise show.
 
-Decided (the user): **above the theme swatches** (after the intro); the Themes screenshot (`themes.webp`) stays
+Decided (the user): **below the theme swatches** (first above them, moved below the same day); the Themes screenshot (`themes.webp`) stays
 for the docs site. Contents, from what `theme.css` restyles: heading, body text, link, muted text, status labels
 (`theme-background-success` / `-failed`), a progress bar, a labelled text field, a select with a disabled option, a
 dropdown button with items, a divider and a disabled item, buttons (default, primary with a tooltip, danger,

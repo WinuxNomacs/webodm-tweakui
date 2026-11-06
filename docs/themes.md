@@ -7,7 +7,7 @@ Administration > Theme) or one of 11 presets: Catppuccin Latte, Frappé, Macchia
 Dark; Dracula; Nord; Gruvbox Dark and Light; One Dark. Each shows a swatch of its colours; choosing one reloads the
 page in it.
 
-Above the themes, a **Sample** shows WebODM's controls in the current theme: text, a link and muted text, status
+Below the themes, a **Sample** shows WebODM's controls in the current theme: text, a link and muted text, status
 labels, a progress bar, a text field, a select, a dropdown menu, buttons (one with a tooltip, one disabled) and page
 numbers. They do nothing; they are there to see how the theme looks on the controls the settings page doesn't
 otherwise show.
