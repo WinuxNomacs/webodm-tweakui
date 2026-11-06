@@ -3,15 +3,24 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Enhanced Task Details** (request 8) — a General > Task Options setting that enhances a task's details panel
-   on the Dashboard: the preset, the options as bubbles, the ODX command to copy. Design below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Enhanced Task Details** (request 8) — 2026-11-06, branch `task-details` (design below).
+  - Code: `tweakui/public/task_details.js` (the rows, preset matching, the command), `tweakui/settings.py`
+    (`enhanced_task_details`), `templates/settings.html` (General > Task Options), `public/main.css`.
+  - Tests: Jest `task_details.test.js` (9), Django (28 in all, on 4.0.0 and 3.3.2).
+  - Live on 4.0.0 (the TestRGB task: Preset M4T-RGB, the user's own preset) and 3.3.2 (a partial task the check
+    created: Custom, then Default once its options were the Default preset's; deleted afterwards): the rows in
+    place of WebODM's Options, the copy button, desktop and phone, WebODM's theme, a dark and a light preset,
+    setting off leaves WebODM's row; no console errors; settings restored.
+  - Found while checking, WebODM's own: options set to `false` are refused by the API (so tasks never hold them);
+    a project deleted while one of its tasks is a partial upload stays "deleting" (the worker skips partial
+    tasks), so the check committed its task to let WebODM remove it.
 - **Theme switcher in the header** (request 7) — 2026-11-06, branch `theme-switcher` (design below).
   - Code: `tweakui/public/theme_menu.js` (the menu), `tweakui/themes.py` (`theme_list`, swatches; dropdown text
     colour), `tweakui/api.py` (`settings.js` gives `window.TweakUI.themes`), `templates/settings.html` (the same
@@ -223,7 +232,7 @@ to place a plugin's item elsewhere, so `main.js` (loaded in `<head>`) moves Twea
 `#about-menu` when the page is parsed. To avoid a flash, `main.css` hides the item in its first place
 (`#side-menu > li:has(> a[href="/plugins/tweakui/"])`) until the script has moved it. Always, not a setting.
 
-## Enhanced Task Details (request 8)
+## Enhanced Task Details (request 8) — done
 
 What WebODM has (checked in 3.3.2 and 4.0.0, the same in both):
 - **The panel**: on the Dashboard, a task's row expands into a details table (`TaskListItem.jsx`): Task ID (with a
