@@ -3,19 +3,28 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Feature screenshots** (request 19, docs phase 1): a script that retakes every feature's screenshot from the
-   4.0.0 dev server into `tweakui/public/previews/` (design below).
+1. **Previews in the settings** (request 19, docs phase 2): each setting's screenshot as a thumbnail beside it in
+   TweakUI's settings page, enlarged on a click.
 
 **Then**
-2. **Previews in the settings** (request 19, docs phase 2): each setting's screenshot as a thumbnail beside it in
-   TweakUI's settings page, enlarged on a click.
-3. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
+2. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
    workflow on a release tag or by hand; the README becomes an overview with links.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Feature screenshots** (request 19, docs phase 1) — 2026-11-06, branch `screenshots` (design below).
+  - Code: `dev/screenshots.js` (the shot list, the login from `TW_USER` / `TW_PASSWORD`, the account's settings
+    put back in a `finally`, the browser's own WebP encoding, pairs side by side with labels), `npm run
+    screenshots`; 11 images in `tweakui/public/previews/` (1.2 MB): show-modified-options, enhanced-task-details,
+    themes, theme-menu, movable-controls, other-tasks, source-frames-2d, source-frames-3d, zoom-override-2d (off /
+    on), zoom-override-3d (before / off / on, the pointer marked), storage.
+  - Tests: Jest 3 (`dev/__tests__/screenshots.test.js`: names, settings, one image per shot); ESLint covers `dev/`.
+  - Run on 4.0.0 (TestRGB, only read): each image looked at; settings restored after every run.
+  - Found while taking them: the 3D zoom needs a point well inside the model (an edge or a treetop lets the
+    pointer's ray pass by), so the script picks one with the model all around it. The side menu in the shots
+    shows the dev server's other plugins (DJI Thermal Analyzer, Developer Tools).
 - **Storage** (request 5) — 2026-11-06, branch `storage` (design below).
   - Code: `tweakui/storage.py` (the report: owned projects and their tasks from `Task.size`, the quota, superusers'
     view of every owner; a task's breakdown by kind), `api.py` (`StorageView`, `StorageTaskView`), `plugin.py`

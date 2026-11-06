@@ -18,7 +18,7 @@ export default [
         rules: {...js.configs.recommended.rules, "no-unused-vars": ["error", {caughtErrors: "none"}]},
     },
     {
-        files: ["tweakui/public/__tests__/**/*.js", "tools/**/*.js"],
+        files: ["tweakui/public/__tests__/**/*.js", "dev/**/*.js"],
         ...js.configs.recommended,
         languageOptions: {ecmaVersion: 2022, sourceType: "commonjs", globals: {...globals.browser, ...globals.node, ...globals.jest}},
     },
