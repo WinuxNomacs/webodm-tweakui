@@ -24,7 +24,8 @@ def defaults(**changes):
     return dict({"show_modified_options": False, "enhanced_task_details": False, "task_details_times": True,
                  "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "show_theme_menu": True, "theme": "webodm"}, **changes)
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
+                 "zoom_override_3d": False, "show_theme_menu": True, "theme": "webodm"}, **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -69,17 +70,21 @@ class TestThePlugin(TweakUITestCase):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js", "source_frames.js"):
+                     "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
+        # The 3D pick before the scripts that use it
+        for name in ("source_frames.js", "zoom_override.js"):
+            self.assertLess(html.index("/plugins/tweakui/pick3d.js"), html.index("/plugins/tweakui/" + name))
         for name in ("main.css", "theme.css"):
             self.assertContains(res, "<link href='/plugins/tweakui/%s' rel='stylesheet' type='text/css'>" % name,
                                 html=True)
 
     def test_the_scripts_and_stylesheet_are_served(self):
         for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js", "source_frames.js", "settings_page.js", "main.css", "theme.css"):
+                     "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "settings_page.js",
+                     "main.css", "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
 
@@ -196,22 +201,25 @@ class TestSettingsPage(TweakUITestCase):
         self.assertIn('href="#map2d"', page)
         map2d = page[page.index('<section id="tweakui-map2d"'):]
         map2d = map2d[:map2d.index("</section>")]
-        for name in ("movable_controls", "other_tasks", "source_frames_2d"):
+        for name in ("movable_controls", "other_tasks", "source_frames_2d", "zoom_override_2d"):
             self.assertIn('data-setting="%s">' % name, map2d)
             self.assertEqual(self.patch({name: True}).json()[name], True)
             self.assertEqual(self.script_settings(self.client)[name], True)
         self.assertEqual(self.client.get(API).json(),
-                         defaults(movable_controls=True, other_tasks=True, source_frames_2d=True))
+                         defaults(movable_controls=True, other_tasks=True, source_frames_2d=True, zoom_override_2d=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="other_tasks" checked')
 
-    def test_the_3d_map_category_has_source_frames_off_by_default(self):
+    def test_the_3d_map_settings_are_off_by_default_in_their_own_section(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         self.assertIn('href="#map3d"', page)
         map3d = page[page.index('<section id="tweakui-map3d"'):]
         map3d = map3d[:map3d.index("</section>")]
         self.assertNotIn("No settings yet.", map3d)
         self.assertIn('data-setting="source_frames_3d">', map3d)
+        self.assertIn('data-setting="zoom_override_3d">', map3d)
         self.assertEqual(self.patch({"source_frames_3d": True}).json(), defaults(source_frames_3d=True))
+        self.assertEqual(self.patch({"zoom_override_3d": True}).json(),
+                         defaults(source_frames_3d=True, zoom_override_3d=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="source_frames_3d" checked')
 
     def test_the_dashboard_includes_the_task_details_script(self):

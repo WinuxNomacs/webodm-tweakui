@@ -3,15 +3,34 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Zoom Override** (request 17) — 2D Map and 3D Map settings to zoom in further: the 2D map 3 steps further, the
-   3D view toward what is under the pointer. Details below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Zoom Override** (request 17) — 2026-11-06, branch `zoom-override` (design below).
+  - Code: `tweakui/public/zoom_override.js` (the 2D limit, the 3D wheel), `tweakui/public/pick3d.js` (the 3D pick
+    and the wait for the viewer, shared with Source Frames, which now adds its button itself),
+    `tweakui/settings.py` (`zoom_override_2d`, `zoom_override_3d`), `templates/settings.html`, `tweakui/plugin.py`.
+  - Tests: Jest (`zoom_override` 5, `source_frames` updated), Django (the settings, the scripts' order).
+  - Live on 4.0.0 (TestRGB) and 3.3.2 (16 of TestRGB's photos processed by the check, deleted afterwards): the 2D
+    map's + button goes 3 steps further (4 clicks to the limit off, 7 on); in 3D, 40 wheel notches with the
+    pointer off-centre: off, the camera ended 24.5 m off the pointer's ray (zooming to the middle of the view); on,
+    it moved 89.8 m along that ray (0.13 m off it), ending 1.3 m from the surface, the surface under the pointer
+    18 cm from the first one, on the point cloud and on the textured model (TestRGB; 3.3.2's sparse fast-orthophoto
+    cloud: 0.68 m, the notches over gaps zooming as before); the 2D and 3D action buttons with Snapshot's camera and
+    Source Frames' both; the task's saved 3D scene unchanged; no console errors; settings restored.
+  - Zooming moves along the pointer's ray (the pick gives only the distance): toward the point picked, the view
+    drifted on a sparse point cloud, whose pick is a point beside the ray.
+  - Found while checking: WebODM's `addActionButton` hooks (2D and 3D) keep only the answers given with the first
+    one (`ApiFactory.js` drops the response listener a tick after the first answer). Source Frames answered at
+    once and pushed out Snapshot's camera button (which loads html2canvas first); with dependencies it was pushed
+    out itself. TweakUI no longer answers those hooks: Source Frames puts its button before Share itself (the 2D
+    map's `.actionButtons`, the 3D view's `.model-action-buttons`), and the 3D features wait for `window.viewer`.
+    A fix in WebODM (keep the listener until every plugin has answered) would be a pull request, only with the
+    user's approval.
 - **Source Frames** (request 16) — 2026-11-06, branch `source-frames` (design below).
   - Code: `tweakui/frames.py` (the photos' projection: poses, Brown/fisheye lenses, the ground's height, an area's
     grid, the ranking), `tweakui/api.py` (`FramesView`, `POST /api/plugins/tweakui/frames/<p>/<t>`),
@@ -26,8 +45,8 @@
     every photo), an area (outline on the lawn's edges and roof lines, ranked by share), the full-frame viewer
     (zoom, arrows, Esc), the download (the page stays), the 3D view's spot and area (picked on the point cloud;
     a click on nothing says so); WebODM's light and dark themes; no console errors; settings restored.
-  - Found while checking: WebODM's action-button hook keeps only the answers that come first, so a hook with
-    dependencies (Leaflet) was left out (the button is added without them, Leaflet being the page's global);
+  - Found while checking: WebODM's action-button hook keeps only the answers that come first (see Zoom Override:
+    the button is now put in place by TweakUI);
     WebODM's layer popup opened on a spot's click (the clicks are taken in the capture phase while picking);
     Potree's measurements are saved by WebODM with the task's 3D scene every 3 s, so marking the 3D place with them
     wrote into TestRGB's saved scene (TweakUI's own three.js objects now; the two saved marks removed from TestRGB
@@ -506,7 +525,7 @@ Decided (the user, 2026-11-06):
 - **"Open full frame" opens a full-screen viewer in the page** (zoom and pan, the spot or area drawn on it, Esc
   closes it).
 
-## Zoom Override (request 17)
+## Zoom Override (request 17) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
 - **2D map**: the Leaflet map stops at zoom 24 (`Map.jsx`: `maxZoom: 24`); its layers would go further (an

@@ -19,4 +19,6 @@
 - 2D Map and 3D Map > Source Frames: a button beside Share picks a spot or draws an area on the 2D map or the 3D
   model and lists the task's photos that show it, best first, each with the place drawn on it, its properties, a
   full-screen viewer and a download.
+- 2D Map and 3D Map > Zoom Override: the 2D map zooms in 3 steps further; in the 3D view the wheel zooms toward what
+  is under the pointer.
 - Experimental.

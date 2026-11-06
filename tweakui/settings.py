@@ -26,6 +26,9 @@ DEFAULTS = {
     # 2D Map and 3D Map: a button to pick a spot or draw an area and see the source photos that show it
     "source_frames_2d": False,
     "source_frames_3d": False,
+    # 2D Map: the map zooms 3 steps further; 3D Map: the wheel zooms toward what is under the pointer
+    "zoom_override_2d": False,
+    "zoom_override_3d": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS
