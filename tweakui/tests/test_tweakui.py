@@ -341,6 +341,167 @@ class TestThemes(TweakUITestCase):
         self.assertIsNone(self.script_value(Client().get("/plugins/tweakui/settings.js").content.decode(), "themes"))
 
 
+THEMES = "/api/plugins/tweakui/themes"
+
+
+def a_theme(name="Live", **colors):
+    """A theme's {name, colors}: Nord's colours, but for the given ones"""
+    from coreplugins.tweakui.themes import PRESETS
+    return {"name": name, "colors": dict(PRESETS["nord"]["colors"], **colors)}
+
+
+class TestCustomThemes(TweakUITestCase):
+    def post(self, data, client=None):
+        return (client or self.client).post(THEMES, json.dumps(data), content_type="application/json")
+
+    def put(self, theme_id, data, client=None):
+        return (client or self.client).put("%s/%s" % (THEMES, theme_id), json.dumps(data),
+                                           content_type="application/json")
+
+    def test_a_user_makes_a_theme_lists_it_and_it_is_kept_in_their_own_data_store(self):
+        res = self.post(a_theme("  Mine  ", primary="#ABCDEF", unknown="x"))
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        theme = res.json()
+        self.assertEqual(theme["name"], "Mine")
+        self.assertEqual(theme["colors"]["primary"], "#abcdef")
+        self.assertNotIn("unknown", theme)
+        self.assertEqual(self.client.get(THEMES).json(), [theme])
+        user = User.objects.get(username="testuser")
+        self.assertEqual(UserDataStore("tweakui", user).get_json("themes"), [theme])
+
+    def test_a_theme_needs_a_name_of_up_to_60_characters_and_all_13_colours_as_rrggbb(self):
+        from coreplugins.tweakui.themes import PRESETS
+        colors = dict(PRESETS["nord"]["colors"])
+        del colors["success"]
+        for data, error in ((a_theme(""), "needs a name"), (a_theme("x" * 61), "at most 60"),
+                            ({"name": "No colours"}, "needs its colours"),
+                            ({"name": "Missing", "colors": colors}, "Missing colours: success"),
+                            (a_theme(primary="red"), "not #rrggbb: primary"),
+                            (a_theme(border="#fff"), "not #rrggbb: border"),
+                            (a_theme(highlight="#ffffff;}body{x"), "not #rrggbb: highlight"),
+                            ([], "Expected a theme")):
+            res = self.post(data)
+            self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, data)
+            self.assertIn(error, res.json()["detail"])
+        self.assertEqual(self.client.get(THEMES).json(), [])
+        self.assertEqual(self.post(a_theme("x" * 60)).status_code, status.HTTP_201_CREATED)
+
+    def test_a_user_has_at_most_50_themes(self):
+        user = User.objects.get(username="testuser")
+        UserDataStore("tweakui", user).set_json("themes", [dict(a_theme(str(i)), id="%x" % i) for i in range(50)])
+        res = self.post(a_theme())
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("At most 50", res.json()["detail"])
+
+    def test_a_theme_is_changed_and_deleted_by_its_id(self):
+        theme = self.post(a_theme()).json()
+        res = self.put(theme["id"], a_theme("Renamed", primary="#000000"))
+        self.assertEqual(res.json(), dict(a_theme("Renamed", primary="#000000"), id=theme["id"]))
+        self.assertEqual(self.put(theme["id"], a_theme(primary="nope")).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.delete("%s/%s" % (THEMES, theme["id"])).status_code, status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.client.get(THEMES).json(), [])
+        self.assertEqual(self.client.delete("%s/%s" % (THEMES, theme["id"])).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_another_user_can_neither_see_change_delete_nor_choose_a_user_s_theme(self):
+        theme = self.post(a_theme()).json()
+        other = self.login("testuser2")
+        self.assertEqual(other.get(THEMES).json(), [])
+        self.assertEqual(self.put(theme["id"], a_theme("Taken"), other).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(other.delete("%s/%s" % (THEMES, theme["id"])).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.patch({"theme": "own:" + theme["id"]}, other).status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.get(THEMES).json(), [theme])
+
+    def test_logged_out_users_and_requests_without_the_csrf_token_are_refused(self):
+        for res in (Client().get(THEMES), Client().post(THEMES, json.dumps(a_theme()), content_type="application/json")):
+            self.assertIn(res.status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="testuser", password="test1234")
+        self.assertEqual(self.post(a_theme(), strict).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_an_own_theme_once_chosen_is_the_user_s_stylesheet(self):
+        from coreplugins.tweakui.themes import colors_css
+        theme = self.post(a_theme(header_background="#123456")).json()
+        self.assertEqual(self.patch({"theme": "own:" + theme["id"]}).json(), defaults(theme="own:" + theme["id"]))
+        css = self.client.get("/plugins/tweakui/theme.css").content.decode()
+        self.assertIn("html #navbar-top{\n\tbackground-color: #123456;", css)
+        self.assertIn(colors_css(theme["colors"]), css)
+        self.assertNotIn("{", self.login("testuser2").get("/plugins/tweakui/theme.css").content.decode())
+
+    def test_a_deleted_or_unknown_own_theme_falls_back_to_webodm_s_theme(self):
+        theme = self.post(a_theme()).json()
+        self.patch({"theme": "own:" + theme["id"]})
+        self.client.delete("%s/%s" % (THEMES, theme["id"]))
+        self.assertEqual(self.client.get(API).json()["theme"], "webodm")
+        self.assertNotIn("{", self.client.get("/plugins/tweakui/theme.css").content.decode())
+        self.assertEqual(self.patch({"theme": "own:abc"}).status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_a_saved_theme_that_no_longer_passes_the_checks_is_left_out(self):
+        user = User.objects.get(username="testuser")
+        good = dict(a_theme("Good"), id="aa")
+        UserDataStore("tweakui", user).set_json("themes", [good, dict(a_theme("Bad", primary="red"), id="bb"),
+                                                           dict(a_theme("Bad id"), id="*/x"), "junk"])
+        self.assertEqual(self.client.get(THEMES).json(), [good])
+
+    def test_the_preview_is_the_stylesheet_of_the_colours_and_saves_nothing(self):
+        from coreplugins.tweakui.themes import colors_css
+        res = self.client.post(THEMES + "/preview", json.dumps(a_theme(primary="#010203")),
+                               content_type="application/json")
+        self.assertEqual(res.json(), {"css": colors_css(a_theme(primary="#010203")["colors"])})
+        bad = self.client.post(THEMES + "/preview", json.dumps(a_theme(primary="x")), content_type="application/json")
+        self.assertEqual(bad.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(self.client.get(THEMES).json(), [])
+
+    def test_the_themes_section_lists_my_themes_with_edit_and_every_theme_with_copy(self):
+        res = self.client.get("/plugins/tweakui/")
+        self.assertContains(res, "My themes")
+        self.assertContains(res, 'data-theme-action="new"')
+        self.assertContains(res, "None yet")
+        self.assertContains(res, 'data-theme-action="copy"', count=12)
+        self.assertNotContains(res, 'data-theme-action="edit"')
+        theme = self.post(a_theme("Mine <b>")).json()
+        self.patch({"theme": "own:" + theme["id"]})
+        res = self.client.get("/plugins/tweakui/")
+        self.assertContains(res, 'value="own:%s" data-setting="theme" checked' % theme["id"])
+        self.assertContains(res, 'data-theme-action="edit"', count=1)
+        self.assertContains(res, "Mine &lt;b&gt;")
+        self.assertNotContains(res, "None yet")
+
+    def test_the_editor_has_webodm_s_13_colours_in_order_and_the_page_has_every_theme_s_colours(self):
+        from coreplugins.tweakui.themes import FIELDS, PRESETS, webodm_colors
+        theme = self.post(a_theme("Mine <b>")).json()
+        body = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertEqual(re.findall(r'class="tweakui-editor-color" data-field="(\w+)"', body), list(FIELDS))
+        self.assertIn("Header Background", body)
+        self.assertIn("Most text, icons, and borders.", body)
+        data = json.loads(re.search(r'<script id="tweakui-theme-colors" type="application/json">(.*?)</script>',
+                                    body, re.DOTALL).group(1))
+        self.assertEqual(list(data), ["webodm"] + list(PRESETS) + ["own:" + theme["id"]])
+        self.assertEqual(data["webodm"]["colors"], webodm_colors())
+        self.assertEqual(data["nord"]["colors"], PRESETS["nord"]["colors"])
+        self.assertEqual(data["own:" + theme["id"]], {"name": "Mine <b>", "colors": theme["colors"]})
+        self.assertNotIn("Mine <b>", body.split('id="tweakui-theme-colors"')[1].split("</script>")[0])
+
+    def test_webodm_s_colours_are_read_as_rrggbb_from_its_theme(self):
+        from app.models import Setting
+        from coreplugins.tweakui.themes import webodm_colors
+        theme = Setting.objects.first().theme
+        theme.primary, theme.secondary, theme.border = "#ABC", "#11223344", "not a colour"
+        theme.save()
+        colors = webodm_colors()
+        self.assertEqual((colors["primary"], colors["secondary"], colors["border"]), ("#aabbcc", "#112233", "#e7e7e7"))
+
+    def test_settings_js_lists_the_user_s_own_themes_after_the_presets_for_the_header_menu(self):
+        theme = self.post(a_theme("Mine")).json()
+        themes = self.script_value(self.client.get("/plugins/tweakui/settings.js").content.decode(), "themes")
+        self.assertEqual(themes[-1], {"id": "own:" + theme["id"], "name": "Mine", "group": "own",
+                                      "swatch": [theme["colors"][f] for f in
+                                                 ("secondary", "primary", "tertiary", "button_primary",
+                                                  "header_background")]})
+        self.assertEqual({t["group"] for t in themes[:-1]}, {"builtin"})
+        other = self.script_value(self.login("testuser2").get("/plugins/tweakui/settings.js").content.decode(), "themes")
+        self.assertEqual(len(other), 12)
+
+
 class TestSourceFrames(TweakUITestCase):
     """Two cameras 100 m above flat ground (a DSM at 20 m), looking straight down, 30 m apart in x: each photo is
     4000 x 3000 px with a focal of 0.8 (of its largest side), so it shows the ground 62.5 m either side in x"""

@@ -22,15 +22,37 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* Settings > Themes: a grid of themes, each a radio button, its swatch (the theme's own colours, from the page's
    data) and its name */
 .tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-.tweakui-settings .tweakui-theme { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; border-width: 1px; border-style: solid; border-radius: 4px; font-weight: normal; cursor: pointer; }
-.tweakui-settings .tweakui-theme input { margin: 0; }
+/* A theme: its radio button, swatch and name (the label), then Edit (your own) and Copy */
+.tweakui-settings .tweakui-theme { display: flex; align-items: center; gap: 4px; padding: 0 8px 0 0; border-width: 1px; border-style: solid; border-radius: 4px; }
+.tweakui-settings .tweakui-theme label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; margin: 0; padding: 8px 0 8px 12px; font-weight: normal; cursor: pointer; }
+.tweakui-settings .tweakui-theme input { margin: 0; flex: none; }
+.tweakui-settings .tweakui-theme-name { overflow-wrap: anywhere; }
 .tweakui-settings .tweakui-theme:has(input:checked) { border-color: currentColor; font-weight: bold; }
+.tweakui-settings .tweakui-theme-actions { display: flex; gap: 4px; flex: none; }
+.tweakui-settings .tweakui-themes-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
+.tweakui-settings .tweakui-themes-heading h5 { margin: 0; font-weight: bold; }
+.tweakui-settings .tweakui-themes-empty { margin: 0; }
+/* Bootstrap's .btn display wins over the hidden attribute: hidden stays hidden on the settings page */
+.tweakui-settings [hidden] { display: none !important; }
+/* The theme editor: the colours in a grid of pickers, each with its name, hex value and WebODM's description */
+.tweakui-settings .tweakui-theme-groups + .tweakui-editor { margin-top: 16px; }
+.tweakui-settings .tweakui-editor-form { padding: 12px; }
+.tweakui-settings .tweakui-editor-colors { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px 24px; }
+.tweakui-settings .tweakui-editor-color { display: flex; align-items: flex-start; gap: 10px; }
+.tweakui-settings .tweakui-editor-color input[type=color] { flex: none; width: 44px; height: 44px; padding: 2px; border: 1px solid; border-radius: 4px; background: transparent; cursor: pointer; }
+.tweakui-settings .tweakui-editor-color label { display: block; margin-bottom: 2px; }
+.tweakui-settings .tweakui-editor-hex { width: 7em; font-family: monospace; }
+.tweakui-settings .tweakui-editor-color p { margin: 2px 0 0; font-size: 12px; }
+.tweakui-settings .tweakui-editor-status:empty { display: none; }
+.tweakui-settings .tweakui-editor-status { margin: 12px 0 0; }
+.tweakui-settings .tweakui-editor-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tweakui-settings .tweakui-editor-buttons [data-editor=delete] { margin-left: auto; }
 .tweakui-swatch { display: inline-flex; border-width: 1px; border-style: solid; border-radius: 3px; overflow: hidden; flex: none; }
 .tweakui-swatch i { display: block; width: 14px; height: 22px; }
 /* A setting's preview (settings_page.js): a thumbnail right of its name and description, under them on a phone;
    a click shows it full size in an overlay, over Bootstrap's modal backdrop */
 /* Settings > Themes > Sample: WebODM's own controls in the current theme, in two columns (one on a phone) */
-.tweakui-settings .tweakui-themes + .tweakui-group { margin-top: 16px; }
+.tweakui-settings .tweakui-theme-groups ~ .tweakui-group { margin-top: 16px; }
 .tweakui-settings .tweakui-sample { padding: 12px; }
 .tweakui-settings .tweakui-sample-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 24px; }
 .tweakui-settings .tweakui-sample h4 { margin-top: 0; }

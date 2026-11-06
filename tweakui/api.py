@@ -9,7 +9,7 @@ from app.plugins.views import TaskView
 
 from app.models import Task
 
-from . import frames, settings, storage, themes
+from . import custom_themes, frames, settings, storage, themes
 
 
 class SettingsView(APIView):
@@ -24,6 +24,55 @@ class SettingsView(APIView):
             return Response(settings.update(request.user, request.data))
         except settings.InvalidSettings as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ThemesView(APIView):
+    """GET and POST /api/plugins/tweakui/themes: the logged-in user's own themes, and a new one from {name,
+    colors} (custom_themes.clean)"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        return Response(custom_themes.own(request.user))
+
+    def post(self, request):
+        try:
+            return Response(custom_themes.create(request.user, request.data), status=status.HTTP_201_CREATED)
+        except custom_themes.InvalidTheme as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ThemeView(APIView):
+    """PUT and DELETE /api/plugins/tweakui/themes/<id>: one of the logged-in user's own themes, given a new
+    {name, colors} or deleted; another user's theme is not found"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def put(self, request, theme_id=None):
+        try:
+            return Response(custom_themes.update(request.user, theme_id, request.data))
+        except custom_themes.InvalidTheme as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        except custom_themes.NoSuchTheme:
+            raise exceptions.NotFound() from None
+
+    def delete(self, request, theme_id=None):
+        try:
+            custom_themes.delete(request.user, theme_id)
+        except custom_themes.NoSuchTheme:
+            raise exceptions.NotFound() from None
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
+
+class ThemePreviewView(APIView):
+    """POST /api/plugins/tweakui/themes/preview: the stylesheet for {name, colors}, which the theme editor shows
+    while a theme is edited; nothing is saved"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            theme = custom_themes.clean(request.data)
+        except custom_themes.InvalidTheme as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({"css": themes.colors_css(theme["colors"])})
 
 
 class FramesView(TaskView):
@@ -78,7 +127,7 @@ def settings_script(request):
     script = "window.TweakUI = window.TweakUI || {};\nwindow.TweakUI.settings = %s;\n" % _script_json(
         settings.load(request.user))
     if request.user.is_authenticated:
-        script += "window.TweakUI.themes = %s;\n" % _script_json(themes.theme_list())
+        script += "window.TweakUI.themes = %s;\n" % _script_json(themes.theme_list(request.user))
     response = HttpResponse(script, content_type="application/javascript; charset=utf-8")
     response["Cache-Control"] = "no-store"
     return response

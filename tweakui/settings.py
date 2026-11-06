@@ -33,15 +33,20 @@ DEFAULTS = {
     "storage_view": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
-    # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS
+    # Themes: "webodm" (WebODM's own theme), a preset id of themes.PRESETS, or "own:<id>", one of the user's own
+    # themes (custom_themes)
     "theme": "webodm",
 }
 
 
-def allowed(name, value):
-    """Whether a value of the right type is one the setting takes (a setting with a list of choices)"""
+def allowed(name, value, user=None):
+    """Whether a value of the right type is one the setting takes (a setting with a list of choices); an own theme
+    only while the user has it"""
     if name == "theme":
-        from .themes import DEFAULT, PRESETS  # themes imports this module
+        from . import custom_themes  # both import this module
+        from .themes import DEFAULT, PRESETS
+        if value.startswith(custom_themes.OWN):
+            return custom_themes.find(user, value[len(custom_themes.OWN):]) is not None
         return value == DEFAULT or value in PRESETS
     return True
 
@@ -61,7 +66,7 @@ def load(user):
         saved = store(user).get_json(KEY, {})
         if isinstance(saved, dict):
             settings.update({k: v for k, v in saved.items()
-                             if k in DEFAULTS and type(v) is type(DEFAULTS[k]) and allowed(k, v)})
+                             if k in DEFAULTS and type(v) is type(DEFAULTS[k]) and allowed(k, v, user)})
     return settings
 
 
@@ -75,7 +80,7 @@ def update(user, changes):
             errors.append("Unknown setting: %s" % name)
         elif type(value) is not type(DEFAULTS[name]):
             errors.append("%s takes a %s" % (name, type(DEFAULTS[name]).__name__))
-        elif not allowed(name, value):
+        elif not allowed(name, value, user):
             errors.append("Unknown %s: %s" % (name, value))
     if errors:
         raise InvalidSettings("; ".join(errors))

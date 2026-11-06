@@ -93,15 +93,62 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 <div class="tweakui-intro">
                     <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 </div>
-                <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
-                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}
-                    {% for theme in themes %}
-                    <label class="tweakui-theme theme-border">
-                        <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
-                        <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
-                        <span class="tweakui-theme-name">{{ theme.name }}</span>
-                    </label>
+                <div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
+                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
+                    opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit.{% endcomment %}
+                    {% for group in theme_groups %}
+                    {% if group.id == "own" %}
+                    <div class="tweakui-themes-heading">
+                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
+                        <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New theme" %}</button>
+                    </div>
+                    {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
+                    {% endif %}
+                    <div class="tweakui-themes" data-group="{{ group.id }}"{% if group.title %} role="group" aria-labelledby="tweakui-themes-{{ group.id }}"{% endif %}>
+                        {% for theme in group.themes %}
+                        <div class="tweakui-theme theme-border" data-theme-id="{{ theme.id }}">
+                            <label>
+                                <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
+                                <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
+                                <span class="tweakui-theme-name">{{ theme.name }}</span>
+                            </label>
+                            <span class="tweakui-theme-actions">
+                                {% if theme.group == "own" %}<button type="button" class="btn btn-default btn-xs" data-theme-action="edit" title="{% trans "Edit" %}" aria-label="{% blocktrans with name=theme.name %}Edit {{ name }}{% endblocktrans %}"><i class="fa fa-pencil-alt"></i></button>{% endif %}
+                                <button type="button" class="btn btn-default btn-xs" data-theme-action="copy" title="{% trans "Copy" %}" aria-label="{% blocktrans with name=theme.name %}Copy {{ name }}{% endblocktrans %}"><i class="fa fa-copy"></i></button>
+                            </span>
+                        </div>
+                        {% endfor %}
+                    </div>
                     {% endfor %}
+                </div>
+                {% comment %}The theme editor (theme_editor.js): a name and WebODM's 13 theme colours, in Administration > Theme's
+                order; while it is open the page shows the unsaved colours{% endcomment %}
+                <div class="tweakui-group theme-border tweakui-editor" hidden>
+                    <h5 class="theme-background-highlight" id="tweakui-editor-title">{% trans "New theme" %}</h5>
+                    <form class="tweakui-editor-form" aria-labelledby="tweakui-editor-title" novalidate>
+                        <div class="form-group">
+                            <label for="tweakui-editor-name">{% trans "Name" %}</label>
+                            <input type="text" id="tweakui-editor-name" class="form-control" maxlength="60" required>
+                        </div>
+                        <div class="tweakui-editor-colors">
+                            {% for field in theme_fields %}
+                            <div class="tweakui-editor-color" data-field="{{ field.name }}">
+                                <input type="color" id="tweakui-color-{{ field.name }}" aria-describedby="tweakui-color-{{ field.name }}-help">
+                                <div>
+                                    <label for="tweakui-color-{{ field.name }}">{{ field.label }}</label>
+                                    <input type="text" class="form-control input-sm tweakui-editor-hex" maxlength="7" spellcheck="false" aria-label="{% blocktrans with label=field.label %}{{ label }}, as #rrggbb{% endblocktrans %}">
+                                    <p class="text-muted" id="tweakui-color-{{ field.name }}-help">{{ field.help }}</p>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                        <p class="tweakui-editor-status" role="status" aria-live="polite"></p>
+                        <div class="tweakui-editor-buttons">
+                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+                            <button type="button" class="btn btn-default" data-editor="cancel">{% trans "Cancel" %}</button>
+                            <button type="button" class="btn btn-danger" data-editor="delete" hidden><i class="fa fa-trash"></i> {% trans "Delete" %}</button>
+                        </div>
+                    </form>
                 </div>
                 {% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them){% endcomment %}
                 <div class="tweakui-group theme-border">
@@ -231,5 +278,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
         </div>
     </div>
 </div>
+{{ theme_colors|json_script:"tweakui-theme-colors" }}
 <script src="{{ public }}settings_page.js"></script>
+<script src="{{ public }}theme_editor.js"></script>
 {% endblock %}

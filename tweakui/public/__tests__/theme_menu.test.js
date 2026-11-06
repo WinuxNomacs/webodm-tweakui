@@ -112,3 +112,14 @@ test("a click on a theme in the menu chooses it", async () => {
     await new Promise(r => setTimeout(r, 0));
     expect(JSON.parse(fetchFn.mock.calls[0][1].body)).toEqual({theme: "dracula"});
 });
+
+test("the user's own themes come after the presets, behind a divider of their own", () => {
+    header();
+    const themes = THEMES.map(t => Object.assign({group: "builtin"}, t)).concat(
+        [{id: "own:abc", name: "Mine", group: "own", swatch: ["#111111"]}]);
+    const menu = themeMenu.build(document, win("webodm", {TweakUI: {settings: {theme: "webodm"}, themes: themes}}));
+    expect(names(menu)).toEqual(["webodm", "catppuccin-latte", "dracula", "nord", "own:abc"]);
+    const children = Array.from(menu.querySelector("ul").children).map(li => li.className || li.textContent);
+    expect(children.filter(c => c === "divider").length).toBe(2);
+    expect(children[children.length - 3]).toBe("divider");
+});
