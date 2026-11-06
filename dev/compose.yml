@@ -1,0 +1,36 @@
+# Added to WebODM's own docker-compose.yml and .dev.yml by dev/webodm.sh: a WebODM checkout runs in dev mode with
+# this repo's plugin mounted as coreplugins/tweakui, under its own container names (TW_PREFIX), port and volumes, so
+# it can run beside another WebODM (whose names and port it would take). The images (TW_*_IMAGE) are each version's,
+# pinned by digest in dev/webodm.sh. The processing node is defined here: WebODM's own file for it was renamed in
+# 4.0.0 (docker-compose.nodeodm.yml, then .nodeodx.yml).
+services:
+  db:
+    image: ${TW_DB_IMAGE}
+    container_name: ${TW_PREFIX}-db
+  broker:
+    image: ${TW_BROKER_IMAGE}
+    container_name: ${TW_PREFIX}-broker
+  node-odx-1:
+    image: ${TW_NODE_IMAGE}
+    container_name: ${TW_PREFIX}-node-odx-1
+    expose:
+      - "3000"
+    restart: unless-stopped
+    oom_score_adj: 500
+  webapp:
+    image: ${TW_WEBAPP_IMAGE}
+    container_name: ${TW_PREFIX}-webapp
+    depends_on:
+      - node-odx-1
+    environment:
+      - WO_DEFAULT_NODES
+    ports: !override
+      - "${WO_PORT}:8000/tcp"
+      - "${TW_LIVERELOAD_PORT}:35729"
+    volumes:
+      - ${TW_PLUGIN_DIR}:/webodm/coreplugins/tweakui
+  worker:
+    image: ${TW_WEBAPP_IMAGE}
+    container_name: ${TW_PREFIX}-worker
+    volumes:
+      - ${TW_PLUGIN_DIR}:/webodm/coreplugins/tweakui
