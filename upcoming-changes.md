@@ -3,7 +3,14 @@
 ## Phases (current and upcoming)
 
 **Up next**
-(nothing planned; new requests arrive in new.md)
+1. **Feature screenshots** (request 19, docs phase 1): a script that retakes every feature's screenshot from the
+   4.0.0 dev server into `tweakui/public/previews/` (design below).
+
+**Then**
+2. **Previews in the settings** (request 19, docs phase 2): each setting's screenshot as a thumbnail beside it in
+   TweakUI's settings page, enlarged on a click.
+3. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
+   workflow on a release tag or by hand; the README becomes an overview with links.
 
 **Later**
 (nothing planned)
@@ -239,6 +246,12 @@ Added 2026-11-06 (ninth new.md):
 18. Source Frames without Area, which is unnecessary: a spot covers an area, as the user can simply move it. The
     spot moves to wherever the user clicks on the map, and the window opens there; the window updates as close
     to real time as possible.
+
+Added 2026-11-06 (tenth new.md):
+
+19. The best documentation framework for hosting the docs on GitHub and staying in step with the repo, with
+    screenshots of many key features to show what they do; where possible, the screenshots shown in TweakUI's
+    settings too, so the user sees what they are turning on or off.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -687,3 +700,47 @@ The plan:
   confirmation's totals, the API calls). Live on both stacks with a task the check creates and deletes.
 
 Open: none.
+
+## Documentation, screenshots and previews (request 19)
+
+Builds on: the settings page (`templates/settings.html`, one `.tweakui-setting` per checkbox, its description in
+`p.text-muted`), the README's feature text (the docs' starting point), the Playwright set-up the live checks use
+(`node_modules/playwright`, the dev account), `dev/package.sh` (the zip: everything committed in `tweakui/`).
+
+Decided (the user, 2026-11-06):
+- **VitePress on GitHub Pages**: Markdown in `docs/`, built with Node (already the repo's dev tooling), published
+  by a workflow that runs on a pushed release tag (`v*`) or by hand (`workflow_dispatch`), never on every push, so
+  the site matches the released version. The repo is private: Pages needs a paid plan or the repo public, the
+  user's step before the first publish.
+- **README: an overview with links**: what TweakUI is, a short list of features, requirements and install, each
+  feature linking to its docs page. The full text lives only in the docs.
+- **Previews: a thumbnail, click to enlarge**: right of a setting's description (under it on a phone); a click
+  opens it full size over the page, Esc or a click closes it.
+- **Stills in WebODM's default theme**: one WebP per feature, retaken by a script.
+
+Phases:
+1. **Feature screenshots.** `dev/screenshots.js` (Node, Playwright, headless): logs in to the 4.0.0 dev server,
+   saves the account's TweakUI settings, and for each shot in a list (its name, the settings it turns on, the page,
+   the steps to show it, the area to crop) sets them, takes it and restores the settings at the end, also on a
+   failure. The shots: Show Modified Options (the Task Options dialog), Enhanced Task Details (a task's details),
+   Themes (a page in a preset theme) and the header's theme menu, Movable Controls, Other Tasks, Source Frames in
+   2D and 3D, Zoom Override 2D and 3D (a before/after pair side by side), the Storage view. The page data is the
+   account's own (TestRGB on 4.0.0), only read. PNG from Playwright, turned into WebP by the browser itself
+   (canvas `toDataURL("image/webp")`, no image library), at most 1280 px wide, into `tweakui/public/previews/
+   <name>.webp`. `npm run screenshots`. Tests: Jest for the shot list's checks (every name a setting or a page,
+   no two alike); the run itself checked by looking at each image.
+2. **Previews in the settings.** A `data-preview="<name>"` on a `.tweakui-setting` (in `settings.html`) adds a
+   thumbnail from `previews/` (`loading="lazy"`, an alt text from the setting's name); a click opens a full-size
+   overlay (theme colours, Esc, a click or × closes it, focus back to the thumbnail). A missing image hides its
+   thumbnail. Tests: Django (the page names only images that exist), Jest (the overlay), live on both stacks at
+   desktop and phone widths, light and dark.
+3. **Documentation site.** `docs/` (VitePress, pinned): a home page, a page per settings category (General,
+   Themes, 2D Map, 3D Map, Storage) from the README's text with the screenshots, Install, Developing. The images
+   come from `tweakui/public/previews/` (one copy, served to both). `npm run docs:dev` and `docs:build`;
+   `.github/workflows/docs.yml` builds and deploys to Pages on a `v*` tag or by hand. README trimmed to the
+   overview; CLAUDE.md: a feature change updates its docs page and retakes its screenshot. Checked: the build, the
+   site served locally in the browser (links, images, phone width, dark mode). The workflow's first run is the
+   user's, after a tag or by hand.
+
+Open: none.
+
