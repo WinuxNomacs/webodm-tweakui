@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 
 from . import settings
 
@@ -76,6 +77,22 @@ PRESETS = {
     "one-dark": _preset("One Dark", "#abb2bf", "#282c34", "#21252b", "#1b1d23", "#3e4451",
                         "#61afef", "#61afef", "#5c6370", "#e06c75", "#d19a66", "#98c379"),
 }
+
+# The colours a theme's swatch shows: background, text, links, buttons, header
+SWATCH = ("secondary", "primary", "tertiary", "button_primary", "header_background")
+
+
+def theme_list():
+    """Every theme the user can pick, in the order of the Themes list: WebODM's theme (with the colours of the
+    instance's theme), then the presets; each with its id, name and swatch colours"""
+    from app.models import Setting
+    setting = Setting.objects.first()
+    theme = setting.theme if setting is not None else None
+    themes = [{"id": DEFAULT, "name": _("WebODM's theme"),
+               "swatch": [getattr(theme, f) for f in SWATCH] if theme is not None else []}]
+    return themes + [{"id": k, "name": v["name"], "swatch": [v["colors"][f] for f in SWATCH]}
+                     for k, v in PRESETS.items()]
+
 
 # WebODM's places that hard-code a white background but take the page's text colour (the theme's primary); with a
 # dark preset they get its darker colour, so they look as with WebODM's default theme. Administration

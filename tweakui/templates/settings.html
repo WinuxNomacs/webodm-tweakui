@@ -32,16 +32,11 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                 <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
                     {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}
+                    {% for theme in themes %}
                     <label class="tweakui-theme theme-border">
-                        <input type="radio" name="theme" value="webodm" data-setting="theme"{% if settings.theme == "webodm" %} checked{% endif %}>
-                        <span class="tweakui-swatch theme-border">{% with t=SETTINGS.theme %}<i style="background:{{ t.secondary }}"></i><i style="background:{{ t.primary }}"></i><i style="background:{{ t.tertiary }}"></i><i style="background:{{ t.button_primary }}"></i><i style="background:{{ t.header_background }}"></i>{% endwith %}</span>
-                        <span class="tweakui-theme-name">{% trans "WebODM's theme" %}</span>
-                    </label>
-                    {% for preset in presets %}
-                    <label class="tweakui-theme theme-border">
-                        <input type="radio" name="theme" value="{{ preset.id }}" data-setting="theme"{% if settings.theme == preset.id %} checked{% endif %}>
-                        <span class="tweakui-swatch theme-border">{% with c=preset.colors %}<i style="background:{{ c.secondary }}"></i><i style="background:{{ c.primary }}"></i><i style="background:{{ c.tertiary }}"></i><i style="background:{{ c.button_primary }}"></i><i style="background:{{ c.header_background }}"></i>{% endwith %}</span>
-                        <span class="tweakui-theme-name">{{ preset.name }}</span>
+                        <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
+                        <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
+                        <span class="tweakui-theme-name">{{ theme.name }}</span>
                     </label>
                     {% endfor %}
                 </div>

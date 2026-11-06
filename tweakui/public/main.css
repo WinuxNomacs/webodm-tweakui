@@ -22,14 +22,22 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-theme { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; border-width: 1px; border-style: solid; border-radius: 4px; font-weight: normal; cursor: pointer; }
 .tweakui-settings .tweakui-theme input { margin: 0; }
 .tweakui-settings .tweakui-theme:has(input:checked) { border-color: currentColor; font-weight: bold; }
-.tweakui-settings .tweakui-swatch { display: inline-flex; border-width: 1px; border-style: solid; border-radius: 3px; overflow: hidden; flex: none; }
-.tweakui-settings .tweakui-swatch i { display: block; width: 14px; height: 22px; }
+.tweakui-swatch { display: inline-flex; border-width: 1px; border-style: solid; border-radius: 3px; overflow: hidden; flex: none; }
+.tweakui-swatch i { display: block; width: 14px; height: 22px; }
 @media (max-width: 767px) {
     .tweakui-settings .tweakui-layout { flex-direction: column; gap: 12px; }
     .tweakui-settings .tweakui-nav { border-width: 0 0 1px 0; width: 100%; display: flex; flex-wrap: wrap; }
     .tweakui-settings .tweakui-nav a { border-right: 0; border-bottom: 3px solid transparent; }
     .tweakui-settings .tweakui-nav a.active { border-bottom-color: currentColor; }
 }
+
+/* The header's theme menu (theme_menu.js): beside the user icon, a list of swatches and names, the current one
+   checked; scrolls on a short screen */
+.navbar-top-links .tweakui-theme-list { max-height: calc(100vh - 70px); overflow-y: auto; min-width: 220px; }
+.navbar-top-links .tweakui-theme-list li a.tweakui-theme-item { display: flex; align-items: center; gap: 8px; padding: 4px 16px 4px 10px; }
+.navbar-top-links .tweakui-theme-list .tweakui-swatch i { width: 10px; height: 16px; }
+.navbar-top-links .tweakui-theme-list .tweakui-unchecked { visibility: hidden; }
+.navbar-top-links .tweakui-theme-list .tweakui-theme-status { padding: 3px 16px; white-space: normal; }
 
 /* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
