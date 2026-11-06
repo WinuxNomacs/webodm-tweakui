@@ -1,6 +1,9 @@
 /* TweakUI. Colours only from WebODM's theme (app/templates/app/theme.css and its theme-* classes, or currentColor),
    never hard-coded; border colours come from theme-border, so the rules here set only widths and styles. */
 
+/* The TweakUI side-menu item: hidden in the place WebODM renders it until main.js has moved it above About. */
+html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-menu) { display: none; }
+
 /* The settings page (templates/settings.html): the navigation pane beside the selected category, above it on a phone.
    The selected category is marked in the link colour (currentColor). */
 .tweakui-settings .tweakui-layout { display: flex; gap: 24px; align-items: flex-start; }

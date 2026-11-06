@@ -3,16 +3,19 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **TweakUI menu item above About** (request 6) — small; details below.
-2. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
+1. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
    Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
-3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **TweakUI menu item above About** (request 6) — 2026-11-06, branch `menu-above-about` (design below).
+  Code: `tweakui/public/main.js` (moves the item), `tweakui/public/main.css` (hides it until moved). Tests: Jest
+  `main.test.js` (4). Live on 4.0.0 and 3.3.2 (as admin): the dashboard and the TweakUI page list TweakUI just
+  above About, after Administration and Developer Tools, and the link opens the settings page.
 - **Phase 1: settings page and Show Modified Options** — 2026-11-06, branch `settings-page` (design below).
   - Code: `tweakui/plugin.py` (menu, page, `settings.js` view, API mount), `tweakui/settings.py` (per-user JSON in
     the data store, defaults and checks), `tweakui/api.py`, `tweakui/templates/settings.html`,
@@ -118,7 +121,7 @@ Proposed design (for the discussion):
 Open (for the discussion): which presets and variants (e.g. Dracula; Nord; Catppuccin Latte, Frappé, Macchiato,
 Mocha; Solarized Light and Dark; others); how far dark presets go on the hard-coded places (map, 3D view, admin).
 
-## TweakUI menu item above About (request 6)
+## TweakUI menu item above About (request 6) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0, `app/templates/app/logged_in_base.html`, the same in both):
 plugins' `main_menu()` items are rendered right after Dashboard, in plugin order; then Processing Nodes,
