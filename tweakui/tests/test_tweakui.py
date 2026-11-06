@@ -1,6 +1,7 @@
 """
 Tests of the TweakUI plugin: it registers, its scripts and stylesheet are on WebODM's pages, and each user's
-settings (the data store, the API, settings.js and the settings page), and the themes (theme.css).
+settings (the data store, the API, settings.js and the settings page), the themes (theme.css), Source Frames and
+Storage.
 """
 import json
 import math
@@ -25,7 +26,8 @@ def defaults(**changes):
                  "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
-                 "zoom_override_3d": False, "show_theme_menu": True, "theme": "webodm"}, **changes)
+                 "zoom_override_3d": False, "storage_view": False, "show_theme_menu": True, "theme": "webodm"},
+                **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -436,3 +438,126 @@ class TestSourceFrames(TweakUITestCase):
         url = "/api/plugins/tweakui/frames/%s/%s" % (other.id, self.task.id)
         self.assertEqual(self.post(point, url=url).status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(self.client.get(self.url).status_code, status.HTTP_405_METHOD_NOT_ALLOWED)
+
+
+class TestStorage(TweakUITestCase):
+    """testuser owns "User Test Project" (BootTestCase's, no tasks) and two projects of tasks of known sizes;
+    testuser2 and testsuperuser own a project each"""
+    MB = 1024 * 1024
+
+    def setUp(self):
+        super().setUp()
+        from app import pending_actions
+        from nodeodm import status_codes
+        self.user = User.objects.get(username="testuser")
+        self.big = Project.objects.create(owner=self.user, name="Big")
+        self.small = Project.objects.create(owner=self.user, name="Small")
+        self.done = Task.objects.create(project=self.big, name="Done", status=status_codes.COMPLETED, size=300.0)
+        self.failed = Task.objects.create(project=self.big, name="Failed", status=status_codes.FAILED, size=20.0)
+        self.compacted = Task.objects.create(project=self.small, name="Compacted", status=status_codes.COMPLETED,
+                                             compacted=True, size=10.0)
+        self.removing = Task.objects.create(project=self.small, name="Going", status=status_codes.CANCELED,
+                                            pending_action=pending_actions.REMOVE, size=5.0)
+        self.other = Project.objects.create(owner=User.objects.get(username="testuser2"), name="Theirs")
+        self.theirs = Task.objects.create(project=self.other, name="Theirs", status=status_codes.COMPLETED, size=50.0)
+
+    def tearDown(self):
+        for task in (self.done, self.failed, self.compacted, self.removing, self.theirs):
+            path = task.task_path()
+            if os.path.isdir(path) and str(task.id) in path:
+                shutil.rmtree(path)
+        super().tearDown()
+
+    def report(self, client=None):
+        res = (client or self.client).get("/api/plugins/tweakui/storage")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        return res.json()
+
+    def write(self, path, size):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
+        with open(path, "wb") as f:
+            f.write(b"x" * size)
+
+    def test_a_user_sees_the_projects_they_own_largest_first_with_their_tasks_and_sizes(self):
+        r = self.report()
+        self.assertFalse(r["admin"])
+        self.assertEqual(r["others"], [])
+        self.assertEqual(r["me"]["user"]["username"], "testuser")
+        self.assertEqual([p["name"] for p in r["me"]["projects"]], ["Big", "Small", "User Test Project"])
+        big = r["me"]["projects"][0]
+        self.assertEqual(big["size"], 320 * self.MB)
+        self.assertEqual([(t["name"], t["size"], t["mark"]) for t in big["tasks"]],
+                         [("Done", 300 * self.MB, "compactable"), ("Failed", 20 * self.MB, "failed")])
+        small = r["me"]["projects"][1]["tasks"]
+        self.assertEqual([(t["name"], t["mark"], t["compacted"]) for t in small],
+                         [("Compacted", None, True), ("Going", "removing", False)])
+        self.assertEqual(r["me"]["used"], 335 * self.MB)
+        self.assertIsNone(r["me"]["quota"])
+        self.assertNotIn("Theirs", json.dumps(r))
+
+    def test_the_quota_is_the_users_and_a_shared_project_is_not_listed(self):
+        from guardian.shortcuts import assign_perm
+        profile = self.user.profile
+        profile.quota = 1000
+        profile.save()
+        assign_perm("view_project", self.user, self.other)
+        r = self.report()
+        self.assertEqual(r["me"]["quota"], 1000 * self.MB)
+        self.assertNotIn("Theirs", [p["name"] for p in r["me"]["projects"]])
+
+    def test_a_project_being_deleted_is_not_listed(self):
+        self.small.deleting = True
+        self.small.save()
+        self.assertNotIn("Small", [p["name"] for p in self.report()["me"]["projects"]])
+
+    def test_an_admin_also_sees_every_other_user_who_owns_a_project_largest_first(self):
+        r = self.report(self.login("testsuperuser"))
+        self.assertTrue(r["admin"])
+        self.assertEqual(r["me"]["user"]["username"], "testsuperuser")
+        self.assertEqual([s["user"]["username"] for s in r["others"]], ["testuser", "testuser2"])
+        self.assertEqual(r["others"][0]["used"], 335 * self.MB)
+        self.assertEqual([p["name"] for p in r["others"][1]["projects"]], ["Theirs", "User 2 Test Project"])
+
+    def test_a_tasks_breakdown_sorts_its_files_by_kind(self):
+        self.write(os.path.join(self.done.task_path(), "a.jpg"), 1000)
+        self.write(os.path.join(self.done.task_path(), "b.jpg"), 500)
+        self.write(self.done.assets_path("odm_orthophoto", "odm_orthophoto.tif"), 300)
+        self.write(self.done.assets_path("odm_dem", "dsm.tif"), 200)
+        self.write(self.done.assets_path("entwine_pointcloud", "ept.json"), 40)
+        self.write(self.done.assets_path("odm_georeferencing", "odm_georeferenced_model.laz"), 60)
+        self.write(self.done.assets_path("odm_texturing", "odm_textured_model_geo.obj"), 70)
+        self.write(self.done.assets_path("all.zip"), 5)
+        self.write(self.done.assets_path("odm_report", "report.pdf"), 7)
+        self.write(os.path.join(self.done.task_path(), "data", "x"), 3)
+        res = self.client.get("/api/plugins/tweakui/storage/%s/%s" % (self.big.id, self.done.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json()["kinds"], {"photos": 1500, "orthophoto": 300, "elevation": 200,
+                                               "point_cloud": 100, "textured_model": 70, "other": 15})
+        self.assertEqual(res.json()["size"], 300 * self.MB)
+
+    def test_a_breakdown_is_for_the_owner_and_admins_only(self):
+        url = "/api/plugins/tweakui/storage/%s/%s" % (self.other.id, self.theirs.id)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.login("testuser2").get(url).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.login("testsuperuser").get(url).json()["kinds"]["photos"], 0)
+        wrong = "/api/plugins/tweakui/storage/%s/%s" % (self.big.id, self.theirs.id)
+        self.assertEqual(self.login("testuser2").get(wrong).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(Client().get("/api/plugins/tweakui/storage").status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_the_setting_is_off_by_default_in_its_own_section_and_the_page_says_where_to_turn_it_on(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertIn('href="#storage"', page)
+        section = page[page.index('<section id="tweakui-storage"'):]
+        self.assertIn('data-setting="storage_view">', section[:section.index("</section>")])
+        off = self.client.get("/plugins/tweakui/storage/")
+        self.assertEqual(off.status_code, status.HTTP_200_OK)
+        self.assertContains(off, 'href="/plugins/tweakui/#storage"')
+        self.assertNotContains(off, "storage_page.js")
+        self.assertEqual(self.patch({"storage_view": True}).json(), defaults(storage_view=True))
+        on = self.client.get("/plugins/tweakui/storage/")
+        self.assertContains(on, "storage_page.js")
+        self.assertContains(on, 'data-api="/api/plugins/tweakui/"')
+        self.assertContains(on, "csrfmiddlewaretoken")
+        self.assertNotContains(on, "comment %}")
+        self.assertEqual(self.script_settings(self.client)["storage_view"], True)
+        self.assertEqual(Client().get("/plugins/tweakui/storage/").status_code, status.HTTP_302_FOUND)

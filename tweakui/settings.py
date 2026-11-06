@@ -29,6 +29,8 @@ DEFAULTS = {
     # 2D Map: the map zooms 3 steps further; 3D Map: the wheel zooms toward what is under the pointer
     "zoom_override_2d": False,
     "zoom_override_3d": False,
+    # Storage: a Storage view under Diagnostic (or under TweakUI's side-menu item without Diagnostic)
+    "storage_view": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS

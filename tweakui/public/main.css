@@ -125,3 +125,33 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-sf-main { overflow: visible; }
     .tweakui-sf-label { top: 6px; }
 }
+
+/* Diagnostic > Storage (templates/storage.html, storage_page.js): the action bar stays at the top while the list
+   scrolls; each user's quota, then a table of projects whose rows open to their tasks and a task's files by kind.
+   The table scrolls sideways on a phone rather than the page. */
+.tweakui-storage .tweakui-storage-actions { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 12px; border-width: 1px; border-style: solid; border-radius: 4px; }
+.tweakui-storage .tweakui-storage-selected { flex: 1; min-width: 160px; }
+.tweakui-storage .tweakui-storage-confirm { padding: 8px 12px; margin-bottom: 12px; border-width: 2px; border-style: solid; border-radius: 4px; }
+.tweakui-storage .tweakui-storage-confirm ul { max-height: 240px; overflow-y: auto; margin-bottom: 8px; }
+.tweakui-storage .tweakui-storage-user { margin-bottom: 24px; }
+.tweakui-storage .tweakui-storage-quota { margin-bottom: 8px; max-width: 480px; }
+.tweakui-storage .tweakui-storage-quota .progress { margin: 4px 0 0; }
+.tweakui-storage .tweakui-storage-scroll { overflow-x: auto; }
+.tweakui-storage .tweakui-storage-table { margin-bottom: 0; }
+.tweakui-storage .tweakui-storage-table > tbody + tbody { border-top-width: 1px; }
+.tweakui-storage .tweakui-storage-table td { vertical-align: middle; }
+.tweakui-storage .tweakui-storage-table td:first-child, .tweakui-storage .tweakui-storage-table th:first-child { width: 28px; }
+.tweakui-storage .tweakui-storage-name .btn-link { padding-left: 0; text-align: left; white-space: normal; }
+.tweakui-storage .tweakui-storage-indent { padding-left: 24px; }
+.tweakui-storage .tweakui-storage-size { text-align: right; white-space: nowrap; }
+.tweakui-storage .tweakui-storage-date, .tweakui-storage .tweakui-storage-buttons { white-space: nowrap; }
+.tweakui-storage .tweakui-storage-buttons { text-align: right; }
+.tweakui-storage .tweakui-storage-kinds { margin-left: 24px; }
+.tweakui-storage .tweakui-storage-kinds td { padding: 2px 12px 2px 0; }
+.tweakui-storage .tweakui-storage-share { width: 160px; }
+.tweakui-storage .tweakui-storage-share .progress { margin: 0; height: 10px; }
+@media (max-width: 767px) {
+    .tweakui-storage .tweakui-storage-date { display: none; }
+    .tweakui-storage .tweakui-storage-table th:nth-child(4) { display: none; }
+    .tweakui-storage .tweakui-storage-share { width: 80px; }
+}

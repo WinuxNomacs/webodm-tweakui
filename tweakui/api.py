@@ -7,7 +7,9 @@ from rest_framework.views import APIView
 
 from app.plugins.views import TaskView
 
-from . import frames, settings, themes
+from app.models import Task
+
+from . import frames, settings, storage, themes
 
 
 class SettingsView(APIView):
@@ -36,6 +38,30 @@ class FramesView(TaskView):
             return Response({"frames": frames.find(task, request.data)})
         except frames.FramesError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class StorageView(APIView):
+    """GET /api/plugins/tweakui/storage: the logged-in user's storage and, for an admin, every user's
+    (storage.report)"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        return Response(storage.report(request.user))
+
+
+class StorageTaskView(APIView):
+    """GET /api/plugins/tweakui/storage/<project>/<task>: a task's files by kind, for its project's owner and
+    admins"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request, project_pk=None, pk=None):
+        try:
+            task = Task.objects.select_related("project").get(pk=pk, project_id=project_pk)
+        except (Task.DoesNotExist, ValueError, TypeError):
+            raise exceptions.NotFound() from None
+        if not storage.can_see(request.user, task):
+            raise exceptions.NotFound()
+        return Response(storage.task_breakdown(task))
 
 
 def _script_json(value):
