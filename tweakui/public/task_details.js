@@ -1,4 +1,4 @@
-// General > Task Options > Enhanced Task Details: in a task's details panel on the Dashboard (TaskListItem in WebODM),
+// General > Task Details > Enhanced Task Details: in a task's details panel on the Dashboard (TaskListItem in WebODM),
 // Started and Finished rows and, while the task runs, its current ODM stage follow WebODM's "Created on"; after
 // WebODM's one-line Options row come the preset the options match (found as WebODM's Edit dialog does), each option in
 // a bubble (WebODM's row then hidden), and the ODX command to run the task by hand, with a copy button. Each of those

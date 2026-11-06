@@ -11,7 +11,7 @@ its options are not at ODM's default, out of how many it has: "Input & Preproces
 enabled. The count follows your changes, including "Reset to default". A preset's own settings count too (the
 Default preset sets auto-boundary and dsm). Only in the grouped view; "Other Options" is counted while it is open.
 
-## Task Options > Enhanced Task Details
+## Task Details > Enhanced Task Details
 
 Off by default.
 
@@ -19,8 +19,9 @@ Off by default.
 
 When a task is opened on the Dashboard, its details show when it started and finished, its current step while it
 runs, and three rows in place of WebODM's one-line Options. Each part has its own setting under Enhanced Task
-Details, all on (they are greyed out while Enhanced Task Details is off); with Options as bubbles off, WebODM's own
-Options line stays.
+Details (Task Start and End Time, Show Current Processing Stage, Show Configured Task Preset, Options as Bubbles,
+Show ODX Command), all on; they are greyed out while Enhanced Task Details is off. With Options as Bubbles off,
+WebODM's own Options line stays.
 
 - **Started** and **Finished**, after "Created on", in your local time. WebODM keeps no start or end time, so
   they are worked out from what it has: Started is when the task was created, Finished that plus its processing

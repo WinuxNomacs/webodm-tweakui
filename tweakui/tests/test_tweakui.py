@@ -170,6 +170,16 @@ class TestSettingsPage(TweakUITestCase):
         self.assertNotContains(res, "{#")
         self.assertNotContains(res, "comment %}")
 
+    def test_enhanced_task_details_and_its_parts_are_under_task_details_with_their_names(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        options, details = page.index(">Task Options</h5>"), page.index(">Task Details</h5>")
+        self.assertLess(options, page.index('data-setting="show_modified_options"'))
+        self.assertLess(page.index('data-setting="show_modified_options"'), details)
+        self.assertLess(details, page.index('data-setting="enhanced_task_details"'))
+        for name in ("Task Start and End Time", "Show Configured Task Preset", "Options as Bubbles",
+                     "Show ODX Command", "Show Current Processing Stage"):
+            self.assertGreater(page.index(name), details)
+
     def test_the_checkbox_shows_the_saved_value(self):
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
         self.patch({"show_modified_options": True})

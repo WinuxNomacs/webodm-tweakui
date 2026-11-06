@@ -4,7 +4,7 @@
 
 - A TweakUI item in the side menu, just above About, and a settings page (navigation pane, General), with each user's own settings.
 - General > Task Options > Show Modified Options: the Task Options dialog's group headings show (modified/total).
-- General > Task Options > Enhanced Task Details: a task's details on the Dashboard show the preset its options
+- General > Task Details > Enhanced Task Details: a task's details on the Dashboard show the preset its options
   match, each option in a bubble, and its ODX command (docker) with a copy button; and when it started and
   finished (worked out from its creation and processing time); while it runs, its current ODM stage ("Current Step
   (8/13): Texturing"). Each part can be turned off on its own.

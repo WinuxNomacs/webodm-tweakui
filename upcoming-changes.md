@@ -15,6 +15,12 @@
 (nothing planned)
 
 **Done**
+- **Task Details section and setting names** (request 22) — 2026-11-06, branch `task-details-section`.
+  - Code: `templates/settings.html` (General: Enhanced Task Details and its parts in their own group, Task Details,
+    below Task Options; the parts renamed Task Start and End Time, Show Configured Task Preset, Options as Bubbles,
+    Show ODX Command, Show Current Processing Stage; the rows in a task's details keep their names). Comments,
+    `docs/general.md` (Task Details > Enhanced Task Details), CHANGELOG.
+  - Tests: Django 1 (the group's place and the five names). Live on 4.0.0 and 3.3.2 at 1280 and 390 px.
 - **Custom themes: your own** (request 21, phase A) — 2026-11-06, branch `custom-themes-own` (design below).
   - Code: `custom_themes.py` (the user's themes in their data store, `themes`; `clean` checks a name of 1-60
     characters and all 13 colours as `#rrggbb`; at most 50; ids are hex), `themes.py` (`colors_css` for any
@@ -311,6 +317,13 @@ Added 2026-11-06 (tenth new.md):
 19. The best documentation framework for hosting the docs on GitHub and staying in step with the repo, with
     screenshots of many key features to show what they do; where possible, the screenshots shown in TweakUI's
     settings too, so the user sees what they are turning on or off.
+
+Added 2026-11-06 (twelfth new.md):
+
+22. On Settings > General, Enhanced Task Details and its options in their own group titled "Task Details"; its
+    options renamed: Started and Finished -> Task Start and End Time, Preset -> Show Configured Task Preset,
+    Options as bubbles -> Options as Bubbles, ODX command -> Show ODX Command, Current step -> Show Current
+    Processing Stage.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
