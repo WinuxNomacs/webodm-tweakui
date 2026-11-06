@@ -20,6 +20,19 @@ change is saved as soon as it is made and applies from the next page.
   including "Reset to default". A preset's own settings count too (the Default preset sets auto-boundary and
   dsm). Only in the grouped view; "Other Options" is counted while it is open.
 
+### Themes
+
+Pick your own colours for WebODM, for you only: **WebODM's theme** (the default, whatever the administrator set in
+Administration > Theme) or one of 11 presets: Catppuccin Latte, Frappé, Macchiato and Mocha; Solarized Light and
+Dark; Dracula; Nord; Gruvbox Dark and Light; One Dark. Each shows a swatch of its colours; choosing one reloads the
+page in it.
+
+A preset fills the colours of WebODM's own theme, so it changes exactly what an administrator's theme can change,
+in each WebODM version. Places WebODM always shows in white keep their white background (some icons and controls
+there only work on white) with readable text: the map's layers panel, the Contours and Object Detection panels,
+and the content of Administration, which keeps WebODM's own theme. Light presets have a header in their accent
+colour, as WebODM's logo is white.
+
 ## Requirements
 
 WebODM 3.3.2 or later (tested on 3.3.2 and 4.0.0).
@@ -31,8 +44,8 @@ Once released: in WebODM, Administration > Plugins, install TweakUI from the plu
 
 ## Outside services
 
-None: the plugin calls no outside service. It keeps each user's settings in WebODM's database, in the plugin's
-per-user data store.
+None: the plugin calls no outside service. It keeps each user's settings, including their theme, in WebODM's
+database, in the plugin's per-user data store.
 
 ## Developing
 

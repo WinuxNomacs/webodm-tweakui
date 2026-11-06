@@ -1,5 +1,6 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
-// address's #hash, General by default), and each setting is saved as soon as it is changed. UMD, so Jest can load it.
+// address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
+// false, a radio button (Themes) as its value. A new theme reloads the page to show it. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -42,8 +43,9 @@
     }
 
     // PATCHes one setting; a failure puts the control back as it was and says why
-    function save(page, input, fetchFn, doc, win) {
-        var name = input.getAttribute("data-setting"), value = input.checked, changes = {};
+    function save(page, input, fetchFn, doc, win, previous) {
+        var name = input.getAttribute("data-setting"), radio = input.type === "radio", changes = {};
+        var value = radio ? input.value : input.checked;
         changes[name] = value;
         setStatus(page, "", false);
         return fetchFn(page.getAttribute("data-api") + "settings", {
@@ -56,9 +58,11 @@
                 if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
                 if (win.TweakUI) win.TweakUI.settings = body;
                 setStatus(page, "Saved", false);
+                if (name === "theme") win.location.reload();
             });
         }).then(null, function (e) {
-            input.checked = !value;
+            if (!radio) input.checked = !value;
+            else if (previous) previous.checked = true;
             setStatus(page, "Not saved: " + e.message, true);
         });
     }
@@ -68,8 +72,19 @@
         if (!page) return;
         showSection(page, win.location.hash);
         win.addEventListener("hashchange", function () { showSection(page, win.location.hash); });
+        // A radio button's group remembers its checked one, to put it back if the change is refused
+        var checked = {};
+        each(page.querySelectorAll("input[type=radio][data-setting]:checked"), function (input) {
+            checked[input.name] = input;
+        });
         each(page.querySelectorAll("input[data-setting]"), function (input) {
-            input.addEventListener("change", function () { save(page, input, win.fetch.bind(win), doc, win); });
+            input.addEventListener("change", function () {
+                var previous = checked[input.name];
+                if (input.type === "radio") checked[input.name] = input;
+                save(page, input, win.fetch.bind(win), doc, win, previous).then(function () {
+                    if (input.type === "radio" && !input.checked && previous) checked[input.name] = previous;
+                });
+            });
         });
     }
 
