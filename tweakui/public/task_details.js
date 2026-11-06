@@ -16,7 +16,8 @@
 
     // Added by NodeODX to every task when it supports them (the outputs WebODM's viewers need)
     var NODE_OPTIONS = ["pc-ept", "cog", "gltf"];
-    var DOCKER = "docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets";
+    var DOCKER = ["docker", "run", "-ti", "--rm", "-v /my/project:/datasets/code", "webodm/odx",
+        "--project-path /datasets"];
     // The command line takes a GeoJSON file where WebODM keeps the boundary itself
     var BOUNDARY_FILE = "/datasets/code/boundary.geojson";
 
@@ -48,18 +49,21 @@
     }
 
     // The ODX command the node runs for these options, in the docker form of WebODM's docs: the task's options
-    // (false booleans left out, booleans as a bare flag), then the node's own
-    function command(options) {
-        var parts = [DOCKER], names = {};
+    // (false booleans left out, booleans as a bare flag), then the node's own; as its words, each flag with its value
+    function commandParts(options) {
+        var parts = DOCKER.slice(), names = {};
         options.forEach(function (o) {
             names[o.name] = true;
             if (o.value === false) return;
-            parts.push("--" + o.name);
-            if (o.name === "boundary") parts.push(BOUNDARY_FILE);
-            else if (o.value !== true) parts.push(shellQuote(o.value));
+            if (o.name === "boundary") parts.push("--boundary " + BOUNDARY_FILE);
+            else parts.push("--" + o.name + (o.value === true ? "" : " " + shellQuote(o.value)));
         });
         NODE_OPTIONS.forEach(function (n) { if (!names[n]) parts.push("--" + n); });
-        return parts.join(" ");
+        return parts;
+    }
+
+    function command(options) {
+        return commandParts(options).join(" ");
     }
 
     function el(doc, tag, className, text) {
@@ -116,7 +120,12 @@
 
         var text = command(options);
         var box = el(doc, "span", "tweakui-odx-command");
-        var code = el(doc, "code", "theme-border", text);
+        // Each flag with its value in a span that wraps as one, so a line doesn't break inside a flag
+        var code = el(doc, "code", "theme-border");
+        commandParts(options).forEach(function (part, i) {
+            if (i) code.appendChild(doc.createTextNode(" "));
+            code.appendChild(el(doc, "span", null, part));
+        });
         var copy = el(doc, "button", "btn btn-default btn-xs tweakui-odx-copy");
         copy.type = "button";
         copy.title = "Copy to clipboard";
