@@ -69,10 +69,24 @@ to near-black, which a dark preset's menu background would hide).
   task's own (cropped as its task is), and set its opacity with the slider beside it, e.g. to compare before and
   after. None is shown when the map opens, and nothing is remembered. A project's own map (Dashboard > the
   project's **View Map**) already lists every task's layers, so it has no such button.
+- **Controls > Source Frames** (off by default): a button beside **Share** (bottom right of the map) finds the
+  task's photos that show a place. Pick **Spot** and click the map, or **Area** and click its corners (finish on the
+  first corner, with a double click or with **Finish**; Esc stops). A window lists the photos best first: for a
+  spot, those where it is nearest the middle of the frame; for an area, those that show most of it (with the share
+  shown). The chosen photo is shown with the spot or area drawn on it, with its file name, capture time, camera,
+  size and the camera's altitude, a **Download** button, and **Open full frame**: the photo full screen, with zoom
+  (wheel, pinch, buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. A
+  project's map searches each of its tasks with cameras.
 
 ### 3D Map
 
-No settings yet.
+- **Controls > Source Frames** (off by default): the same in a task's 3D view, by clicking the point cloud or the
+  textured model (a drag still turns the view). The picked points' own heights are used.
+
+How Source Frames finds the photos: from each photo's position, direction and lens (the task's camera shots, as
+WebODM shows them in its Cameras layer) and the ground's height (the task's DSM; without one, the point cloud's
+mean height). A place counts as shown when it falls inside the photo's frame: something in front of it (a roof, a
+tree) isn't detected. Only tasks with camera shots have the button.
 
 ## Requirements
 

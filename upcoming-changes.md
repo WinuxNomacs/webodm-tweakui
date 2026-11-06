@@ -3,15 +3,34 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Source Frames** (request 16) — a button on the 2D map and in the 3D view (each with its own setting) to pick a
-   spot or draw an area and see the source photos that show it, best first. Details below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Source Frames** (request 16) — 2026-11-06, branch `source-frames` (design below).
+  - Code: `tweakui/frames.py` (the photos' projection: poses, Brown/fisheye lenses, the ground's height, an area's
+    grid, the ranking), `tweakui/api.py` (`FramesView`, `POST /api/plugins/tweakui/frames/<p>/<t>`),
+    `tweakui/plugin.py`, `tweakui/settings.py` (`source_frames_2d`, `source_frames_3d`), `templates/settings.html`
+    (2D Map and 3D Map > Controls), `public/source_frames.js` (the button, bar, window, viewer, the 2D and 3D tools),
+    `public/main.css`.
+  - Tests: Django 38 (`TestSourceFrames` +6: two synthetic cameras over a DSM), 43 with `app.tests.test_plugins`, on
+    4.0.0 and 3.3.2; Jest 79 (`source_frames` 14).
+  - Live on 4.0.0 (TestRGB, 220 photos, with a DSM) and 3.3.2 (16 of TestRGB's photos processed as a
+    fast-orthophoto task by the check: no DSM, the point cloud's mean height; deleted afterwards), desktop and
+    phone: a spot (the photo below the camera ranked first with the spot at its centre; the same branch ringed in
+    every photo), an area (outline on the lawn's edges and roof lines, ranked by share), the full-frame viewer
+    (zoom, arrows, Esc), the download (the page stays), the 3D view's spot and area (picked on the point cloud;
+    a click on nothing says so); WebODM's light and dark themes; no console errors; settings restored.
+  - Found while checking: WebODM's action-button hook keeps only the answers that come first, so a hook with
+    dependencies (Leaflet) was left out (the button is added without them, Leaflet being the page's global);
+    WebODM's layer popup opened on a spot's click (the clicks are taken in the capture phase while picking);
+    Potree's measurements are saved by WebODM with the task's 3D scene every 3 s, so marking the 3D place with them
+    wrote into TestRGB's saved scene (TweakUI's own three.js objects now; the two saved marks removed from TestRGB
+    through WebODM's scene API, the rest of its scene untouched); a link styled as a button takes WebODM's link
+    colour (Download is a button); the bar's × took the 3D view's white text (the theme's text colour now).
 - **2D Map and 3D Map settings, Movable Controls, Other Tasks** (requests 10, 15) — 2026-11-06, branch
   `map-settings` (design below).
   - Code: `tweakui/settings.py` (`movable_controls`, `other_tasks`), `templates/settings.html` (2D Map, 3D Map),
@@ -438,7 +457,7 @@ Design:
   drags it too): the project's other tasks with an orthophoto, each with a checkbox (shown over the task's own
   layers, cropped as its task is) and an opacity slider; none shown on opening. Nothing remembered between pages.
 
-## Source Frames (request 16)
+## Source Frames (request 16) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
 - A task with cameras has `shots.geojson` (in `available_assets`; e.g. TestRGB, 220 photos): per photo its file

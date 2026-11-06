@@ -79,3 +79,49 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-other-tasks .tweakui-other-task-name span { overflow: hidden; text-overflow: ellipsis; }
 .tweakui-other-tasks .tweakui-other-task-name input { margin: 0; flex: none; }
 .tweakui-other-tasks .tweakui-other-task-opacity { width: 90px; flex: none; }
+
+/* 2D Map and 3D Map > Source Frames (source_frames.js): the bar to pick a place, the window of photos, the full-screen
+   viewer. The place drawn on a photo (and the map) is yellow with a dark edge, as it must show on any photo, not
+   follow the theme */
+.tweakui-sf-picking, .tweakui-sf-picking canvas, .tweakui-sf-picking .leaflet-interactive { cursor: crosshair !important; }
+.tweakui-sf-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1002; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: calc(100% - 20px); padding: 6px 8px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4); }
+.tweakui-sf-bar .tweakui-sf-hint { font-size: 12px; }
+.tweakui-sf-bar .close { margin-left: 4px; float: none; }
+.tweakui-sf-bar .close, .tweakui-sf-head .close { color: inherit; text-shadow: none; opacity: 0.7; }
+.tweakui-sf-bar .close:hover, .tweakui-sf-head .close:hover { color: inherit; opacity: 1; }
+.tweakui-sf-window { position: absolute; right: 10px; top: 64px; z-index: 1002; width: 560px; max-width: calc(100% - 20px); max-height: calc(100% - 124px); display: flex; flex-direction: column; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 1px 8px rgba(0, 0, 0, 0.45); overflow: hidden; }
+.tweakui-sf-head { display: flex; align-items: center; padding: 6px 10px; cursor: move; touch-action: none; user-select: none; font-weight: bold; }
+.tweakui-sf-head .tweakui-sf-title { flex: 1; }
+.tweakui-sf-head .close { float: none; }
+.tweakui-sf-body { display: flex; min-height: 0; flex: 1; overflow: hidden; }
+.tweakui-sf-message { margin: 10px; }
+.tweakui-sf-list { flex: none; width: 128px; overflow-y: auto; border-width: 0 1px 0 0; border-style: solid; padding: 6px; display: flex; flex-direction: column; gap: 6px; }
+.tweakui-sf-item { display: block; width: 100%; padding: 2px; border-width: 2px; border-style: solid; border-radius: 4px; text-align: center; color: inherit; }
+.tweakui-sf-item.active { border-color: currentColor !important; }
+.tweakui-sf-caption { display: block; font-size: 11px; line-height: 1.4; }
+.tweakui-sf-main { flex: 1; min-width: 0; overflow-y: auto; padding: 8px; }
+.tweakui-sf-photo { position: relative; line-height: 0; }
+.tweakui-sf-photo img { width: 100%; height: auto; display: block; border-radius: 3px; user-select: none; }
+.tweakui-sf-photo .tweakui-sf-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
+.tweakui-sf-main-photo { cursor: zoom-in; }
+.tweakui-sf-ring, .tweakui-sf-outline { fill: none; stroke: #ffeb3b; stroke-width: 2px; }
+.tweakui-sf-ring-outer, .tweakui-sf-outline-outer { fill: none; stroke: #000; stroke-opacity: 0.6; stroke-width: 4px; }
+.tweakui-sf-outline { fill: #ffeb3b; fill-opacity: 0.12; }
+.tweakui-sf-actions { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
+.tweakui-sf-props { margin-bottom: 0; table-layout: fixed; font-size: 12px; }
+.tweakui-sf-props th { width: 120px; white-space: nowrap; }
+.tweakui-sf-props td { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tweakui-sf-viewer { position: fixed; left: 0; top: 0; right: 0; bottom: 0; z-index: 100000; display: flex; flex-direction: column; }
+.tweakui-sf-viewer-bar { display: flex; align-items: center; gap: 6px; padding: 6px 10px; border-width: 0 0 1px 0; border-style: solid; }
+.tweakui-sf-viewer-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; text-align: center; }
+.tweakui-sf-viewer-stage { flex: 1; min-height: 0; overflow: hidden; display: flex; align-items: center; justify-content: center; touch-action: none; cursor: grab; }
+.tweakui-sf-viewer-stage .tweakui-sf-photo { max-width: 100%; max-height: 100%; transform-origin: center center; }
+.tweakui-sf-viewer-stage .tweakui-sf-photo img { max-width: 100vw; max-height: calc(100vh - 50px); width: auto; border-radius: 0; }
+@media (max-width: 600px) {
+    .tweakui-sf-window { left: 10px; right: 10px; width: auto; top: auto; bottom: 56px; max-height: calc(100% - 156px); }
+    .tweakui-sf-body { flex-direction: column; overflow-y: auto; }
+    .tweakui-sf-list { width: auto; flex-direction: row; overflow-x: auto; overflow-y: hidden; border-width: 0 0 1px 0; }
+    .tweakui-sf-item { width: 96px; flex: none; }
+    .tweakui-sf-main { overflow: visible; }
+    .tweakui-sf-bar { top: 6px; }
+}

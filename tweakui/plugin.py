@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import settings, themes
-from .api import SettingsView, settings_script
+from .api import FramesView, SettingsView, settings_script
 
 
 class Plugin(PluginBase):
@@ -16,7 +16,7 @@ class Plugin(PluginBase):
     # a view (app_mount_points come before public/); so is theme.css
     def include_js_files(self):
         return ["settings.js", "main.js", "task_options.js", "task_details.js", "theme_menu.js",
-                "movable_controls.js", "other_tasks.js"]
+                "movable_controls.js", "other_tasks.js", "source_frames.js"]
 
     def include_css_files(self):
         return ["main.css", "theme.css"]
@@ -39,4 +39,7 @@ class Plugin(PluginBase):
         ]
 
     def api_mount_points(self):
-        return [MountPoint("settings$", SettingsView.as_view())]
+        return [
+            MountPoint("settings$", SettingsView.as_view()),
+            MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
+        ]

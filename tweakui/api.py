@@ -1,11 +1,13 @@
 import json
 
 from django.http import HttpResponse
-from rest_framework import permissions, status
+from rest_framework import exceptions, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
-from . import settings, themes
+from app.plugins.views import TaskView
+
+from . import frames, settings, themes
 
 
 class SettingsView(APIView):
@@ -19,6 +21,20 @@ class SettingsView(APIView):
         try:
             return Response(settings.update(request.user, request.data))
         except settings.InvalidSettings as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class FramesView(TaskView):
+    """POST /api/plugins/tweakui/frames/<project>/<task>: the task's photos that show a spot or an area (see
+    frames.parse), best first; WebODM's task permissions (a public task's to anyone)"""
+
+    def post(self, request, project_pk=None, pk=None):
+        task = self.get_and_check_task(request, pk)
+        if str(task.project_id) != str(project_pk):
+            raise exceptions.NotFound()
+        try:
+            return Response({"frames": frames.find(task, request.data)})
+        except frames.FramesError as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
 

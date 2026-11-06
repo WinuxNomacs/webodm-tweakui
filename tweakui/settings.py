@@ -23,6 +23,9 @@ DEFAULTS = {
     "movable_controls": False,
     # 2D Map: on a task's map, a panel of the project's other tasks' orthophotos to show over its own
     "other_tasks": False,
+    # 2D Map and 3D Map: a button to pick a spot or draw an area and see the source photos that show it
+    "source_frames_2d": False,
+    "source_frames_3d": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS

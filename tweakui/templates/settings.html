@@ -117,11 +117,27 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                         </label>
                         <p class="text-muted">{% trans "On a task's map, a button below Layers lists the project's other tasks with an orthophoto, to show over the task's own, each with its opacity." %}</p>
                     </div>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="source_frames_2d"{% if settings.source_frames_2d %} checked{% endif %}>
+                            {% trans "Source Frames" %}
+                        </label>
+                        <p class="text-muted">{% trans "A button beside Share picks a spot or draws an area on the map and lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
+                    </div>
                 </div>
             </section>
             <section id="tweakui-map3d" data-section="map3d" role="tabpanel" hidden>
                 <h4>{% trans "3D Map" %}</h4>
-                <p class="text-muted">{% trans "No settings yet." %}</p>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Controls" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="source_frames_3d"{% if settings.source_frames_3d %} checked{% endif %}>
+                            {% trans "Source Frames" %}
+                        </label>
+                        <p class="text-muted">{% trans "A button beside Share picks a spot or draws an area on the model and lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
+                    </div>
+                </div>
             </section>
             <p class="tweakui-status" role="status" aria-live="polite"></p>
         </div>
