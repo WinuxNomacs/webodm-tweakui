@@ -4,7 +4,21 @@ A [WebODM](https://github.com/WebODM/WebODM) plugin of small enhancements to Web
 WebODM's plugin system only: it changes nothing in WebODM itself and can be turned off at any time in
 Administration > Plugins.
 
-**Status: experimental, no features yet.** The features will be listed here as they are added.
+**Status: experimental.**
+
+## Features
+
+Each user has their own TweakUI settings: the **TweakUI** item in WebODM's side menu opens them. The settings page
+has a navigation pane of categories on the left (above the settings on a phone); it opens on **General**. A
+change is saved as soon as it is made and applies from the next page.
+
+### General
+
+- **Task Options > Show Modified Options** (off by default): in the Task Options dialog (a new task's Options >
+  Edit, or a task's Edit), each group heading shows how many of its options are not at ODM's default, out of how
+  many it has: "Input & Preprocessing (1/13)" once ignore-gsd is enabled. The count follows your changes,
+  including "Reset to default". A preset's own settings count too (the Default preset sets auto-boundary and
+  dsm). Only in the grouped view; "Other Options" is counted while it is open.
 
 ## Requirements
 
@@ -17,7 +31,8 @@ Once released: in WebODM, Administration > Plugins, install TweakUI from the plu
 
 ## Outside services
 
-None: the plugin calls no outside service.
+None: the plugin calls no outside service. It keeps each user's settings in WebODM's database, in the plugin's
+per-user data store.
 
 ## Developing
 

@@ -1,8 +1,8 @@
 {% extends "app/plugins/templates/base.html" %}
 {% load i18n %}
 {% block content %}
-{# The TweakUI settings: a navigation pane of categories and the selected category (settings_page.js). Colours come
-   only from WebODM's theme classes. #}
+{% comment %}The TweakUI settings: a navigation pane of categories and the selected category (settings_page.js).
+Colours come only from WebODM's theme classes.{% endcomment %}
 <div id="tweakui-settings" class="tweakui-settings" data-api="{{ api }}">
     {% csrf_token %}
     <h3>{% trans "TweakUI" %}</h3>

@@ -2,4 +2,6 @@
 
 ## Unreleased
 
-- The plugin's skeleton: a script and stylesheet loaded on every WebODM page, no features yet. Experimental.
+- A TweakUI item in the side menu and a settings page (navigation pane, General), with each user's own settings.
+- General > Task Options > Show Modified Options: the Task Options dialog's group headings show (modified/total).
+- Experimental.

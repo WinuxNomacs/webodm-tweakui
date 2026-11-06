@@ -135,6 +135,8 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(res, 'data-setting="show_modified_options"')
         self.assertContains(res, 'data-api="/api/plugins/tweakui/"')
         self.assertContains(res, "csrfmiddlewaretoken")
+        self.assertNotContains(res, "{#")
+        self.assertNotContains(res, "comment %}")
 
     def test_the_checkbox_shows_the_saved_value(self):
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
