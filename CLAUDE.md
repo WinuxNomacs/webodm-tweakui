@@ -61,6 +61,7 @@ The `test`, `live-check` and `release-check` skills in `.claude/skills` have the
 - Jest: `npm test` at the repo root (jsdom). ESLint: `npm run lint -- tweakui` (the scripts in `public/` are ES5).
 - Ruff: `.venv/bin/ruff check .`
 - Live checks: headless Playwright (Node) against http://localhost:8005 (4.0.0) and http://localhost:8006 (3.3.2)
-  with a dev account from the user.
+  with a dev account from the user. Expected console error in dev mode: `localhost:35729/livereload.js` refused
+  (WebODM's pages ask for that port; these stacks map livereload to 35734/35735).
 - WebODM's Django CSRF check applies to a plugin's API (WebODM routes it through a plain Django view): a POST,
   PATCH or DELETE needs the session's CSRF token even with basic or JWT authentication.
