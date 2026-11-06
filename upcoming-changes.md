@@ -3,8 +3,8 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
-   Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
+1. **Themes** — a Themes item in the settings page's navigation pane: each user picks one of 11 preset themes
+   (Catppuccin ×4, Solarized ×2, Dracula, Nord, Gruvbox ×2, One Dark) or WebODM's own. Planned below.
 2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
@@ -99,7 +99,7 @@ Design:
 
 Open: none.
 
-## Phase 2: Themes (request 3), to be designed with the user
+## Phase 2: Themes (request 3), planned
 
 What WebODM offers (checked in 3.3.2 and 4.0.0):
 - One theme per instance: `Setting.theme` points at a `Theme` (`app/models/theme.py`): 13 colours (primary,
@@ -128,8 +128,30 @@ Decided (the user, 2026-11-06):
   panels the preset's own dark colour as text colour (a preset colour, not a hard-coded one), so they stay as
   they look with WebODM's default theme. The live check covers each of them on both versions.
 
-Open (for the discussion): which presets and variants (e.g. Dracula; Nord; Catppuccin Latte, Frappé, Macchiato,
-Mocha; Solarized Light and Dark; others).
+- **Presets** (11, plus "WebODM's theme", the default): Catppuccin Latte, Frappé, Macchiato and Mocha; Solarized
+  Light and Dark; Dracula; Nord; Gruvbox Dark and Light; One Dark.
+
+Open: none.
+
+Plan (branch `themes`):
+- **Setting**: `theme` in `DEFAULTS` (`tweakui/settings.py`), default `"webodm"`; the API accepts only a known
+  preset id.
+- **Presets**: `tweakui/themes.py`, one dict per preset with WebODM's 13 theme colour fields (the names of
+  `app/models/theme.py`), taken from each scheme's published palette.
+- **`/plugins/tweakui/theme.css`** (an app mount point, listed in `include_css_files` after `main.css`): for a
+  logged-in user with a preset, renders WebODM's own `app/theme.css` template with a context whose
+  `SETTINGS.theme` holds the preset's colours (WebODM's `{% theme %}` tag reads `context['SETTINGS'].theme`), so
+  the CSS follows each version's template; then prefixes every selector with `html ` so it wins over WebODM's
+  inline theme, which comes later in the page. Then the panels with hard-coded white backgrounds get the preset's
+  dark colour as text colour (see the decision above). "WebODM's theme" or a logged-out page: an empty
+  stylesheet. Not cached across users (`Cache-Control: private`).
+- **Settings > Themes** (the settings page's navigation pane, new section): a list of the presets, each with a
+  swatch of its colours and its name; choosing one saves it and reloads the page so the new look shows.
+- **README**: the Themes section; **CHANGELOG**.
+- Tests: Django (setting validation; the view renders a preset's colours, prefixes selectors, is empty for the
+  default and for anonymous users), Jest (the Themes section saves the choice). Live on 4.0.0 and 3.3.2: each
+  preset on the dashboard, a task's map, the 3D view, the settings page and Administration; the white panels stay
+  readable; the user's setting restored afterwards.
 
 ## TweakUI menu item above About (request 6) — done
 
