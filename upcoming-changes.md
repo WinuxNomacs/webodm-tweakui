@@ -3,10 +3,15 @@
 ## Phases (current and upcoming)
 
 **Up next**
-(nothing planned)
+1. **Custom themes: your own** (request 21, phase A): make, edit and delete your own themes from any theme, with a
+   live preview.
 
 **Then**
-(nothing planned)
+2. **Custom themes: import and export** (request 21, phase B): your own themes to and from a JSON file or JSON
+   text.
+3. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
+   imports, exports, deletes and publishes (from their own) the themes every user sees, read-only to them;
+   superusers only.
 
 **Later**
 (nothing planned)
@@ -738,6 +743,62 @@ The plan:
 - **Tests**: Django (the report's sums and ordering, owners only, admins' groups, the breakdown and its
   permissions, the setting); Jest (the menu restructuring both ways, the page's rendering, selection and the
   confirmation's totals, the API calls). Live on both stacks with a task the check creates and deletes.
+
+Open: none.
+
+## Custom themes (request 21)
+
+The request (2026-11-06): users create their own themes, import and export them as JSON; administrators publish
+themes to every user.
+
+Builds on: `tweakui/themes.py` (a theme is WebODM's 13 theme colours, `FIELDS`; `preset_css` renders WebODM's own
+theme template with them, so it works for any 13 colours; `theme_list` feeds the settings page and the header's
+theme menu, `window.TweakUI.themes`), `settings.py` (the `theme` setting, checked by `allowed`; an unknown value
+falls back to WebODM's theme on load), the per-user and global data stores, Settings > Themes > Sample (the
+preview), `main.js` (already moves side-menu items: the TweakUI item, Storage under Diagnostic).
+
+Decided (the user, 2026-11-06):
+- **All 13 of WebODM's colours**, as in Administration > Theme. A new theme starts from a copy of **any** theme
+  (WebODM's, a preset, a published one or one of your own). Built-in (and published) themes can't be edited, only
+  copied.
+- **Each user's own themes, plus themes an administrator publishes to every user**, read-only to them; published
+  themes are managed on a page under **Administration** (import, export).
+- **A JSON file** of a single theme object or a list of them: `{"name": "...", "colors": {"primary": "#rrggbb",
+  ...}}` (WebODM's field names, all 13 required; other keys ignored).
+- **An imported theme with the name of an existing one replaces it** (in the same list: your own, or the published).
+- **Files and text**: besides the file, each theme has **Copy JSON** (the theme as a JSON string on the clipboard)
+  and Import also takes pasted JSON text (the same object or list).
+- **Published themes: import, or publish one of your own**: the Administration page has Import, Export, Delete and
+  **Publish** (a copy of one of the administrator's own themes, made in the normal editor); no second editor.
+- **Superusers only** see Administration > TweakUI Themes and change published themes (other staff don't).
+
+Design:
+- Storage: your themes in your user data store (`themes`: a list of `{id, name, colors}`); published ones in the
+  plugin's global data store. Checked on the server on every write: each colour `#rrggbb` (it goes into CSS), a
+  name of 1 to 60 characters, at most 50 themes per list. The `theme` setting takes `webodm`, a preset id,
+  `own:<id>` or `published:<id>`; a deleted theme falls back to WebODM's theme.
+- Settings > Themes: the swatches in groups, WebODM's theme and the presets, then Published, then My themes. A
+  **New theme** button and a **Copy** action on every theme open the editor; your own themes also have **Edit**.
+  The editor (under the swatches, above the Sample): a name, 13 labelled colour pickers (the browser's
+  `input type=color`, plus the hex value) in Administration > Theme's order, Save, Cancel, and Delete for an
+  existing theme. While editing, the Sample and the page show the unsaved colours (the server renders the CSS
+  for them; nothing is saved until Save). The header's theme menu lists your own and the published themes too.
+
+Phases:
+- **A. Your own themes**: storage and checks, the API (list, create, update, delete, preview CSS), the editor,
+  choosing one. Tests: Django (the checks, CSS of an own theme, another user can't see or change it, a deleted
+  theme falls back), Jest (the editor, the preview), live on both stacks.
+- **B. Import and export** on Settings > Themes: **Export** downloads `tweakui-themes.json` (all your themes; each
+  own theme's menu also exports just it); **Copy JSON** on any theme puts it on the clipboard as a JSON string;
+  **Import** takes a file or pasted JSON text, the server checks it and replaces by name, and
+  the page says what was added, replaced or refused (and why). Tests: Django (single object, list, bad colour,
+  missing field, too many, replace by name), Jest (the file read and the report), live.
+- **C. Published themes**: a page `/plugins/tweakui/admin/themes/` for superusers (others get 403), linked from
+  the side menu's **Administration** section by `main.js` (WebODM has no hook there; the link is added only for
+  administrators). It lists the published themes with their swatches; Import (replace by name), Export (all or
+  one), Delete; and **Publish** a copy of one of the administrator's own themes. Users see them under Published,
+  can choose and copy them. Tests: Django (permissions, a published theme in every user's list and CSS, delete
+  falls back), Jest, live.
 
 Open: none.
 
