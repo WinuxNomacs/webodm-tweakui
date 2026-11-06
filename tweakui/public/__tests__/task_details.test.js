@@ -164,3 +164,110 @@ test("a task that hasn't ended is fetched again while its panel is open, and its
     expect(fetch.mock.calls.length).toBe(calls);
     jest.useRealTimers();
 });
+
+const ALL = details.parts();
+const without = (...off) => Object.assign({}, ALL, ...off.map(p => ({[p]: false})));
+
+test("every part is on unless its setting is false", () => {
+    expect(details.parts({})).toEqual({times: true, preset: true, options: true, command: true, step: true});
+    expect(details.parts({task_details_command: false, task_details_step: true}).command).toBe(false);
+});
+
+test("parts turned off are left out, and without bubbles WebODM's Options row stays", () => {
+    const root = panel(task);
+    details.enhance(document, window, root, task, null, without("times", "options"));
+    expect(labels(root)).toEqual(["Task ID:", "Created on:", "Options:", "Preset:", "ODX command:", "Disk Usage:"]);
+    expect(root.querySelector(".tweakui-hidden")).toBeNull();
+    details.enhance(document, window, root, task, null, without("preset", "command"));
+    expect(labels(root)).toEqual(["Task ID:", "Created on:", "Started:", "Finished:", "Options:", "Disk Usage:"]);
+    expect(root.querySelector(".tweakui-hidden")).not.toBeNull();
+    details.enhance(document, window, root, task, null, without("times", "options"));
+    expect(root.querySelector(".tweakui-hidden")).toBeNull();
+    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(2);
+});
+
+test("ODM's stages are 13, 12 with fast-orthophoto, and stop at end-with's", () => {
+    expect(details.stages([]).length).toBe(13);
+    expect(details.stages([]).map(s => s[0]).indexOf("mvs_texturing")).toBe(7);
+    expect(details.stages([{name: "fast-orthophoto", value: true}]).length).toBe(12);
+    expect(details.stages([{name: "end-with", value: "odm_dem"}]).map(s => s[1]).pop()).toBe("Elevation Models");
+    expect(details.stages([{name: "end-with", value: "odm_dem"}]).length).toBe(10);
+});
+
+test("the step is the last stage the console says is running, then done after the last", () => {
+    let step = details.readStep(undefined, ["[INFO] Initializing ODX 3.8.5"]);
+    expect(step).toEqual({stage: null, done: false});
+    expect(details.stepText([], step)).toEqual(["Current Step:", "Starting"]);
+    step = details.readStep(step, ["[INFO] Running dataset stage", "[INFO] Finished dataset stage",
+        "[INFO] Running mvs_texturing stage"]);
+    expect(details.stepText([], step)).toEqual(["Current Step (8/13):", "Texturing"]);
+    expect(details.stepText([{name: "fast-orthophoto", value: true}], step)).toEqual(["Current Step (7/12):", "Texturing"]);
+    step = details.readStep(step, ["[INFO] Finished odm_postprocess stage", "[INFO] No more stages to run"]);
+    expect(details.stepText([], step)).toEqual(["Current Step:", "Downloading results"]);
+    expect(details.stepText([], undefined)).toEqual(["Current Step:", "…"]);
+});
+
+test("a running task's step follows Finished, or the Options row without Created on, and not once it has ended", () => {
+    const running = Object.assign({}, task, {status: 20, processing_time: 5000});
+    let root = panel(running);
+    details.enhance(document, window, root, running, null, ALL, {stage: "opensfm", done: false});
+    expect(labels(root)).toEqual(["Task ID:", "Created on:", "Started:", "Finished:", "Current Step (4/13):", "Preset:",
+        "Options:", "ODX command:", "Disk Usage:"]);
+    expect(root.querySelector(".tweakui-task-step").textContent).toBe("Structure from Motion");
+    details.enhance(document, window, root, running, null, without("step"), {stage: "opensfm", done: false});
+    expect(root.querySelector(".tweakui-task-step")).toBeNull();
+    details.enhance(document, window, root, task, null, ALL, {stage: "opensfm", done: false});
+    expect(root.querySelector(".tweakui-task-step")).toBeNull();
+    root = panel(running);
+    root.querySelectorAll("tbody > tr")[1].remove();
+    details.enhance(document, window, root, running, null, ALL, undefined);
+    expect(labels(root)).toEqual(["Task ID:", "Current Step:", "Preset:", "Options:", "ODX command:", "Disk Usage:"]);
+});
+
+test("a running task's console is read on opening, then only its new lines, and again from the start after a restart", async () => {
+    jest.useFakeTimers();
+    let hook, consoleLines = ["[INFO] Running dataset stage", "[INFO] Running opensfm stage"];
+    const running = Object.assign({}, task, {id: "t8", status: 20, processing_time: 5000});
+    const fetch = jest.fn(url => {
+        let body = running;
+        if (url.startsWith("/api/presets")) body = presets;
+        else if (url.includes("/output/")) {
+            const line = Number(/line=(\d+)/.exec(url)[1]);
+            body = {lines: consoleLines.slice(line), count: consoleLines.length};
+        }
+        return Promise.resolve({ok: true, json: () => Promise.resolve(body)});
+    });
+    const win = Object.assign(Object.create(window), {
+        PluginsAPI: {Dashboard: {addTaskActionButton: cb => { hook = cb; }}},
+        fetch, setTimeout: (f, ms) => setTimeout(f, ms), MutationObserver: undefined
+    });
+    const root = panel(running);
+    details.start(document, win, ALL);
+    hook({task: running});
+    await jest.advanceTimersByTimeAsync(10);
+    expect(fetch).toHaveBeenCalledWith("/api/projects/1/tasks/t8/output/?f=json&line=0", {credentials: "same-origin"});
+    expect(root.querySelector(".tweakui-task-step").textContent).toBe("Structure from Motion");
+    consoleLines = consoleLines.concat(["[INFO] Running openmvs stage"]);
+    await jest.advanceTimersByTimeAsync(5000);
+    expect(fetch).toHaveBeenCalledWith("/api/projects/1/tasks/t8/output/?f=json&line=2", {credentials: "same-origin"});
+    expect(root.querySelector(".tweakui-task-step").textContent).toBe("Multi-View Stereo");
+    consoleLines = ["[INFO] Initializing ODX 3.8.5"];
+    await jest.advanceTimersByTimeAsync(5000);
+    expect(root.querySelector(".tweakui-task-step").textContent).toBe("Starting");
+    jest.useRealTimers();
+});
+
+test("with Current step off the console is not read", async () => {
+    let hook;
+    const running = Object.assign({}, task, {id: "t7", status: 20, processing_time: 5000});
+    const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve(presets)}));
+    const win = Object.assign(Object.create(window), {
+        PluginsAPI: {Dashboard: {addTaskActionButton: cb => { hook = cb; }}},
+        fetch, setTimeout: (f) => setTimeout(f, 0), MutationObserver: undefined
+    });
+    panel(running);
+    details.start(document, win, without("step"));
+    hook({task: running});
+    await new Promise(r => setTimeout(r, 10));
+    expect(fetch.mock.calls.some(c => c[0].includes("/output/"))).toBe(false);
+});

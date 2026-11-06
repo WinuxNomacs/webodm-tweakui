@@ -20,11 +20,17 @@ change is saved as soon as it is made and applies from the next page.
   including "Reset to default". A preset's own settings count too (the Default preset sets auto-boundary and
   dsm). Only in the grouped view; "Other Options" is counted while it is open.
 - **Task Options > Enhanced Task Details** (off by default): when a task is opened on the Dashboard, its details
-  show when it started and finished, and three rows in place of WebODM's one-line Options:
+  show when it started and finished, its current step while it runs, and three rows in place of WebODM's one-line
+  Options. Each part has its own setting under Enhanced Task Details, all on (they are greyed out while Enhanced
+  Task Details is off); with Options as bubbles off, WebODM's own Options line stays.
   - **Started** and **Finished**, after "Created on", in your local time. WebODM keeps no start or end time, so
     they are worked out from what it has: Started is when the task was created, Finished that plus its processing
     time ("Running" while it runs). Created means when its upload began, and a restart counts the processing
     time again from the new run, so after a slow upload or a restart they are off by that much.
+  - **Current Step**, while the task runs: the ODM stage it is in, read from the task's console every 5 seconds
+    while its details are open, e.g. "Current Step (8/13): Texturing". ODM runs 13 stages (12 with
+    fast-orthophoto, fewer with end-with); "Starting" before the first, "Downloading results" once ODM is done and
+    WebODM fetches the results.
   - **Preset**: the preset the task's options match, found as WebODM's Edit dialog finds it (the first preset
     with exactly the same options and values), or "Custom". WebODM doesn't record a task's preset, so a preset
     edited since may no longer match.

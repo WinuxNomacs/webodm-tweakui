@@ -116,6 +116,26 @@ test("a changed checkbox does not reload the page", async () => {
     expect(win.location.reload).not.toHaveBeenCalled();
 });
 
+test("the settings under Enhanced Task Details are greyed out and disabled while it is off", async () => {
+    document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
+        <section data-section="general"><input type="checkbox" data-setting="enhanced_task_details">
+        <div class="tweakui-subsettings" data-depends="enhanced_task_details">
+        <input type="checkbox" data-setting="task_details_step" checked></div></section>
+        <p class="tweakui-status"></p></div>`;
+    const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({})}));
+    settingsPage.start(document, {location: {hash: ""}, addEventListener() {}, fetch});
+    const main = document.querySelector("[data-setting=enhanced_task_details]");
+    const part = document.querySelector("[data-setting=task_details_step]");
+    const box = document.querySelector(".tweakui-subsettings");
+    expect(part.disabled).toBe(true);
+    expect(box.classList.contains("tweakui-off")).toBe(true);
+    main.checked = true;
+    main.dispatchEvent(new Event("change"));
+    expect(part.disabled).toBe(false);
+    expect(box.classList.contains("tweakui-off")).toBe(false);
+    expect(part.checked).toBe(true);
+});
+
 test("turning the theme menu on or off reloads the page to show it", async () => {
     document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
         <section data-section="themes"><input type="checkbox" data-setting="show_theme_menu"></section>

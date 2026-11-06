@@ -16,6 +16,9 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-group h5 { margin: 0; padding: 8px 12px; font-weight: bold; }
 .tweakui-settings .tweakui-setting { padding: 8px 12px; }
 .tweakui-settings .tweakui-setting p { margin: 0 0 0 20px; }
+/* Settings that belong to the one above (data-depends), indented; greyed out while it is off */
+.tweakui-settings .tweakui-subsettings { margin-left: 20px; }
+.tweakui-settings .tweakui-subsettings.tweakui-off { opacity: 0.5; }
 /* Settings > Themes: a grid of themes, each a radio button, its swatch (the theme's own colours, from the page's
    data) and its name */
 .tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
@@ -56,3 +59,5 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-odx-command { display: flex; align-items: flex-start; gap: 6px; }
 .tweakui-odx-command code { flex: 1; min-width: 0; display: block; white-space: normal; border-width: 1px; border-style: solid; padding: 4px 6px; color: inherit; background: transparent; font-size: 90%; }
 .tweakui-odx-command code span { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }
+/* The Current Step label keeps its count on its line */
+.info-table tr[data-tweakui-row="step"] > td:first-child { white-space: nowrap; padding-right: 8px; }
