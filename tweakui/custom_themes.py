@@ -109,3 +109,48 @@ def delete(user, theme_id):
     if len(kept) == len(themes):
         raise NoSuchTheme(theme_id)
     _save(user, kept)
+
+
+# The most entries one import takes (each is checked; at most MAX_THEMES can be kept)
+MAX_IMPORT = 500
+
+
+def import_themes(user, data):
+    """Imports {name, colors} themes, one object or a list of them, into the user's own: a theme with the name of
+    one of theirs replaces its colours (it keeps its id, so a user whose theme it is keeps it), others are added
+    while there is room. Returns {added: [names], replaced: [names], refused: [{index, name, reason}]}, index
+    counting from 1; nothing refused is kept. A later theme of the same name replaces an earlier one."""
+    entries = [data] if isinstance(data, dict) else data
+    if not isinstance(entries, list) or not entries:
+        raise InvalidTheme("Expected a theme object or a list of them")
+    if len(entries) > MAX_IMPORT:
+        raise InvalidTheme("At most %d themes in one import" % MAX_IMPORT)
+    themes = own(user)
+    report = {"added": [], "replaced": [], "refused": []}
+    for index, entry in enumerate(entries, 1):
+        try:
+            theme = clean(entry)
+        except InvalidTheme as e:
+            name = entry.get("name") if isinstance(entry, dict) else None
+            report["refused"].append({"index": index, "name": name if isinstance(name, str) else "",
+                                      "reason": str(e)})
+            continue
+        same = [i for i, t in enumerate(themes) if t["name"] == theme["name"]]
+        if same:
+            themes[same[0]] = dict(theme, id=themes[same[0]]["id"])
+            if theme["name"] not in report["replaced"] + report["added"]:
+                report["replaced"].append(theme["name"])
+        elif len(themes) >= MAX_THEMES:
+            report["refused"].append({"index": index, "name": theme["name"],
+                                      "reason": "At most %d themes" % MAX_THEMES})
+        else:
+            themes.append(dict(theme, id=uuid.uuid4().hex[:12]))
+            report["added"].append(theme["name"])
+    if report["added"] or report["replaced"]:
+        _save(user, themes)
+    return report
+
+
+def export(theme):
+    """A theme as it is exported and imported: {name, colors}"""
+    return {"name": theme["name"], "colors": theme["colors"]}

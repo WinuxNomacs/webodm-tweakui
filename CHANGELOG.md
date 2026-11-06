@@ -13,6 +13,9 @@
 - Themes > My themes: each user's own themes; New theme (from the current theme) or Copy (any theme) opens an
   editor of WebODM's 13 theme colours, which the page previews before Save; Edit and Delete on your own themes.
   They are also in the header's theme menu.
+- Themes > My themes: Import (a JSON file or pasted text of one theme or a list; a theme with the name of one of
+  yours replaces it; a report of what was added, replaced and refused), Export (all your themes, or one), and Copy
+  JSON on every theme.
 - Themes > Sample: WebODM's controls (text, labels, a progress bar, a field, a select, a dropdown, buttons,
   pagination) in the current theme, doing nothing, below the themes.
 - A paintbrush in the header, left of the user icon: a menu of the themes to switch on any page; Themes > Theme

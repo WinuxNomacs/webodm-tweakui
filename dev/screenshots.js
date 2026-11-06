@@ -67,6 +67,19 @@ const SHOTS = [
         },
     },
     {
+        // The Import panel with a theme pasted (Nord's colours, as Copy JSON gives them); nothing is imported
+        name: "theme-import", settings: {},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/#themes");
+            const nord = await s.page.$eval("#tweakui-theme-colors", e => JSON.parse(e.textContent).nord.colors);
+            await s.page.click("[data-theme-action=import]");
+            await s.page.fill("#tweakui-import-text", JSON.stringify({name: "Night", colors: nord}, null, 2));
+            await s.page.$eval("#tweakui-import-text", e => { e.setSelectionRange(0, 0); e.scrollTop = 0; });
+            await s.page.waitForTimeout(300);
+            return ".tweakui-import";
+        },
+    },
+    {
         name: "movable-controls", settings: {movable_controls: true},
         async run(s) {
             await s.openMap();

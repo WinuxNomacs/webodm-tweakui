@@ -11,11 +11,13 @@ function page(checked) {
     document.head.innerHTML = '<link rel="stylesheet" href="/plugins/tweakui/theme.css">';
     const theme = id => `<div class="tweakui-theme" data-theme-id="${id}"><label><input type="radio" name="theme" value="${id}"${id === checked ? " checked" : ""}></label>
         ${id.indexOf("own:") === 0 ? '<button type="button" data-theme-action="edit">Edit</button>' : ""}
-        <button type="button" data-theme-action="copy">Copy</button></div>`;
+        <button type="button" data-theme-action="copy">Copy</button>
+        <button type="button" data-theme-action="json"><i class="fa fa-code"></i></button></div>`;
     document.body.innerHTML = `
       <div id="tweakui-settings" data-api="/api/plugins/tweakui/">
         <input type="hidden" name="csrfmiddlewaretoken" value="tok">
         <button type="button" data-theme-action="new">New theme</button>
+        <button type="button" data-theme-action="import">Import</button>
         ${Object.keys(THEMES).map(theme).join("")}
         <div class="tweakui-editor" hidden><h5 id="tweakui-editor-title"></h5>
           <form><input type="text" id="tweakui-editor-name">
@@ -23,6 +25,9 @@ function page(checked) {
             <p class="tweakui-editor-status"></p>
             <button type="submit">Save</button><button type="button" data-editor="cancel">Cancel</button>
             <button type="button" data-editor="delete" hidden>Delete</button></form></div>
+        <div class="tweakui-import" hidden><form><input type="file" id="tweakui-import-file">
+          <textarea id="tweakui-import-text"></textarea><div class="tweakui-import-report"></div>
+          <button type="submit">Import</button><button type="button" data-import="close">Close</button></form></div>
       </div>
       <script id="tweakui-theme-colors" type="application/json">${JSON.stringify(THEMES)}</script>`;
 }
@@ -38,7 +43,8 @@ function start(checked, replies) {
     const win = {
         fetch: jest.fn((url, init) => replies(url, init)),
         setTimeout: jest.fn(fn => timers.push(fn)), clearTimeout: jest.fn(),
-        location: {reload: jest.fn()}, confirm: jest.fn(() => true), TweakUI: {settings: {}}
+        location: {reload: jest.fn()}, confirm: jest.fn(() => true),
+        TweakUI: {settings: {}, copyText: jest.fn(() => Promise.resolve())}, FileReader
     };
     const state = editor.start(document, win);
     return {state, win, runTimers: () => timers.splice(0).forEach(fn => fn())};
@@ -180,4 +186,80 @@ test("Delete asks first, then deletes the theme and reloads; declining deletes n
     const del = win.fetch.mock.calls.find(c => c[1].method === "DELETE");
     expect(del[0]).toBe("/api/plugins/tweakui/themes/abc");
     expect(win.location.reload).toHaveBeenCalled();
+});
+
+test("Copy JSON puts any theme on the clipboard as {name, colors} and the button shows it worked", async () => {
+    const {win, runTimers} = start("webodm", previewing);
+    el("[data-theme-id=nord] [data-theme-action=json]").click();
+    expect(JSON.parse(win.TweakUI.copyText.mock.calls[0][0])).toEqual(THEMES.nord);
+    await flush();
+    expect(el("[data-theme-id=nord] [data-theme-action=json] i").className).toBe("fa fa-check");
+    runTimers();
+    expect(el("[data-theme-id=nord] [data-theme-action=json] i").className).toBe("fa fa-code");
+    win.TweakUI.copyText.mockReturnValueOnce(Promise.reject(new Error("denied")));
+    el('[data-theme-id="own:abc"] [data-theme-action=json]').click();
+    await flush();
+    expect(el('[data-theme-id="own:abc"] [data-theme-action=json] i').className).toBe("fa fa-times");
+    expect(el(".tweakui-editor").hidden).toBe(true);
+});
+
+const report = () => el(".tweakui-import-report").textContent;
+const imported = result => (url) => url.endsWith("import") ? answer(result) : previewing();
+
+test("Import opens its panel; a chosen file's text goes into the JSON box", async () => {
+    const {state} = start("webodm", previewing);
+    el("[data-theme-action=import]").click();
+    expect(el(".tweakui-import").hidden).toBe(false);
+    expect(el(".tweakui-editor").hidden).toBe(true);
+    await editor.readFile(state, new File(['{"name": "From a file"}'], "t.json", {type: "application/json"}));
+    expect(el("#tweakui-import-text").value).toBe('{"name": "From a file"}');
+    await editor.readFile(state, {size: 2 * 1024 * 1024, name: "big.json"});
+    expect(report()).toBe("Not read: the file is larger than 1 MB");
+});
+
+test("Import sends the parsed JSON and reports what was added, replaced and refused; Close then reloads", async () => {
+    const {state, win} = start("webodm", imported({added: ["Night"], replaced: ["Mine"],
+        refused: [{index: 3, name: "Bad", reason: "Colours that are not #rrggbb: primary"}, {index: 4, name: "", reason: "Expected a theme object"}]}));
+    editor.openImport(state);
+    el("#tweakui-import-text").value = '[{"name": "Night"}]';
+    await editor.importThemes(state);
+    const [url, init] = win.fetch.mock.calls.find(c => c[0].endsWith("import"));
+    expect(url).toBe("/api/plugins/tweakui/themes/import");
+    expect(init.method).toBe("POST");
+    expect(JSON.parse(init.body)).toEqual([{name: "Night"}]);
+    const lines = Array.from(document.querySelectorAll(".tweakui-import-report p, .tweakui-import-report li")).map(e => e.textContent);
+    expect(lines).toEqual(["Added 1: Night", "Replaced 1: Mine", "Refused 2:", "#3 “Bad”: Colours that are not #rrggbb: primary",
+        "#4: Expected a theme object", "Close reloads the page to show them."]);
+    el("[data-import=close]").click();
+    expect(win.location.reload).toHaveBeenCalled();
+});
+
+test("text that isn't JSON or an import the server refuses is reported, and Close only closes", async () => {
+    const {state, win} = start("webodm", (url) => url.endsWith("import")
+        ? answer({detail: "Expected a theme object or a list of them"}, false, 400) : previewing());
+    editor.openImport(state);
+    await editor.importThemes(state);
+    expect(report()).toBe("Not imported: choose a file or paste JSON");
+    el("#tweakui-import-text").value = "{name: oops";
+    await editor.importThemes(state);
+    expect(report()).toMatch(/^Not imported: this isn't JSON \(/);
+    expect(win.fetch.mock.calls.some(c => c[0].endsWith("import"))).toBe(false);
+    el("#tweakui-import-text").value = "[]";
+    await editor.importThemes(state);
+    expect(report()).toBe("Not imported: Expected a theme object or a list of them");
+    expect(el(".tweakui-import-report p").className).toBe("text-danger");
+    el("[data-import=close]").click();
+    expect(win.location.reload).not.toHaveBeenCalled();
+    expect(el(".tweakui-import").hidden).toBe(true);
+    expect(report()).toBe("");
+});
+
+test("an import with everything refused changes nothing, so Close doesn't reload", async () => {
+    const {state, win} = start("webodm", imported({added: [], replaced: [], refused: [{index: 1, name: "X", reason: "At most 50 themes"}]}));
+    editor.openImport(state);
+    el("#tweakui-import-text").value = '{"name": "X"}';
+    await editor.importThemes(state);
+    expect(report()).toBe("Refused 1:#1 “X”: At most 50 themes");
+    editor.closeImport(state);
+    expect(win.location.reload).not.toHaveBeenCalled();
 });

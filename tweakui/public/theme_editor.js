@@ -3,6 +3,9 @@
 // colour picker and its #rrggbb value. While it is open the page shows the unsaved colours: the server renders their
 // stylesheet (themes/preview), which takes the place of theme.css until Cancel. Save keeps the theme and makes it
 // your theme; Delete (your own) deletes it. The themes' colours come from the page (#tweakui-theme-colors).
+// Also: Copy JSON on every theme (the theme as {name, colors} on the clipboard, through task_details.js's copy), and
+// Import, a panel that takes a JSON file or text of one theme or a list (themes/import) and says what was added,
+// replaced or refused; Close then reloads the page to list them. Export is a plain download link (themes/export).
 // UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
@@ -11,7 +14,7 @@
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
 
-    var OWN = "own:", HEX = /^#[0-9a-f]{6}$/, PREVIEW_DELAY = 250;
+    var OWN = "own:", HEX = /^#[0-9a-f]{6}$/, PREVIEW_DELAY = 250, MAX_FILE = 1024 * 1024;
 
     function csrfToken(doc) {
         var input = doc.querySelector("input[name=csrfmiddlewaretoken]");
@@ -181,17 +184,116 @@
         });
     }
 
+    // Copy JSON: the theme as {name, colors} on the clipboard; the button shows a tick, or a cross if it failed
+    function copyJson(state, id, button) {
+        var theme = state.themes[id], copy = state.win.TweakUI && state.win.TweakUI.copyText;
+        if (!theme) return Promise.resolve();
+        var icon = button && button.querySelector("i"), was = icon && icon.className;
+        var show = function (name) {
+            if (!icon) return;
+            icon.className = name;
+            state.win.setTimeout(function () { icon.className = was; }, 2000);
+        };
+        var copying = copy ? copy(JSON.stringify({name: theme.name, colors: theme.colors}, null, 2))
+            : Promise.reject(new Error("no clipboard"));
+        return copying.then(function () { show("fa fa-check"); }, function () { show("fa fa-times"); });
+    }
+
+    function openImport(state) {
+        state.importer.hidden = false;
+        if (state.importer.scrollIntoView) state.importer.scrollIntoView({block: "nearest"});
+        state.importer.querySelector("#tweakui-import-text").focus();
+    }
+
+    // Close reloads the page when an import changed your themes, so it lists them
+    function closeImport(state) {
+        if (state.imported) { state.win.location.reload(); return; }
+        state.importer.hidden = true;
+        report(state, null);
+    }
+
+    // The import's report: an error (text), or what was added, replaced and refused (the server's answer)
+    function report(state, result) {
+        var box = state.importer.querySelector(".tweakui-import-report"), doc = state.doc;
+        while (box.firstChild) box.removeChild(box.firstChild);
+        if (!result) return;
+        var line = function (text, cls) {
+            var p = doc.createElement("p");
+            p.textContent = text;
+            if (cls) p.className = cls;
+            box.appendChild(p);
+            return p;
+        };
+        if (typeof result === "string") { line(result, "text-danger"); return; }
+        if (result.added.length) line("Added " + result.added.length + ": " + result.added.join(", "));
+        if (result.replaced.length) line("Replaced " + result.replaced.length + ": " + result.replaced.join(", "));
+        if (result.refused.length) {
+            line("Refused " + result.refused.length + ":", "text-danger");
+            var list = doc.createElement("ul");
+            list.className = "text-danger";
+            result.refused.forEach(function (r) {
+                var li = doc.createElement("li");
+                li.textContent = "#" + r.index + (r.name ? " “" + r.name + "”" : "") + ": " + r.reason;
+                list.appendChild(li);
+            });
+            box.appendChild(list);
+        }
+        if (result.added.length || result.replaced.length) line("Close reloads the page to show them.", "text-muted");
+        else if (!result.refused.length) line("Nothing to import.");
+    }
+
+    // A chosen file's text goes into the JSON box, to import from there
+    function readFile(state, file) {
+        if (!file) return Promise.resolve();
+        if (file.size > MAX_FILE) { report(state, "Not read: the file is larger than 1 MB"); return Promise.resolve(); }
+        return new Promise(function (resolve) {
+            var reader = new state.win.FileReader();
+            reader.onload = function () {
+                state.importer.querySelector("#tweakui-import-text").value = reader.result;
+                report(state, null);
+                resolve();
+            };
+            reader.onerror = function () { report(state, "Not read: " + file.name); resolve(); };
+            reader.readAsText(file);
+        });
+    }
+
+    // Imports the JSON box's themes
+    function importThemes(state) {
+        var text = state.importer.querySelector("#tweakui-import-text").value.trim(), data;
+        if (!text) { report(state, "Not imported: choose a file or paste JSON"); return Promise.resolve(); }
+        try { data = JSON.parse(text); } catch (e) {
+            report(state, "Not imported: this isn't JSON (" + e.message + ")");
+            return Promise.resolve();
+        }
+        return request(state, "POST", "themes/import", data).then(function (result) {
+            if (result.added.length || result.replaced.length) state.imported = true;
+            report(state, result);
+        }, function (e) {
+            report(state, "Not imported: " + e.message);
+        });
+    }
+
     function start(doc, win) {
         var page = doc.getElementById("tweakui-settings"), data = doc.getElementById("tweakui-theme-colors");
-        var editor = page && page.querySelector(".tweakui-editor");
-        if (!editor || !data) return null;
-        var state = {page: page, editor: editor, doc: doc, win: win, fetch: win.fetch.bind(win),
-            themes: JSON.parse(data.textContent), editing: null, seq: 0, timer: null};
+        var editor = page && page.querySelector(".tweakui-editor"), importer = page && page.querySelector(".tweakui-import");
+        if (!editor || !importer || !data) return null;
+        var state = {page: page, editor: editor, importer: importer, doc: doc, win: win, fetch: win.fetch.bind(win),
+            themes: JSON.parse(data.textContent), editing: null, seq: 0, timer: null, imported: false};
         page.addEventListener("click", function (e) {
-            var button = e.target.closest ? e.target.closest("[data-theme-action]") : null;
+            var button = e.target.closest ? e.target.closest("button[data-theme-action]") : null;
             if (!button) return;
-            var theme = button.closest("[data-theme-id]");
-            open(state, button.getAttribute("data-theme-action"), theme ? theme.getAttribute("data-theme-id") : null);
+            var action = button.getAttribute("data-theme-action"), theme = button.closest("[data-theme-id]");
+            var id = theme ? theme.getAttribute("data-theme-id") : null;
+            if (action === "json") copyJson(state, id, button);
+            else if (action === "import") openImport(state);
+            else open(state, action, id);
+        });
+        var form = importer.querySelector("form");
+        form.addEventListener("submit", function (e) { e.preventDefault(); importThemes(state); });
+        importer.querySelector("[data-import=close]").addEventListener("click", function () { closeImport(state); });
+        importer.querySelector("#tweakui-import-file").addEventListener("change", function (e) {
+            readFile(state, e.target.files && e.target.files[0]);
         });
         editor.querySelector("form").addEventListener("submit", function (e) { e.preventDefault(); save(state); });
         editor.querySelector("[data-editor=cancel]").addEventListener("click", function () { close(state); });
@@ -201,5 +303,6 @@
     }
 
     return {start: start, open: open, close: close, save: save, remove: remove, preview: preview, colors: colors,
-        onInput: onInput};
+        onInput: onInput, copyJson: copyJson, openImport: openImport, closeImport: closeImport,
+        readFile: readFile, importThemes: importThemes};
 });

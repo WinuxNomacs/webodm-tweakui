@@ -5,8 +5,8 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import settings, themes
-from .api import (FramesView, SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesView, ThemeView,
-                  settings_script)
+from .api import (FramesView, SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView,
+                  ThemesImportView, ThemesView, ThemeView, settings_script)
 
 
 class Plugin(PluginBase):
@@ -57,6 +57,8 @@ class Plugin(PluginBase):
             MountPoint("settings$", SettingsView.as_view()),
             MountPoint("themes$", ThemesView.as_view()),
             MountPoint(r"themes/preview$", ThemePreviewView.as_view()),
+            MountPoint(r"themes/import$", ThemesImportView.as_view()),
+            MountPoint(r"themes/export$", ThemesExportView.as_view()),
             MountPoint(r"themes/(?P<theme_id>[0-9a-f]{1,32})$", ThemeView.as_view()),
             MountPoint("storage$", StorageView.as_view()),
             MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
