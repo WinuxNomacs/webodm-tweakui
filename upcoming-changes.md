@@ -3,9 +3,13 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **First features** — the user writes the UI enhancements they want in `new.md`; each is planned here (what it
-   changes, on which page and panel, which WebODM hook or extension point it uses) before it is built. A feature
-   that needs a hook WebODM lacks is reported to the user; a WebODM pull request only with their approval.
+1. **Settings page and Show Modified Options** — the TweakUI menu item, its settings page with a navigation pane
+   (General), per-user settings, and the first setting (General > Task Options > Show Modified Options).
+   Details below.
+
+**Then**
+2. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
+   Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
 
 **Later**
 (nothing planned)
@@ -22,3 +26,75 @@
   - Checked: Ruff, ESLint, Jest 1; Django `test_tweakui` (4) and `app.tests.test_plugins` (5) on 4.0.0 and
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
+
+## Requests (from new.md, 2026-11-06)
+
+1. A TweakUI menu item in WebODM's side menu, where users change their TweakUI settings.
+2. In the TweakUI settings, a navigation pane that opens on a General item; more categories will be added.
+3. A Themes item in that navigation pane: pick from predefined themes (Darcula/Dracula, Nord, Catppuccin,
+   Solarized, ...), translated to WebODM's theme functionality; WebODM's theming reviewed thoroughly before the
+   design discussion.
+4. Under General, a "Task Options" section (settings that change WebODM's Task Options dialog), with "Show
+   Modified Options": when on, the number after each option group's heading in that dialog shows how many of its
+   options are not at their default, e.g. "Input & Preprocessing (1/13)" after enabling ignore-gsd.
+
+Decided (the user, 2026-11-06):
+- **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
+  themselves only (the plugin's per-user data store).
+- **Themes are a per-user overlay**: a user picks a preset or "WebODM's theme" (the default); nothing in WebODM's
+  data changes, and turning the plugin off restores everything.
+- **"Modified" means different from ODM's default**: what the dialog's own "Reset to default" button restores,
+  so a preset's own settings count as modified.
+
+## Phase 1: settings page and Show Modified Options (requests 1, 2, 4)
+
+What WebODM offers (checked in 3.3.2 and 4.0.0):
+- `main_menu()` adds side-menu entries (`app/plugins/menu.py`, rendered in `app/logged_in_base.html` for logged-in
+  users); `app_mount_points()` adds pages under `/plugins/tweakui/`, which extend `app/logged_in_base.html`.
+- `app_view_handler` (`app/plugins/views.py`) tries a plugin's mount points before its `public/` files, so
+  `include_js_files(["settings.js"])` can be a view: each page gets the user's settings in `<head>`, before
+  `main.js`, with no request after load.
+- `UserDataStore` (`app/plugins/data_store.py`) holds per-user values (string, int, float, bool, json).
+- The Task Options dialog is `EditPresetDialog.jsx`, the same in both versions. It calls
+  `PluginsAPI.Dashboard.presetDialogOptionsReady({task, getExifData, options})` when it opens and when the view
+  changes (grouped/flat); `options` holds each option's component by name. An option is at its default when
+  `getValue()` is `undefined` (`ProcessingNodeOption.jsx`), which is also what "Reset to default" restores. Each
+  group heading is `.option-group-header` with `<span class="option-count">(N)</span>`; groups are rendered while
+  collapsed (hidden), except "Other Options", whose options exist only while it is open.
+
+Design:
+- **Menu**: "TweakUI" in the side menu (sliders icon), linking to `/plugins/tweakui/`.
+- **Page**: `/plugins/tweakui/` (logged in), WebODM's layout; on the left a navigation pane (General; Themes in
+  phase 2), on the right the selected category. Opens on General. On a phone the pane sits above the content.
+- **Storage and API**: settings are one JSON value in the user's data store; `GET`/`PATCH
+  /api/plugins/tweakui/settings` (the user's own only; PATCH with the session's CSRF token). Unknown keys and
+  wrong types are refused. `/plugins/tweakui/settings.js` sets `window.TweakUI.settings` on every page.
+- **General > Task Options > Show Modified Options**: a switch, off by default, saved as soon as it is changed.
+  When on, in the Task Options dialog (New Task > Options > Edit, and a task's Edit), each group heading reads
+  "(modified/total)", "(0/13)" when none, updated as options change (inputs, checkboxes, selects, "Reset to
+  default"). The count is put in a `data-` attribute that a CSS rule shows instead of WebODM's own number, so
+  React's re-renders of the heading don't undo it. Grouped view only (flat view has no headings).
+
+Open: none.
+
+## Phase 2: Themes (request 3), to be designed with the user
+
+What WebODM offers (checked in 3.3.2 and 4.0.0):
+- One theme per instance: `Setting.theme` points at a `Theme` (`app/models/theme.py`): 13 colours (primary,
+  secondary, tertiary, button primary/default/danger, header background/primary, border, highlight, dialog
+  warning, failed, success), custom CSS and HTML fields. Admins edit it in Administration > Theme.
+- `app/templates/app/theme.css` turns those colours into CSS (411 lines; plus helpers `complementary`,
+  `scalebyiv`), inlined and cached in `base.html` **after** the plugins' CSS, then the theme's custom CSS.
+  4.0.0 adds `.admin-area` CSS variables for the rewritten Administration pages.
+- Only those colours are themeable: about 6 of WebODM's stylesheets set white backgrounds directly (map and 3D
+  view panels, among others), so dark presets need a small extra stylesheet for those places.
+
+Proposed design (for the discussion):
+- A preset is the 13 colours plus optional extra CSS. `/plugins/tweakui/theme.css` (a view, in
+  `include_css_files`) renders WebODM's own `theme.css` template with the user's preset, so the presets follow
+  whatever WebODM themes in each version. Since the plugin's CSS comes before WebODM's theme, its selectors are
+  made more specific (each prefixed with `html `) to win without a flash. "WebODM's theme" serves nothing.
+- Themes page: a list of presets with a preview swatch of their colours; choosing one saves and reloads the look.
+
+Open (for the discussion): which presets and variants (e.g. Dracula; Nord; Catppuccin Latte, Frappé, Macchiato,
+Mocha; Solarized Light and Dark; others); how far dark presets go on the hard-coded places (map, 3D view, admin).
