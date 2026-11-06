@@ -3,7 +3,11 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Paintbrush toggle and task start/end times** (requests 9, 12) — two small additions to settings that
+   exist: Themes > "Show the theme menu in the header", and Started/Finished rows in Enhanced Task Details.
+2. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
+   Movable Controls on, the 2D map's popup panels can be dragged by their title.
+3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -93,6 +97,18 @@ Added 2026-11-06 (second new.md):
 8. (2026-11-06) Under Task Options settings, an option "Enhanced Task Details" that enhances the task view: the
    Preset used to create the task if available; the Options in individual bubbles, so they stand out and are
    easier to read; an item showing the exact ODX command it generates, for easy copy/paste.
+
+Added 2026-11-06 (fourth new.md):
+
+9. Under Themes settings, an option at the top to toggle the Paint Brush control in the header on/off.
+10. Two new settings sections, 2D Map and 3D Map, for their own settings. In 2D Map, "Movable Controls": when on,
+    the user can move the 2D map's popup controls around (all of WebODM's built-in ones: Contours, Layers, Base
+    Maps, ...); a control that closes always reopens in its default position.
+11. Without a change to WebODM: can another task of the same project be selected as a layer in a task's 2D map,
+    to overlay orthophotos and compare before/after results? Dropped (the user, 2026-11-06): WebODM's project
+    map (a project's View Map) lists every task's layers with Side By Side; nothing to build.
+12. Task start and end times in Enhanced Task Details: the task's duration is shown, but the start and finish
+    timestamps help too.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -275,6 +291,43 @@ Decided (the user, 2026-11-06):
 - **The command is the docker command** of WebODM's docs (`/my/project` a placeholder for the user's folder).
 - **With the options the node adds** (`--pc-ept --cog --gltf`), so a run by hand gives the same outputs; false
   booleans left out, as the node does.
+
+## Paintbrush toggle and task start/end times (requests 9, 12)
+
+What there is: the paintbrush menu (`public/theme_menu.js`) is on for every user; Enhanced Task Details
+(`public/task_details.js`) replaces WebODM's Options row of a task's details panel. WebODM's panel (the same in
+3.3.2 and 4.0.0) has "Created on:" (`Task.created_at`) and shows the duration in the task's row
+(`processing_time`, ms, from the node). WebODM stores no start or end time. Two sources exist:
+- **ODM's `log.json`** in the task's assets (`/api/projects/<p>/tasks/<t>/assets/log.json`, WebODM's own route,
+  both versions): `startTime` and `endTime` of the run on the node; only for tasks whose results were
+  downloaded (not running, failed or canceled), and written without a time zone (the node's clock; UTC in Docker).
+- **WebODM's own fields**: started = `created_at` (a dashboard upload sets it when the upload is committed),
+  finished = `created_at` + `processing_time`. On the TestRGB task they are within 20 s of `log.json`'s times
+  (13:38:04 / 14:24:40 against 13:38:23 / 14:24:57 UTC); they work for every task, any node, and a running one.
+
+Decided (the user, 2026-11-06): the times come from WebODM's own fields (not `log.json`).
+
+Design:
+- **Themes > "Show the theme menu in the header"** (on by default), at the top of the Themes section; off, the
+  paintbrush isn't added. Settings > Themes still picks the theme.
+- **Enhanced Task Details: "Started:" and "Finished:" rows** after WebODM's "Created on:", in the browser's
+  local date and time like WebODM's; a running task shows "Running", a task never processed "—".
+
+## 2D Map and 3D Map settings, Movable Controls (request 10)
+
+What there is (the same in 3.3.2 and 4.0.0): the 2D map's popup panels are Leaflet controls in the map's top-right
+corner: Layers (`LayersControlPanel`), Contours and Object Detection (core plugins), each a `.open` wrapper with a
+`.title` bar and a `.close-button`; Measure (the measure plugin's `.plugin-measure.popup`); Base Maps (Leaflet's
+layers control, a list that opens while the pointer is over it).
+
+Decided (the user, 2026-11-06): 3D Map is added now, empty ("No settings yet").
+
+Design:
+- **Settings > 2D Map** and **Settings > 3D Map**: two categories in the navigation pane.
+- **2D Map > "Movable Controls"** (off by default): a panel is dragged by its title bar (mouse or touch), within
+  the map; when it closes (its wrapper loses `.open`, or it is removed) its position is cleared, so it reopens
+  where WebODM puts it. Base Maps and Measure have no title bar: dragged by their own edge (Base Maps closes as
+  soon as the pointer leaves it, so moving it helps little).
 
 ## Storage (request 5), to be designed with the user
 
