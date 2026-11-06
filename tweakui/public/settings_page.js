@@ -2,7 +2,9 @@
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
 // false, a radio button (Themes) as its value. A new theme, or the theme menu or the Storage view turned on or off,
 // reloads the page to show it (the header, the side menu).
-// Settings in a data-depends box are greyed out and disabled while the setting it names is off. UMD, so Jest can load it.
+// Settings in a data-depends box are greyed out and disabled while the setting it names is off. A setting with a
+// data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
+// overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -80,11 +82,74 @@
         });
     }
 
+    // The overlay showing a screenshot full size; closing it gives the focus back to the thumbnail
+    function enlarge(doc, button) {
+        var overlay = doc.createElement("div"), backdrop = doc.createElement("div"), figure = doc.createElement("figure");
+        var img = doc.createElement("img"), close = doc.createElement("button"), caption = doc.createElement("figcaption");
+        overlay.className = "tweakui-preview-overlay";
+        overlay.setAttribute("role", "dialog");
+        overlay.setAttribute("aria-modal", "true");
+        overlay.setAttribute("aria-label", button.getAttribute("title"));
+        backdrop.className = "modal-backdrop in";
+        figure.className = "theme-secondary theme-border";
+        img.src = button.querySelector("img").getAttribute("src");
+        img.alt = button.querySelector("img").alt;
+        caption.textContent = button.getAttribute("title");
+        close.type = "button";
+        close.className = "close";
+        close.setAttribute("aria-label", "Close");
+        close.innerHTML = "&times;";
+        figure.appendChild(close);
+        figure.appendChild(img);
+        figure.appendChild(caption);
+        overlay.appendChild(backdrop);
+        overlay.appendChild(figure);
+        function onKey(e) { if (e.key === "Escape" || e.keyCode === 27) shut(); }
+        function shut() {
+            doc.removeEventListener("keydown", onKey);
+            if (overlay.parentNode) overlay.parentNode.removeChild(overlay);
+            button.focus();
+        }
+        overlay.addEventListener("click", shut);
+        doc.addEventListener("keydown", onKey);
+        doc.body.appendChild(overlay);
+        close.focus();
+        return overlay;
+    }
+
+    // A thumbnail beside each setting with a data-preview, titled with the setting's name
+    function addPreviews(page, doc) {
+        var base = page.getAttribute("data-previews");
+        if (!base) return;
+        each(page.querySelectorAll("[data-preview]"), function (box) {
+            if (box.querySelector(".tweakui-preview")) return;
+            var label = box.querySelector("label");
+            var name = label ? label.textContent.replace(/\s+/g, " ").trim()
+                : (box.closest("section") && box.closest("section").querySelector("h4").textContent.trim());
+            var button = doc.createElement("button"), img = doc.createElement("img");
+            button.type = "button";
+            button.className = "tweakui-preview theme-border";
+            button.setAttribute("title", name);
+            img.src = base + box.getAttribute("data-preview") + ".webp";
+            img.alt = name;
+            img.setAttribute("loading", "lazy");
+            img.addEventListener("error", function () {
+                button.hidden = true;
+                box.className = box.className.replace(/\s*\btweakui-has-preview\b/, "");
+            });
+            button.appendChild(img);
+            button.addEventListener("click", function () { enlarge(doc, button); });
+            box.appendChild(button);
+            box.className += " tweakui-has-preview";
+        });
+    }
+
     function start(doc, win) {
         var page = doc.getElementById("tweakui-settings");
         if (!page) return;
         showSection(page, win.location.hash);
         applyDepends(page);
+        addPreviews(page, doc);
         win.addEventListener("hashchange", function () { showSection(page, win.location.hash); });
         // A radio button's group remembers its checked one, to put it back if the change is refused
         var checked = {};
@@ -103,5 +168,6 @@
         });
     }
 
-    return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends};
+    return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends,
+        addPreviews: addPreviews, enlarge: enlarge};
 });

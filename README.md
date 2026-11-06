@@ -10,7 +10,8 @@ Administration > Plugins.
 
 Each user has their own TweakUI settings: the **TweakUI** item near the bottom of WebODM's side menu, just above About, opens them. The settings page
 has a navigation pane of categories on the left (above the settings on a phone); it opens on **General**. A
-change is saved as soon as it is made and applies from the next page.
+change is saved as soon as it is made and applies from the next page. Beside each feature is a screenshot of
+it; a click shows it full size (Esc or another click closes it).
 
 ### General
 
@@ -137,7 +138,7 @@ database, in the plugin's per-user data store.
 ## Developing
 
 See [CLAUDE.md](CLAUDE.md) for the dev environment (`dev/webodm.sh`), tests and the release steps. The features'
-screenshots in `tweakui/public/previews/` are retaken from a running WebODM with
+screenshots in `tweakui/public/previews/` (the settings page's previews) are retaken from a running WebODM with
 `TW_USER=... TW_PASSWORD=... npm run screenshots` (`dev/screenshots.js`).
 
 ## License
