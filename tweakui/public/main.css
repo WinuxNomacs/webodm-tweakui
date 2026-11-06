@@ -1,2 +1,25 @@
-/* TweakUI. Colours only from WebODM's theme (app/templates/app/theme.css), never hard-coded; rules scoped to
-   html.tweakui. */
+/* TweakUI. Colours only from WebODM's theme (app/templates/app/theme.css and its theme-* classes, or currentColor),
+   never hard-coded; border colours come from theme-border, so the rules here set only widths and styles. */
+
+/* The settings page (templates/settings.html): the navigation pane beside the selected category, above it on a phone.
+   The selected category is marked in the link colour (currentColor). */
+.tweakui-settings .tweakui-layout { display: flex; gap: 24px; align-items: flex-start; }
+.tweakui-settings .tweakui-nav { list-style: none; margin: 0; padding: 0; min-width: 180px; border-width: 0 1px 0 0; border-style: solid; }
+.tweakui-settings .tweakui-nav a { display: block; padding: 8px 12px; border-right: 3px solid transparent; text-decoration: none; }
+.tweakui-settings .tweakui-nav a.active { border-right-color: currentColor; font-weight: bold; }
+.tweakui-settings .tweakui-sections { flex: 1; min-width: 0; }
+.tweakui-settings .tweakui-sections h4 { margin-top: 0; }
+.tweakui-settings .tweakui-group { border-width: 1px; border-style: solid; border-radius: 4px; margin-bottom: 16px; }
+.tweakui-settings .tweakui-group h5 { margin: 0; padding: 8px 12px; font-weight: bold; }
+.tweakui-settings .tweakui-setting { padding: 8px 12px; }
+.tweakui-settings .tweakui-setting p { margin: 0 0 0 20px; }
+@media (max-width: 767px) {
+    .tweakui-settings .tweakui-layout { flex-direction: column; gap: 12px; }
+    .tweakui-settings .tweakui-nav { border-width: 0 0 1px 0; width: 100%; display: flex; flex-wrap: wrap; }
+    .tweakui-settings .tweakui-nav a { border-right: 0; border-bottom: 3px solid transparent; }
+    .tweakui-settings .tweakui-nav a.active { border-bottom-color: currentColor; }
+}
+
+/* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
+.option-group-header[data-tweakui-count] > .option-count { display: none; }
+.option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }
