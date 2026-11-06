@@ -512,6 +512,83 @@ class TestCustomThemes(TweakUITestCase):
         self.assertEqual(len(other), 12)
 
 
+    def import_(self, data, client=None):
+        return (client or self.client).post(THEMES + "/import", json.dumps(data), content_type="application/json")
+
+    def test_an_import_of_one_theme_object_adds_it(self):
+        res = self.import_(a_theme("  Night  ", unknown="x"))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), {"added": ["Night"], "replaced": [], "refused": []})
+        [theme] = self.client.get(THEMES).json()
+        self.assertEqual(theme["name"], "Night")
+        self.assertEqual(theme["colors"], a_theme()["colors"])
+
+    def test_an_import_of_a_list_replaces_by_name_keeps_the_id_and_refuses_bad_themes_with_why(self):
+        mine = self.post(a_theme("Mine")).json()
+        self.patch({"theme": "own:" + mine["id"]})
+        colors = dict(a_theme()["colors"])
+        del colors["border"]
+        res = self.import_([a_theme("Mine", primary="#123456"), a_theme("New"), a_theme("Bad", primary="red"),
+                            {"name": "Short", "colors": colors}, "text", a_theme("New", primary="#654321")])
+        self.assertEqual(res.json(), {"added": ["New"], "replaced": ["Mine"], "refused": [
+            {"index": 3, "name": "Bad", "reason": "Colours that are not #rrggbb: primary"},
+            {"index": 4, "name": "Short", "reason": "Missing colours: border"},
+            {"index": 5, "name": "", "reason": "Expected a theme object"}]})
+        themes = self.client.get(THEMES).json()
+        self.assertEqual([(t["name"], t["colors"]["primary"]) for t in themes],
+                         [("Mine", "#123456"), ("New", "#654321")])
+        self.assertEqual(themes[0]["id"], mine["id"])
+        self.assertEqual(self.client.get("/api/plugins/tweakui/settings").json()["theme"], "own:" + mine["id"])
+
+    def test_an_import_adds_up_to_50_themes_and_refuses_the_rest_but_still_replaces(self):
+        user = User.objects.get(username="testuser")
+        UserDataStore("tweakui", user).set_json("themes", [dict(a_theme(str(i)), id="%x" % i) for i in range(49)])
+        res = self.import_([a_theme("A"), a_theme("B"), a_theme("0", primary="#000000")]).json()
+        self.assertEqual(res["added"], ["A"])
+        self.assertEqual(res["replaced"], ["0"])
+        self.assertEqual(res["refused"], [{"index": 2, "name": "B", "reason": "At most 50 themes"}])
+        self.assertEqual(len(self.client.get(THEMES).json()), 50)
+
+    def test_an_import_that_is_not_a_theme_or_a_list_of_them_is_refused_and_changes_nothing(self):
+        for data in ([], "text", 3, [a_theme()] * 501):
+            res = self.import_(data)
+            self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, data)
+        self.assertIn("at most 500", self.import_([a_theme()] * 501).json()["detail"].lower())
+        self.assertEqual(self.import_([a_theme(primary="red")]).json()["added"], [])
+        self.assertEqual(self.client.get(THEMES).json(), [])
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="testuser", password="test1234")
+        self.assertEqual(self.import_(a_theme(), strict).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_export_downloads_the_user_s_themes_as_a_list_or_one_as_an_object_that_import_takes_back(self):
+        res = self.client.get(THEMES + "/export")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res["Content-Disposition"], 'attachment; filename="tweakui-themes.json"')
+        self.assertEqual(json.loads(res.content), [])
+        one = self.post(a_theme("Night Sky!")).json()
+        self.post(a_theme("Day"))
+        exported = json.loads(self.client.get(THEMES + "/export").content)
+        self.assertEqual(exported, [a_theme("Night Sky!"), a_theme("Day")])
+        res = self.client.get(THEMES + "/export?id=" + one["id"])
+        self.assertEqual(res["Content-Disposition"], 'attachment; filename="tweakui-theme-night-sky.json"')
+        self.assertEqual(json.loads(res.content), a_theme("Night Sky!"))
+        self.assertEqual(self.login("testuser2").get(THEMES + "/export?id=" + one["id"]).status_code,
+                         status.HTTP_404_NOT_FOUND)
+        self.assertEqual(json.loads(self.login("testuser2").get(THEMES + "/export").content), [])
+        self.assertEqual(self.import_(exported).json()["replaced"], ["Night Sky!", "Day"])
+
+    def test_my_themes_have_import_export_and_copy_json_and_my_own_also_export(self):
+        res = self.client.get("/plugins/tweakui/")
+        self.assertContains(res, 'data-theme-action="import"')
+        self.assertContains(res, 'data-theme-action="json"', count=12)
+        self.assertNotContains(res, 'href="/api/plugins/tweakui/themes/export"')
+        self.assertContains(res, 'class="tweakui-group theme-border tweakui-import" hidden')
+        theme = self.post(a_theme("Mine")).json()
+        res = self.client.get("/plugins/tweakui/")
+        self.assertContains(res, 'href="/api/plugins/tweakui/themes/export"')
+        self.assertContains(res, 'href="/api/plugins/tweakui/themes/export?id=%s"' % theme["id"])
+        self.assertContains(res, 'data-theme-action="json"', count=13)
+
 class TestSourceFrames(TweakUITestCase):
     """Two cameras 100 m above flat ground (a DSM at 20 m), looking straight down, 30 m apart in x: each photo is
     4000 x 3000 px with a focal of 0.8 (of its largest side), so it shows the ground 62.5 m either side in x"""

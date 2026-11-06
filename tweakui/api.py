@@ -1,6 +1,7 @@
 import json
 
 from django.http import HttpResponse
+from django.utils.text import slugify
 from rest_framework import exceptions, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
@@ -73,6 +74,37 @@ class ThemePreviewView(APIView):
         except custom_themes.InvalidTheme as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         return Response({"css": themes.colors_css(theme["colors"])})
+
+
+class ThemesImportView(APIView):
+    """POST /api/plugins/tweakui/themes/import: {name, colors} themes, one object or a list, into the logged-in
+    user's own (custom_themes.import_themes); answers what was added, replaced and refused"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def post(self, request):
+        try:
+            return Response(custom_themes.import_themes(request.user, request.data))
+        except custom_themes.InvalidTheme as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class ThemesExportView(APIView):
+    """GET /api/plugins/tweakui/themes/export: the logged-in user's own themes as a JSON file to download
+    (tweakui-themes.json, a list of {name, colors}); with ?id=<id>, just that theme (an object)"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        theme_id = request.query_params.get("id")
+        if theme_id:
+            theme = custom_themes.find(request.user, theme_id)
+            if theme is None:
+                raise exceptions.NotFound()
+            data, name = custom_themes.export(theme), "tweakui-theme-%s.json" % (slugify(theme["name"]) or theme_id)
+        else:
+            data, name = [custom_themes.export(t) for t in custom_themes.own(request.user)], "tweakui-themes.json"
+        res = HttpResponse(json.dumps(data, indent=2) + "\n", content_type="application/json")
+        res["Content-Disposition"] = 'attachment; filename="%s"' % name
+        return res
 
 
 class FramesView(TaskView):

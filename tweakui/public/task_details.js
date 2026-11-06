@@ -9,9 +9,13 @@
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.PluginsAPI && root.PluginsAPI.Dashboard && root.PluginsAPI.Dashboard.addTaskActionButton) {
-        var settings = (root.TweakUI && root.TweakUI.settings) || {};
-        if (settings.enhanced_task_details) api.start(root.document, root, api.parts(settings));
+    else if (root.document) {
+        // Its clipboard copy, for the other scripts (Settings > Themes' Copy JSON)
+        root.TweakUI = root.TweakUI || {};
+        root.TweakUI.copyText = function (text) { return api.copyText(text, root.document, root); };
+        var settings = root.TweakUI.settings || {};
+        if (settings.enhanced_task_details && root.PluginsAPI && root.PluginsAPI.Dashboard &&
+            root.PluginsAPI.Dashboard.addTaskActionButton) api.start(root.document, root, api.parts(settings));
     }
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
@@ -433,5 +437,5 @@
 
     return {start: start, enhance: enhance, rows: rows, command: command, matchPreset: matchPreset,
         optionsText: optionsText, shellQuote: shellQuote, times: times, parts: parts, stages: stages,
-        readStep: readStep, stepText: stepText};
+        readStep: readStep, stepText: stepText, copyText: copyText};
 });

@@ -25,6 +25,29 @@ WebODM's theme.
 A theme needs a name of up to 60 characters, and you can have up to 50. Your themes are also in the header's theme
 menu, after the presets.
 
+## Import and export
+
+![The Import panel with a theme pasted](../tweakui/public/previews/theme-import.webp)
+
+Themes move between users and WebODMs as JSON: one theme is an object with its name and all 13 colours, as in
+Administration > Theme, and a file can hold one theme or a list of them.
+
+```json
+{"name": "Night", "colors": {"primary": "#eceff4", "secondary": "#2e3440", "tertiary": "#88c0d0",
+  "button_primary": "#88c0d0", "button_default": "#4c566a", "button_danger": "#bf616a",
+  "header_background": "#242933", "header_primary": "#eceff4", "border": "#434c5e", "highlight": "#3b4252",
+  "dialog_warning": "#d08770", "failed": "#523f4a", "success": "#4b5653"}}
+```
+
+- **Export**, beside New theme, downloads all your themes as `tweakui-themes.json`; the download button on one of
+  your themes downloads just it.
+- **Copy JSON** beside any theme (WebODM's, a preset or your own) puts it on the clipboard, to paste into a
+  message or another WebODM's Import.
+- **Import** opens a panel: choose a file (its text shows in the box) or paste JSON, then **Import**. A theme with
+  the name of one of yours replaces its colours (if it's your current theme, you keep it); the others are added.
+  The panel says what was added, replaced and refused, and why (a colour that isn't `#rrggbb`, a missing colour,
+  no name, more than 50 themes). **Close** then reloads the page to list them.
+
 ## Sample
 
 Below the themes, a **Sample** shows WebODM's controls in the current theme: text, a link and muted text, status

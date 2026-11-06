@@ -21,16 +21,21 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-subsettings.tweakui-off { opacity: 0.5; }
 /* Settings > Themes: a grid of themes, each a radio button, its swatch (the theme's own colours, from the page's
    data) and its name */
-.tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
-/* A theme: its radio button, swatch and name (the label), then Edit (your own) and Copy */
-.tweakui-settings .tweakui-theme { display: flex; align-items: center; gap: 4px; padding: 0 8px 0 0; border-width: 1px; border-style: solid; border-radius: 4px; }
-.tweakui-settings .tweakui-theme label { display: flex; align-items: center; gap: 8px; flex: 1; min-width: 0; margin: 0; padding: 8px 0 8px 12px; font-weight: normal; cursor: pointer; }
+.tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }
+/* A theme: its radio button, swatch and name (the label), then its buttons (Edit and Export on your own, Copy and
+   Copy JSON), which go under the name, at the right, when the card is too narrow for both */
+.tweakui-settings .tweakui-theme { display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; padding: 0 8px 0 0; border-width: 1px; border-style: solid; border-radius: 4px; }
+.tweakui-settings .tweakui-theme label { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 0 8px 12px; font-weight: normal; cursor: pointer; flex: 1 1 200px; }
 .tweakui-settings .tweakui-theme input { margin: 0; flex: none; }
 .tweakui-settings .tweakui-theme-name { overflow-wrap: anywhere; }
 .tweakui-settings .tweakui-theme:has(input:checked) { border-color: currentColor; font-weight: bold; }
-.tweakui-settings .tweakui-theme-actions { display: flex; gap: 4px; flex: none; }
-.tweakui-settings .tweakui-themes-heading { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
-.tweakui-settings .tweakui-themes-heading h5 { margin: 0; font-weight: bold; }
+.tweakui-settings .tweakui-theme-actions { display: flex; gap: 4px; flex: none; margin-left: auto; padding: 4px 0; }
+.tweakui-settings .tweakui-themes-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
+.tweakui-settings .tweakui-themes-heading h5 { margin: 0; font-weight: bold; white-space: nowrap; }
+.tweakui-settings .tweakui-themes-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+.tweakui-settings .tweakui-import-text { font-family: monospace; font-size: 12px; resize: vertical; }
+.tweakui-settings .tweakui-import-report p, .tweakui-settings .tweakui-import-report ul { margin: 0 0 6px; }
+.tweakui-settings .tweakui-import code { white-space: normal; }
 .tweakui-settings .tweakui-themes-empty { margin: 0; }
 /* Bootstrap's .btn display wins over the hidden attribute: hidden stays hidden on the settings page */
 .tweakui-settings [hidden] { display: none !important; }
