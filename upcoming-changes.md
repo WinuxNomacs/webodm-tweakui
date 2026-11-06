@@ -4,7 +4,7 @@
 
 **Up next** (order decided by the user, 2026-11-06)
 1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
-   what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
+   what the user's projects and tasks take, and cleaning them up. Planned in full (decisions below).
 
 **Later**
 (nothing planned)
@@ -602,7 +602,7 @@ Decided (the user, 2026-11-06):
   and stays on screen the whole time Source Frames is on. The button again, Esc, or the window's × ends Source
   Frames and removes the spot.
 
-## Storage (request 5), to be designed with the user
+## Storage (request 5)
 
 What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
 - **Diagnostic** is a core plugin (`coreplugins/diagnostic`): one side-menu item "Diagnostic" linking to
@@ -638,4 +638,39 @@ Decided (the user, 2026-11-06):
   projects and sizes (with the owner) and clean them through WebODM's API. No leftover-folder, cache or node-copy
   cleanup (that would need file deletion by the plugin on the server).
 
-Open: none for now; details are confirmed when the phase is planned in full.
+Decided when planned in full (the user, 2026-11-06):
+- **A task's breakdown by kind, when it is opened**: photos, orthophoto, elevation, point cloud, textured model,
+  other (LuxODM's `task_breakdown`, a read of the task's folder; the plugin never deletes files itself). It shows
+  what Compact frees (the photos).
+- **Checkboxes and one action**: tick tasks or projects, then Compact or Delete the selection, with one
+  confirmation listing everything that goes and the total it frees; each row keeps its own buttons too.
+- **Admins: grouped by user**: their own projects first, then a section per other user (largest first), each with
+  the user's quota bar and their projects and tasks.
+- **Without Diagnostic** (disabled by an admin): Storage becomes a sub-item of TweakUI's side-menu item, which
+  turns into a parent ("Settings", "Storage"), expanded by default.
+
+The plan:
+- **Settings > Storage**: a new category in the navigation pane (icon `fa-database`) with "Show the Storage view"
+  (`storage_view`, off by default) and a description saying where it appears.
+- **Side menu** (`main.js`, before metisMenu starts): with `storage_view` on, the Diagnostic item becomes a parent
+  "Diagnostic" with "System" (`/plugins/diagnostic/`) and "Storage" (`/plugins/tweakui/storage/`); without a
+  Diagnostic item, TweakUI's item becomes a parent with "Settings" and "Storage", expanded. The current page's
+  sub-item is marked active. Off: the menu is WebODM's as before.
+- **The page** (`/plugins/tweakui/storage/`, an `app_mount_point`, logged in; with the setting off it says where to
+  turn it on): a template on WebODM's base like the settings page, filled by `storage_page.js` (ES5).
+  - Per user: the quota bar ("X of Y used", or "X used" without a quota), then the projects they own, largest
+    first, each opening to its tasks (name, status, created, size, a mark for failed / canceled / compactable);
+    a task opening to its breakdown.
+  - Checkboxes on projects and tasks; a bar with "Compact" (completed, not yet compacted tasks only) and "Delete";
+    each row's own Compact / Delete. The confirmation names each project and task and the MB freed (a task's
+    size; Compact: its photos, from the breakdown when loaded, else "its photos").
+  - The actions go through WebODM's API from the browser (`POST .../tasks/<t>/compact/`, `.../remove/`,
+    `DELETE /api/projects/<p>/`), so its permissions, node cleanup and quota apply; the list refreshes after.
+- **The plugin's API**: `GET /api/plugins/tweakui/storage` (the user's report; for admins every user's, grouped)
+  and `GET /api/plugins/tweakui/storage/task/<p>/<t>` (the breakdown, for the owner or an admin). Sizes from
+  `Task.size`; the quota from `Profile`.
+- **Tests**: Django (the report's sums and ordering, owners only, admins' groups, the breakdown and its
+  permissions, the setting); Jest (the menu restructuring both ways, the page's rendering, selection and the
+  confirmation's totals, the API calls). Live on both stacks with a task the check creates and deletes.
+
+Open: none.
