@@ -2,14 +2,27 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
-   what the user's projects and tasks take, and cleaning them up. Planned in full (decisions below).
+**Up next**
+(nothing planned; new requests arrive in new.md)
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Storage** (request 5) — 2026-11-06, branch `storage` (design below).
+  - Code: `tweakui/storage.py` (the report: owned projects and their tasks from `Task.size`, the quota, superusers'
+    view of every owner; a task's breakdown by kind), `api.py` (`StorageView`, `StorageTaskView`), `plugin.py`
+    (the page `/plugins/tweakui/storage/`, the API), `templates/storage.html`, `public/storage_page.js` (rows,
+    ticks, the confirmation, WebODM's compact / remove / project delete), `public/main.js` (Diagnostic → System and
+    Storage; without Diagnostic, TweakUI → Settings and Storage, expanded; before metisMenu starts, or toggling
+    itself after), `settings.py` (`storage_view`), `templates/settings.html` (Settings > Storage), `main.css`.
+  - Tests: Django 44 (`TestStorage` 7) on 4.0.0 and 3.3.2; Jest 106 (`storage_page` 15, `main` 10).
+  - Live on 4.0.0 and 3.3.2 with a project "Live check storage" (a 16-photo and a 3-photo task) the check made and
+    deleted through the page: the menu closed until clicked, open on the Storage page; TestRGB's breakdown in 130
+    ms (1.1 GB of photos); Compact's confirmation freeing 86.7 MB, then the task's photos at 0 B; a ticked task
+    deleted; the project deleted from its row; phone width without sideways scroll; the light (3.3.2) and dark
+    (4.0.0, Solarized Dark) themes; no console errors. Not checked live: Diagnostic disabled (it would mean
+    turning the plugin off on the dev server; Jest covers it).
 - **Source Frames: a spot that follows the clicks** (request 18) — 2026-11-06, branch `source-frames-spot`
   (design below).
   - Code: `tweakui/public/source_frames.js` (the label, the controller, the 2D and 3D tools: one spot moved by each
@@ -602,7 +615,7 @@ Decided (the user, 2026-11-06):
   and stays on screen the whole time Source Frames is on. The button again, Esc, or the window's × ends Source
   Frames and removes the spot.
 
-## Storage (request 5)
+## Storage (request 5) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
 - **Diagnostic** is a core plugin (`coreplugins/diagnostic`): one side-menu item "Diagnostic" linking to

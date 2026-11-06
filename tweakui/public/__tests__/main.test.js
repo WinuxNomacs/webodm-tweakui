@@ -43,3 +43,75 @@ test("a page without the side menu is left alone", () => {
     document.body.innerHTML = "<p>Welcome</p>";
     expect(() => new Function(source)()).not.toThrow();
 });
+
+describe("the Storage view in the side menu", () => {
+    afterEach(() => { delete window.TweakUI; delete window.jQuery; window.history.replaceState(null, "", "/"); });
+
+    const subs = item => Array.from(item.querySelectorAll(":scope > ul a")).map(a => [a.textContent.trim(), a.getAttribute("href")]);
+
+    test("turned off, the side menu is WebODM's", () => {
+        window.TweakUI = {settings: {storage_view: false}};
+        sideMenu();
+        new Function(source)();
+        expect(document.querySelectorAll("#side-menu ul").length).toBe(0);
+        expect(document.querySelector('a[href="/plugins/diagnostic/"]')).not.toBeNull();
+    });
+
+    test("turned on, Diagnostic opens to System and Storage, closed until its page or a click", () => {
+        window.TweakUI = {settings: {storage_view: true}};
+        sideMenu();
+        new Function(source)();
+        const item = Array.from(document.querySelectorAll("#side-menu > li")).find(li => /Diagnostic/.test(li.textContent));
+        expect(item.querySelector("a").getAttribute("href")).toBe("#");
+        expect(item.querySelector("a .arrow")).not.toBeNull();
+        expect(subs(item)).toEqual([["System", "/plugins/diagnostic/"], ["Storage", "/plugins/tweakui/storage/"]]);
+        expect(item.classList.contains("active")).toBe(false);
+        // TweakUI's own item is left as it is
+        expect(document.querySelector(".tweakui-menu > a").getAttribute("href")).toBe("/plugins/tweakui/");
+    });
+
+    test("on the Storage page its entry is marked and Diagnostic is open", () => {
+        window.TweakUI = {settings: {storage_view: true}};
+        window.history.replaceState(null, "", "/plugins/tweakui/storage/");
+        sideMenu();
+        new Function(source)();
+        const item = document.querySelector("#side-menu ul").parentNode;
+        expect(item.classList.contains("active")).toBe(true);
+        expect(item.querySelector("a.active").textContent.trim()).toBe("Storage");
+    });
+
+    test("without Diagnostic, TweakUI's item opens to Settings and Storage, open from the start", () => {
+        window.TweakUI = {settings: {storage_view: true}};
+        document.body.innerHTML = '<ul id="side-menu"><li><a href="/dashboard/">Dashboard</a></li>' +
+            '<li><a href="/plugins/tweakui/">TweakUI</a></li><li id="about-menu"><a href="/about/">About</a></li></ul>';
+        new Function(source)();
+        const item = document.querySelector(".tweakui-menu");
+        expect(labels()[1]).toMatch(/^TweakUI/);
+        expect(subs(item)).toEqual([["Settings", "/plugins/tweakui/"], ["Storage", "/plugins/tweakui/storage/"]]);
+        expect(item.classList.contains("active")).toBe(true);
+    });
+
+    test("when WebODM's menu has already started, the new parent opens and closes on its own", () => {
+        window.TweakUI = {settings: {storage_view: true}};
+        window.jQuery = () => ({data: name => name === "metisMenu" ? {} : undefined});
+        sideMenu();
+        new Function(source)();
+        const list = document.querySelector("#side-menu ul");
+        const link = list.parentNode.querySelector("a");
+        expect(list.classList.contains("collapse")).toBe(true);
+        expect(list.classList.contains("in")).toBe(false);
+        link.click();
+        expect(list.classList.contains("in")).toBe(true);
+        expect(list.getAttribute("aria-expanded")).toBe("true");
+        link.click();
+        expect(list.classList.contains("in")).toBe(false);
+    });
+
+    test("running twice does not add a second submenu", () => {
+        window.TweakUI = {settings: {storage_view: true}};
+        sideMenu();
+        new Function(source)();
+        new Function(source)();
+        expect(document.querySelectorAll("#side-menu ul").length).toBe(1);
+    });
+});

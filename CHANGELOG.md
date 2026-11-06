@@ -21,4 +21,8 @@
   the spot drawn on it, its properties, a full-screen viewer and a download.
 - 2D Map and 3D Map > Zoom Override: the 2D map zooms in 3 steps further; in the 3D view the wheel zooms toward what
   is under the pointer.
+- Storage: Diagnostic in the side menu opens to System and Storage (TweakUI's item does without Diagnostic). The
+  page shows the quota and the projects you own, largest first, opening to their tasks and a task's files by kind.
+  Tasks and projects are compacted or deleted one by one or ticked together, with one confirmation of what goes
+  and what it frees, through WebODM's own API. Administrators also see every user's.
 - Experimental.

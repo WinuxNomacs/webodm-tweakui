@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import settings, themes
-from .api import FramesView, SettingsView, settings_script
+from .api import FramesView, SettingsView, StorageTaskView, StorageView, settings_script
 
 
 class Plugin(PluginBase):
@@ -32,8 +32,18 @@ class Plugin(PluginBase):
                 "themes": themes.theme_list(),
             })
 
+        @login_required
+        def storage_page(request):
+            return render(request, self.template_path("storage.html"), {
+                "title": _("Storage"),
+                "public": self.public_url(""),
+                "api": "/api/plugins/{}/".format(self.get_name()),
+                "on": settings.load(request.user)["storage_view"],
+            })
+
         return [
             MountPoint("$", settings_page),
+            MountPoint(r"storage/$", storage_page),
             MountPoint(r"settings\.js$", settings_script),
             MountPoint(r"theme\.css$", themes.theme_css),
         ]
@@ -41,5 +51,7 @@ class Plugin(PluginBase):
     def api_mount_points(self):
         return [
             MountPoint("settings$", SettingsView.as_view()),
+            MountPoint("storage$", StorageView.as_view()),
+            MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
             MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
         ]

@@ -16,6 +16,8 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                 <i class="fa fa-map fa-fw"></i> {% trans "2D Map" %}</a></li>
             <li><a href="#map3d" role="tab" class="theme-background-highlight-hover" data-section="map3d">
                 <i class="fa fa-cube fa-fw"></i> {% trans "3D Map" %}</a></li>
+            <li><a href="#storage" role="tab" class="theme-background-highlight-hover" data-section="storage">
+                <i class="fa fa-database fa-fw"></i> {% trans "Storage" %}</a></li>
         </ul>
         <div class="tweakui-sections">
             <section id="tweakui-general" data-section="general" role="tabpanel">
@@ -150,6 +152,19 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                             {% trans "Zoom Override" %}
                         </label>
                         <p class="text-muted">{% trans "The mouse wheel zooms toward what is under the pointer, the points or the model, instead of the middle of the view, so any surface can be neared. Over empty space it zooms as before." %}</p>
+                    </div>
+                </div>
+            </section>
+            <section id="tweakui-storage" data-section="storage" role="tabpanel" hidden>
+                <h4>{% trans "Storage" %}</h4>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Storage View" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="storage_view"{% if settings.storage_view %} checked{% endif %}>
+                            {% trans "Show the Storage view" %}
+                        </label>
+                        <p class="text-muted">{% trans "Diagnostic in the side menu opens to System and Storage (without Diagnostic, TweakUI does). Storage shows what your projects and tasks take of your quota, each task's files by kind, and cleans them up: compact a task (its photos go, its results stay) or delete tasks and projects." %}</p>
                     </div>
                 </div>
             </section>
