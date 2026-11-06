@@ -2,7 +2,7 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (order to be confirmed by the user)
+**Up next** (order decided by the user, 2026-11-06)
 1. **TweakUI menu item above About** (request 6) — small; details below.
 2. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
    Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
@@ -155,4 +155,12 @@ Proposed design (for the discussion):
   and what it frees, done through WebODM's API above. Projects shared with the user are not listed (they are
   not in the user's quota).
 
-Open (for the discussion): where the view appears under Diagnostic; whether admins also get an instance-wide part.
+Decided (the user, 2026-11-06):
+- **Under a Diagnostic submenu**: with Storage on, TweakUI's script turns the Diagnostic side-menu item into a
+  menu with "System" (WebODM's Diagnostic page) and "Storage" (TweakUI's view), as in LuxODM. If an admin
+  disables Diagnostic, the Storage view has no menu entry.
+- **Admins also see all users**: everyone sees and cleans their own projects; admins also see every user's
+  projects and sizes (with the owner) and clean them through WebODM's API. No leftover-folder, cache or node-copy
+  cleanup (that would need file deletion by the plugin on the server).
+
+Open: none for now; details are confirmed when the phase is planned in full.
