@@ -195,6 +195,23 @@ class TestThemes(TweakUITestCase):
                 for selector in head.split(","):
                     self.assertTrue(selector.strip().startswith("html "), selector)
 
+    def test_administration_keeps_webodm_s_own_theme_variables_and_readable_text(self):
+        from coreplugins.tweakui.themes import PRESETS
+        self.patch({"theme": "dracula"})
+        css = self.theme_css()
+        self.assertNotIn("--body-bg", css)
+        self.assertIn("html .admin-area,", css)
+        self.assertIn("{color: %s;}" % PRESETS["dracula"]["colors"]["secondary"], css)
+
+    def test_the_header_text_stands_out_and_light_presets_have_a_header_dark_enough_for_the_white_logo(self):
+        from coreplugins.tweakui.themes import PRESETS, _luminance
+        for preset in PRESETS.values():
+            c = preset["colors"]
+            self.assertIn(c["header_primary"], (c["primary"], c["secondary"]), preset["name"])
+            self.assertLess(_luminance(c["header_background"]), 160, preset["name"])
+            self.assertGreater(abs(_luminance(c["header_primary"]) - _luminance(c["header_background"])), 100,
+                               preset["name"])
+
     def test_each_user_gets_their_own_preset(self):
         self.patch({"theme": "dracula"})
         self.assertIn("{", self.theme_css())

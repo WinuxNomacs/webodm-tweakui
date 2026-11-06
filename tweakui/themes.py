@@ -20,6 +20,11 @@ FIELDS = ("primary", "secondary", "tertiary", "button_primary", "button_default"
           "header_background", "header_primary", "border", "highlight", "dialog_warning", "failed", "success")
 
 
+def _luminance(color):
+    r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
+    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+
+
 def _mix(color, background, amount):
     """color laid over background at the given opacity (0..1), as #rrggbb"""
     a = [int(color[i:i + 2], 16) for i in (1, 3, 5)]
@@ -28,14 +33,16 @@ def _mix(color, background, amount):
 
 
 def _preset(name, text, base, panel, header, border, link, button, muted, red, yellow, green):
-    """A preset from a scheme's palette: buttons show their label in the base colour (as WebODM's theme does), and
-    failed and success notifications are the base tinted with red and green, so the text stays readable."""
+    """A preset from a scheme's palette: buttons show their label in the base colour (as WebODM's theme does), the
+    header's text is the text or base colour, whichever stands out more on it, and failed and success notifications
+    are the base tinted with red and green, so the text stays readable."""
     return {
         "name": name,
         "colors": {
             "primary": text, "secondary": base, "tertiary": link,
             "button_primary": button, "button_default": muted, "button_danger": red,
-            "header_background": header, "header_primary": text,
+            "header_background": header,
+            "header_primary": max(text, base, key=lambda c: abs(_luminance(c) - _luminance(header))),
             "border": border, "highlight": panel, "dialog_warning": yellow,
             "failed": _mix(red, base, 0.25), "success": _mix(green, base, 0.25),
         },
@@ -43,9 +50,10 @@ def _preset(name, text, base, panel, header, border, link, button, muted, red, y
 
 
 # Each scheme's published palette (text, base, panel, header, border, link, button, muted, red, yellow, green).
-# The order is the one of the Themes list.
+# The order is the one of the Themes list. WebODM's logo in the header is white, so light schemes have a header in
+# their accent colour.
 PRESETS = {
-    "catppuccin-latte": _preset("Catppuccin Latte", "#4c4f69", "#eff1f5", "#e6e9ef", "#dce0e8", "#ccd0da",
+    "catppuccin-latte": _preset("Catppuccin Latte", "#4c4f69", "#eff1f5", "#e6e9ef", "#1e66f5", "#ccd0da",
                                 "#1e66f5", "#1e66f5", "#8c8fa1", "#d20f39", "#fe640b", "#40a02b"),
     "catppuccin-frappe": _preset("Catppuccin Frappé", "#c6d0f5", "#303446", "#292c3c", "#232634", "#414559",
                                  "#8caaee", "#8caaee", "#838ba7", "#e78284", "#ef9f76", "#a6d189"),
@@ -53,7 +61,7 @@ PRESETS = {
                                     "#8aadf4", "#8aadf4", "#8087a2", "#ed8796", "#f5a97f", "#a6da95"),
     "catppuccin-mocha": _preset("Catppuccin Mocha", "#cdd6f4", "#1e1e2e", "#181825", "#11111b", "#313244",
                                 "#89b4fa", "#89b4fa", "#7f849c", "#f38ba8", "#fab387", "#a6e3a1"),
-    "solarized-light": _preset("Solarized Light", "#586e75", "#fdf6e3", "#eee8d5", "#eee8d5", "#e4ddc8",
+    "solarized-light": _preset("Solarized Light", "#586e75", "#fdf6e3", "#eee8d5", "#268bd2", "#e4ddc8",
                                "#268bd2", "#268bd2", "#93a1a1", "#dc322f", "#cb4b16", "#859900"),
     "solarized-dark": _preset("Solarized Dark", "#93a1a1", "#002b36", "#073642", "#073642", "#0e4552",
                               "#268bd2", "#268bd2", "#586e75", "#dc322f", "#cb4b16", "#859900"),
@@ -63,29 +71,31 @@ PRESETS = {
                     "#88c0d0", "#88c0d0", "#4c566a", "#bf616a", "#d08770", "#a3be8c"),
     "gruvbox-dark": _preset("Gruvbox Dark", "#ebdbb2", "#282828", "#32302f", "#1d2021", "#3c3836",
                             "#83a598", "#83a598", "#928374", "#fb4934", "#fe8019", "#b8bb26"),
-    "gruvbox-light": _preset("Gruvbox Light", "#3c3836", "#fbf1c7", "#f2e5bc", "#ebdbb2", "#d5c4a1",
+    "gruvbox-light": _preset("Gruvbox Light", "#3c3836", "#fbf1c7", "#f2e5bc", "#076678", "#d5c4a1",
                              "#076678", "#076678", "#928374", "#9d0006", "#af3a03", "#79740e"),
     "one-dark": _preset("One Dark", "#abb2bf", "#282c34", "#21252b", "#1b1d23", "#3e4451",
                         "#61afef", "#61afef", "#5c6370", "#e06c75", "#d19a66", "#98c379"),
 }
 
-# WebODM's panels that hard-code a white background but take the page's text colour (the theme's primary); with a
-# dark preset they get its darker colour, so they look as with WebODM's default theme
+# WebODM's places that hard-code a white background but take the page's text colour (the theme's primary); with a
+# dark preset they get its darker colour, so they look as with WebODM's default theme. Administration
+# (.admin-area) is one of them, and also keeps the colours WebODM's theme gives its own variables (KEEP_WEBODM).
 WHITE_PANELS = (
+    ".admin-area",
     ".leaflet-control-layers-control .layers-control-panel",
     ".leaflet-control-contours .contours-panel",
     ".leaflet-control-objdetect .objdetect-panel",
 )
 
 
-def _luminance(color):
-    r, g, b = (int(color[i:i + 2], 16) for i in (1, 3, 5))
-    return 0.2126 * r + 0.7152 * g + 0.0722 * b
+# Rules of WebODM's theme a preset leaves out, so WebODM's own theme applies there
+KEEP_WEBODM = (".admin-area",)
 
 
 def _prefix_selectors(css):
     """Prefixes every selector with "html ", so the rules win over WebODM's own theme (inlined later in the page,
-    with the same selectors); @keyframes are left out, as WebODM's theme already defines them"""
+    with the same selectors); @keyframes are left out, as WebODM's theme already defines them, and so are the
+    rules of KEEP_WEBODM"""
     css = re.sub(r"/\*.*?\*/", "", css, flags=re.DOTALL)
     out, i = [], 0
     while True:
@@ -100,7 +110,7 @@ def _prefix_selectors(css):
         body = css[start + 1:end - 1]
         if head.startswith(("@media", "@supports")):
             out.append("%s{\n%s}\n" % (head, _prefix_selectors(body)))
-        elif head and not head.startswith("@"):
+        elif head and not head.startswith("@") and head not in KEEP_WEBODM:
             selectors = ",\n".join("html " + s.strip() for s in head.split(",") if s.strip())
             out.append("%s{%s}\n" % (selectors, body))
         i = end
