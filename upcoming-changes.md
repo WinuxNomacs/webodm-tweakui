@@ -3,8 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
-   workflow on a release tag or by hand; the README becomes an overview with links.
+(nothing planned)
 
 **Then**
 (nothing planned)
@@ -13,6 +12,19 @@
 (nothing planned)
 
 **Done**
+- **Documentation site** (request 19, docs phase 3) — 2026-11-06, branch `docs-site` (design below).
+  - Code: `docs/` (VitePress 1.6.4, pinned): home, General, Themes, 2D Map, 3D Map, Storage, Install, Developing,
+    local search; the images by a relative path to `tweakui/public/previews/` (bundled into the site at build).
+    `npm run docs:dev`, `docs:build`, `docs:preview`; `.nvmrc` (Node 26). `.github/workflows/docs.yml`: build and
+    deploy to Pages on a `v*` tag or by hand, actions pinned by commit. README trimmed to an overview linking to
+    https://winuxnomacs.github.io/webodm-tweakui/; CLAUDE.md: a feature change updates its docs page and
+    screenshot, a `v*` tag publishes the docs.
+  - Checked: the build (fails on a dead link), a clean `npm ci --ignore-scripts` build as the workflow runs it, the
+    built site in a browser at 1280 px light and 390 px dark: every page, all 11 images, every internal link, no
+    horizontal scroll, no console errors. The workflow's first run is the user's (Pages must be on first:
+    Settings > Pages > Source: GitHub Actions; a private repo needs a paid plan).
+  - `npm audit`: VitePress 1.6.4 (the latest stable) brings Vite 5 and esbuild with advisories for their dev
+    server only (`docs:dev`, bound to localhost); the built site is static.
 - **Previews in the settings** (request 19, docs phase 2) — 2026-11-06, branch `settings-previews` (design below).
   - Code: `templates/settings.html` (`data-previews` on the page, a `data-preview` on 10 settings and on the
     Themes intro), `public/settings_page.js` (`addPreviews`: a lazy thumbnail titled with the setting's name,

@@ -225,3 +225,5 @@ node_modules/
 
 new.md
 .claude/settings.local.json
+docs/.vitepress/cache/
+docs/.vitepress/dist/
