@@ -6,6 +6,10 @@
 1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
+**To place** (request 8, order to be decided by the user)
+- **Enhanced Task Details** (request 8) — a General > Task Options setting that enhances a task's details panel
+  on the Dashboard: the preset, the options as bubbles, the ODX command to copy. Design below.
+
 **Later**
 (nothing planned)
 
@@ -78,6 +82,10 @@ Added 2026-11-06 (second new.md):
 7. (2026-11-06) A Paint Brush icon in the header row, left of the user's icon; clicking it opens a dropdown of the
    available themes to change it on the fly. The current theme and WebODM's default theme are the top options. It
    sets the same theme preference as Settings > Themes: a shortcut.
+
+8. (2026-11-06) Under Task Options settings, an option "Enhanced Task Details" that enhances the task view: the
+   Preset used to create the task if available; the Options in individual bubbles, so they stand out and are
+   easier to read; an item showing the exact ODX command it generates, for easy copy/paste.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -216,6 +224,45 @@ Administration (staff), Developer Tools (dev mode, superusers), and `<li id="abo
 to place a plugin's item elsewhere, so `main.js` (loaded in `<head>`) moves TweakUI's `<li>` just before
 `#about-menu` when the page is parsed. To avoid a flash, `main.css` hides the item in its first place
 (`#side-menu > li:has(> a[href="/plugins/tweakui/"])`) until the script has moved it. Always, not a setting.
+
+## Enhanced Task Details (request 8), to be designed with the user
+
+What WebODM has (checked in 3.3.2 and 4.0.0, the same in both):
+- **The panel**: on the Dashboard, a task's row expands into a details table (`TaskListItem.jsx`): Task ID (with a
+  copy-to-clipboard link), Created on, Processing Node, **Options** (one comma-separated line, `name:value`,
+  `boundary:geojson`, or "Default" when empty), Average GSD, Area, Points, Georeferencing, CRS, Disk Usage,
+  Task Output.
+- **No preset is stored with a task**: a task keeps only its options (`Task.options`). WebODM itself finds the
+  preset when a task's options are edited (`EditTaskForm.findFirstPresetMatching`): the first preset (system
+  ones first, then newest) with exactly the same options and values, else "Custom".
+- **The command**: WebODM sends the options to the node; NodeODX adds `--pc-ept --cog --gltf` (the outputs
+  WebODM needs, when the node supports them) and runs `run.sh <options> --project-path /var/www/data <uuid>`.
+  It logs that line on the node only (which may be another machine): WebODM never sees it. WebODM's docs show
+  ODX run by hand as `docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets
+  <options>`.
+- **Hooks**: `PluginsAPI.Dashboard.addTaskActionButton` is called with the task (its id, project, options) each
+  time a task's details panel opens; there is no hook into the details table itself, so the rows are added and
+  WebODM's Options row hidden by the script (as Show Modified Options does in the dialog), kept in place with a
+  MutationObserver when React re-renders.
+
+Proposed design (branch `task-details`):
+- **General > Task Options > Enhanced Task Details** (off by default), beside Show Modified Options.
+- In a task's details panel, with the setting on:
+  - **Preset:** the preset the task's options match, found as WebODM does (the presets the user can see,
+    `/api/presets/`), or "Custom" when none match.
+  - **Options:** each option a bubble (`name` and value, theme colours), in place of the comma-separated line;
+    "Default" when the task has none.
+  - **ODX command:** the command, in a monospace box with a copy button (as Task ID's), e.g.
+    `docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets --dsm
+    --feature-quality ultra`; values quoted for the shell where needed; `--boundary` as a file name, as the
+    command line takes a GeoJSON file.
+  - Updated when the task's options are edited.
+- README, CHANGELOG. Tests: Jest (matching, bubbles, the command and quoting, the setting off), Django (the
+  setting). Live on 4.0.0 (the completed TestRGB task) and 3.3.2 (a task created by the check, then deleted),
+  desktop and phone, a light and a dark preset.
+
+Open (for the user): where it goes in the phases; how the preset is found; the command's form; whether it has
+the options the node adds.
 
 ## Storage (request 5), to be designed with the user
 
