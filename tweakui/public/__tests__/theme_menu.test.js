@@ -46,6 +46,16 @@ test("with WebODM's theme current it is listed once, on top", () => {
     expect(names(themeMenu.build(document, win("webodm")))).toEqual(["webodm", "catppuccin-latte", "dracula", "nord"]);
 });
 
+test("there is no menu when Settings > Themes turns it off", () => {
+    header();
+    const w = win("webodm");
+    w.TweakUI.settings.show_theme_menu = false;
+    expect(themeMenu.build(document, w)).toBeNull();
+    expect(document.querySelector(".tweakui-theme-menu")).toBeNull();
+    w.TweakUI.settings.show_theme_menu = true;
+    expect(themeMenu.build(document, w)).not.toBeNull();
+});
+
 test("there is no menu without the user icon, without the themes, or a second time", () => {
     document.body.innerHTML = "<nav id='navbar-top'></nav>";
     expect(themeMenu.build(document, win("webodm"))).toBeNull();

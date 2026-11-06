@@ -6,7 +6,7 @@ const DOCKER = "docker run -ti --rm -v /my/project:/datasets/code webodm/odx --p
 function panel(task) {
     document.body.innerHTML = '<div class="expanded-panel"><table class="table info-table"><tbody>' +
         '<tr><td><strong>Task ID:</strong></td><td><a class="task-id-link">' + task.id + ' <i></i></a></td></tr>' +
-        '<tr><td><strong>Created on:</strong></td><td>today</td></tr>' +
+        '<tr><td><strong>Created on:</strong></td><td>' + new Date(task.created_at).toLocaleString() + '</td></tr>' +
         '<tr><td><strong>Options:</strong></td><td>' + details.optionsText(task.options) + '</td></tr>' +
         '<tr><td><strong>Disk Usage:</strong></td><td>1 MB</td></tr>' +
         "</tbody></table></div>";
@@ -14,7 +14,8 @@ function panel(task) {
 }
 
 const labels = root => Array.from(root.querySelectorAll("tbody > tr:not(.tweakui-hidden) strong")).map(s => s.textContent);
-const task = {id: "t1", project: 1, options: [{name: "auto-boundary", value: true}, {name: "dsm", value: true},
+const CREATED = "2026-11-06T13:38:04.225Z";
+const task = {id: "t1", project: 1, created_at: CREATED, status: 40, processing_time: 2795777, options: [{name: "auto-boundary", value: true}, {name: "dsm", value: true},
     {name: "feature-quality", value: "ultra"}]};
 const presets = [
     {id: 1, name: "High Resolution", options: [{name: "dsm", value: true}]},
@@ -43,7 +44,7 @@ test("the command leaves out false booleans, quotes values for the shell and tak
 test("the panel gets Preset, Options as bubbles and ODX command rows after WebODM's Options row, which is hidden", () => {
     const root = panel(task);
     expect(details.enhance(document, window, root, task, presets[2])).toBe(true);
-    expect(labels(root)).toEqual(["Task ID:", "Created on:", "Preset:", "Options:", "ODX command:", "Disk Usage:"]);
+    expect(labels(root)).toEqual(["Task ID:", "Created on:", "Started:", "Finished:", "Preset:", "Options:", "ODX command:", "Disk Usage:"]);
     expect(root.querySelector(".tweakui-hidden").textContent).toContain("auto-boundary:true");
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("Mine");
     expect(Array.from(root.querySelectorAll(".tweakui-option-bubble")).map(b => b.textContent)).toEqual(["auto-boundary", "dsm", "feature-qualityultra"]);
@@ -54,7 +55,7 @@ test("a task matching no preset shows Custom, one without options None, and befo
     let root = panel(task);
     details.enhance(document, window, root, task, null);
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("Custom");
-    const plain = {id: "t2", project: 1, options: []};
+    const plain = {id: "t2", project: 1, created_at: CREATED, status: 40, processing_time: 1000, options: []};
     root = panel(plain);
     details.enhance(document, window, root, plain, null);
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("None");
@@ -69,20 +70,48 @@ test("enhancing again changes nothing, and rows follow changed options", () => {
     const first = root.querySelector("[data-tweakui-row]");
     details.enhance(document, window, root, task, null);
     expect(root.querySelector("[data-tweakui-row]")).toBe(first);
-    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(3);
-    const edited = {id: "t1", options: [{name: "dsm", value: true}]};
+    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(5);
+    const edited = Object.assign({}, task, {options: [{name: "dsm", value: true}]});
     root.querySelector(".tweakui-hidden td:last-child").textContent = details.optionsText(edited.options);
     details.enhance(document, window, root, edited, presets[0]);
-    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(3);
+    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(5);
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("High Resolution");
 });
 
 test("a panel whose Options row shows other options is left as WebODM made it", () => {
     const root = panel(task);
     details.enhance(document, window, root, task, null);
-    const other = {id: "t1", options: [{name: "dsm", value: true}]};
+    const other = Object.assign({}, task, {options: [{name: "dsm", value: true}]});
     expect(details.enhance(document, window, root, other, null)).toBe(false);
     expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(0);
+});
+
+test("started is the task's creation and finished that plus its processing time, in the browser's local time", () => {
+    const root = panel(task);
+    details.enhance(document, window, root, task, null);
+    const created = new Date(CREATED).getTime();
+    expect(root.querySelector(".tweakui-task-started").textContent).toBe(new Date(created).toLocaleString());
+    expect(root.querySelector(".tweakui-task-finished").textContent).toBe(new Date(created + 2795777).toLocaleString());
+});
+
+test("a running task shows Running, one that never ran a dash, and the rows follow its status", () => {
+    const running = Object.assign({}, task, {status: 20, processing_time: 5000});
+    expect(details.times(running)).toEqual({started: new Date(CREATED).getTime(), finished: null, running: true});
+    expect(details.times(Object.assign({}, task, {status: 10, processing_time: -1}))).toEqual({started: null, finished: null, running: false});
+    expect(details.times(Object.assign({}, task, {status: 50, processing_time: -1}))).toEqual({started: null, finished: null, running: false});
+    const root = panel(running);
+    details.enhance(document, window, root, running, null);
+    expect(root.querySelector(".tweakui-task-finished").textContent).toBe("Running");
+    details.enhance(document, window, root, task, null);
+    expect(root.querySelector(".tweakui-task-finished").textContent).not.toBe("Running");
+    expect(root.querySelectorAll("[data-tweakui-row]").length).toBe(5);
+});
+
+test("without WebODM's Created on row there are no Started and Finished rows", () => {
+    const root = panel(task);
+    root.querySelectorAll("tbody > tr")[1].remove();
+    expect(details.enhance(document, window, root, task, null)).toBe(true);
+    expect(labels(root)).toEqual(["Task ID:", "Preset:", "Options:", "ODX command:", "Disk Usage:"]);
 });
 
 test("the copy button copies the command and shows a check", async () => {
@@ -109,4 +138,29 @@ test("start adds the rows to a panel once WebODM gives its task, and adds no but
     await new Promise(r => setTimeout(r, 10));
     expect(win.fetch).toHaveBeenCalledWith("/api/presets/?ordering=-system,-created_at", {credentials: "same-origin"});
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("Mine");
+});
+
+test("a task that hasn't ended is fetched again while its panel is open, and its rows follow it", async () => {
+    jest.useFakeTimers();
+    let hook;
+    // Its own id: the earlier start test's observer still watches the page with task t1
+    const running = Object.assign({}, task, {id: "t9", status: 20, processing_time: 5000});
+    const done = Object.assign({}, task, {id: "t9"});
+    const fetch = jest.fn(url => Promise.resolve({ok: true, json: () => Promise.resolve(url.startsWith("/api/presets") ? presets : done)}));
+    const win = Object.assign(Object.create(window), {
+        PluginsAPI: {Dashboard: {addTaskActionButton: cb => { hook = cb; }}},
+        fetch, setTimeout: (f, ms) => setTimeout(f, ms), MutationObserver: undefined
+    });
+    const root = panel(running);
+    details.start(document, win);
+    hook({task: running});
+    await jest.advanceTimersByTimeAsync(10);
+    expect(root.querySelector(".tweakui-task-finished").textContent).toBe("Running");
+    await jest.advanceTimersByTimeAsync(5000);
+    expect(fetch).toHaveBeenCalledWith("/api/projects/1/tasks/t9/", {credentials: "same-origin"});
+    expect(root.querySelector(".tweakui-task-finished").textContent).not.toBe("Running");
+    const calls = fetch.mock.calls.length;
+    await jest.advanceTimersByTimeAsync(20000);
+    expect(fetch.mock.calls.length).toBe(calls);
+    jest.useRealTimers();
 });

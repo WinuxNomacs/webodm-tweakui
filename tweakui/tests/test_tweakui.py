@@ -17,7 +17,8 @@ API = "/api/plugins/tweakui/settings"
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"show_modified_options": False, "enhanced_task_details": False, "theme": "webodm"}, **changes)
+    return dict({"show_modified_options": False, "enhanced_task_details": False, "show_theme_menu": True,
+                 "theme": "webodm"}, **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -165,6 +166,14 @@ class TestSettingsPage(TweakUITestCase):
         self.assertNotContains(page, 'data-setting="enhanced_task_details" checked')
         self.assertEqual(self.patch({"enhanced_task_details": True}).json(), defaults(enhanced_task_details=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="enhanced_task_details" checked')
+
+    def test_the_theme_menu_is_on_by_default_and_its_checkbox_is_in_the_themes_section(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        themes = page[page.index('<section id="tweakui-themes"'):]
+        self.assertIn('data-setting="show_theme_menu" checked', themes[:themes.index("</section>")])
+        self.assertEqual(self.patch({"show_theme_menu": False}).json(), defaults(show_theme_menu=False))
+        self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_theme_menu" checked')
+        self.assertEqual(self.script_settings(self.client)["show_theme_menu"], False)
 
     def test_the_dashboard_includes_the_task_details_script(self):
         self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")

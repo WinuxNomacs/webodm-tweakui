@@ -1,9 +1,10 @@
 // General > Task Options > Enhanced Task Details: in a task's details panel on the Dashboard (TaskListItem in WebODM),
-// WebODM's one-line Options row gives way to three rows: the preset the options match (found as WebODM's Edit dialog
-// does), each option in a bubble, and the ODX command to run the task by hand, with a copy button.
+// Started and Finished rows follow WebODM's "Created on", and WebODM's one-line Options row gives way to three rows:
+// the preset the options match (found as WebODM's Edit dialog does), each option in a bubble, and the ODX command to
+// run the task by hand, with a copy button.
 // WebODM gives the task through PluginsAPI.Dashboard.addTaskActionButton each time a panel opens (no button is
-// added); the rows go in after WebODM's Options row, found by its text, which is hidden. A MutationObserver puts
-// them back after React re-renders. UMD, so Jest can load it.
+// added); the rows go in after WebODM's rows, found by their text (the Options row is hidden). A MutationObserver
+// puts them back after React re-renders. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -20,6 +21,11 @@
         "--project-path /datasets"];
     // The command line takes a GeoJSON file where WebODM keeps the boundary itself
     var BOUNDARY_FILE = "/datasets/code/boundary.geojson";
+    // WebODM's status codes (StatusCodes.js): running, and failed, completed, canceled (a task has ended); a task
+    // with no status or queued hasn't started
+    var RUNNING = 20, ENDED = [30, 40, 50];
+    // How often a task that hasn't ended is fetched again while its panel is open
+    var POLL_MS = 5000;
 
     // WebODM's own text of the Options row (TaskListItem.optionsToList)
     function optionsText(options) {
@@ -100,6 +106,38 @@
         return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
     }
 
+    function ended(task) {
+        return ENDED.indexOf(task.status) >= 0;
+    }
+
+    // WebODM keeps no start or end time: started is when the task was created (its upload began), finished that plus
+    // the node's processing time (which a restart counts again from the new run); null where it doesn't apply
+    function times(task) {
+        var created = new Date(task.created_at).getTime(), ran = task.processing_time > 0;
+        if (isNaN(created)) return {started: null, finished: null, running: false};
+        var running = task.status === RUNNING;
+        return {
+            started: ran || running ? created : null,
+            finished: ran && ended(task) ? created + task.processing_time : null,
+            running: running
+        };
+    }
+
+    function dateText(ms) {
+        return new Date(ms).toLocaleString();
+    }
+
+    // The Started and Finished rows
+    function timeRows(doc, task) {
+        var t = times(task);
+        return [
+            row(doc, "Started:", el(doc, "span", "tweakui-task-started", t.started === null ? "—" : dateText(t.started)),
+                "started"),
+            row(doc, "Finished:", el(doc, "span", "tweakui-task-finished",
+                t.finished !== null ? dateText(t.finished) : (t.running ? "Running" : "—")), "finished")
+        ];
+    }
+
     // The three rows for a task; preset is a preset, null (no match) or undefined (presets not loaded)
     function rows(doc, win, task, preset) {
         var options = task.options || [];
@@ -152,9 +190,9 @@
         return link ? (link.textContent || "").trim() : null;
     }
 
-    // WebODM's Options row in a panel's table: the row whose value cell has the task's options text
-    function optionsRow(table, task) {
-        var want = optionsText(task.options), trs = table.querySelectorAll("tbody > tr");
+    // WebODM's row in a panel's table whose value cell has this text
+    function rowWithValue(table, want) {
+        var trs = table.querySelectorAll("tbody > tr");
         for (var i = 0; i < trs.length; i++) {
             var cells = trs[i].children;
             if (trs[i].getAttribute("data-tweakui-row") === null && cells.length === 2 &&
@@ -163,29 +201,43 @@
         return null;
     }
 
-    // Puts a task's rows in its panel after WebODM's Options row (hidden), or brings them up to date; leaves the
-    // panel as WebODM made it when the Options row isn't found
+    function removeAll(nodes) {
+        for (var i = 0; i < nodes.length; i++) nodes[i].parentNode.removeChild(nodes[i]);
+    }
+
+    function insertAfter(target, trs) {
+        var next = target.nextSibling;
+        trs.forEach(function (tr) { target.parentNode.insertBefore(tr, next); });
+    }
+
+    // Puts a task's rows in its panel, or brings them up to date: Started and Finished after WebODM's Created on (when
+    // found), the others after WebODM's Options row (hidden); leaves the panel as WebODM made it when the Options row
+    // isn't found
     function enhance(doc, win, panel, task, preset) {
         var table = panel.querySelector(".info-table");
         if (!table) return false;
-        var target = optionsRow(table, task), old = table.querySelectorAll("[data-tweakui-row]");
-        var key = JSON.stringify([task.options, preset ? preset.id : (preset === null ? "none" : "loading")]);
+        var target = rowWithValue(table, optionsText(task.options)), old = table.querySelectorAll("[data-tweakui-row]");
         if (!target) {
-            for (var j = 0; j < old.length; j++) old[j].parentNode.removeChild(old[j]);
+            removeAll(old);
             return false;
         }
-        if (/\btweakui-hidden\b/.test(target.className) && old.length === 3 && old[0] === target.nextSibling &&
+        var created = rowWithValue(table, dateText(task.created_at));
+        var key = JSON.stringify([task.options, preset ? preset.id : (preset === null ? "none" : "loading"),
+            task.created_at, task.status, task.processing_time, !!created]);
+        var count = created ? 5 : 3;
+        if (/\btweakui-hidden\b/.test(target.className) && old.length === count &&
+            old[count - 3] === target.nextSibling && (!created || old[0] === created.nextSibling) &&
             table.getAttribute("data-tweakui-key") === key) return true;
-        for (var i = 0; i < old.length; i++) old[i].parentNode.removeChild(old[i]);
+        removeAll(old);
         if (!/\btweakui-hidden\b/.test(target.className)) target.className += " tweakui-hidden";
-        var next = target.nextSibling;
-        rows(doc, win, task, preset).forEach(function (tr) { target.parentNode.insertBefore(tr, next); });
+        if (created) insertAfter(created, timeRows(doc, task));
+        insertAfter(target, rows(doc, win, task, preset));
         table.setAttribute("data-tweakui-key", key);
         return true;
     }
 
     function start(doc, win) {
-        var tasks = {}, presets, scheduled = false, refetching = {};
+        var tasks = {}, presets, scheduled = false, refetching = {}, polled = {};
 
         function update() {
             scheduled = false;
@@ -194,7 +246,9 @@
                 var id = panelTaskId(panels[i]), task = id && tasks[id];
                 if (!task) continue;
                 var preset = presets === undefined ? undefined : matchPreset(presets, task.options || []);
-                if (!enhance(doc, win, panels[i], task, preset) && !refetching[id] && task.project) refetch(task);
+                if (!enhance(doc, win, panels[i], task, preset)) {
+                    if (!refetching[id] && task.project) refetch(task);
+                } else if (!ended(task) && task.project && !polled[id]) poll(task);
             }
         }
 
@@ -219,6 +273,20 @@
                 }, function () {});
         }
 
+        // A task that hasn't ended, its panel open: fetched again after a while, so Started and Finished follow it
+        function poll(task) {
+            polled[task.id] = true;
+            win.setTimeout(function () {
+                win.fetch("/api/projects/" + task.project + "/tasks/" + task.id + "/", {credentials: "same-origin"})
+                    .then(function (res) { return res.ok ? res.json() : null; })
+                    .then(function (fresh) {
+                        if (fresh && tasks[task.id] === task) tasks[task.id] = fresh;
+                        polled[task.id] = false;
+                        later();
+                    }, function () { polled[task.id] = false; });
+            }, POLL_MS);
+        }
+
         win.PluginsAPI.Dashboard.addTaskActionButton(function (args) {
             if (args && args.task && args.task.id) {
                 tasks[args.task.id] = args.task;
@@ -241,5 +309,5 @@
     }
 
     return {start: start, enhance: enhance, rows: rows, command: command, matchPreset: matchPreset,
-        optionsText: optionsText, shellQuote: shellQuote};
+        optionsText: optionsText, shellQuote: shellQuote, times: times};
 });
