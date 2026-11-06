@@ -10,6 +10,15 @@
 (nothing planned)
 
 **Done**
+- **Theme switcher in the header** (request 7) — 2026-11-06, branch `theme-switcher` (design below).
+  - Code: `tweakui/public/theme_menu.js` (the menu), `tweakui/themes.py` (`theme_list`, swatches; dropdown text
+    colour), `tweakui/api.py` (`settings.js` gives `window.TweakUI.themes`), `templates/settings.html` (the same
+    list), `public/main.css`.
+  - Tests: Jest `theme_menu.test.js` (8), Django (26 in all, on 4.0.0 and 3.3.2).
+  - Live on 4.0.0 and 3.3.2: the paintbrush just left of the user icon on the dashboard and the map page, none
+    logged out; the order (current, WebODM's theme, divider, the rest); choosing a theme reloads in it and
+    Settings > Themes shows it; desktop and phone; no console errors; the admin's theme restored (Dracula on
+    4.0.0, WebODM's on 3.3.2).
 - **Phase 2: Themes** (request 3) — 2026-11-06, branch `themes` (design below).
   - Code: `tweakui/themes.py` (presets, `theme.css` view), `tweakui/settings.py` (`theme` setting and its
     choices), `tweakui/plugin.py` (mount, `include_css_files`), `templates/settings.html` (Themes section),
@@ -66,6 +75,9 @@ Added 2026-11-06 (second new.md):
    Diagnostic: the user's WebODM storage use at a glance, like LuxODM's Storage page (`~/gitrepos/web/luxodm`,
    may be reused), and cleaning up / deleting unneeded tasks, projects and other items filling their quota.
 6. Move the TweakUI side-menu item near the bottom of the side menu, just above About.
+7. (2026-11-06) A Paint Brush icon in the header row, left of the user's icon; clicking it opens a dropdown of the
+   available themes to change it on the fly. The current theme and WebODM's default theme are the top options. It
+   sets the same theme preference as Settings > Themes: a shortcut.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -164,6 +176,37 @@ Plan (branch `themes`):
   default and for anonymous users), Jest (the Themes section saves the choice). Live on 4.0.0 and 3.3.2: each
   preset on the dashboard, a task's map, the 3D view, the settings page and Administration; the white panels stay
   readable; the user's setting restored afterwards.
+
+## Theme switcher in the header (request 7) — done
+
+Builds on Themes (the `theme` setting, `PATCH /api/plugins/tweakui/settings`, the presets).
+What WebODM has (the same in 3.3.2 and 4.0.0): the header's right side is `ul.nav.navbar-top-links.navbar-right`
+in `logged_in_base.html` with one `li.dropdown` (the user icon and its menu), a Bootstrap 3 dropdown driven by
+jQuery's data API, which also handles items added later. In single-user mode the list is left out (no user
+icon).
+
+Plan (branch `theme-switcher`):
+- `settings.js` also gives the theme list, `window.TweakUI.themes`: id, name and swatch colours, WebODM's theme
+  first, then the presets in the Themes list's order.
+- `public/theme_menu.js` (in `include_js_files`): on a page with the header's user dropdown, puts a
+  `li.dropdown` before it: a paintbrush (`fa-paint-brush`) and caret, with a `dropdown-menu` (right-aligned, as
+  the user menu): the current theme (checked), WebODM's theme (when it is not the current one), a divider, then
+  the other presets; each with its swatch and name. Choosing one PATCHes `theme` (the CSRF cookie) and reloads
+  the page; a failure shows in the menu and changes nothing. Not shown where the header has no user icon
+  (logged out, public pages, single-user mode).
+- Styles in `main.css` (theme colours only; swatches from the data, as in Settings > Themes).
+- README, CHANGELOG. Tests: Django (`settings.js` gives the themes), Jest (the menu's order, placement, saving,
+  failure, no header). Live on 4.0.0 and 3.3.2: the dashboard, a map and the settings page, desktop and phone;
+  the user's theme restored.
+
+Open: none (single-user mode has no user icon, so no switcher, as the request places it by that icon).
+
+Found in the live check and built in:
+- WebODM's `main.scss` sets dropdown items to `#222 !important` (both versions), over its theme's text colour:
+  under a dark preset every dropdown (this menu, the user menu, Import) had dark text on a dark background.
+  Presets now give `.dropdown-menu > li > a` the preset's text colour (`!important`, more specific).
+- On a phone the paintbrush is not at the header's edge, so the right-aligned menu went off the left of the
+  screen; there it lines up with the header's right edge.
 
 ## TweakUI menu item above About (request 6) — done
 

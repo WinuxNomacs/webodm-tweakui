@@ -10,6 +10,7 @@ from types import SimpleNamespace
 
 from django.http import HttpResponse
 from django.template.loader import render_to_string
+from django.utils.translation import gettext as _
 
 from . import settings
 
@@ -77,6 +78,22 @@ PRESETS = {
                         "#61afef", "#61afef", "#5c6370", "#e06c75", "#d19a66", "#98c379"),
 }
 
+# The colours a theme's swatch shows: background, text, links, buttons, header
+SWATCH = ("secondary", "primary", "tertiary", "button_primary", "header_background")
+
+
+def theme_list():
+    """Every theme the user can pick, in the order of the Themes list: WebODM's theme (with the colours of the
+    instance's theme), then the presets; each with its id, name and swatch colours"""
+    from app.models import Setting
+    setting = Setting.objects.first()
+    theme = setting.theme if setting is not None else None
+    themes = [{"id": DEFAULT, "name": _("WebODM's theme"),
+               "swatch": [getattr(theme, f) for f in SWATCH] if theme is not None else []}]
+    return themes + [{"id": k, "name": v["name"], "swatch": [v["colors"][f] for f in SWATCH]}
+                     for k, v in PRESETS.items()]
+
+
 # WebODM's places that hard-code a white background but take the page's text colour (the theme's primary); with a
 # dark preset they get its darker colour, so they look as with WebODM's default theme. Administration
 # (.admin-area) is one of them, and also keeps the colours WebODM's theme gives its own variables (KEEP_WEBODM).
@@ -118,12 +135,16 @@ def _prefix_selectors(css):
 
 
 def preset_css(preset_id):
-    """The stylesheet for a preset: WebODM's theme with its colours, then the white panels' text colour"""
+    """The stylesheet for a preset: WebODM's theme with its colours, then the white panels' text colour and the
+    dropdown menus' text"""
     colors = PRESETS[preset_id]["colors"]
     context = {"SETTINGS": SimpleNamespace(theme=SimpleNamespace(**colors))}
     css = _prefix_selectors(render_to_string("app/theme.css", context))
     dark = min(colors["primary"], colors["secondary"], key=_luminance)
     css += "html %s{color: %s;}\n" % (",\nhtml ".join(WHITE_PANELS), dark)
+    # WebODM's theme gives the dropdown menus' items its text colour, but WebODM's main.scss sets them to #222
+    # !important, which would be dark on a dark preset's menu background: give them the theme's text colour
+    css += "html .dropdown-menu > li > a{color: %s !important;}\n" % colors["primary"]
     return css
 
 

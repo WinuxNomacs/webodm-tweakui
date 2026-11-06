@@ -42,7 +42,14 @@ class TweakUITestCase(BootTestCase):
         res = client.get("/plugins/tweakui/settings.js")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         body = res.content.decode()
-        return json.loads(body.split("window.TweakUI.settings = ", 1)[1].rstrip().rstrip(";"))
+        return self.script_value(body, "settings")
+
+    def script_value(self, body, name):
+        """The JSON value settings.js gives window.TweakUI.<name>, or None"""
+        for line in body.splitlines():
+            if line.startswith("window.TweakUI.%s = " % name):
+                return json.loads(line.split(" = ", 1)[1].rstrip(";"))
+        return None
 
 
 class TestThePlugin(TweakUITestCase):
@@ -54,7 +61,7 @@ class TestThePlugin(TweakUITestCase):
     def test_the_dashboard_includes_the_scripts_settings_first_and_the_stylesheet(self):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        for name in ("settings.js", "main.js", "task_options.js"):
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
@@ -63,7 +70,8 @@ class TestThePlugin(TweakUITestCase):
                                 html=True)
 
     def test_the_scripts_and_stylesheet_are_served(self):
-        for name in ("settings.js", "main.js", "task_options.js", "settings_page.js", "main.css", "theme.css"):
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "settings_page.js", "main.css",
+                     "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
 
@@ -203,6 +211,12 @@ class TestThemes(TweakUITestCase):
         self.assertIn("html .admin-area,", css)
         self.assertIn("{color: %s;}" % PRESETS["dracula"]["colors"]["secondary"], css)
 
+    def test_dropdown_menu_items_get_the_preset_s_text_colour_over_webodm_s_hard_coded_one(self):
+        from coreplugins.tweakui.themes import PRESETS
+        self.patch({"theme": "nord"})
+        self.assertIn("html .dropdown-menu > li > a{color: %s !important;}" % PRESETS["nord"]["colors"]["primary"],
+                      self.theme_css())
+
     def test_the_header_text_stands_out_and_light_presets_have_a_header_dark_enough_for_the_white_logo(self):
         from coreplugins.tweakui.themes import PRESETS, _luminance
         for preset in PRESETS.values():
@@ -232,3 +246,13 @@ class TestThemes(TweakUITestCase):
         self.assertContains(res, "Catppuccin Frapp")
         self.patch({"theme": "one-dark"})
         self.assertContains(self.client.get("/plugins/tweakui/"), 'value="one-dark" data-setting="theme" checked')
+
+    def test_settings_js_lists_the_themes_for_the_header_menu_only_when_logged_in(self):
+        from app.models import Setting
+        from coreplugins.tweakui.themes import PRESETS
+        themes = self.script_value(self.client.get("/plugins/tweakui/settings.js").content.decode(), "themes")
+        self.assertEqual([t["id"] for t in themes], ["webodm"] + list(PRESETS))
+        self.assertEqual(themes[0]["name"], "WebODM's theme")
+        self.assertEqual(themes[0]["swatch"][0], Setting.objects.first().theme.secondary)
+        self.assertEqual(themes[1]["swatch"][0], PRESETS["catppuccin-latte"]["colors"]["secondary"])
+        self.assertIsNone(self.script_value(Client().get("/plugins/tweakui/settings.js").content.decode(), "themes"))
