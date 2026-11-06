@@ -59,6 +59,21 @@ and the content of Administration, which keeps WebODM's own theme. Light presets
 colour, as WebODM's logo is white. Dropdown menus show their items in the preset's text colour (WebODM fixes them
 to near-black, which a dark preset's menu background would hide).
 
+### 2D Map
+
+- **Controls > Movable Controls** (off by default): drag the map's panels (Layers, Base Maps, Measure, Contours,
+  Object Detection, Other Tasks) by their title, with the mouse or a finger, anywhere within the map. A panel that
+  closes reopens in its usual place.
+- **Controls > Other Tasks** (off by default): on a task's map, a button below Layers opens an **Other Tasks**
+  panel listing the project's other tasks that have an orthophoto. Check one to show its orthophoto over the
+  task's own (cropped as its task is), and set its opacity with the slider beside it, e.g. to compare before and
+  after. None is shown when the map opens, and nothing is remembered. A project's own map (Dashboard > the
+  project's **View Map**) already lists every task's layers, so it has no such button.
+
+### 3D Map
+
+No settings yet.
+
 ## Requirements
 
 WebODM 3.3.2 or later (tested on 3.3.2 and 4.0.0).
