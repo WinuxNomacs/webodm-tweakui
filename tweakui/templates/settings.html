@@ -93,6 +93,16 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 <div class="tweakui-intro">
                     <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 </div>
+                <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
+                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}
+                    {% for theme in themes %}
+                    <label class="tweakui-theme theme-border">
+                        <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
+                        <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
+                        <span class="tweakui-theme-name">{{ theme.name }}</span>
+                    </label>
+                    {% endfor %}
+                </div>
                 {% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them){% endcomment %}
                 <div class="tweakui-group theme-border">
                     <h5 class="theme-background-highlight">{% trans "Sample" %}</h5>
@@ -148,16 +158,6 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <li><a href="#">&raquo;</a></li>
                         </ul>
                     </form>
-                </div>
-                <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
-                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}
-                    {% for theme in themes %}
-                    <label class="tweakui-theme theme-border">
-                        <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
-                        <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
-                        <span class="tweakui-theme-name">{{ theme.name }}</span>
-                    </label>
-                    {% endfor %}
                 </div>
             </section>
             <section id="tweakui-map2d" data-section="map2d" role="tabpanel" hidden>

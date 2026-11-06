@@ -30,6 +30,7 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* A setting's preview (settings_page.js): a thumbnail right of its name and description, under them on a phone;
    a click shows it full size in an overlay, over Bootstrap's modal backdrop */
 /* Settings > Themes > Sample: WebODM's own controls in the current theme, in two columns (one on a phone) */
+.tweakui-settings .tweakui-themes + .tweakui-group { margin-top: 16px; }
 .tweakui-settings .tweakui-sample { padding: 12px; }
 .tweakui-settings .tweakui-sample-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 24px; }
 .tweakui-settings .tweakui-sample h4 { margin-top: 0; }
