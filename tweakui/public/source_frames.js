@@ -1,14 +1,14 @@
-// 2D Map and 3D Map > Source Frames: a button beside Share (an action button, as the Snapshot core plugin adds) picks
+// 2D Map and 3D Map > Source Frames: a button beside Share, in the map's action buttons, picks
 // a spot or draws an area on the 2D map or the 3D model, and opens a window of the task's photos that show it, best
 // first (a spot's by how near it is to the frame's centre, an area's by the share of the area shown): each photo
 // with the place drawn on it, its properties, a full-screen viewer and a download. The photos are found by TweakUI's
 // API (frames.py: the photos' poses and lenses, the ground's height). A project's map searches each of its tasks
-// with cameras. Leaflet, Potree and three.js are the page's globals. UMD, so Jest can load it.
+// with cameras. Leaflet, Potree and three.js are the page's globals; the 3D pick is pick3d.js's. UMD, so Jest can
+// load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    if (typeof module === "object" && module.exports) module.exports = factory(require("./pick3d"));
+    else if (root.document) factory(root.TweakUI && root.TweakUI.pick3d).start(root.document, root);
+})(typeof window !== "undefined" ? window : this, function (pick3d) {
     "use strict";
 
     var THUMB = 160, PHOTO = 1024;
@@ -622,7 +622,7 @@
     // the scene. Not Potree's measurements: WebODM saves those with the task's 3D scene
     function modelMarks(THREE, viewer) {
         var group = new THREE.Group(), line = null, points = [], closed = false;
-        group.name = "tweakui-source-frames";
+        group.name = pick3d.MARKS;
         group.renderOrder = 999;
         viewer.scene.scene.add(group);
         var color = 0xffeb3b;
@@ -662,34 +662,11 @@
     // The 3D view's tool: a click on the point cloud or the model (not a drag, which orbits) is a spot or an area's
     // corner
     function modelTool(win, viewer) {
-        var Potree = win.Potree, THREE = win.THREE;
+        var THREE = win.THREE;
         var marks = null, drawing = null, dom = viewer.renderer.domElement;
         function pickAt(e) {
-            var rect = dom.getBoundingClientRect();
-            var mouse = {x: e.clientX - rect.left, y: e.clientY - rect.top};
-            var camera = viewer.scene.getActiveCamera();
-            var best = null;
-            var clouds = (viewer.scene.pointclouds || []).filter(function (p) { return p.visible; });
-            if (clouds.length && Potree.Utils && Potree.Utils.getMousePointCloudIntersection) {
-                var hit = Potree.Utils.getMousePointCloudIntersection(mouse, camera, viewer, clouds, {pickClipped: false});
-                if (hit) best = {point: hit.location, distance: camera.position.distanceTo(hit.location)};
-            }
-            // The textured model (and any mesh shown), but not the photos' frustums, measurements or TweakUI's marks
-            var raycaster = new THREE.Raycaster();
-            raycaster.setFromCamera(new THREE.Vector2(mouse.x / rect.width * 2 - 1, -(mouse.y / rect.height) * 2 + 1), camera);
-            var meshes = [];
-            viewer.scene.scene.traverseVisible(function (o) {
-                if (o.isMesh && !skipped(o)) meshes.push(o);
-            });
-            var hits = raycaster.intersectObjects(meshes, false);
-            if (hits.length && (!best || hits[0].distance < best.distance)) best = {point: hits[0].point, distance: hits[0].distance};
-            return best && best.point;
-        }
-        function skipped(o) {
-            for (var p = o; p; p = p.parent) {
-                if (p._feat || p.name === "tweakui-source-frames" || (Potree.Measure && p instanceof Potree.Measure)) return true;
-            }
-            return false;
+            var hit = pick3d.pick(win, viewer, e.clientX, e.clientY);
+            return hit && hit.point;
         }
         function clear() {
             if (marks) { marks.remove(); marks = null; }
@@ -756,15 +733,25 @@
         return api;
     }
 
-    function actionButton(React, onClick) {
-        return React.createElement("button", {
-            type: "button",
-            className: "btn btn-sm btn-secondary tweakui-sf-button",
-            title: "Source Frames: the photos that show a spot or an area",
-            "aria-label": "Source Frames",
-            style: {padding: "5px 9px"},
-            onClick: onClick
-        }, React.createElement("i", {className: "fa fa-crosshairs"}));
+    // The button, put before WebODM's Share button in the row of action buttons (as WebODM wraps each plugin's in a
+    // div). Not through PluginsAPI's addActionButton: WebODM keeps only the buttons that answer first, so an answer
+    // of TweakUI's would push out Snapshot's (which loads a library first), or the reverse
+    function addButton(doc, row, onClick) {
+        if (!row || row.querySelector(".tweakui-sf-button")) return null;
+        var wrap = el(doc, "div", "tweakui-sf-action");
+        var b = el(doc, "button", "btn btn-sm btn-secondary tweakui-sf-button");
+        b.type = "button";
+        b.title = "Source Frames: the photos that show a spot or an area";
+        b.setAttribute("aria-label", "Source Frames");
+        b.appendChild(icon(doc, "fa-crosshairs"));
+        b.addEventListener("click", onClick);
+        wrap.appendChild(b);
+        var share = null;
+        for (var i = 0; i < row.children.length; i++) {
+            if (row.children[i].querySelector(".shareButton") || row.children[i].classList.contains("shareButton")) { share = row.children[i]; break; }
+        }
+        row.insertBefore(wrap, share || row.lastElementChild);
+        return b;
     }
 
     // The 3D view's task: the page gives it as JSON on [data-modelview]
@@ -780,25 +767,24 @@
     function start(doc, win) {
         var settings = (win.TweakUI && win.TweakUI.settings) || {};
         var P = win.PluginsAPI;
-        // React is WebODM's global by the time a hook runs (not yet when this script loads)
-        if (!P) return;
-        if (settings.source_frames_2d && P.Map && P.Map.addActionButton) {
-            // Without dependencies: WebODM takes the buttons that answer first (a hook with dependencies answers
-            // after Snapshot's and is left out); Leaflet is the page's global by then
-            P.Map.addActionButton(function (args) {
-                var tasks = tasksWithCameras(args.tiles), L = win.L;
-                if (!tasks.length || !args.map || !win.React || !L) return null;
-                var c = controller(doc, win, args.map.getContainer(), mapTool(L, args.map), tasks);
-                return actionButton(win.React, function () { c.toggle(); });
+        // The 2D map's action buttons are beside its container (Map.jsx); Leaflet is the page's global
+        if (settings.source_frames_2d && P && P.Map && P.Map.didAddControls) {
+            P.Map.didAddControls(function (args) {
+                var tasks = tasksWithCameras(args && args.tiles), L = win.L;
+                if (!tasks.length || !args.map || !L) return;
+                var box = args.map.getContainer();
+                var row = box.parentNode && box.parentNode.querySelector(".actionButtons");
+                var c = controller(doc, win, box, mapTool(L, args.map), tasks);
+                addButton(doc, row, function () { c.toggle(); });
             });
         }
-        if (settings.source_frames_3d && P.ModelView && P.ModelView.addActionButton) {
-            P.ModelView.addActionButton(function (args) {
+        if (settings.source_frames_3d && pick3d) {
+            pick3d.whenViewer(doc, win, function (viewer, row) {
                 var task = modelTask(doc);
-                if (!task || (task.available_assets || []).indexOf("shots.geojson") === -1 || !win.Potree || !win.THREE || !win.React) return null;
+                if (!task || (task.available_assets || []).indexOf("shots.geojson") === -1 || !win.Potree || !win.THREE) return;
                 var c = null;
-                return actionButton(win.React, function () {
-                    if (!c) c = controller(doc, win, args.viewer.renderArea, modelTool(win, args.viewer), [task]);
+                addButton(doc, row, function () {
+                    if (!c) c = controller(doc, win, viewer.renderArea || viewer.renderer.domElement.parentNode, modelTool(win, viewer), [task]);
                     c.toggle();
                 });
             });
@@ -808,6 +794,6 @@
     return {
         start: start, tasksWithCameras: tasksWithCameras, merge: merge, findFrames: findFrames, overlay: overlay,
         buildWindow: buildWindow, buildBar: buildBar, controller: controller, mapTool: mapTool, modelTool: modelTool, viewer: viewer,
-        modelTask: modelTask, formatTime: formatTime, imageUrl: imageUrl
+        modelTask: modelTask, formatTime: formatTime, imageUrl: imageUrl, addButton: addButton
     };
 });

@@ -261,29 +261,43 @@ test("the button opens the bar, a place opens the window of its photos, and a ne
     expect(container.querySelector(".tweakui-sf-bar")).toBeNull();
 });
 
-test("with Source Frames on, the 2D map and the 3D view get the button when their task has cameras", () => {
-    const mapHook = jest.fn(), modelHook = jest.fn();
-    const React = {createElement: jest.fn((tag, props) => ({tag, props}))};
-    const win = settings => ({TweakUI: {settings}, React, L: {}, Potree: {}, THREE: {},
-        PluginsAPI: {Map: {addActionButton: mapHook}, ModelView: {addActionButton: modelHook}}, fetch: jest.fn()});
+test("with Source Frames on, the button goes before Share on a 2D map or 3D view whose task has cameras", () => {
+    const mapHook = jest.fn();
+    const win = settings => ({TweakUI: {settings}, L: {}, Potree: {}, THREE: {}, setTimeout: f => f(),
+        PluginsAPI: {Map: {didAddControls: mapHook}}, fetch: jest.fn()});
     sf.start(document, win({source_frames_2d: false, source_frames_3d: false}));
     expect(mapHook).not.toHaveBeenCalled();
-    expect(modelHook).not.toHaveBeenCalled();
 
-    sf.start(document, win({source_frames_2d: true, source_frames_3d: true}));
-    // Without dependencies: WebODM keeps only the buttons that answer first
+    // WebODM's map: its container, and beside it the action buttons (a plugin's in a div, Share, 3D)
+    document.body.innerHTML = '<div><div id="map"></div><div class="actionButtons"><div><button id="snap"></button></div>' +
+        '<div class="shareButton"></div><button class="switchModeButton"></button></div></div>';
+    const map = {getContainer: () => document.getElementById("map")};
+    sf.start(document, win({source_frames_2d: true}));
+    // Not WebODM's addActionButton, which keeps only the first answers (Snapshot's would be left out)
     expect(typeof mapHook.mock.calls[0][0]).toBe("function");
-    const map = {getContainer: () => document.createElement("div")};
-    const button = mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: taskA}}]});
-    expect(button.tag).toBe("button");
-    expect(button.props.className).toContain("tweakui-sf-button");
-    expect(mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: {id: "c", project: 3, camera_shots: ""}}}]})).toBeNull();
+    mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: {id: "c", project: 3, camera_shots: ""}}}]});
+    expect(document.querySelector(".tweakui-sf-button")).toBeNull();
+    mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: taskA}}]});
+    const row = document.querySelector(".actionButtons");
+    expect(Array.from(row.children).map(c => c.id || c.className)).toEqual(["", "tweakui-sf-action", "shareButton", "switchModeButton"]);
+    expect(row.children[0].querySelector("#snap")).not.toBeNull();
+    // Once only
+    mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: taskA}}]});
+    expect(document.querySelectorAll(".tweakui-sf-button").length).toBe(1);
+    document.querySelector(".tweakui-sf-button").click();
+    expect(document.querySelector("#map .tweakui-sf-bar")).not.toBeNull();
 
-    document.body.innerHTML = '<div data-modelview data-task=\'{"id": "a", "project": 3, "available_assets": ["shots.geojson"]}\'></div>';
+    // The 3D view: its task on [data-modelview], its viewer as window.viewer, its action buttons' row
+    const page3d = assets => '<div data-modelview data-task=\'{"id": "a", "project": 3, "available_assets": ' + JSON.stringify(assets) +
+        '}\'><div class="model-action-buttons"><div class="shareButton"></div></div></div>';
+    const viewer = {renderer: {domElement: document.createElement("canvas")}, scene: {}, renderArea: document.createElement("div")};
+    document.body.innerHTML = page3d(["shots.geojson"]);
     expect(sf.modelTask(document)).toEqual({id: "a", project: 3, available_assets: ["shots.geojson"]});
-    expect(modelHook.mock.calls[0][0]({viewer: {}}).tag).toBe("button");
-    document.body.innerHTML = '<div data-modelview data-task=\'{"id": "a", "project": 3, "available_assets": []}\'></div>';
-    expect(modelHook.mock.calls[0][0]({viewer: {}})).toBeNull();
+    sf.start(document, Object.assign(win({source_frames_3d: true}), {viewer}));
+    expect(document.querySelector(".model-action-buttons").firstElementChild.className).toBe("tweakui-sf-action");
+    document.body.innerHTML = page3d([]);
+    sf.start(document, Object.assign(win({source_frames_3d: true}), {viewer}));
+    expect(document.querySelector(".tweakui-sf-button")).toBeNull();
 });
 
 // three.js and Potree as far as the 3D tool uses them

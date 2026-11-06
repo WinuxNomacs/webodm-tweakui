@@ -124,6 +124,13 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                         </label>
                         <p class="text-muted">{% trans "A button beside Share picks a spot or draws an area on the map and lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
                     </div>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="zoom_override_2d"{% if settings.zoom_override_2d %} checked{% endif %}>
+                            {% trans "Zoom Override" %}
+                        </label>
+                        <p class="text-muted">{% trans "The map zooms in 3 steps further than WebODM lets it (each step twice as close), with the wheel, the + button and a pinch." %}</p>
+                    </div>
                 </div>
             </section>
             <section id="tweakui-map3d" data-section="map3d" role="tabpanel" hidden>
@@ -136,6 +143,13 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                             {% trans "Source Frames" %}
                         </label>
                         <p class="text-muted">{% trans "A button beside Share picks a spot or draws an area on the model and lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
+                    </div>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="zoom_override_3d"{% if settings.zoom_override_3d %} checked{% endif %}>
+                            {% trans "Zoom Override" %}
+                        </label>
+                        <p class="text-muted">{% trans "The mouse wheel zooms toward what is under the pointer, the points or the model, instead of the middle of the view, so any surface can be neared. Over empty space it zooms as before." %}</p>
                     </div>
                 </div>
             </section>
