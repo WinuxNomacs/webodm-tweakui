@@ -22,3 +22,11 @@ test("every shot has its image in previews/, and every image there a shot", () =
     const images = fs.readdirSync(OUT).filter(f => f.endsWith(".webp")).map(f => f.replace(/\.webp$/, "")).sort();
     expect(images).toEqual(SHOTS.map(s => s.name).sort());
 });
+
+test("every image in previews/ is shown somewhere: as a setting's preview or on a docs page", () => {
+    const root = path.join(__dirname, "..", "..");
+    const used = fs.readFileSync(path.join(root, "tweakui", "templates", "settings.html"), "utf8") +
+        fs.readdirSync(path.join(root, "docs")).filter(f => f.endsWith(".md"))
+            .map(f => fs.readFileSync(path.join(root, "docs", f), "utf8")).join("\n");
+    SHOTS.forEach(s => expect(used).toMatch(new RegExp(`data-preview="${s.name}"|previews/${s.name}\\.webp`)));
+});

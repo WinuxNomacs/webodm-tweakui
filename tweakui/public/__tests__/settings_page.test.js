@@ -222,3 +222,42 @@ test("a page without a previews folder adds no thumbnails", () => {
     settingsPage.addPreviews(root, document);
     expect(root.querySelector(".tweakui-preview")).toBeNull();
 });
+
+function samplePage() {
+    document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
+        <form class="tweakui-sample"><input type="text" value="x"><a href="#" id="link"><i>in a link</i></a>
+            <button type="button" data-toggle="tooltip" title="A tooltip">Primary</button></form></div>`;
+    return document.getElementById("tweakui-settings");
+}
+
+test("the theme sample's links and its form do nothing, so the category stays as it is", () => {
+    const page = samplePage();
+    settingsPage.inertSample(page, window);
+    const click = new MouseEvent("click", {bubbles: true, cancelable: true});
+    page.querySelector("#link i").dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    const submit = new Event("submit", {bubbles: true, cancelable: true});
+    page.querySelector("form").dispatchEvent(submit);
+    expect(submit.defaultPrevented).toBe(true);
+});
+
+test("the theme sample's tooltip is Bootstrap's, set up on the first hover once the page has it", () => {
+    const page = samplePage();
+    const tooltip = jest.fn(function () { return this; });
+    let data;
+    const wrapped = {tooltip, data: () => data};
+    const $ = Object.assign(jest.fn(() => wrapped), {fn: {tooltip: () => {}}});
+    const win = {};
+    settingsPage.inertSample(page, win);
+    const button = page.querySelector("[data-toggle=tooltip]");
+    button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+    expect(tooltip).not.toHaveBeenCalled();
+    win.jQuery = $;
+    button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+    expect($).toHaveBeenCalledWith(button);
+    expect(tooltip).toHaveBeenCalledWith("show");
+    data = {};
+    tooltip.mockClear();
+    button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+    expect(tooltip).not.toHaveBeenCalled();
+});

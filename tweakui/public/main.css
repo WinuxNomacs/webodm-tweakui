@@ -29,6 +29,14 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-swatch i { display: block; width: 14px; height: 22px; }
 /* A setting's preview (settings_page.js): a thumbnail right of its name and description, under them on a phone;
    a click shows it full size in an overlay, over Bootstrap's modal backdrop */
+/* Settings > Themes > Sample: WebODM's own controls in the current theme, in two columns (one on a phone) */
+.tweakui-settings .tweakui-sample { padding: 12px; }
+.tweakui-settings .tweakui-sample-columns { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 8px 24px; }
+.tweakui-settings .tweakui-sample h4 { margin-top: 0; }
+.tweakui-settings .tweakui-sample .progress { margin-bottom: 12px; }
+.tweakui-settings .tweakui-sample-status { display: inline-block; padding: 2px 8px; border-radius: 3px; font-size: 12px; }
+.tweakui-settings .tweakui-sample-buttons { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 12px; }
+.tweakui-settings .tweakui-sample .pagination { margin: 12px 0 0; }
 .tweakui-settings .tweakui-has-preview { display: grid; grid-template-columns: minmax(0, 1fr) auto; column-gap: 16px; align-items: start; }
 .tweakui-settings .tweakui-has-preview > :not(.tweakui-preview) { grid-column: 1; }
 .tweakui-settings .tweakui-intro { margin-bottom: 12px; }
