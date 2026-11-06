@@ -3,18 +3,36 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Custom themes: import and export** (request 21, phase B): your own themes to and from a JSON file or JSON
-   text.
-
-**Then**
-2. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
+1. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
    imports, exports, deletes and publishes (from their own) the themes every user sees, read-only to them;
    superusers only.
+
+**Then**
+(nothing planned)
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Custom themes: import and export** (request 21, phase B) — 2026-11-06, branch `custom-themes-import`.
+  - Code: `custom_themes.py` (`import_themes`: one object or a list of up to 500; a theme with the name of one of
+    yours replaces its colours and keeps its id, so a user's current theme stays; others added while under 50;
+    each refused one reported with its number and reason; `export`), `api.py` (`themes/import` POST → `{added,
+    replaced, refused}`; `themes/export[?id=]` GET, a download: `tweakui-themes.json`, a list, or
+    `tweakui-theme-<name>.json`, one object), `templates/settings.html` (My themes: Import and Export beside New
+    theme; Copy JSON on every theme, Export on your own; the Import panel: a file, whose text goes in the box, or
+    pasted JSON; a report; Close reloads when anything changed), `public/theme_editor.js` (Copy JSON, the panel),
+    `public/task_details.js` (its clipboard copy shared as `window.TweakUI.copyText`, with the old way on plain
+    http), `public/main.css` (a theme's buttons go under its name when the card is narrow, which also stops the
+    presets' names breaking mid-word on 3.3.2). Screenshot `theme-import`, docs `themes.md` (Import and export),
+    README, CHANGELOG.
+  - Tests: Django 6 (one object, a list with replace by name / bad colour / missing colour / not an object, 50 at
+    most while still replacing, not a theme or a list / over 500 / CSRF, export of all and one and back through
+    import, another user's 404, the page's buttons); Jest 5 (Copy JSON, the file read and its size, the report and
+    Close's reload, not JSON and the server's refusal, all refused).
+  - Live on 4.0.0 and 3.3.2: Copy JSON of Nord read back from the clipboard; a file of one good and one bad theme
+    (added 1, refused 1 with why), Close reloads with it listed; Export of all and of one downloaded and read;
+    the export pasted back (replaced 1); 390 px without horizontal scroll; themes and settings restored.
 - **Task Details section and setting names** (request 22) — 2026-11-06, branch `task-details-section`.
   - Code: `templates/settings.html` (General: Enhanced Task Details and its parts in their own group, Task Details,
     below Task Options; the parts renamed Task Start and End Time, Show Configured Task Preset, Options as Bubbles,
@@ -318,7 +336,7 @@ Added 2026-11-06 (tenth new.md):
     screenshots of many key features to show what they do; where possible, the screenshots shown in TweakUI's
     settings too, so the user sees what they are turning on or off.
 
-Added 2026-11-06 (twelfth new.md):
+Added 2026-11-06 (new.md after request 21):
 
 22. On Settings > General, Enhanced Task Details and its options in their own group titled "Task Details"; its
     options renamed: Started and Finished -> Task Start and End Time, Preset -> Show Configured Task Preset,
