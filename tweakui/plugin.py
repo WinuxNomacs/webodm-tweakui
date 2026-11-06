@@ -4,7 +4,7 @@ from django.utils.translation import gettext_lazy as _
 
 from app.plugins import Menu, MountPoint, PluginBase
 
-from . import settings
+from . import settings, themes
 from .api import SettingsView, settings_script
 
 
@@ -13,12 +13,12 @@ class Plugin(PluginBase):
         return [Menu(_("TweakUI"), self.public_url(""), "fa fa-sliders-h fa-fw")]
 
     # On every WebODM page (base.html), in this order; paths are relative to public/, except settings.js, which is
-    # a view (app_mount_points come before public/)
+    # a view (app_mount_points come before public/); so is theme.css
     def include_js_files(self):
         return ["settings.js", "main.js", "task_options.js"]
 
     def include_css_files(self):
-        return ["main.css"]
+        return ["main.css", "theme.css"]
 
     def app_mount_points(self):
         @login_required
@@ -28,11 +28,13 @@ class Plugin(PluginBase):
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
                 "settings": settings.load(request.user),
+                "presets": [dict(id=k, **v) for k, v in themes.PRESETS.items()],
             })
 
         return [
             MountPoint("$", settings_page),
             MountPoint(r"settings\.js$", settings_script),
+            MountPoint(r"theme\.css$", themes.theme_css),
         ]
 
     def api_mount_points(self):

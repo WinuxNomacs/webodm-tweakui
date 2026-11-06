@@ -10,6 +10,8 @@ Colours come only from WebODM's theme classes.{% endcomment %}
         <ul class="tweakui-nav theme-border" role="tablist">
             <li><a href="#general" role="tab" class="theme-background-highlight-hover" data-section="general">
                 <i class="fa fa-cog fa-fw"></i> {% trans "General" %}</a></li>
+            <li><a href="#themes" role="tab" class="theme-background-highlight-hover" data-section="themes">
+                <i class="fa fa-palette fa-fw"></i> {% trans "Themes" %}</a></li>
         </ul>
         <div class="tweakui-sections">
             <section id="tweakui-general" data-section="general" role="tabpanel">
@@ -23,6 +25,25 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                         </label>
                         <p class="text-muted">{% trans "In the Task Options dialog, each group's heading shows how many of its options are not at their default, e.g. (1/13)." %}</p>
                     </div>
+                </div>
+            </section>
+            <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>
+                <h4>{% trans "Themes" %}</h4>
+                <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
+                <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
+                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}
+                    <label class="tweakui-theme theme-border">
+                        <input type="radio" name="theme" value="webodm" data-setting="theme"{% if settings.theme == "webodm" %} checked{% endif %}>
+                        <span class="tweakui-swatch theme-border">{% with t=SETTINGS.theme %}<i style="background:{{ t.secondary }}"></i><i style="background:{{ t.primary }}"></i><i style="background:{{ t.tertiary }}"></i><i style="background:{{ t.button_primary }}"></i><i style="background:{{ t.header_background }}"></i>{% endwith %}</span>
+                        <span class="tweakui-theme-name">{% trans "WebODM's theme" %}</span>
+                    </label>
+                    {% for preset in presets %}
+                    <label class="tweakui-theme theme-border">
+                        <input type="radio" name="theme" value="{{ preset.id }}" data-setting="theme"{% if settings.theme == preset.id %} checked{% endif %}>
+                        <span class="tweakui-swatch theme-border">{% with c=preset.colors %}<i style="background:{{ c.secondary }}"></i><i style="background:{{ c.primary }}"></i><i style="background:{{ c.tertiary }}"></i><i style="background:{{ c.button_primary }}"></i><i style="background:{{ c.header_background }}"></i>{% endwith %}</span>
+                        <span class="tweakui-theme-name">{{ preset.name }}</span>
+                    </label>
+                    {% endfor %}
                 </div>
             </section>
             <p class="tweakui-status" role="status" aria-live="polite"></p>

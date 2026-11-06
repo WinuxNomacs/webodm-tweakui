@@ -16,6 +16,14 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-group h5 { margin: 0; padding: 8px 12px; font-weight: bold; }
 .tweakui-settings .tweakui-setting { padding: 8px 12px; }
 .tweakui-settings .tweakui-setting p { margin: 0 0 0 20px; }
+/* Settings > Themes: a grid of themes, each a radio button, its swatch (the theme's own colours, from the page's
+   data) and its name */
+.tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr)); gap: 12px; }
+.tweakui-settings .tweakui-theme { display: flex; align-items: center; gap: 8px; margin: 0; padding: 8px 12px; border-width: 1px; border-style: solid; border-radius: 4px; font-weight: normal; cursor: pointer; }
+.tweakui-settings .tweakui-theme input { margin: 0; }
+.tweakui-settings .tweakui-theme:has(input:checked) { border-color: currentColor; font-weight: bold; }
+.tweakui-settings .tweakui-swatch { display: inline-flex; border-width: 1px; border-style: solid; border-radius: 3px; overflow: hidden; flex: none; }
+.tweakui-settings .tweakui-swatch i { display: block; width: 14px; height: 22px; }
 @media (max-width: 767px) {
     .tweakui-settings .tweakui-layout { flex-direction: column; gap: 12px; }
     .tweakui-settings .tweakui-nav { border-width: 0 0 1px 0; width: 100%; display: flex; flex-wrap: wrap; }

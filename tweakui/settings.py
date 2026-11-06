@@ -9,7 +9,17 @@ KEY = "settings"
 DEFAULTS = {
     # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
     "show_modified_options": False,
+    # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS
+    "theme": "webodm",
 }
+
+
+def allowed(name, value):
+    """Whether a value of the right type is one the setting takes (a setting with a list of choices)"""
+    if name == "theme":
+        from .themes import DEFAULT, PRESETS  # themes imports this module
+        return value == DEFAULT or value in PRESETS
+    return True
 
 
 class InvalidSettings(ValueError):
@@ -26,7 +36,8 @@ def load(user):
     if user is not None and user.is_authenticated:
         saved = store(user).get_json(KEY, {})
         if isinstance(saved, dict):
-            settings.update({k: v for k, v in saved.items() if k in DEFAULTS and type(v) is type(DEFAULTS[k])})
+            settings.update({k: v for k, v in saved.items()
+                             if k in DEFAULTS and type(v) is type(DEFAULTS[k]) and allowed(k, v)})
     return settings
 
 
@@ -40,6 +51,8 @@ def update(user, changes):
             errors.append("Unknown setting: %s" % name)
         elif type(value) is not type(DEFAULTS[name]):
             errors.append("%s takes a %s" % (name, type(DEFAULTS[name]).__name__))
+        elif not allowed(name, value):
+            errors.append("Unknown %s: %s" % (name, value))
     if errors:
         raise InvalidSettings("; ".join(errors))
     settings = load(user)

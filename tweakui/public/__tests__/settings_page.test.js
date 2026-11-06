@@ -68,3 +68,50 @@ test("a network failure also puts the checkbox back", async () => {
     expect(input.checked).toBe(true);
     expect(root.querySelector(".tweakui-status").textContent).toBe("Not saved: offline");
 });
+
+function themesPage() {
+    document.body.innerHTML = `
+      <div id="tweakui-settings" data-api="/api/plugins/tweakui/">
+        <input type="hidden" name="csrfmiddlewaretoken" value="tok">
+        <section data-section="themes">
+          <input type="radio" name="theme" value="webodm" data-setting="theme" checked>
+          <input type="radio" name="theme" value="nord" data-setting="theme">
+        </section>
+        <p class="tweakui-status"></p>
+      </div>`;
+    const root = document.getElementById("tweakui-settings");
+    const [webodm, nord] = root.querySelectorAll("input[type=radio]");
+    return {root, webodm, nord};
+}
+
+test("choosing a theme sends its value and reloads the page to show it", async () => {
+    const {root, webodm, nord} = themesPage();
+    nord.checked = true;
+    const fetchFn = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({theme: "nord"})}));
+    const win = {location: {reload: jest.fn()}};
+    await settingsPage.save(root, nord, fetchFn, document, win, webodm);
+    expect(JSON.parse(fetchFn.mock.calls[0][1].body)).toEqual({theme: "nord"});
+    expect(win.location.reload).toHaveBeenCalled();
+});
+
+test("a refused theme puts the previous one back and does not reload", async () => {
+    const {root, webodm, nord} = themesPage();
+    nord.checked = true;
+    const win = {location: {reload: jest.fn()}};
+    const fetchFn = () => Promise.resolve({ok: false, status: 400, json: () => Promise.resolve({detail: "Unknown theme: nord"})});
+    await settingsPage.save(root, nord, fetchFn, document, win, webodm);
+    expect(webodm.checked).toBe(true);
+    expect(nord.checked).toBe(false);
+    expect(win.location.reload).not.toHaveBeenCalled();
+    expect(root.querySelector(".tweakui-status").textContent).toBe("Not saved: Unknown theme: nord");
+});
+
+test("a changed checkbox does not reload the page", async () => {
+    const root = page(false);
+    const input = root.querySelector("input[data-setting]");
+    input.checked = true;
+    const win = {location: {reload: jest.fn()}};
+    const fetchFn = () => Promise.resolve({ok: true, json: () => Promise.resolve({})});
+    await settingsPage.save(root, input, fetchFn, document, win);
+    expect(win.location.reload).not.toHaveBeenCalled();
+});
