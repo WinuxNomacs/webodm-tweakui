@@ -16,9 +16,9 @@
   reopens in its usual place.
 - 2D Map > Other Tasks: on a task's map, a panel to show the project's other tasks' orthophotos over the task's
   own, each with an opacity slider.
-- 2D Map and 3D Map > Source Frames: a button beside Share picks a spot or draws an area on the 2D map or the 3D
-  model and lists the task's photos that show it, best first, each with the place drawn on it, its properties, a
-  full-screen viewer and a download.
+- 2D Map and 3D Map > Source Frames: a button beside Share turns it on; each click on the 2D map or the 3D model
+  moves a spot there, and a window, updated in place, lists the task's photos that show it, best first, each with
+  the spot drawn on it, its properties, a full-screen viewer and a download.
 - 2D Map and 3D Map > Zoom Override: the 2D map zooms in 3 steps further; in the 3D view the wheel zooms toward what
   is under the pointer.
 - Experimental.

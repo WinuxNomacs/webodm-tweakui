@@ -70,13 +70,15 @@ to near-black, which a dark preset's menu background would hide).
   after. None is shown when the map opens, and nothing is remembered. A project's own map (Dashboard > the
   project's **View Map**) already lists every task's layers, so it has no such button.
 - **Controls > Source Frames** (off by default): a button beside **Share** (bottom right of the map) finds the
-  task's photos that show a place. Pick **Spot** and click the map, or **Area** and click its corners (finish on the
-  first corner, with a double click or with **Finish**; Esc stops). A window lists the photos best first: for a
-  spot, those where it is nearest the middle of the frame; for an area, those that show most of it (with the share
-  shown). The chosen photo is shown with the spot or area drawn on it, with its file name, capture time, camera,
-  size and the camera's altitude, a **Download** button, and **Open full frame**: the photo full screen, with zoom
-  (wheel, pinch, buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. A
-  project's map searches each of its tasks with cameras.
+  task's photos that show a spot. Click it and a label "Click Map to View Source Frame" shows at the top of the map
+  while Source Frames is on; each click on the map (not a drag, which pans) moves the spot there. The first opens a
+  window, and each later one updates it in place: the photos best first (those where the spot is nearest the middle
+  of the frame), the best one chosen. To look over an area, move the spot around it. The chosen photo is shown with
+  the spot drawn on it, with its file name, capture time, camera, size and the camera's altitude, a **Download**
+  button, and **Open full frame**: the photo full screen, with zoom
+  (wheel, pinch, buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. The
+  button again, Esc, or the window's × turns Source Frames off. A project's map searches each of its tasks with
+  cameras.
 - **Controls > Zoom Override** (off by default): the map zooms in 3 steps further than WebODM lets it (zoom 27
   instead of 24, each step twice as close), with the wheel, the + button and a pinch. Past the orthophoto's own
   detail, its pixels are enlarged.
@@ -84,7 +86,8 @@ to near-black, which a dark preset's menu background would hide).
 ### 3D Map
 
 - **Controls > Source Frames** (off by default): the same in a task's 3D view, by clicking the point cloud or the
-  textured model (a drag still turns the view). The picked points' own heights are used.
+  textured model (a drag still turns the view; a click on empty space says so). The picked points' own heights are
+  used.
 - **Controls > Zoom Override** (off by default): the mouse wheel zooms toward what is under the pointer (the point
   cloud or the textured model) instead of the middle of the view, and the view then turns around that depth, so
   any surface can be neared, as closely as wanted. WebODM's 3D view has no zoom limit as such, but its wheel slows
@@ -93,7 +96,7 @@ to near-black, which a dark preset's menu background would hide).
 
 How Source Frames finds the photos: from each photo's position, direction and lens (the task's camera shots, as
 WebODM shows them in its Cameras layer) and the ground's height (the task's DSM; without one, the point cloud's
-mean height). A place counts as shown when it falls inside the photo's frame: something in front of it (a roof, a
+mean height). A spot counts as shown when it falls inside the photo's frame: something in front of it (a roof, a
 tree) isn't detected. Only tasks with camera shots have the button.
 
 ## Requirements

@@ -25,7 +25,7 @@ class SettingsView(APIView):
 
 
 class FramesView(TaskView):
-    """POST /api/plugins/tweakui/frames/<project>/<task>: the task's photos that show a spot or an area (see
+    """POST /api/plugins/tweakui/frames/<project>/<task>: the task's photos that show a spot (see
     frames.parse), best first; WebODM's task permissions (a public task's to anyone)"""
 
     def post(self, request, project_pk=None, pk=None):

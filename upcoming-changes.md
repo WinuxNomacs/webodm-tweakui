@@ -3,15 +3,27 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Source Frames: a spot that follows the clicks** (request 18) — Area goes; while Source Frames is open, each
-   click moves the spot and the window updates in place; the bar becomes a label. Details below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Source Frames: a spot that follows the clicks** (request 18) — 2026-11-06, branch `source-frames-spot`
+  (design below).
+  - Code: `tweakui/public/source_frames.js` (the label, the controller, the 2D and 3D tools: one spot moved by each
+    click; the window's `show` and `busy`; an older request aborted), `tweakui/frames.py` (spots only: the area's
+    grid, share and outline gone), `public/main.css` (the label, the busy sign), `templates/settings.html`.
+  - Tests: Jest 85 (`source_frames` 16), Django 37 (`TestSourceFrames` 5: an area refused) on 4.0.0 and 3.3.2.
+  - Live on 4.0.0 (TestRGB, desktop and phone) and 3.3.2 (16 of TestRGB's photos processed by the check, deleted
+    afterwards): the label from the button's click until off; each click moving the one spot and updating the
+    same window in place (where it was dragged, a busy sign, the best photo chosen); three quick clicks ending on
+    the last spot's photos; in 3D, a click on nothing says so; the button, Esc and the window's × ending it (a
+    click then opens WebODM's popup again); lookups 19–107 ms in the browser; the 3D scene unchanged; no console
+    errors; settings restored.
+  - Seen while checking: the window (about 560 px wide) covers most of the 3D view at 1280 px wide (Potree's
+    side panel takes the left) and the lower map on a phone; it can be dragged aside.
 - **Zoom Override** (request 17) — 2026-11-06, branch `zoom-override` (design below).
   - Code: `tweakui/public/zoom_override.js` (the 2D limit, the 3D wheel), `tweakui/public/pick3d.js` (the 3D pick
     and the wait for the viewer, shared with Source Frames, which now adds its button itself),
@@ -33,7 +45,8 @@
     map's `.actionButtons`, the 3D view's `.model-action-buttons`), and the 3D features wait for `window.viewer`.
     A fix in WebODM (keep the listener until every plugin has answered) would be a pull request, only with the
     user's approval.
-- **Source Frames** (request 16) — 2026-11-06, branch `source-frames` (design below).
+- **Source Frames** (request 16) — 2026-11-06, branch `source-frames` (design below; Area since removed by
+  request 18).
   - Code: `tweakui/frames.py` (the photos' projection: poses, Brown/fisheye lenses, the ground's height, an area's
     grid, the ranking), `tweakui/api.py` (`FramesView`, `POST /api/plugins/tweakui/frames/<p>/<t>`),
     `tweakui/plugin.py`, `tweakui/settings.py` (`source_frames_2d`, `source_frames_3d`), `templates/settings.html`
@@ -559,7 +572,7 @@ Decided (the user, 2026-11-06):
 - **2D: 3 steps, fixed** (zoom 27); one on/off setting.
 - **3D: the wheel zooms toward what is under the pointer**, the orbit centre moving there (over nothing, as before).
 
-## Source Frames: a spot that follows the clicks (request 18)
+## Source Frames: a spot that follows the clicks (request 18) — done
 
 Builds on Source Frames (request 16). What it does now (`public/source_frames.js`, the same on 3.3.2 and 4.0.0):
 - The action button opens a bar (2D map and 3D view): **Spot**, **Area**, **Finish** (while an area is drawn), a
@@ -586,7 +599,7 @@ Decided (the user, 2026-11-06):
 - **Each move shows the window as if opened fresh at the new spot**: the best photo selected (the spot nearest
   the frame's centre); the same spot simply moves around and the window only updates.
 - **No bar**: a label "Click Map to View Source Frame" appears once the Source Frames action button is clicked
-  (read here as: until the first click opens the window). The button again, Esc, or the window's × ends Source
+  and stays on screen the whole time Source Frames is on. The button again, Esc, or the window's × ends Source
   Frames and removes the spot.
 
 ## Storage (request 5), to be designed with the user

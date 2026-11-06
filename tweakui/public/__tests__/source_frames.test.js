@@ -4,7 +4,7 @@ const flush = () => new Promise(r => setTimeout(r, 0));
 const taskA = {id: "a", project: 3, name: "TestRGB", camera_shots: "/api/projects/3/tasks/a/download/shots.geojson"};
 const taskB = {id: "b", project: 3, name: "TestThermal", camera_shots: "/api/projects/3/tasks/b/download/shots.geojson"};
 const frame = (name, more) => Object.assign({filename: name, camera: "v2 dji m4t 4032 3024 brown 0.6666", width: 4000,
-    height: 3000, capture_time: 1789721193, altitude: 226.77, share: 1, centre: 0.1, task: taskA}, more);
+    height: 3000, capture_time: 1789721193, altitude: 226.77, centre: 0.1, task: taskA}, more);
 
 function respond(byTask) {
     return jest.fn(url => {
@@ -24,28 +24,25 @@ test("a map's tasks with cameras are found once each, from its tiles", () => {
     expect(sf.tasksWithCameras(undefined)).toEqual([]);
 });
 
-test("the photos are asked of each task with the place and the CSRF token, and merged best first", async () => {
+test("the photos are asked of each task with the spot and the CSRF token, and merged by how near the spot is to their centre", async () => {
     document.cookie = "csrftoken=tok123";
     const fetch = respond({
-        a: [{filename: "a1.jpg", share: 0.5, centre: 0.2}, {filename: "a2.jpg", share: 1, centre: 0.4}],
-        b: [{filename: "b1.jpg", share: 1, centre: 0.1}]
+        a: [{filename: "a1.jpg", centre: 0.2}, {filename: "a2.jpg", centre: 0.4}],
+        b: [{filename: "b1.jpg", centre: 0.1}]
     });
-    const place = {type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]]};
-    const result = await sf.findFrames(fetch, document, [taskA, taskB], place);
+    const place = {type: "Point", coordinates: [1, 2]};
+    const signal = {};
+    const result = await sf.findFrames(fetch, document, [taskA, taskB], place, signal);
     expect(fetch.mock.calls[0][0]).toBe("/api/plugins/tweakui/frames/3/a");
-    expect(fetch.mock.calls[0][1]).toMatchObject({method: "POST", credentials: "same-origin", headers: {"X-CSRFToken": "tok123"}});
+    expect(fetch.mock.calls[0][1]).toMatchObject({method: "POST", credentials: "same-origin", headers: {"X-CSRFToken": "tok123"}, signal});
     expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual(place);
-    // An area: by share, then by how near the centre
-    expect(result.frames.map(f => f.filename)).toEqual(["b1.jpg", "a2.jpg", "a1.jpg"]);
+    expect(result.frames.map(f => f.filename)).toEqual(["b1.jpg", "a1.jpg", "a2.jpg"]);
     expect(result.frames[0].task).toBe(taskB);
     expect(result.errors).toEqual([]);
-    // A spot: by how near the centre only
-    expect(sf.merge([{task: taskA, frames: [{filename: "x", share: 1, centre: 0.3}, {filename: "y", share: 1, centre: 0.1}]}], false)
-        .map(f => f.filename)).toEqual(["y", "x"]);
 });
 
 test("a task whose photos can't be found says why, named when the map has several", async () => {
-    const fetch = respond({a: new Error("This task has no cameras"), b: [{filename: "b1.jpg", share: 1, centre: 0}]});
+    const fetch = respond({a: new Error("This task has no cameras"), b: [{filename: "b1.jpg", centre: 0}]});
     const result = await sf.findFrames(fetch, document, [taskA, taskB], {type: "Point", coordinates: [1, 2]});
     expect(result.errors).toEqual(["TestRGB: This task has no cameras"]);
     expect(result.frames.map(f => f.filename)).toEqual(["b1.jpg"]);
@@ -53,7 +50,7 @@ test("a task whose photos can't be found says why, named when the map has severa
     expect(one.errors).toEqual(["No"]);
 });
 
-test("the place is drawn on a photo: a ring round a spot, an area's outline", () => {
+test("the spot is drawn on a photo as a ring, round whatever the photo's shape", () => {
     const spot = sf.overlay(document, frame("a.jpg", {spot: [0.25, 0.75]}));
     const rings = spot.querySelectorAll("ellipse");
     expect(rings.length).toBe(2);
@@ -61,28 +58,26 @@ test("the place is drawn on a photo: a ring round a spot, an area's outline", ()
     expect(rings[1].getAttribute("cy")).toBe("0.75");
     // Round on a 4:3 photo
     expect(Number(rings[1].getAttribute("rx")) * 4000).toBeCloseTo(Number(rings[1].getAttribute("ry")) * 3000);
-    const area = sf.overlay(document, frame("a.jpg", {outline: [[0.1, 0.2], [0.9, 0.2], [0.5, 1.4]]}));
-    expect(area.querySelector("polygon.tweakui-sf-outline").getAttribute("points")).toBe("0.1,0.2 0.9,0.2 0.5,1.4");
-    expect(sf.overlay(document, frame("a.jpg", {outline: null})).children.length).toBe(0);
+    expect(sf.overlay(document, frame("a.jpg")).children.length).toBe(0);
 });
 
 test("the window lists the photos best first and shows the chosen one with its properties, full frame and download", () => {
     const container = document.createElement("div");
     document.body.appendChild(container);
     const onClose = jest.fn();
-    const w = sf.buildWindow(document, window, container, {area: true, multiple: false}, onClose);
+    const w = sf.buildWindow(document, window, container, {multiple: false}, onClose);
     expect(container.querySelector(".tweakui-sf-message").textContent).toBe("Finding the photos…");
-    w.show({frames: [frame("a b.jpg", {share: 0.9, outline: [[0, 0], [1, 0], [1, 1]]}), frame("c.jpg", {share: 0.4})], errors: []});
+    w.show({frames: [frame("a b.jpg", {spot: [0.5, 0.5]}), frame("c.jpg", {spot: [0.1, 0.2]})], errors: []});
     expect(container.querySelector(".tweakui-sf-title").textContent).toBe("Source Frames (2)");
     const items = container.querySelectorAll(".tweakui-sf-item");
-    expect(Array.from(items).map(i => i.textContent)).toEqual(["90%", "40%"]);
+    expect(Array.from(items).map(i => i.textContent)).toEqual(["#1", "#2"]);
     expect(items[0].querySelector("img").getAttribute("src")).toBe("/api/projects/3/tasks/a/images/thumbnail/a%20b.jpg?size=160");
     expect(items[0].classList.contains("active")).toBe(true);
     const props = () => Array.from(container.querySelectorAll(".tweakui-sf-props tr")).map(r => [r.children[0].textContent, r.children[1].textContent]);
-    expect(props()).toEqual([["File", "a b.jpg"], ["Area shown", "90%"], ["Captured", new Date(1789721193000).toLocaleString()],
+    expect(props()).toEqual([["File", "a b.jpg"], ["Captured", new Date(1789721193000).toLocaleString()],
         ["Camera", "dji m4t 4032 3024 brown 0.6666"], ["Size", "4000 × 3000 px"], ["Camera altitude", "226.8 m"]]);
     expect(container.querySelector(".tweakui-sf-main-photo img").getAttribute("src")).toContain("a%20b.jpg?size=1024");
-    expect(container.querySelector(".tweakui-sf-main-photo polygon")).not.toBeNull();
+    expect(container.querySelector(".tweakui-sf-main-photo ellipse")).not.toBeNull();
     expect(container.querySelector(".tweakui-sf-download").getAttribute("data-href")).toBe("/api/projects/3/tasks/a/images/download/a%20b.jpg");
     items[1].click();
     expect(items[1].classList.contains("active")).toBe(true);
@@ -93,20 +88,41 @@ test("the window lists the photos best first and shows the chosen one with its p
     container.querySelector(".tweakui-sf-close").click();
     expect(document.querySelector(".tweakui-sf-viewer")).toBeNull();
     expect(container.querySelector(".tweakui-sf-window")).toBeNull();
-    expect(onClose).toHaveBeenCalledWith(false);
+    expect(onClose).toHaveBeenCalled();
 });
 
-test("a place no photo shows says so; a map of several tasks names each photo's", () => {
+test("a new spot's photos replace the window's in place, as if opened fresh: the best one chosen, the full frame closed", () => {
     const container = document.createElement("div");
-    const w = sf.buildWindow(document, window, container, {area: false, multiple: true});
+    document.body.appendChild(container);
+    const w = sf.buildWindow(document, window, container, {multiple: false});
+    w.show({frames: [frame("a.jpg"), frame("b.jpg")], errors: []});
+    w.element.style.left = "40px";
+    container.querySelectorAll(".tweakui-sf-item")[1].click();
+    container.querySelector(".tweakui-sf-open").click();
+    w.busy(true);
+    const spinner = container.querySelector(".tweakui-sf-busy");
+    expect(spinner.style.display).toBe("");
+    // The list stays while the new photos are found
+    expect(container.querySelectorAll(".tweakui-sf-item").length).toBe(2);
+    w.show({frames: [frame("c.jpg"), frame("d.jpg"), frame("e.jpg")], errors: []});
+    expect(spinner.style.display).toBe("none");
+    expect(document.querySelector(".tweakui-sf-viewer")).toBeNull();
+    expect(container.querySelectorAll(".tweakui-sf-window").length).toBe(1);
+    expect(w.element.style.left).toBe("40px");
+    expect(container.querySelector(".tweakui-sf-item.active").textContent).toBe("#1");
+    expect(container.querySelector(".tweakui-sf-props td").textContent).toBe("c.jpg");
+});
+
+test("a spot no photo shows says so; a map of several tasks names each photo's", () => {
+    const container = document.createElement("div");
+    const w = sf.buildWindow(document, window, container, {multiple: true});
     w.show({frames: [], errors: []});
     expect(container.querySelector(".tweakui-sf-body").textContent).toBe("No photo shows this spot.");
-    const w2 = sf.buildWindow(document, window, container, {area: false, multiple: true});
+    const w2 = sf.buildWindow(document, window, container, {multiple: true});
     w2.show({frames: [frame("b.jpg", {task: taskB, spot: [0.5, 0.5]})], errors: ["TestRGB: Error 500"]});
     expect(w2.element.querySelector(".text-danger").textContent).toBe("TestRGB: Error 500");
     expect(w2.element.querySelector(".tweakui-sf-caption").textContent).toBe("#1");
     expect(w2.element.querySelector(".tweakui-sf-props").textContent).toContain("TaskTestThermal");
-    expect(w2.element.querySelector(".tweakui-sf-props").textContent).not.toContain("Area shown");
 });
 
 test("the full-screen viewer goes through the photos with the arrow keys, zooms, and Escape closes it", () => {
@@ -146,7 +162,7 @@ function fakeMap() {
         added
     };
     const layer = kind => (latlngs, options) => ({kind, latlngs, options, addTo(m) { m.added.push(this); return this; }});
-    const L = {polygon: layer("polygon"), polyline: layer("polyline"), circleMarker: layer("circle")};
+    const L = {circleMarker: (latlng, options) => Object.assign(layer("circle")(latlng, options), {setLatLng(ll) { this.latlngs = ll; }})};
     return {map, L, container};
 }
 
@@ -157,108 +173,117 @@ function click(target, x, y, moved) {
     return e;
 }
 
-test("on the 2D map a click is a spot, and is TweakUI's alone (not a layer's popup of WebODM's)", () => {
-    const {map, L, container} = fakeMap();
-    const tool = sf.mapTool(L, map);
-    const done = jest.fn();
-    const mapClick = jest.fn();
-    container.addEventListener("click", mapClick);
-    tool.start("spot", done);
-    // A drag that pans the map is not a click
-    click(container, 10, 20, 30);
-    expect(done).not.toHaveBeenCalled();
-    click(container, 10, 20);
-    expect(done).toHaveBeenCalledWith({type: "Point", coordinates: [10, 20]});
-    expect(mapClick).not.toHaveBeenCalled();
-    expect(map.added.map(l => l.kind)).toEqual(["circle"]);
-    // Picking is over: the map has its clicks back
-    click(container, 50, 50);
-    expect(mapClick).toHaveBeenCalledTimes(1);
-    expect(done).toHaveBeenCalledTimes(1);
-    tool.clear();
-    expect(map.added).toEqual([]);
-});
-
-test("on the 2D map an area is drawn corner by corner and finished on its first corner, controls left alone", () => {
+test("on the 2D map each click moves the one spot there, and is TweakUI's alone until it stops", () => {
     const {map, L, container} = fakeMap();
     const control = document.createElement("div");
     control.className = "leaflet-control";
     container.appendChild(control);
     const tool = sf.mapTool(L, map);
-    const done = jest.fn();
-    tool.start("area", done);
-    click(container, 0, 0);
-    click(container, 100, 0);
+    const onSpot = jest.fn();
+    const mapClick = jest.fn();
+    container.addEventListener("click", mapClick);
+    tool.start(onSpot);
+    // A drag that pans the map is not a click, nor one on a control
+    click(container, 10, 20, 30);
     click(control, 300, 300);
-    click(container, 100, 100);
-    expect(map.added.map(l => l.kind)).toEqual(["polygon"]);
-    click(container, 5, 5);
-    expect(done).toHaveBeenCalledWith({type: "Polygon", coordinates: [[[0, 0], [100, 0], [100, 100], [0, 0]]]});
-    // A double click finishes one too
-    tool.start("area", done);
-    click(container, 0, 0); click(container, 10, 0); click(container, 10, 10);
-    container.dispatchEvent(new MouseEvent("dblclick", {bubbles: true, cancelable: true}));
-    expect(done).toHaveBeenCalledTimes(2);
-    // Two corners are no area
-    tool.start("area", done);
-    click(container, 0, 0); click(container, 10, 0);
-    tool.finish();
-    expect(done).toHaveBeenCalledTimes(2);
-    tool.cancel();
+    expect(onSpot).not.toHaveBeenCalled();
+    click(container, 10, 20);
+    expect(onSpot).toHaveBeenLastCalledWith({type: "Point", coordinates: [10, 20]});
+    // Not a layer's popup of WebODM's
+    expect(mapClick).toHaveBeenCalledTimes(1);
+    click(container, 50, 60);
+    expect(onSpot).toHaveBeenLastCalledWith({type: "Point", coordinates: [50, 60]});
+    expect(map.added.map(l => [l.kind, l.latlngs])).toEqual([["circle", {lat: 60, lng: 50}]]);
+    tool.stop();
+    expect(map.added).toEqual([]);
+    click(container, 70, 70);
+    expect(onSpot).toHaveBeenCalledTimes(2);
+    expect(mapClick).toHaveBeenCalledTimes(2);
 });
 
-test("the bar starts with Spot, shows Finish while an area is drawn, and Escape stops picking", () => {
+function controlled(byTask) {
     const container = document.createElement("div");
     document.body.appendChild(container);
-    const tool = {start: jest.fn(), cancel: jest.fn(), finish: jest.fn(), clear: jest.fn()};
-    const onPlace = jest.fn(), onClose = jest.fn();
-    sf.buildBar(document, window, container, tool, onPlace, onClose);
-    const bar = container.querySelector(".tweakui-sf-bar");
-    expect(tool.start.mock.calls[0][0]).toBe("spot");
-    expect(bar.querySelector(".tweakui-sf-spot").classList.contains("active")).toBe(true);
-    expect(bar.querySelector(".tweakui-sf-finish").style.display).toBe("none");
-    expect(container.classList.contains("tweakui-sf-picking")).toBe(true);
-    bar.querySelector(".tweakui-sf-area").click();
-    expect(tool.start.mock.calls[1][0]).toBe("area");
-    expect(bar.querySelector(".tweakui-sf-finish").style.display).toBe("");
-    bar.querySelector(".tweakui-sf-finish").click();
-    expect(tool.finish).toHaveBeenCalled();
-    // The tool gives the place: picking ends and the place goes on
-    tool.start.mock.calls[1][1]({type: "Polygon", coordinates: []});
-    expect(onPlace).toHaveBeenCalled();
-    expect(container.classList.contains("tweakui-sf-picking")).toBe(false);
-    bar.querySelector(".tweakui-sf-spot").click();
-    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
-    expect(container.classList.contains("tweakui-sf-picking")).toBe(false);
-    bar.querySelector(".tweakui-sf-bar-close").click();
-    expect(container.querySelector(".tweakui-sf-bar")).toBeNull();
-    expect(onClose).toHaveBeenCalled();
-});
-
-test("the button opens the bar, a place opens the window of its photos, and a new place keeps its own drawing", async () => {
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    let give;
-    const tool = {start: jest.fn((kind, done) => { give = done; }), cancel: jest.fn(), finish: jest.fn(), clear: jest.fn()};
-    const win = {fetch: respond({a: [{filename: "a.jpg", share: 1, centre: 0, spot: [0.5, 0.5]}]})};
+    let spot;
+    const tool = {start: jest.fn(f => { spot = f; }), stop: jest.fn()};
+    const win = {fetch: respond(byTask), AbortController: class { constructor() { this.signal = {}; } abort() { this.signal.aborted = true; } }};
     win.fetch.bind = () => win.fetch;
-    const c = sf.controller(document, win, container, tool, [taskA]);
+    const onChange = jest.fn();
+    const c = sf.controller(document, win, container, tool, [taskA], onChange);
+    return {container, tool, win, onChange, c, spot: p => spot(p)};
+}
+
+test("on, Source Frames shows its label the whole time, the first spot opens the window and later ones update it", async () => {
+    const {container, tool, win, onChange, c, spot} = controlled({a: [{filename: "a.jpg", centre: 0, spot: [0.5, 0.5]}]});
     c.toggle();
-    expect(c.isOpen()).toBe(true);
-    give({type: "Point", coordinates: [1, 2]});
+    expect(c.isOn()).toBe(true);
+    expect(onChange).toHaveBeenLastCalledWith(true);
+    const label = () => container.querySelector(".tweakui-sf-label");
+    expect(label().textContent).toBe(" Click Map to View Source Frame");
+    expect(container.querySelector(".tweakui-sf-window")).toBeNull();
+    spot({type: "Point", coordinates: [1, 2]});
     await flush(); await flush();
     expect(container.querySelector(".tweakui-sf-title").textContent).toBe("Source Frames (1)");
-    tool.start.mock.calls.length = 0;
-    container.querySelector(".tweakui-sf-area").click();
-    give({type: "Polygon", coordinates: [[[0, 0], [1, 0], [1, 1], [0, 0]]]});
-    expect(tool.clear).not.toHaveBeenCalled();
-    expect(container.querySelectorAll(".tweakui-sf-window").length).toBe(1);
-    // Closing the window clears the place; closing the bar too
-    container.querySelector(".tweakui-sf-close").click();
-    expect(tool.clear).toHaveBeenCalledTimes(1);
+    expect(label()).not.toBeNull();
+    // The next spot: the same window, busy until its photos come
+    win.fetch.mockImplementation(() => Promise.resolve({ok: true, status: 200,
+        json: () => Promise.resolve({frames: [{filename: "b.jpg", centre: 0, spot: [0.2, 0.2]}, {filename: "c.jpg", centre: 0.5, spot: [0.9, 0.9]}]})}));
+    const first = container.querySelector(".tweakui-sf-window");
+    spot({type: "Point", coordinates: [3, 4]});
+    expect(container.querySelector(".tweakui-sf-busy").style.display).toBe("");
+    await flush(); await flush();
+    expect(container.querySelector(".tweakui-sf-window")).toBe(first);
+    expect(container.querySelector(".tweakui-sf-title").textContent).toBe("Source Frames (2)");
+    expect(label()).not.toBeNull();
+    expect(tool.start).toHaveBeenCalledTimes(1);
+});
+
+test("only the latest spot's photos are shown, the older request cancelled", async () => {
+    const {container, win, c, spot} = controlled({});
+    const answers = [];
+    win.fetch.mockImplementation((url, options) => new Promise(resolve => answers.push({resolve, options})));
     c.toggle();
-    expect(c.isOpen()).toBe(false);
-    expect(container.querySelector(".tweakui-sf-bar")).toBeNull();
+    spot({type: "Point", coordinates: [1, 2]});
+    spot({type: "Point", coordinates: [3, 4]});
+    expect(answers[0].options.signal.aborted).toBe(true);
+    expect(answers[1].options.signal.aborted).toBeUndefined();
+    const reply = names => ({ok: true, status: 200, json: () => Promise.resolve({frames: names.map(n => ({filename: n, centre: 0}))})});
+    answers[1].resolve(reply(["new.jpg"]));
+    await flush(); await flush();
+    answers[0].resolve(reply(["old1.jpg", "old2.jpg"]));
+    await flush(); await flush();
+    expect(container.querySelector(".tweakui-sf-props td").textContent).toBe("new.jpg");
+});
+
+test("the button again, Escape, or the window's close turns Source Frames off: the label, the spot and the window go", async () => {
+    const {container, tool, onChange, c, spot} = controlled({a: [{filename: "a.jpg", centre: 0}]});
+    const ends = [
+        () => c.toggle(),
+        () => document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"})),
+        () => container.querySelector(".tweakui-sf-close").click()
+    ];
+    for (const end of ends) {
+        c.toggle();
+        spot({type: "Point", coordinates: [1, 2]});
+        await flush(); await flush();
+        expect(container.classList.contains("tweakui-sf-picking")).toBe(true);
+        end();
+        expect(c.isOn()).toBe(false);
+        expect(onChange).toHaveBeenLastCalledWith(false);
+        expect(container.querySelector(".tweakui-sf-label")).toBeNull();
+        expect(container.querySelector(".tweakui-sf-window")).toBeNull();
+        expect(container.classList.contains("tweakui-sf-picking")).toBe(false);
+    }
+    expect(tool.stop).toHaveBeenCalledTimes(3);
+    // Escape in the full-screen viewer closes only the viewer
+    c.toggle();
+    spot({type: "Point", coordinates: [1, 2]});
+    await flush(); await flush();
+    container.querySelector(".tweakui-sf-open").click();
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+    expect(document.querySelector(".tweakui-sf-viewer")).toBeNull();
+    expect(c.isOn()).toBe(true);
+    c.toggle();
 });
 
 test("with Source Frames on, the button goes before Share on a 2D map or 3D view whose task has cameras", () => {
@@ -284,8 +309,13 @@ test("with Source Frames on, the button goes before Share on a 2D map or 3D view
     // Once only
     mapHook.mock.calls[0][0]({map, tiles: [{meta: {task: taskA}}]});
     expect(document.querySelectorAll(".tweakui-sf-button").length).toBe(1);
-    document.querySelector(".tweakui-sf-button").click();
-    expect(document.querySelector("#map .tweakui-sf-bar")).not.toBeNull();
+    const button = document.querySelector(".tweakui-sf-button");
+    button.click();
+    expect(document.querySelector("#map .tweakui-sf-label")).not.toBeNull();
+    expect(button.classList.contains("active")).toBe(true);
+    button.click();
+    expect(document.querySelector("#map .tweakui-sf-label")).toBeNull();
+    expect(button.classList.contains("active")).toBe(false);
 
     // The 3D view: its task on [data-modelview], its viewer as window.viewer, its action buttons' row
     const page3d = assets => '<div data-modelview data-task=\'{"id": "a", "project": 3, "available_assets": ' + JSON.stringify(assets) +
@@ -343,45 +373,37 @@ function tap3d(canvas, x, y) {
     canvas.dispatchEvent(new MouseEvent("pointerup", {bubbles: true, clientX: x, clientY: y, button: 0}));
 }
 
-test("in the 3D view a click on the points is a spot in the task's coordinates, marked without Potree's saved measurements", () => {
+test("in the 3D view each click on the points moves the one spot there, in the task's coordinates, without Potree's saved measurements", () => {
     const {win, viewer, canvas, scene} = fake3d([410975.5, 4661820.25, 211.5]);
     const tool = sf.modelTool(win, viewer);
-    const done = jest.fn();
-    tool.start("spot", done);
+    const onSpot = jest.fn();
+    tool.start(onSpot);
     // A drag orbits the view: no spot
     canvas.dispatchEvent(new MouseEvent("pointerdown", {bubbles: true, clientX: 10, clientY: 10, button: 0}));
     canvas.dispatchEvent(new MouseEvent("pointerup", {bubbles: true, clientX: 60, clientY: 10, button: 0}));
-    expect(done).not.toHaveBeenCalled();
+    expect(onSpot).not.toHaveBeenCalled();
     tap3d(canvas, 400, 300);
-    expect(done).toHaveBeenCalledWith({type: "Point", coordinates: [410975.5, 4661820.25, 211.5], crs: "task"});
+    expect(onSpot).toHaveBeenCalledWith({type: "Point", coordinates: [410975.5, 4661820.25, 211.5], crs: "task"});
+    tap3d(canvas, 200, 100);
+    expect(onSpot).toHaveBeenCalledTimes(2);
     // WebODM saves Potree's measurements with the task: none is added
     expect(viewer.scene.addMeasurement).not.toHaveBeenCalled();
     const marks = scene.children.find(c => c.name === "tweakui-source-frames");
     expect(marks.children.length).toBe(1);
-    tool.clear();
+    tool.stop();
     expect(scene.children).toEqual([]);
+    tap3d(canvas, 400, 300);
+    expect(onSpot).toHaveBeenCalledTimes(2);
 });
 
-test("in the 3D view an area takes its corners and Finish; a click on nothing says so", () => {
+test("in the 3D view a click on nothing says so and leaves the spot", () => {
     const empty = fake3d(null);
-    const missTool = sf.modelTool(empty.win, empty.viewer);
-    missTool.hint = jest.fn();
-    missTool.start("spot", jest.fn());
+    const tool = sf.modelTool(empty.win, empty.viewer);
+    tool.hint = jest.fn();
+    const onSpot = jest.fn();
+    tool.start(onSpot);
     tap3d(empty.canvas, 400, 300);
-    expect(missTool.hint).toHaveBeenCalledWith("Nothing there: click on the points or the model.");
-    missTool.clear();
-
-    const {win, viewer, canvas, scene} = fake3d([1, 2, 3]);
-    const tool = sf.modelTool(win, viewer);
-    const done = jest.fn();
-    tool.start("area", done);
-    tap3d(canvas, 100, 100); tap3d(canvas, 300, 100); tap3d(canvas, 300, 300);
-    tool.finish();
-    expect(done).toHaveBeenCalledWith({type: "Polygon", coordinates: [[[1, 2, 3], [1, 2, 3], [1, 2, 3], [1, 2, 3]]], crs: "task"});
-    const marks = scene.children.find(c => c.name === "tweakui-source-frames");
-    // Three spheres and the closed line through them
-    expect(marks.children.length).toBe(4);
-    expect(marks.children[3].geometry.points.length).toBe(3);
-    tool.clear();
-    expect(scene.children).toEqual([]);
+    expect(tool.hint).toHaveBeenCalledWith("Nothing there: click on the points or the model.");
+    expect(onSpot).not.toHaveBeenCalled();
+    tool.stop();
 });
