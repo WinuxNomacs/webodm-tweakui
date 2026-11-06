@@ -3,15 +3,23 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Themes** — a Themes item in the settings page's navigation pane: each user picks one of 11 preset themes
-   (Catppuccin ×4, Solarized ×2, Dracula, Nord, Gruvbox ×2, One Dark) or WebODM's own. Planned below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Phase 2: Themes** (request 3) — 2026-11-06, branch `themes` (design below).
+  - Code: `tweakui/themes.py` (presets, `theme.css` view), `tweakui/settings.py` (`theme` setting and its
+    choices), `tweakui/plugin.py` (mount, `include_css_files`), `templates/settings.html` (Themes section),
+    `public/settings_page.js` (radio buttons, reload), `public/main.css` (the grid of themes).
+  - Tests: Django `TestThemes` (8; 24 in all, on 4.0.0 and 3.3.2), Jest `settings_page.test.js` (+3).
+  - Live on 4.0.0 and 3.3.2: all 11 presets on the dashboard, the settings page, the project map page and
+    Administration (background, text, header as the preset), choosing one in Settings > Themes, the phone width,
+    the layers panel (white, preset's dark text; checked with the panel's elements, as no task has a map); no
+    console errors; the admin's settings restored. Not checked: the 3D view and a task's map with layers (no
+    task with outputs on the dev stacks).
 - **TweakUI menu item above About** (request 6) — 2026-11-06, branch `menu-above-about` (design below).
   Code: `tweakui/public/main.js` (moves the item), `tweakui/public/main.css` (hides it until moved). Tests: Jest
   `main.test.js` (4). Live on 4.0.0 and 3.3.2 (as admin): the dashboard and the TweakUI page list TweakUI just
@@ -99,7 +107,7 @@ Design:
 
 Open: none.
 
-## Phase 2: Themes (request 3), planned
+## Phase 2: Themes (request 3) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0):
 - One theme per instance: `Setting.theme` points at a `Theme` (`app/models/theme.py`): 13 colours (primary,
@@ -148,6 +156,10 @@ Plan (branch `themes`):
 - **Settings > Themes** (the settings page's navigation pane, new section): a list of the presets, each with a
   swatch of its colours and its name; choosing one saves it and reloads the page so the new look shows.
 - **README**: the Themes section; **CHANGELOG**.
+- Found in the live check and built in: Administration's content (`.admin-area`) hard-codes a white background
+  in both versions, and 4.0.0's theme colours its text through variables, so presets leave the `.admin-area`
+  rule to WebODM's theme and give its text the preset's dark colour. WebODM's logo is white, so light presets have
+  a header in their accent colour (the header text is whichever of text and base stands out more).
 - Tests: Django (setting validation; the view renders a preset's colours, prefixes selectors, is empty for the
   default and for anonymous users), Jest (the Themes section saves the choice). Live on 4.0.0 and 3.3.2: each
   preset on the dashboard, a task's map, the 3D view, the settings page and Administration; the white panels stay
