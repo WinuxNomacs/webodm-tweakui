@@ -3,7 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Theme switcher in the header** (request 7) — a paintbrush in the header, left of the user icon, opens a list
+   of the themes; choosing one sets the user's theme. Planned below.
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -66,6 +68,9 @@ Added 2026-11-06 (second new.md):
    Diagnostic: the user's WebODM storage use at a glance, like LuxODM's Storage page (`~/gitrepos/web/luxodm`,
    may be reused), and cleaning up / deleting unneeded tasks, projects and other items filling their quota.
 6. Move the TweakUI side-menu item near the bottom of the side menu, just above About.
+7. (2026-11-06) A Paint Brush icon in the header row, left of the user's icon; clicking it opens a dropdown of the
+   available themes to change it on the fly. The current theme and WebODM's default theme are the top options. It
+   sets the same theme preference as Settings > Themes: a shortcut.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -164,6 +169,30 @@ Plan (branch `themes`):
   default and for anonymous users), Jest (the Themes section saves the choice). Live on 4.0.0 and 3.3.2: each
   preset on the dashboard, a task's map, the 3D view, the settings page and Administration; the white panels stay
   readable; the user's setting restored afterwards.
+
+## Theme switcher in the header (request 7), planned
+
+Builds on Themes (the `theme` setting, `PATCH /api/plugins/tweakui/settings`, the presets).
+What WebODM has (the same in 3.3.2 and 4.0.0): the header's right side is `ul.nav.navbar-top-links.navbar-right`
+in `logged_in_base.html` with one `li.dropdown` (the user icon and its menu), a Bootstrap 3 dropdown driven by
+jQuery's data API, which also handles items added later. In single-user mode the list is left out (no user
+icon).
+
+Plan (branch `theme-switcher`):
+- `settings.js` also gives the theme list, `window.TweakUI.themes`: id, name and swatch colours, WebODM's theme
+  first, then the presets in the Themes list's order.
+- `public/theme_menu.js` (in `include_js_files`): on a page with the header's user dropdown, puts a
+  `li.dropdown` before it: a paintbrush (`fa-paint-brush`) and caret, with a `dropdown-menu` (right-aligned, as
+  the user menu): the current theme (checked), WebODM's theme (when it is not the current one), a divider, then
+  the other presets; each with its swatch and name. Choosing one PATCHes `theme` (the CSRF cookie) and reloads
+  the page; a failure shows in the menu and changes nothing. Not shown where the header has no user icon
+  (logged out, public pages, single-user mode).
+- Styles in `main.css` (theme colours only; swatches from the data, as in Settings > Themes).
+- README, CHANGELOG. Tests: Django (`settings.js` gives the themes), Jest (the menu's order, placement, saving,
+  failure, no header). Live on 4.0.0 and 3.3.2: the dashboard, a map and the settings page, desktop and phone;
+  the user's theme restored.
+
+Open: none (single-user mode has no user icon, so no switcher, as the request places it by that icon).
 
 ## TweakUI menu item above About (request 6) — done
 
