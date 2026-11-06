@@ -229,13 +229,16 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")
 
 
-    def test_the_previews_the_page_names_are_exactly_the_screenshots_in_the_previews_folder(self):
+    def test_every_preview_the_page_names_is_a_screenshot_in_the_previews_folder(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         self.assertIn('data-previews="/plugins/tweakui/previews/"', page)
         named = re.findall(r'data-preview="([a-z0-9-]+)"', page)
         folder = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public", "previews")
         shots = sorted(f[:-len(".webp")] for f in os.listdir(folder) if f.endswith(".webp"))
-        self.assertEqual(sorted(named), shots)
+        self.assertIn("theme-menu", named)
+        self.assertNotIn("themes", named)  # Themes shows a live sample in place of its screenshot
+        for name in named:
+            self.assertIn(name, shots)
         self.assertEqual(len(named), len(set(named)))
         self.assertEqual(self.client.get("/plugins/tweakui/previews/%s.webp" % named[0]).status_code,
                          status.HTTP_200_OK)

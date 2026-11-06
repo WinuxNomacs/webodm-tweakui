@@ -144,12 +144,33 @@
         });
     }
 
+    // Themes > Sample does nothing: Enter in its text field doesn't submit, and its links don't change the page's hash
+    // (which picks the category). Its dropdown and tooltip are Bootstrap's, when the page has them.
+    function inertSample(page, win) {
+        each(page.querySelectorAll(".tweakui-sample"), function (form) {
+            form.addEventListener("submit", function (e) { e.preventDefault(); });
+            form.addEventListener("click", function (e) {
+                var link = e.target.closest ? e.target.closest("a") : null;
+                if (link && form.contains(link)) e.preventDefault();
+            });
+            // Bootstrap's tooltip comes with WebODM's bundle, which loads after this script: set up on the first hover
+            function tooltip(e) {
+                var target = e.target.closest ? e.target.closest("[data-toggle=tooltip]") : null, $ = win.jQuery;
+                if (!target || !$ || !$.fn || !$.fn.tooltip || $(target).data("bs.tooltip")) return;
+                $(target).tooltip().tooltip("show");
+            }
+            form.addEventListener("mouseover", tooltip);
+            form.addEventListener("focusin", tooltip);
+        });
+    }
+
     function start(doc, win) {
         var page = doc.getElementById("tweakui-settings");
         if (!page) return;
         showSection(page, win.location.hash);
         applyDepends(page);
         addPreviews(page, doc);
+        inertSample(page, win);
         win.addEventListener("hashchange", function () { showSection(page, win.location.hash); });
         // A radio button's group remembers its checked one, to put it back if the change is refused
         var checked = {};
@@ -169,5 +190,5 @@
     }
 
     return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends,
-        addPreviews: addPreviews, enlarge: enlarge};
+        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample};
 });

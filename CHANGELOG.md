@@ -10,6 +10,8 @@
   (8/13): Texturing"). Each part can be turned off on its own.
 - Themes: each user picks WebODM's theme or one of 11 presets (Catppuccin ×4, Solarized ×2, Dracula, Nord,
   Gruvbox ×2, One Dark), applied through WebODM's own theme template.
+- Themes > Sample: WebODM's controls (text, labels, a progress bar, a field, a select, a dropdown, buttons,
+  pagination) in the current theme, doing nothing, above the themes.
 - A paintbrush in the header, left of the user icon: a menu of the themes to switch on any page; Themes > Theme
   Menu turns it off.
 - 2D Map > Movable Controls: the 2D map's panels can be dragged by their title within the map; a panel that closes
