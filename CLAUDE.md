@@ -25,15 +25,19 @@ It is committed and public: nothing private, nothing true only on one machine. K
 - **WebODM 3.3.2 and 4.0.0 both**: 3.3.2 is Python 3.9, Django 2.2, DRF 3.13, Postgres 9.5 with PostGIS; 4.0.0 is
   Python 3.14, Django 5.2, DRF 3.18, Postgres 18 without GIS. The plugin's code runs unchanged on both: Ruff
   targets py39 (the oldest), and every change is tested on both stacks before a merge.
-- **Never push and never tag.** Nothing is published by a push yet (no CI). A release: Claude prepares a
-  `release/X.Y.Z` branch (manifest version, `CHANGELOG.md`, `README.md`), builds the zip with `dev/package.sh`
+- **Never push and never tag.** A pushed `v*` tag publishes the docs site (`.github/workflows/docs.yml`, which
+  also runs by hand); no other workflow runs. A release: Claude prepares a `release/X.Y.Z` branch (manifest
+  version, `CHANGELOG.md`, `README.md`, `docs/`), builds the zip with `dev/package.sh`
   (`dist/tweakui-X.Y.Z.zip` and its sha256), runs the `release-check` skill and merges; the user tags `vX.Y.Z`,
   attaches the zip to the GitHub release and adds `{url, sha256}` to WebODM-Plugins' `directory.json`.
 - **Settings are per user**: a new setting is a name and default in `DEFAULTS` (`tweakui/settings.py`), a control
   with `data-setting` in its category's section of `templates/settings.html` (a new category: a link in the
   navigation pane and a `<section data-section>`), and reads `window.TweakUI.settings` in the page scripts:
   `/plugins/tweakui/settings.js` is a view, loaded before the other scripts on every page.
-- **`README.md` is the plugin's public page**: every feature change updates it on the same branch.
+- **`README.md` is the plugin's overview, `docs/` its documentation** (VitePress, a page per settings category,
+  published to GitHub Pages by `.github/workflows/docs.yml` on a `v*` tag or by hand): a feature change updates
+  its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),
+  on the same branch.
 - Planned in `upcoming-changes.md`; new requests arrive in `new.md` (untracked).
 
 ## Dev environment
@@ -66,6 +70,7 @@ The `test`, `live-check` and `release-check` skills in `.claude/skills` have the
 - Screenshots: `TW_USER=... TW_PASSWORD=... npm run screenshots [-- name ...]` (`dev/screenshots.js`, the 4.0.0 dev
   server, or `TW_BASE`) retakes `tweakui/public/previews/<name>.webp`, the settings' previews and the docs' images.
   A feature change that changes what a shot shows retakes it; a new feature gets a shot in its list.
+- Docs: `npm run docs:build` (fails on a dead link); `npm run docs:dev` serves them with live reload.
 - Ruff: `.venv/bin/ruff check .`
 - Live checks: headless Playwright (Node) against http://localhost:8005 (4.0.0) and http://localhost:8006 (3.3.2)
   with a dev account from the user. Expected console error in dev mode: `localhost:35729/livereload.js` refused
