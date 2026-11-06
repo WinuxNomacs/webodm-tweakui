@@ -1,0 +1,33 @@
+{% extends "app/plugins/templates/base.html" %}
+{% load i18n %}
+{% block content %}
+{% comment %}The TweakUI settings: a navigation pane of categories and the selected category (settings_page.js).
+Colours come only from WebODM's theme classes.{% endcomment %}
+<div id="tweakui-settings" class="tweakui-settings" data-api="{{ api }}">
+    {% csrf_token %}
+    <h3>{% trans "TweakUI" %}</h3>
+    <div class="tweakui-layout">
+        <ul class="tweakui-nav theme-border" role="tablist">
+            <li><a href="#general" role="tab" class="theme-background-highlight-hover" data-section="general">
+                <i class="fa fa-cog fa-fw"></i> {% trans "General" %}</a></li>
+        </ul>
+        <div class="tweakui-sections">
+            <section id="tweakui-general" data-section="general" role="tabpanel">
+                <h4>{% trans "General" %}</h4>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Task Options" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="show_modified_options"{% if settings.show_modified_options %} checked{% endif %}>
+                            {% trans "Show Modified Options" %}
+                        </label>
+                        <p class="text-muted">{% trans "In the Task Options dialog, each group's heading shows how many of its options are not at their default, e.g. (1/13)." %}</p>
+                    </div>
+                </div>
+            </section>
+            <p class="tweakui-status" role="status" aria-live="polite"></p>
+        </div>
+    </div>
+</div>
+<script src="{{ public }}settings_page.js"></script>
+{% endblock %}

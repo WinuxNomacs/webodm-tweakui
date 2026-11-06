@@ -3,18 +3,26 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Settings page and Show Modified Options** — the TweakUI menu item, its settings page with a navigation pane
-   (General), per-user settings, and the first setting (General > Task Options > Show Modified Options).
-   Details below.
-
-**Then**
-2. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
+1. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
    Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Phase 1: settings page and Show Modified Options** — 2026-11-06, branch `settings-page` (design below).
+  - Code: `tweakui/plugin.py` (menu, page, `settings.js` view, API mount), `tweakui/settings.py` (per-user JSON in
+    the data store, defaults and checks), `tweakui/api.py`, `tweakui/templates/settings.html`,
+    `tweakui/public/settings_page.js`, `tweakui/public/task_options.js`, `tweakui/public/main.css`.
+  - Tests: `tweakui/tests/test_tweakui.py` (15), Jest `settings_page.test.js`, `task_options.test.js` (13 with
+    main's). Django tests and `app.tests.test_plugins` pass on 4.0.0 and 3.3.2.
+  - Live, on both (as admin): the menu item, the page at desktop and phone width, saving and reloading the setting;
+    in a new task's Edit Task Options: (0/13) on opening, Bounds & Cropping (1/4) and Digital Elevation Models
+    (1/10) from the Default preset (auto-boundary, dsm), ignore-gsd -> (1/13), min-num-features -> Structure From
+    Motion (1/13), Reset to default -> (0/13), search narrows the counts, flat view and back; with the setting
+    off, WebODM's own numbers. A task's Edit was not checked live (the only task was processing); it is the same
+    dialog. Found while checking, WebODM's own: switching to flat view and back clears typed values;
+    `ProcessingNodeOption.jsx` logs a React `class` warning.
 - **Phase 0: scaffold** — 2026-11-06, branch `scaffold`. Decided (the user, 2026-11-06): id and folder `tweakui`,
   name "TweakUI"; WebODM 3.3.2 and 4.0.0 both; changes to WebODM itself only with the user's approval.
   - Plugin: `tweakui/` (manifest 0.1.0, experimental; `plugin.py` includes `public/main.js`, which sets
@@ -46,7 +54,7 @@ Decided (the user, 2026-11-06):
 - **"Modified" means different from ODM's default**: what the dialog's own "Reset to default" button restores,
   so a preset's own settings count as modified.
 
-## Phase 1: settings page and Show Modified Options (requests 1, 2, 4)
+## Phase 1: settings page and Show Modified Options (requests 1, 2, 4) — done
 
 What WebODM offers (checked in 3.3.2 and 4.0.0):
 - `main_menu()` adds side-menu entries (`app/plugins/menu.py`, rendered in `app/logged_in_base.html` for logged-in
@@ -74,6 +82,7 @@ Design:
   "(modified/total)", "(0/13)" when none, updated as options change (inputs, checkboxes, selects, "Reset to
   default"). The count is put in a `data-` attribute that a CSS rule shows instead of WebODM's own number, so
   React's re-renders of the heading don't undo it. Grouped view only (flat view has no headings).
+  (Built: the attribute is on `.option-group-header`, shown by `::after`, with WebODM's `.option-count` hidden.)
 
 Open: none.
 

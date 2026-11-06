@@ -29,6 +29,10 @@ It is committed and public: nothing private, nothing true only on one machine. K
   `release/X.Y.Z` branch (manifest version, `CHANGELOG.md`, `README.md`), builds the zip with `dev/package.sh`
   (`dist/tweakui-X.Y.Z.zip` and its sha256), runs the `release-check` skill and merges; the user tags `vX.Y.Z`,
   attaches the zip to the GitHub release and adds `{url, sha256}` to WebODM-Plugins' `directory.json`.
+- **Settings are per user**: a new setting is a name and default in `DEFAULTS` (`tweakui/settings.py`), a control
+  with `data-setting` in its category's section of `templates/settings.html` (a new category: a link in the
+  navigation pane and a `<section data-section>`), and reads `window.TweakUI.settings` in the page scripts:
+  `/plugins/tweakui/settings.js` is a view, loaded before the other scripts on every page.
 - **`README.md` is the plugin's public page**: every feature change updates it on the same branch.
 - Planned in `upcoming-changes.md`; new requests arrive in `new.md` (untracked).
 
