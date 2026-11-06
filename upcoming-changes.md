@@ -3,9 +3,11 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
+1. **Enhanced Task Details: a toggle per row, Current Step** (requests 13, 14) — each row of Enhanced Task
+   Details can be turned off; a running task shows its current ODM stage, "Current Step (8/13): Texturing".
+2. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
    Movable Controls on, the 2D map's popup panels can be dragged by their title.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -116,6 +118,13 @@ Added 2026-11-06 (fourth new.md):
     map (a project's View Map) lists every task's layers with Side By Side; nothing to build.
 12. Task start and end times in Enhanced Task Details: the task's duration is shown, but the start and finish
     timestamps help too.
+
+Added 2026-11-06 (fifth new.md):
+
+13. Each part of Enhanced Task Details its own toggle in the settings (e.g. Show Start/End Timestamps, Show ODX
+    Command, ...).
+14. An Enhanced Task Details option for running tasks: the current step's name and number out of the steps to
+    complete, e.g. "Current Step (8/15): Texturing"; how the steps are found to be discussed.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -325,6 +334,44 @@ Design:
   `processing_time` above 0, or running). Finished: `created_at` + `processing_time` for a completed, failed or
   canceled task that ran; "Running" while it runs; "—" otherwise. While a task that hasn't ended has its panel
   open, it is fetched again every 5 s, so the rows follow it.
+
+## Enhanced Task Details: a toggle per row, Current Step (requests 13, 14)
+
+What there is: Enhanced Task Details (one setting, `enhanced_task_details`, `public/task_details.js`) adds
+Started/Finished after "Created on", and Preset, Options (bubbles, WebODM's Options row hidden) and ODX command;
+a task that hasn't ended is fetched again every 5 s while its panel is open. For the steps (checked in ODX 3.8.5
+on the dev node and in WebODM 3.3.2 and 4.0.0):
+- **ODM's pipeline** (`stages/odm_app.py`): dataset, split, merge, opensfm, openmvs, odm_filterpoints,
+  odm_meshing, mvs_texturing, odm_georeferencing, odm_dem, odm_orthophoto, odm_report, odm_postprocess: 13;
+  `fast-orthophoto` leaves out openmvs, `end-with` stops after the stage it names. Every stage logs
+  `Running <name> stage` as it starts (a rerun too: stages skip their work inside, after that line), and
+  `No more stages to run` after the last.
+- **WebODM keeps the node's output** in the task's console, served by `GET /api/projects/<p>/tasks/<t>/output/
+  ?line=N` (lines from N; the same in both versions). A restart clears it. After ODM, the task stays running
+  while WebODM downloads and extracts the results (`running_progress` 0.85 to 1).
+
+Decided (the user, 2026-11-06):
+- **Before Movable Controls.**
+- **ODM's stages only** are counted (13, 12 with fast-orthophoto, fewer with end-with), not WebODM's upload and
+  download.
+- **In the details panel only**, not in the task's row on the dashboard.
+- **Enhanced Task Details stays the main switch**, with a toggle per row under it, all on by default.
+
+Design (branch `task-details-rows`):
+- **Settings > General > Task Options > Enhanced Task Details**, then indented under it, greyed out while it is
+  off: **Started and Finished**, **Preset**, **Options as bubbles**, **ODX command**, **Current step** (settings
+  `task_details_times`, `_preset`, `_options`, `_command`, `_step`, all on). With Options as bubbles off,
+  WebODM's Options row stays and the other rows go after it.
+- **"Current Step (n/N): Name"** after Finished (or where Started/Finished would be), only while the task runs:
+  the last `Running <name> stage` line in its console, read from `/output/` (the whole console on opening, then
+  only the new lines at each 5 s fetch; from the start again when the task restarts). Names: Load Dataset, Split,
+  Merge, Structure from Motion, Multi-View Stereo, Filter Points, Meshing, Texturing, Georeferencing, Elevation
+  Models, Orthophoto, Report, Post-processing. N from the task's options (fast-orthophoto, end-with). Before the
+  first stage "Starting"; after `No more stages to run` "Downloading results" (no number).
+- README, CHANGELOG. Tests: Jest (each toggle, the step from console lines, N from the options, the polling of
+  new lines, a restart), Django (the defaults, the controls). Live on both stacks; a running task by restarting
+  TestRGB from a late stage on 4.0.0 is not done (it changes the user's task): a task created by the check, or
+  Jest only, to be seen when building.
 
 ## 2D Map and 3D Map settings, Movable Controls (request 10)
 
