@@ -62,7 +62,10 @@ The `test`, `live-check` and `release-check` skills in `.claude/skills` have the
 - Django: `docker exec -w /webodm tw-webapp python manage.py test --noinput coreplugins.tweakui.tests.test_tweakui`
   (4.0.0) and, before a merge, the same in `tw3-webapp` (3.3.2). One run at a time per stack: a stack's runs share
   its test database (the two stacks' are separate).
-- Jest: `npm test` at the repo root (jsdom). ESLint: `npm run lint -- tweakui` (the scripts in `public/` are ES5).
+- Jest: `npm test` at the repo root (jsdom). ESLint: `npm run lint -- tweakui dev` (the scripts in `public/` are ES5).
+- Screenshots: `TW_USER=... TW_PASSWORD=... npm run screenshots [-- name ...]` (`dev/screenshots.js`, the 4.0.0 dev
+  server, or `TW_BASE`) retakes `tweakui/public/previews/<name>.webp`, the settings' previews and the docs' images.
+  A feature change that changes what a shot shows retakes it; a new feature gets a shot in its list.
 - Ruff: `.venv/bin/ruff check .`
 - Live checks: headless Playwright (Node) against http://localhost:8005 (4.0.0) and http://localhost:8006 (3.3.2)
   with a dev account from the user. Expected console error in dev mode: `localhost:35729/livereload.js` refused

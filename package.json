@@ -4,10 +4,14 @@
   "private": true,
   "scripts": {
     "test": "jest",
-    "lint": "eslint"
+    "lint": "eslint",
+    "screenshots": "node dev/screenshots.js"
   },
   "jest": {
-    "roots": ["<rootDir>/tweakui/public"],
+    "roots": [
+      "<rootDir>/tweakui/public",
+      "<rootDir>/dev"
+    ],
     "testEnvironment": "jsdom"
   },
   "devDependencies": {

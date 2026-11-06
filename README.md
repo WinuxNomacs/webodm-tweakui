@@ -136,7 +136,9 @@ database, in the plugin's per-user data store.
 
 ## Developing
 
-See [CLAUDE.md](CLAUDE.md) for the dev environment (`dev/webodm.sh`), tests and the release steps.
+See [CLAUDE.md](CLAUDE.md) for the dev environment (`dev/webodm.sh`), tests and the release steps. The features'
+screenshots in `tweakui/public/previews/` are retaken from a running WebODM with
+`TW_USER=... TW_PASSWORD=... npm run screenshots` (`dev/screenshots.js`).
 
 ## License
 
