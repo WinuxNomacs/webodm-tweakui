@@ -3,7 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Source Frames: a spot that follows the clicks** (request 18) — Area goes; while Source Frames is open, each
+   click moves the spot and the window updates in place; the bar becomes a label. Details below.
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -205,6 +207,12 @@ Added 2026-11-06 (eighth new.md):
 
 17. Zoom Override in the 2D Map and 3D Map settings: on the 2D map, zoom in 3 steps further than WebODM allows; in
     the 3D view, zoom in about 3x closer. The user isn't sure how the 3D control works and asked how it should.
+
+Added 2026-11-06 (ninth new.md):
+
+18. Source Frames without Area, which is unnecessary: a spot covers an area, as the user can simply move it. The
+    spot moves to wherever the user clicks on the map, and the window opens there; the window updates as close
+    to real time as possible.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -550,6 +558,36 @@ Decided (the user, 2026-11-06):
 - **Before Storage.**
 - **2D: 3 steps, fixed** (zoom 27); one on/off setting.
 - **3D: the wheel zooms toward what is under the pointer**, the orbit centre moving there (over nothing, as before).
+
+## Source Frames: a spot that follows the clicks (request 18)
+
+Builds on Source Frames (request 16). What it does now (`public/source_frames.js`, the same on 3.3.2 and 4.0.0):
+- The action button opens a bar (2D map and 3D view): **Spot**, **Area**, **Finish** (while an area is drawn), a
+  hint and ×. Spot is picked at first; a spot takes **one** click, then picking ends: another spot needs Spot again.
+- Each place closes the window and opens a new one at its default place (top right), showing "Finding the
+  photos…" until the list comes, the best photo selected.
+- One lookup takes 12–19 ms in the server on TestRGB (220 photos, with a DSM; measured in `tw-webapp`), plus the
+  request's round trip: fast enough to follow a dragged spot.
+
+Proposed design (for the discussion):
+- **Area goes**: the bar's Area and Finish buttons, the area drawing on the 2D map and in the 3D view, the
+  window's "Area shown", and the API's Polygon (`frames.py`: the grid, the share; a spot's result loses `share`).
+  The README, the settings' wording and the tests follow.
+- **The spot follows the clicks**: while Source Frames is open, every click on the map (or on the points or the
+  model in 3D) moves the spot there; a drag still pans (or orbits). The first click opens the window; later ones
+  update it.
+- **The window updates in place**: it stays where the user dragged it, the list and the photo are replaced when
+  the new answer comes (no "Finding the photos…" in between, a small busy sign instead), and only the latest
+  place's answer is shown (a newer click cancels the older request).
+
+Decided (the user, 2026-11-06):
+- **Before Storage.**
+- **Click only**: a click moves the spot; the marker itself isn't dragged.
+- **Each move shows the window as if opened fresh at the new spot**: the best photo selected (the spot nearest
+  the frame's centre); the same spot simply moves around and the window only updates.
+- **No bar**: a label "Click Map to View Source Frame" appears once the Source Frames action button is clicked
+  (read here as: until the first click opens the window). The button again, Esc, or the window's × ends Source
+  Frames and removes the spot.
 
 ## Storage (request 5), to be designed with the user
 
