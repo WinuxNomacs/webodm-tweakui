@@ -12,6 +12,10 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                 <i class="fa fa-cog fa-fw"></i> {% trans "General" %}</a></li>
             <li><a href="#themes" role="tab" class="theme-background-highlight-hover" data-section="themes">
                 <i class="fa fa-palette fa-fw"></i> {% trans "Themes" %}</a></li>
+            <li><a href="#map2d" role="tab" class="theme-background-highlight-hover" data-section="map2d">
+                <i class="fa fa-map fa-fw"></i> {% trans "2D Map" %}</a></li>
+            <li><a href="#map3d" role="tab" class="theme-background-highlight-hover" data-section="map3d">
+                <i class="fa fa-cube fa-fw"></i> {% trans "3D Map" %}</a></li>
         </ul>
         <div class="tweakui-sections">
             <section id="tweakui-general" data-section="general" role="tabpanel">
@@ -94,6 +98,30 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                     </label>
                     {% endfor %}
                 </div>
+            </section>
+            <section id="tweakui-map2d" data-section="map2d" role="tabpanel" hidden>
+                <h4>{% trans "2D Map" %}</h4>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Controls" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="movable_controls"{% if settings.movable_controls %} checked{% endif %}>
+                            {% trans "Movable Controls" %}
+                        </label>
+                        <p class="text-muted">{% trans "Drag the map's panels (Layers, Base Maps, Measure, Contours, ...) by their title, within the map. A panel that closes reopens in its usual place." %}</p>
+                    </div>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="other_tasks"{% if settings.other_tasks %} checked{% endif %}>
+                            {% trans "Other Tasks" %}
+                        </label>
+                        <p class="text-muted">{% trans "On a task's map, a button below Layers lists the project's other tasks with an orthophoto, to show over the task's own, each with its opacity." %}</p>
+                    </div>
+                </div>
+            </section>
+            <section id="tweakui-map3d" data-section="map3d" role="tabpanel" hidden>
+                <h4>{% trans "3D Map" %}</h4>
+                <p class="text-muted">{% trans "No settings yet." %}</p>
             </section>
             <p class="tweakui-status" role="status" aria-live="polite"></p>
         </div>

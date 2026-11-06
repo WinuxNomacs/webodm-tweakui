@@ -19,7 +19,8 @@ def defaults(**changes):
     """Every setting at its default, but for the given changes"""
     return dict({"show_modified_options": False, "enhanced_task_details": False, "task_details_times": True,
                  "task_details_preset": True, "task_details_options": True, "task_details_command": True,
-                 "task_details_step": True, "show_theme_menu": True, "theme": "webodm"}, **changes)
+                 "task_details_step": True, "movable_controls": False, "other_tasks": False,
+                 "show_theme_menu": True, "theme": "webodm"}, **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -63,7 +64,8 @@ class TestThePlugin(TweakUITestCase):
     def test_the_dashboard_includes_the_scripts_settings_first_and_the_stylesheet(self):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js"):
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
+                     "other_tasks.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
@@ -72,8 +74,8 @@ class TestThePlugin(TweakUITestCase):
                                 html=True)
 
     def test_the_scripts_and_stylesheet_are_served(self):
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "settings_page.js", "main.css",
-                     "theme.css"):
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
+                     "other_tasks.js", "settings_page.js", "main.css", "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
 
@@ -184,6 +186,26 @@ class TestSettingsPage(TweakUITestCase):
         self.assertEqual(self.patch({"show_theme_menu": False}).json(), defaults(show_theme_menu=False))
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_theme_menu" checked')
         self.assertEqual(self.script_settings(self.client)["show_theme_menu"], False)
+
+    def test_the_2d_map_settings_are_off_by_default_in_their_own_section_and_can_be_turned_on(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertIn('href="#map2d"', page)
+        map2d = page[page.index('<section id="tweakui-map2d"'):]
+        map2d = map2d[:map2d.index("</section>")]
+        for name in ("movable_controls", "other_tasks"):
+            self.assertIn('data-setting="%s">' % name, map2d)
+            self.assertEqual(self.patch({name: True}).json()[name], True)
+            self.assertEqual(self.script_settings(self.client)[name], True)
+        self.assertEqual(self.client.get(API).json(), defaults(movable_controls=True, other_tasks=True))
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="other_tasks" checked')
+
+    def test_the_3d_map_category_has_no_settings_yet(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertIn('href="#map3d"', page)
+        map3d = page[page.index('<section id="tweakui-map3d"'):]
+        map3d = map3d[:map3d.index("</section>")]
+        self.assertIn("No settings yet.", map3d)
+        self.assertNotIn("data-setting", map3d)
 
     def test_the_dashboard_includes_the_task_details_script(self):
         self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")

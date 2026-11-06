@@ -19,6 +19,10 @@ DEFAULTS = {
     "task_details_options": True,
     "task_details_command": True,
     "task_details_step": True,
+    # 2D Map: the map's popup panels can be dragged by their title
+    "movable_controls": False,
+    # 2D Map: on a task's map, a panel of the project's other tasks' orthophotos to show over its own
+    "other_tasks": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS

@@ -15,7 +15,8 @@ class Plugin(PluginBase):
     # On every WebODM page (base.html), in this order; paths are relative to public/, except settings.js, which is
     # a view (app_mount_points come before public/); so is theme.css
     def include_js_files(self):
-        return ["settings.js", "main.js", "task_options.js", "task_details.js", "theme_menu.js"]
+        return ["settings.js", "main.js", "task_options.js", "task_details.js", "theme_menu.js",
+                "movable_controls.js", "other_tasks.js"]
 
     def include_css_files(self):
         return ["main.css", "theme.css"]

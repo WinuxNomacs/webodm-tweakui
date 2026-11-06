@@ -12,4 +12,9 @@
   Gruvbox ×2, One Dark), applied through WebODM's own theme template.
 - A paintbrush in the header, left of the user icon: a menu of the themes to switch on any page; Themes > Theme
   Menu turns it off.
+- 2D Map > Movable Controls: the 2D map's panels can be dragged by their title within the map; a panel that closes
+  reopens in its usual place.
+- 2D Map > Other Tasks: on a task's map, a panel to show the project's other tasks' orthophotos over the task's
+  own, each with an opacity slider.
+- A 3D Map category in the settings, with no settings yet.
 - Experimental.

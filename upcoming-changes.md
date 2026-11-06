@@ -3,16 +3,27 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **2D Map and 3D Map settings, Movable Controls, Other Tasks** (requests 10, 15) — two new categories in the
-   settings; with Movable Controls on, the 2D map's popup panels can be dragged by their title; with Other Tasks
-   on, a task's map can show the orthophotos of the project's other tasks over its own.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **2D Map and 3D Map settings, Movable Controls, Other Tasks** (requests 10, 15) — 2026-11-06, branch
+  `map-settings` (design below).
+  - Code: `tweakui/settings.py` (`movable_controls`, `other_tasks`), `templates/settings.html` (2D Map, 3D Map),
+    `tweakui/plugin.py`, `public/movable_controls.js`, `public/other_tasks.js`, `public/main.css`.
+  - Tests: Jest 65 (`movable_controls` 8, `other_tasks` 7), Django 32 (+2) on 4.0.0 and 3.3.2.
+  - Live on 4.0.0 (TestRGB's map, TestThermalNoPlugin as the other task) and 3.3.2 (a project of two tasks the
+    check imported from TestRGB's orthophoto, deleted afterwards): Layers, Base Maps, Measure and Other Tasks
+    dragged and kept inside the map, the map not dragged with them, back in place once closed; the other task's
+    orthophoto over the task's own, its opacity, hidden again; no button on the project's map; phone width with a
+    finger drag; no console errors of TweakUI's (only Google's base map tiles, not reachable from the check);
+    settings restored.
+  - Found while checking: Base Maps lets presses through to the map on touch screens, so dragging it dragged the
+    map too: a press on a title bar no longer reaches the map. Base Maps closes on a map click or its close button
+    (not when the pointer leaves it), and has a title bar, as Measure has a heading: all are dragged by them.
 - **Enhanced Task Details: a toggle per row, Current Step** (requests 13, 14) — 2026-11-06, branch
   `task-details-rows` (design below).
   - Code: `tweakui/settings.py` (`task_details_*`), `templates/settings.html` (the toggles under Enhanced Task
@@ -389,7 +400,7 @@ Design (branch `task-details-rows`):
   TestRGB from a late stage on 4.0.0 is not done (it changes the user's task): a task created by the check, or
   Jest only, to be seen when building.
 
-## 2D Map and 3D Map settings, Movable Controls, Other Tasks (requests 10, 15)
+## 2D Map and 3D Map settings, Movable Controls, Other Tasks (requests 10, 15) — done
 
 What there is (the same in 3.3.2 and 4.0.0): the 2D map's popup panels are Leaflet controls in the map's top-right
 corner: Layers (`LayersControlPanel`), Contours and Object Detection (core plugins), each a `.open` wrapper with a
