@@ -8,7 +8,7 @@ Administration > Plugins.
 
 ## Features
 
-Each user has their own TweakUI settings: the **TweakUI** item in WebODM's side menu opens them. The settings page
+Each user has their own TweakUI settings: the **TweakUI** item near the bottom of WebODM's side menu, just above About, opens them. The settings page
 has a navigation pane of categories on the left (above the settings on a phone); it opens on **General**. A
 change is saved as soon as it is made and applies from the next page.
 
