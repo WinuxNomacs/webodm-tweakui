@@ -301,17 +301,23 @@ What there is: the paintbrush menu (`public/theme_menu.js`) is on for every user
 - **ODM's `log.json`** in the task's assets (`/api/projects/<p>/tasks/<t>/assets/log.json`, WebODM's own route,
   both versions): `startTime` and `endTime` of the run on the node; only for tasks whose results were
   downloaded (not running, failed or canceled), and written without a time zone (the node's clock; UTC in Docker).
-- **WebODM's own fields**: started = `created_at` (a dashboard upload sets it when the upload is committed),
-  finished = `created_at` + `processing_time`. On the TestRGB task they are within 20 s of `log.json`'s times
-  (13:38:04 / 14:24:40 against 13:38:23 / 14:24:57 UTC); they work for every task, any node, and a running one.
+- **WebODM's own fields**: started = `created_at`, finished = `created_at` + `processing_time`. On the TestRGB
+  task they are within 20 s of `log.json`'s times (13:38:04 / 14:24:40 against 13:38:23 / 14:24:57 UTC); they work
+  for every task, any node, and a running one. But `created_at` is set when the task is created, i.e. when its
+  upload begins, and a restart sets `processing_time` back to -1 and the node counts again from the new run: after
+  a slow upload Finished is early by the upload's length, and after a restart both are off by the time before it.
 
-Decided (the user, 2026-11-06): the times come from WebODM's own fields (not `log.json`).
+Decided (the user, 2026-11-06, asked again once the restart and upload caveats were known): the times come from
+WebODM's own fields (not `log.json`), with those caveats.
 
 Design:
 - **Themes > "Show the theme menu in the header"** (on by default), at the top of the Themes section; off, the
   paintbrush isn't added. Settings > Themes still picks the theme.
-- **Enhanced Task Details: "Started:" and "Finished:" rows** after WebODM's "Created on:", in the browser's
-  local date and time like WebODM's; a running task shows "Running", a task never processed "—".
+- **Enhanced Task Details: "Started:" and "Finished:" rows** after WebODM's "Created on:" (found by its text),
+  in the browser's local date and time like WebODM's. Started: `created_at` once the task has run (a
+  `processing_time` above 0, or running). Finished: `created_at` + `processing_time` for a completed, failed or
+  canceled task that ran; "Running" while it runs; "—" otherwise. While a task that hasn't ended has its panel
+  open, it is fetched again every 5 s, so the rows follow it.
 
 ## 2D Map and 3D Map settings, Movable Controls (request 10)
 
