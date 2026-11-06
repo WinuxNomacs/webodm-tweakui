@@ -1,7 +1,8 @@
 """
-Settings > Themes: preset colour schemes, and /plugins/tweakui/theme.css, which applies the user's preset.
+Settings > Themes: preset colour schemes, the user's own themes (custom_themes), and /plugins/tweakui/theme.css,
+which applies the user's theme.
 
-A preset fills the 13 colours of WebODM's own theme (app/models/theme.py) and changes nothing else: the CSS is
+A preset (or an own theme) fills the 13 colours of WebODM's own theme (app/models/theme.py) and changes nothing else: the CSS is
 WebODM's theme template (app/templates/app/theme.css) rendered with the preset's colours, so it follows whatever
 each WebODM version themes. Places where WebODM hard-codes a white background keep it.
 """
@@ -12,7 +13,7 @@ from django.http import HttpResponse
 from django.template.loader import render_to_string
 from django.utils.translation import gettext as _
 
-from . import settings
+from . import custom_themes, settings
 
 DEFAULT = "webodm"
 
@@ -82,16 +83,60 @@ PRESETS = {
 SWATCH = ("secondary", "primary", "tertiary", "button_primary", "header_background")
 
 
-def theme_list():
-    """Every theme the user can pick, in the order of the Themes list: WebODM's theme (with the colours of the
-    instance's theme), then the presets; each with its id, name and swatch colours"""
-    from app.models import Setting
+def _hex(color, default):
+    """A colour of WebODM's theme as #rrggbb: Administration > Theme also takes #rgb and #rrggbbaa"""
+    color = (color or "").strip().lower()
+    if re.match(r"^#[0-9a-f]{3}$", color):
+        color = "#" + "".join(c * 2 for c in color[1:])
+    return color[:7] if re.match(r"^#[0-9a-f]{6}", color) else default
+
+
+def webodm_colors():
+    """The colours of the instance's WebODM theme (Administration > Theme), or its defaults without one"""
+    from app.models import Setting, Theme
     setting = Setting.objects.first()
     theme = setting.theme if setting is not None else None
-    themes = [{"id": DEFAULT, "name": _("WebODM's theme"),
-               "swatch": [getattr(theme, f) for f in SWATCH] if theme is not None else []}]
-    return themes + [{"id": k, "name": v["name"], "swatch": [v["colors"][f] for f in SWATCH]}
-                     for k, v in PRESETS.items()]
+    return {f: _hex(getattr(theme, f, None), Theme._meta.get_field(f).default) for f in FIELDS}
+
+
+def fields():
+    """WebODM's theme colours as Administration > Theme names and describes them, for the theme editor"""
+    from app.models import Theme
+    return [{"name": f, "label": Theme._meta.get_field(f).verbose_name, "help": Theme._meta.get_field(f).help_text}
+            for f in FIELDS]
+
+
+def _entry(theme_id, name, colors, group):
+    return {"id": theme_id, "name": name, "group": group, "swatch": [colors[f] for f in SWATCH]}
+
+
+def theme_list(user=None, with_colors=False):
+    """Every theme the user can pick, in the order of the Themes list: WebODM's theme (with the colours of the
+    instance's theme) and the presets ("builtin"), then the user's own ("own", id "own:<id>"); each with its id,
+    name, group and swatch colours, and with its 13 colours when asked (the theme editor copies them)"""
+    themes = [(DEFAULT, _("WebODM's theme"), webodm_colors(), "builtin")]
+    themes += [(k, v["name"], v["colors"], "builtin") for k, v in PRESETS.items()]
+    themes += [(custom_themes.OWN + t["id"], t["name"], t["colors"], "own") for t in custom_themes.own(user)]
+    return [dict(_entry(*t), **({"colors": t[2]} if with_colors else {})) for t in themes]
+
+
+def groups(user):
+    """The Themes list's groups: WebODM's theme and the presets, then the user's own (always shown, with New
+    theme)"""
+    themes = theme_list(user)
+    return [{"id": "builtin", "title": "", "themes": [t for t in themes if t["group"] == "builtin"]},
+            {"id": "own", "title": _("My themes"), "themes": [t for t in themes if t["group"] == "own"]}]
+
+
+def colors_of(theme_id, user):
+    """The colours of the theme the setting names (a preset or one of the user's own), or None for WebODM's theme
+    or a theme that is gone"""
+    if theme_id in PRESETS:
+        return PRESETS[theme_id]["colors"]
+    if theme_id.startswith(custom_themes.OWN):
+        theme = custom_themes.find(user, theme_id[len(custom_themes.OWN):])
+        return theme["colors"] if theme else None
+    return None
 
 
 # WebODM's places that hard-code a white background but take the page's text colour (the theme's primary); with a
@@ -135,9 +180,12 @@ def _prefix_selectors(css):
 
 
 def preset_css(preset_id):
-    """The stylesheet for a preset: WebODM's theme with its colours, then the white panels' text colour and the
-    dropdown menus' text"""
-    colors = PRESETS[preset_id]["colors"]
+    return colors_css(PRESETS[preset_id]["colors"])
+
+
+def colors_css(colors):
+    """The stylesheet for a theme's 13 colours (checked #rrggbb): WebODM's theme with them, then the white panels'
+    text colour and the dropdown menus' text"""
     context = {"SETTINGS": SimpleNamespace(theme=SimpleNamespace(**colors))}
     css = _prefix_selectors(render_to_string("app/theme.css", context))
     dark = min(colors["primary"], colors["secondary"], key=_luminance)
@@ -149,9 +197,10 @@ def preset_css(preset_id):
 
 
 def theme_css(request):
-    """/plugins/tweakui/theme.css, on every page: the logged-in user's preset, or nothing for WebODM's theme"""
-    preset = settings.load(request.user)["theme"]
-    css = preset_css(preset) if preset in PRESETS else ""
-    response = HttpResponse("/* TweakUI theme: %s */\n%s" % (preset, css), content_type="text/css; charset=utf-8")
+    """/plugins/tweakui/theme.css, on every page: the logged-in user's theme, or nothing for WebODM's theme"""
+    theme = settings.load(request.user)["theme"]
+    colors = colors_of(theme, request.user)
+    css = colors_css(colors) if colors else ""
+    response = HttpResponse("/* TweakUI theme: %s */\n%s" % (theme, css), content_type="text/css; charset=utf-8")
     response["Cache-Control"] = "no-store"
     return response

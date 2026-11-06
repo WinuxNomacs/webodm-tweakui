@@ -1,7 +1,7 @@
 // The header's theme menu (unless Settings > Themes turns it off): a paintbrush left of the user icon opens a list of the themes (window.TweakUI.themes,
 // from settings.js): the current one, WebODM's theme, then the others. Choosing one saves it as the user's theme,
 // the same setting as Settings > Themes, and reloads the page in it. Bootstrap's dropdown (jQuery's data API)
-// opens and closes the menu. UMD, so Jest can load it.
+// opens and closes the menu. The user's own themes (Settings > Themes > My themes) come after the presets. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -78,7 +78,11 @@
         list.appendChild(el(doc, "li", "dropdown-header", "Themes"));
         groups.top.forEach(function (t) { list.appendChild(item(doc, t, current)); });
         if (groups.rest.length) list.appendChild(el(doc, "li", "divider"));
-        groups.rest.forEach(function (t) { list.appendChild(item(doc, t, current)); });
+        // The presets, then each further group (your own themes) after a divider of its own
+        groups.rest.forEach(function (t, i) {
+            if (i && t.group !== groups.rest[i - 1].group) list.appendChild(el(doc, "li", "divider"));
+            list.appendChild(item(doc, t, current));
+        });
         var status = el(doc, "li", "tweakui-theme-status text-danger");
         status.hidden = true;
         list.appendChild(status);

@@ -56,6 +56,17 @@ const SHOTS = [
         },
     },
     {
+        // The editor on a copy of a preset, previewed on the page; nothing is saved
+        name: "theme-editor", settings: {},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/#themes");
+            await s.page.click('[data-theme-id="catppuccin-mocha"] [data-theme-action=copy]');
+            await s.page.waitForSelector("#tweakui-theme-preview", {state: "attached"});
+            await s.page.waitForTimeout(500);
+            return ".tweakui-editor";
+        },
+    },
+    {
         name: "movable-controls", settings: {movable_controls: true},
         async run(s) {
             await s.openMap();

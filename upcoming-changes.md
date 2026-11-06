@@ -3,13 +3,11 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Custom themes: your own** (request 21, phase A): make, edit and delete your own themes from any theme, with a
-   live preview.
+1. **Custom themes: import and export** (request 21, phase B): your own themes to and from a JSON file or JSON
+   text.
 
 **Then**
-2. **Custom themes: import and export** (request 21, phase B): your own themes to and from a JSON file or JSON
-   text.
-3. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
+2. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
    imports, exports, deletes and publishes (from their own) the themes every user sees, read-only to them;
    superusers only.
 
@@ -17,6 +15,22 @@
 (nothing planned)
 
 **Done**
+- **Custom themes: your own** (request 21, phase A) — 2026-11-06, branch `custom-themes-own` (design below).
+  - Code: `custom_themes.py` (the user's themes in their data store, `themes`; `clean` checks a name of 1-60
+    characters and all 13 colours as `#rrggbb`; at most 50; ids are hex), `themes.py` (`colors_css` for any
+    colours, `webodm_colors` as `#rrggbb`, `fields` from WebODM's Theme model, `theme_list(user)` with groups,
+    `colors_of`), `settings.py` (`theme` takes `own:<id>` while the user has it, else WebODM's theme), `api.py`
+    (`themes` GET/POST, `themes/<id>` PUT/DELETE, `themes/preview` POST → `{css}`), `templates/settings.html`
+    (Settings > Themes: My themes with New theme, Copy on every theme, Edit on your own, the editor, the themes'
+    colours as `json_script`), `public/theme_editor.js` (the editor and its preview, which replaces `theme.css`
+    until Cancel; Save also makes it your theme), `public/theme_menu.js` (own themes after a divider),
+    `public/main.css`. Screenshot `theme-editor` (`dev/screenshots.js`), docs `themes.md`, README, CHANGELOG.
+  - Tests: Django 14 (`TestCustomThemes`: create, checks, 50 at most, update and delete, another user, CSRF, CSS of
+    an own theme, deleted falls back, bad saved data left out, preview, the page, the editor's fields and colours,
+    WebODM's colours as `#rrggbb`, settings.js); Jest 10 (`theme_editor.test.js`) and 1 (`theme_menu`: the divider).
+  - Live on 4.0.0 and 3.3.2: Copy of Dracula, a typed header colour previewed on the page, Cancel puts the theme
+    back, Save makes it the current theme and the header menu lists it, Edit and Delete at 390 px (no horizontal
+    scroll) fall back to WebODM's theme; settings and themes restored.
 - **Theme sample** (request 20) — 2026-11-06, branch `theme-sample` (design below).
   - Code: `templates/settings.html` (Settings > Themes: a "Sample" group below the swatches, in place of the
     intro's screenshot thumbnail), `public/settings_page.js` (`inertSample`: its links and form do

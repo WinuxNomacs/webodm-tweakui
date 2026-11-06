@@ -5,7 +5,8 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import settings, themes
-from .api import FramesView, SettingsView, StorageTaskView, StorageView, settings_script
+from .api import (FramesView, SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesView, ThemeView,
+                  settings_script)
 
 
 class Plugin(PluginBase):
@@ -29,7 +30,10 @@ class Plugin(PluginBase):
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
                 "settings": settings.load(request.user),
-                "themes": themes.theme_list(),
+                "theme_groups": themes.groups(request.user),
+                "theme_fields": themes.fields(),
+                "theme_colors": {t["id"]: {"name": t["name"], "colors": t["colors"]}
+                                 for t in themes.theme_list(request.user, with_colors=True)},
             })
 
         @login_required
@@ -51,6 +55,9 @@ class Plugin(PluginBase):
     def api_mount_points(self):
         return [
             MountPoint("settings$", SettingsView.as_view()),
+            MountPoint("themes$", ThemesView.as_view()),
+            MountPoint(r"themes/preview$", ThemePreviewView.as_view()),
+            MountPoint(r"themes/(?P<theme_id>[0-9a-f]{1,32})$", ThemeView.as_view()),
             MountPoint("storage$", StorageView.as_view()),
             MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
             MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
