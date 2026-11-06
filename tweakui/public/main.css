@@ -47,3 +47,12 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
 .option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }
+
+/* General > Task Options > Enhanced Task Details: the rows TweakUI puts in a task's details panel */
+.expanded-panel .info-table tr.tweakui-hidden { display: none; }
+.tweakui-option-bubbles { display: flex; flex-wrap: wrap; gap: 4px; }
+.tweakui-option-bubble { display: inline-flex; align-items: baseline; border-width: 1px; border-style: solid; border-radius: 10px; padding: 0 8px; line-height: 1.6; white-space: nowrap; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.tweakui-option-value { font-weight: bold; margin-left: 5px; }
+.tweakui-odx-command { display: flex; align-items: flex-start; gap: 6px; }
+.tweakui-odx-command code { flex: 1; min-width: 0; display: block; white-space: normal; border-width: 1px; border-style: solid; padding: 4px 6px; color: inherit; background: transparent; font-size: 90%; }
+.tweakui-odx-command code span { display: inline-block; max-width: 100%; overflow-wrap: anywhere; }

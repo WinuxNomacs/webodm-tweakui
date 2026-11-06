@@ -9,6 +9,9 @@ KEY = "settings"
 DEFAULTS = {
     # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
     "show_modified_options": False,
+    # General > Task Options: a task's details panel on the Dashboard shows its preset, its options as bubbles and
+    # its ODX command
+    "enhanced_task_details": False,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS
     "theme": "webodm",
 }

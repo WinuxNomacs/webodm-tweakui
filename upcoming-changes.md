@@ -10,6 +10,17 @@
 (nothing planned)
 
 **Done**
+- **Enhanced Task Details** (request 8) — 2026-11-06, branch `task-details` (design below).
+  - Code: `tweakui/public/task_details.js` (the rows, preset matching, the command), `tweakui/settings.py`
+    (`enhanced_task_details`), `templates/settings.html` (General > Task Options), `public/main.css`.
+  - Tests: Jest `task_details.test.js` (9), Django (28 in all, on 4.0.0 and 3.3.2).
+  - Live on 4.0.0 (the TestRGB task: Preset M4T-RGB, the user's own preset) and 3.3.2 (a partial task the check
+    created: Custom, then Default once its options were the Default preset's; deleted afterwards): the rows in
+    place of WebODM's Options, the copy button, desktop and phone, WebODM's theme, a dark and a light preset,
+    setting off leaves WebODM's row; no console errors; settings restored.
+  - Found while checking, WebODM's own: options set to `false` are refused by the API (so tasks never hold them);
+    a project deleted while one of its tasks is a partial upload stays "deleting" (the worker skips partial
+    tasks), so the check committed its task to let WebODM remove it.
 - **Theme switcher in the header** (request 7) — 2026-11-06, branch `theme-switcher` (design below).
   - Code: `tweakui/public/theme_menu.js` (the menu), `tweakui/themes.py` (`theme_list`, swatches; dropdown text
     colour), `tweakui/api.py` (`settings.js` gives `window.TweakUI.themes`), `templates/settings.html` (the same
@@ -78,6 +89,10 @@ Added 2026-11-06 (second new.md):
 7. (2026-11-06) A Paint Brush icon in the header row, left of the user's icon; clicking it opens a dropdown of the
    available themes to change it on the fly. The current theme and WebODM's default theme are the top options. It
    sets the same theme preference as Settings > Themes: a shortcut.
+
+8. (2026-11-06) Under Task Options settings, an option "Enhanced Task Details" that enhances the task view: the
+   Preset used to create the task if available; the Options in individual bubbles, so they stand out and are
+   easier to read; an item showing the exact ODX command it generates, for easy copy/paste.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -216,6 +231,50 @@ Administration (staff), Developer Tools (dev mode, superusers), and `<li id="abo
 to place a plugin's item elsewhere, so `main.js` (loaded in `<head>`) moves TweakUI's `<li>` just before
 `#about-menu` when the page is parsed. To avoid a flash, `main.css` hides the item in its first place
 (`#side-menu > li:has(> a[href="/plugins/tweakui/"])`) until the script has moved it. Always, not a setting.
+
+## Enhanced Task Details (request 8) — done
+
+What WebODM has (checked in 3.3.2 and 4.0.0, the same in both):
+- **The panel**: on the Dashboard, a task's row expands into a details table (`TaskListItem.jsx`): Task ID (with a
+  copy-to-clipboard link), Created on, Processing Node, **Options** (one comma-separated line, `name:value`,
+  `boundary:geojson`, or "Default" when empty), Average GSD, Area, Points, Georeferencing, CRS, Disk Usage,
+  Task Output.
+- **No preset is stored with a task**: a task keeps only its options (`Task.options`). WebODM itself finds the
+  preset when a task's options are edited (`EditTaskForm.findFirstPresetMatching`): the first preset (system
+  ones first, then newest) with exactly the same options and values, else "Custom".
+- **The command**: WebODM sends the options to the node; NodeODX adds `--pc-ept --cog --gltf` (the outputs
+  WebODM needs, when the node supports them) and runs `run.sh <options> --project-path /var/www/data <uuid>`.
+  It logs that line on the node only (which may be another machine): WebODM never sees it. WebODM's docs show
+  ODX run by hand as `docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets
+  <options>`.
+- **Hooks**: `PluginsAPI.Dashboard.addTaskActionButton` is called with the task (its id, project, options) each
+  time a task's details panel opens; there is no hook into the details table itself, so the rows are added and
+  WebODM's Options row hidden by the script (as Show Modified Options does in the dialog), kept in place with a
+  MutationObserver when React re-renders.
+
+Proposed design (branch `task-details`):
+- **General > Task Options > Enhanced Task Details** (off by default), beside Show Modified Options.
+- In a task's details panel, with the setting on:
+  - **Preset:** the preset the task's options match, found as WebODM does (the presets the user can see,
+    `/api/presets/`), or "Custom" when none match.
+  - **Options:** each option a bubble (`name` and value, theme colours), in place of the comma-separated line;
+    "Default" when the task has none.
+  - **ODX command:** the command, in a monospace box with a copy button (as Task ID's), e.g.
+    `docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets --dsm
+    --feature-quality ultra`; values quoted for the shell where needed; `--boundary` as a file name, as the
+    command line takes a GeoJSON file.
+  - Updated when the task's options are edited.
+- README, CHANGELOG. Tests: Jest (matching, bubbles, the command and quoting, the setting off), Django (the
+  setting). Live on 4.0.0 (the completed TestRGB task) and 3.3.2 (a task created by the check, then deleted),
+  desktop and phone, a light and a dark preset.
+
+Decided (the user, 2026-11-06):
+- **Before Storage.**
+- **The preset is matched as WebODM does** (existing tasks too; an edited preset may no longer match), not
+  recorded at creation.
+- **The command is the docker command** of WebODM's docs (`/my/project` a placeholder for the user's folder).
+- **With the options the node adds** (`--pc-ept --cog --gltf`), so a run by hand gives the same outputs; false
+  booleans left out, as the node does.
 
 ## Storage (request 5), to be designed with the user
 

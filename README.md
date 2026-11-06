@@ -19,6 +19,17 @@ change is saved as soon as it is made and applies from the next page.
   many it has: "Input & Preprocessing (1/13)" once ignore-gsd is enabled. The count follows your changes,
   including "Reset to default". A preset's own settings count too (the Default preset sets auto-boundary and
   dsm). Only in the grouped view; "Other Options" is counted while it is open.
+- **Task Options > Enhanced Task Details** (off by default): when a task is opened on the Dashboard, its details
+  show three rows in place of WebODM's one-line Options:
+  - **Preset**: the preset the task's options match, found as WebODM's Edit dialog finds it (the first preset
+    with exactly the same options and values), or "Custom". WebODM doesn't record a task's preset, so a preset
+    edited since may no longer match.
+  - **Options**: each option in its own bubble, with its value.
+  - **ODX command**: the command to run the task yourself, with a copy button:
+    `docker run -ti --rm -v /my/project:/datasets/code webodm/odx --project-path /datasets` followed by the task's
+    options and the three the processing node adds by itself (`--pc-ept --cog --gltf`), as the node runs it.
+    Replace `/my/project` with your folder, which holds the photos in `images/`; a task's boundary is read from
+    `boundary.geojson` there.
 
 ### Themes
 
