@@ -409,33 +409,17 @@ class TestSourceFrames(TweakUITestCase):
         found = self.post({"type": "Point", "coordinates": self.lnglat(self.X + 40, self.Y)}).json()["frames"]
         self.assertAlmostEqual(found[-1]["spot"][0], 0.5 + 0.8 * 40 / 70, places=3)
 
-    def test_an_areas_photos_are_ordered_by_the_share_of_it_they_show(self):
-        x0, x1, y0, y1 = self.X - 50, self.X + 50, self.Y - 20, self.Y + 20
-        ring = [self.lnglat(x, y) for x, y in ((x0, y0), (x1, y0), (x1, y1), (x0, y1), (x0, y0))]
-        found = self.post({"type": "Polygon", "coordinates": [ring]}).json()["frames"]
-        self.assertEqual([f["filename"] for f in found], ["a.jpg", "b.jpg"])
-        # a shows all of it; b shows x from 30 - 62.5 m on: 82.5 of its 100 m
-        self.assertEqual(found[0]["share"], 1.0)
-        self.assertAlmostEqual(found[1]["share"], 0.825, delta=0.03)
-        # Its outline in a's photo: 50 m either side is 0.8 * 0.5 of the width, 20 m 0.8 * 0.2 of the width
-        outline = found[0]["outline"]
-        self.assertEqual(len(outline), 4)
-        self.assertAlmostEqual(min(p[0] for p in outline), 0.5 - 0.8 * 0.5, places=3)
-        self.assertAlmostEqual(max(p[1] for p in outline), 0.5 + 0.8 * 0.2 * 4000 / 3000, places=3)
-
     def test_a_3d_pick_gives_its_own_height_in_the_tasks_coordinates(self):
         # Picked on a roof 60 m below the cameras: 30 m from b is 0.8 * 30 / 60 from its centre
         found = self.post({"type": "Point", "coordinates": [self.X, self.Y, 60.0], "crs": "task"}).json()["frames"]
         self.assertAlmostEqual(found[1]["spot"][0], 0.5 - 0.8 * 0.5, places=3)
-        ring = [[self.X - 5, self.Y - 5, 20], [self.X + 5, self.Y - 5, 20], [self.X + 5, self.Y + 5, 20]]
-        found = self.post({"type": "Polygon", "coordinates": [ring], "crs": "task"}).json()["frames"]
-        self.assertEqual([f["share"] for f in found], [1.0, 1.0])
         res = self.post({"type": "Point", "coordinates": [self.X, self.Y], "crs": "task"})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
 
-    def test_bad_places_and_tasks_without_cameras_are_refused(self):
+    def test_anything_but_a_spot_and_tasks_without_cameras_are_refused(self):
+        ring = [self.lnglat(x, y) for x, y in ((self.X, self.Y), (self.X + 9, self.Y), (self.X, self.Y + 9), (self.X, self.Y))]
         for data in ({}, {"type": "LineString", "coordinates": [[0, 0], [1, 1]]}, {"type": "Point", "coordinates": "x"},
-                     {"type": "Polygon", "coordinates": [[[0, 0], [1, 1], [0, 0]]]},
+                     {"type": "Polygon", "coordinates": [ring]}, {"type": "Point", "coordinates": [0, 0, 0, 0]},
                      {"type": "Point", "coordinates": [0, 0], "crs": "EPSG:4326"}):
             self.assertEqual(self.post(data).status_code, status.HTTP_400_BAD_REQUEST, data)
         self.task.available_assets = ["orthophoto.tif"]

@@ -1,10 +1,10 @@
-// 2D Map and 3D Map > Source Frames: a button beside Share, in the map's action buttons, picks
-// a spot or draws an area on the 2D map or the 3D model, and opens a window of the task's photos that show it, best
-// first (a spot's by how near it is to the frame's centre, an area's by the share of the area shown): each photo
-// with the place drawn on it, its properties, a full-screen viewer and a download. The photos are found by TweakUI's
-// API (frames.py: the photos' poses and lenses, the ground's height). A project's map searches each of its tasks
-// with cameras. Leaflet, Potree and three.js are the page's globals; the 3D pick is pick3d.js's. UMD, so Jest can
-// load it.
+// 2D Map and 3D Map > Source Frames: a button beside Share, in the map's action buttons, turns Source Frames on;
+// while it is on, a label says to click the map, each click on the 2D map or the 3D model moves the one spot there,
+// and a window shows the task's photos that see it, best first (by how near the spot is to the frame's centre),
+// updated in place: each photo with the spot drawn on it, its properties, a full-screen viewer and a download. The
+// photos are found by TweakUI's API (frames.py: the photos' poses and lenses, the ground's height). A project's map
+// searches each of its tasks with cameras. Leaflet, Potree and three.js are the page's globals; the 3D pick is
+// pick3d.js's. UMD, so Jest can load it.
 (function (root, factory) {
     if (typeof module === "object" && module.exports) module.exports = factory(require("./pick3d"));
     else if (root.document) factory(root.TweakUI && root.TweakUI.pick3d).start(root.document, root);
@@ -12,10 +12,9 @@
     "use strict";
 
     var THUMB = 160, PHOTO = 1024;
-    // How far a press may move and still be a click (the 3D view orbits on a drag)
+    // How far a press may move and still be a click (the map pans and the 3D view orbits on a drag)
     var CLICK_SLOP = 5;
-    // An area is finished by a click this near its first corner (in pixels)
-    var CLOSE_PX = 12;
+    var LABEL = "Click Map to View Source Frame";
 
     // Helpers
 
@@ -55,8 +54,6 @@
         return b;
     }
 
-    function percent(share) { return Math.round(share * 100) + "%"; }
-
     function formatTime(seconds) {
         if (!seconds) return "";
         var d = new Date(seconds * 1000);
@@ -76,26 +73,26 @@
     }
 
     // The photos of several tasks in one list, best first (as frames.py orders one task's)
-    function merge(results, area) {
+    function merge(results) {
         var all = [];
         results.forEach(function (r) {
             (r.frames || []).forEach(function (f) { f.task = r.task; all.push(f); });
         });
-        all.sort(function (a, b) {
-            if (area && a.share !== b.share) return b.share - a.share;
-            return a.centre - b.centre;
-        });
+        all.sort(function (a, b) { return a.centre - b.centre; });
         return all;
     }
 
-    // Asks TweakUI's API for the photos of each task that show a place; resolves to {frames, errors}
-    function findFrames(fetchFn, doc, tasks, place) {
+    // Asks TweakUI's API for the photos of each task that show a spot; resolves to {frames, errors}. `signal`
+    // (an AbortSignal) cancels the requests when a newer spot comes
+    function findFrames(fetchFn, doc, tasks, place, signal) {
         return Promise.all(tasks.map(function (task) {
-            return fetchFn("/api/plugins/tweakui/frames/" + task.project + "/" + task.id, {
+            var options = {
                 method: "POST", credentials: "same-origin",
                 headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken(doc)},
                 body: JSON.stringify(place)
-            }).then(function (res) {
+            };
+            if (signal) options.signal = signal;
+            return fetchFn("/api/plugins/tweakui/frames/" + task.project + "/" + task.id, options).then(function (res) {
                 return res.json().then(function (body) {
                     if (!res.ok) throw new Error((body && body.detail) || ("Error " + res.status));
                     return {task: task, frames: body.frames};
@@ -103,7 +100,7 @@
             }).then(null, function (e) { return {task: task, error: e.message}; });
         })).then(function (results) {
             return {
-                frames: merge(results.filter(function (r) { return !r.error; }), place.type === "Polygon"),
+                frames: merge(results.filter(function (r) { return !r.error; })),
                 errors: results.filter(function (r) { return r.error; }).map(function (r) {
                     return (tasks.length > 1 ? (r.task.name || "Task #" + r.task.id) + ": " : "") + r.error;
                 })
@@ -111,7 +108,7 @@
         });
     }
 
-    // The place drawn on a photo: an SVG over it, in fractions of its width and height
+    // The spot drawn on a photo: a ring, in an SVG over it, in fractions of its width and height
     var SVGNS = "http://www.w3.org/2000/svg";
     function overlay(doc, frame) {
         var svg = doc.createElementNS(SVGNS, "svg");
@@ -130,15 +127,6 @@
                 ring.setAttribute("ry", r[1] * Math.min(aspect, 1));
                 ring.setAttribute("vector-effect", "non-scaling-stroke");
                 svg.appendChild(ring);
-            });
-        } else if (frame.outline) {
-            var points = frame.outline.map(function (p) { return p[0] + "," + p[1]; }).join(" ");
-            ["tweakui-sf-outline-outer", "tweakui-sf-outline"].forEach(function (c) {
-                var poly = doc.createElementNS(SVGNS, "polygon");
-                poly.setAttribute("class", c);
-                poly.setAttribute("points", points);
-                poly.setAttribute("vector-effect", "non-scaling-stroke");
-                svg.appendChild(poly);
             });
         }
         return svg;
@@ -305,20 +293,24 @@
         return {element: root, close: close, show: show};
     }
 
-    // The window of the photos: the list, best first, and the chosen one with its properties. Returns {element,
-    // close, select}
+    // The window of the photos: the list, best first, and the chosen one with its properties; `show` replaces them
+    // for a new spot, `busy` marks a spot's photos being found. Returns {element, close, show, busy, select}
     function buildWindow(doc, win, container, state, onClose) {
         var box = el(doc, "div", "tweakui-sf-window theme-secondary theme-color-primary theme-border");
         box.setAttribute("role", "dialog");
         box.setAttribute("aria-label", "Source Frames");
         var head = el(doc, "div", "tweakui-sf-head theme-background-highlight");
         var title = el(doc, "span", "tweakui-sf-title", "Source Frames");
+        var spinner = icon(doc, "fa-spinner fa-spin tweakui-sf-busy");
+        spinner.setAttribute("aria-label", "Finding the photos");
+        spinner.style.display = "none";
         var closeButton = el(doc, "button", "close tweakui-sf-close");
         closeButton.type = "button";
         closeButton.title = "Close";
         closeButton.setAttribute("aria-label", "Close");
         closeButton.innerHTML = "&times;";
         head.appendChild(title);
+        head.appendChild(spinner);
         head.appendChild(closeButton);
         var body = el(doc, "div", "tweakui-sf-body");
         box.appendChild(head);
@@ -336,7 +328,6 @@
             var table = el(doc, "table", "table table-condensed tweakui-sf-props");
             var rows = [["File", frame.filename]];
             if (state.multiple) rows.push(["Task", frame.task.name || "Task #" + frame.task.id]);
-            if (state.area) rows.push(["Area shown", percent(frame.share)]);
             rows.push(["Captured", formatTime(frame.capture_time)]);
             rows.push(["Camera", frame.camera ? frame.camera.replace(/^v2 /, "") : ""]);
             rows.push(["Size", frame.width && frame.height ? frame.width + " × " + frame.height + " px" : ""]);
@@ -397,7 +388,12 @@
             body.appendChild(el(doc, "p", "tweakui-sf-message" + (className ? " " + className : ""), text));
         }
 
+        function busy(on) { spinner.style.display = on ? "" : "none"; }
+
+        // As if the window were opened fresh at the spot: the best photo chosen
         function show(result) {
+            busy(false);
+            if (full) full.close();
             frames = result.frames;
             title.textContent = "Source Frames (" + frames.length + ")";
             body.textContent = "";
@@ -407,7 +403,7 @@
                 body.appendChild(err);
             }
             if (!frames.length) {
-                if (!result.errors.length) message(state.area ? "No photo shows this area." : "No photo shows this spot.", "text-muted");
+                if (!result.errors.length) message("No photo shows this spot.", "text-muted");
                 return;
             }
             list = el(doc, "div", "tweakui-sf-list theme-border");
@@ -417,12 +413,11 @@
                 var item = el(doc, "button", "tweakui-sf-item theme-border theme-secondary");
                 item.type = "button";
                 item.setAttribute("role", "option");
-                item.title = frame.filename + (state.area ? " (" + percent(frame.share) + " of the area)" : "");
+                item.title = frame.filename;
                 var thumb = photo(doc, frame, THUMB);
                 thumb.querySelector("img").loading = "lazy";
                 item.appendChild(thumb);
-                item.appendChild(el(doc, "span", "tweakui-sf-caption",
-                    state.area ? percent(frame.share) : "#" + (i + 1)));
+                item.appendChild(el(doc, "span", "tweakui-sf-caption", "#" + (i + 1)));
                 item.addEventListener("click", function () { select(i); });
                 list.appendChild(item);
             });
@@ -432,303 +427,189 @@
             select(0);
         }
 
-        // `replaced`: by the window of a new place
-        function close(replaced) {
+        function close() {
             if (full) full.close();
             if (box.parentNode) box.parentNode.removeChild(box);
-            if (onClose) onClose(replaced === true);
+            if (onClose) onClose();
         }
         closeButton.addEventListener("click", function () { close(); });
 
         message("Finding the photos…");
-        return {element: box, close: close, show: show, select: function (i) { select(i); }, frames: function () { return frames; }};
+        return {element: box, close: close, show: show, busy: busy, select: function (i) { select(i); }, frames: function () { return frames; }};
     }
 
-    // The tool bar: Spot or Area, and while an area is drawn, Finish and Cancel. `tool` is the map's or the 3D
-    // view's: {start(kind, done), cancel(), finish(), clear()}. Returns {element, close}
-    function buildBar(doc, win, container, tool, onPlace, onClose) {
-        var bar = el(doc, "div", "tweakui-sf-bar theme-secondary theme-color-primary theme-border");
-        bar.setAttribute("role", "toolbar");
-        bar.setAttribute("aria-label", "Source Frames");
-        var hint = el(doc, "span", "tweakui-sf-hint");
-        var buttons = {};
-        function button(key, iconName, text, action, className) {
-            var b = el(doc, "button", "btn btn-sm " + (className || "btn-secondary") + " tweakui-sf-" + key);
-            b.type = "button";
-            b.appendChild(icon(doc, iconName));
-            b.appendChild(doc.createTextNode(" " + text));
-            b.addEventListener("click", function (e) { e.stopPropagation(); action(); });
-            buttons[key] = b;
-            bar.appendChild(b);
-            return b;
-        }
-        var mode = null;
-        // The tool says when a click finds nothing there (the 3D view's empty space)
-        tool.hint = function (text) { hint.textContent = text; };
-        function setMode(kind) {
-            mode = kind;
-            buttons.spot.classList.toggle("active", kind === "spot");
-            buttons.area.classList.toggle("active", kind === "area");
-            // Not the hidden attribute: Bootstrap's .btn shows it
-            buttons.finish.style.display = kind === "area" ? "" : "none";
-            hint.textContent = kind === "spot" ? "Click a place." :
-                kind === "area" ? "Click the corners; finish on the first one or with Finish." : "";
-            container.classList.toggle("tweakui-sf-picking", !!kind);
-        }
-        function pick(kind) {
-            tool.cancel();
-            setMode(kind);
-            tool.start(kind, function (place) {
-                setMode(null);
-                onPlace(place);
+    // The label shown while Source Frames is on, with what the tool has to say below it (a click on nothing in the
+    // 3D view). Returns {element, hint, remove}
+    function buildLabel(doc, container) {
+        var label = el(doc, "div", "tweakui-sf-label theme-secondary theme-color-primary theme-border");
+        label.setAttribute("role", "status");
+        label.appendChild(icon(doc, "fa-crosshairs"));
+        label.appendChild(doc.createTextNode(" " + LABEL));
+        var hint = el(doc, "div", "tweakui-sf-hint");
+        hint.style.display = "none";
+        label.appendChild(hint);
+        container.appendChild(label);
+        return {
+            element: label,
+            hint: function (text) { hint.textContent = text || ""; hint.style.display = text ? "" : "none"; },
+            remove: function () { if (label.parentNode) label.parentNode.removeChild(label); }
+        };
+    }
+
+    // Source Frames on a map or a 3D view. `tool` is the map's or the 3D view's: {start(onSpot), stop()}, the spot
+    // drawn by it and moved on each click until it stops. On: the label, and each spot updates the window (the first
+    // opens it); only the latest spot's photos are shown, an older request cancelled. Off (the button again, Esc,
+    // the window's close): the label, the spot and the window go. `onChange(on)` tells the button
+    function controller(doc, win, container, tool, tasks, onChange) {
+        var on = false, label = null, box = null, latest = 0, abort = null;
+        function onSpot(place) {
+            if (label) label.hint("");
+            if (!box) {
+                box = buildWindow(doc, win, container, {multiple: tasks.length > 1}, function () { box = null; off(); });
+            } else box.busy(true);
+            if (abort) abort.abort();
+            abort = win.AbortController ? new win.AbortController() : null;
+            var mine = ++latest, target = box;
+            findFrames(win.fetch.bind(win), doc, tasks, place, abort && abort.signal).then(function (result) {
+                if (mine === latest && box === target) target.show(result);
             });
         }
-        button("spot", "fa-crosshairs", "Spot", function () { pick("spot"); });
-        button("area", "fa-draw-polygon", "Area", function () { pick("area"); });
-        button("finish", "fa-check", "Finish", function () { tool.finish(); }, "btn-primary");
-        bar.appendChild(hint);
-        var x = el(doc, "button", "close tweakui-sf-bar-close");
-        x.type = "button";
-        x.title = "Close";
-        x.setAttribute("aria-label", "Close");
-        x.innerHTML = "&times;";
-        x.addEventListener("click", function (e) { e.stopPropagation(); close(); });
-        bar.appendChild(x);
-        ["click", "dblclick", "mousedown", "pointerdown", "touchstart", "wheel"].forEach(function (t) {
-            bar.addEventListener(t, function (e) { e.stopPropagation(); });
-        });
         function keys(e) {
-            if (e.key === "Escape" && mode && !doc.querySelector(".tweakui-sf-viewer")) {
-                tool.cancel();
-                setMode(null);
-            }
+            if (e.key === "Escape" && !doc.querySelector(".tweakui-sf-viewer")) off();
         }
-        doc.addEventListener("keydown", keys);
-        function close() {
+        function off() {
+            if (!on) return;
+            on = false;
+            latest++;
+            if (abort) { abort.abort(); abort = null; }
             doc.removeEventListener("keydown", keys);
-            tool.cancel();
-            setMode(null);
-            if (bar.parentNode) bar.parentNode.removeChild(bar);
-            if (onClose) onClose();
-        }
-        container.appendChild(bar);
-        pick("spot");
-        return {element: bar, close: close, pick: pick};
-    }
-
-    // Source Frames on a map or a 3D view: the button's click opens (or closes) the bar; a place opens the window
-    function controller(doc, win, container, tool, tasks) {
-        var bar = null, box = null;
-        function closeWindow() {
+            tool.stop();
+            tool.hint = null;
+            if (label) { label.remove(); label = null; }
+            container.classList.remove("tweakui-sf-picking");
             if (box) { var b = box; box = null; b.close(); }
-            tool.clear();
+            if (onChange) onChange(false);
         }
-        function onPlace(place) {
-            // The previous window goes, but not the place just drawn
-            if (box) { var b = box; box = null; b.close(true); }
-            var state = {area: place.type === "Polygon", multiple: tasks.length > 1};
-            box = buildWindow(doc, win, container, state, function (replaced) {
-                if (replaced) return;
-                box = null;
-                tool.clear();
-            });
-            var mine = box;
-            findFrames(win.fetch.bind(win), doc, tasks, place).then(function (result) {
-                if (box === mine) mine.show(result);
-            });
+        function turnOn() {
+            on = true;
+            label = buildLabel(doc, container);
+            tool.hint = label.hint;
+            container.classList.add("tweakui-sf-picking");
+            doc.addEventListener("keydown", keys);
+            tool.start(onSpot);
+            if (onChange) onChange(true);
         }
         return {
-            toggle: function () {
-                if (bar) { bar.close(); return; }
-                bar = buildBar(doc, win, container, tool, onPlace, function () { bar = null; closeWindow(); });
-            },
-            isOpen: function () { return !!bar; },
+            toggle: function () { if (on) off(); else turnOn(); },
+            off: off,
+            isOn: function () { return on; },
             window: function () { return box; }
         };
     }
 
-    // The 2D map's tool: a click is a spot; an area is drawn corner by corner (a polygon of Leaflet's). While it
-    // picks, a click on the map is TweakUI's alone (WebODM's map opens a layer's popup on a click): it is taken in
-    // the capture phase, unless it ends a drag (the map pans) or lands on a control or TweakUI's bar or window
+    // The 2D map's tool: each click moves the spot (a marker of Leaflet's) there. While it is on, a click on the
+    // map is TweakUI's alone (WebODM's map opens a layer's popup on a click): it is taken in the capture phase,
+    // unless it ends a drag (the map pans) or lands on a control or TweakUI's label or window
     function mapTool(L, map) {
-        var shape = null, drawing = null, box = map.getContainer();
-        var SKIP = ".leaflet-control, .leaflet-popup, .tweakui-sf-bar, .tweakui-sf-window";
-        function style() { return {color: "#ffeb3b", weight: 3, fillOpacity: 0.15, interactive: false}; }
-        function clear() {
-            if (shape) { map.removeLayer(shape); shape = null; }
-        }
-        function stop() {
-            if (!drawing) return;
-            box.removeEventListener("pointerdown", drawing.down, true);
-            box.removeEventListener("click", drawing.click, true);
-            box.removeEventListener("dblclick", drawing.dblclick, true);
-            if (drawing.line) map.removeLayer(drawing.line);
-            drawing = null;
-        }
-        function finishArea() {
-            if (!drawing || drawing.points.length < 3) return;
-            var points = drawing.points.slice(), done = drawing.done;
-            stop();
-            shape = L.polygon(points, style()).addTo(map);
-            var ring = points.map(function (p) { return [p.lng, p.lat]; });
-            ring.push(ring[0]);
-            done({type: "Polygon", coordinates: [ring]});
-        }
+        var marker = null, on = null, box = map.getContainer();
+        var SKIP = ".leaflet-control, .leaflet-popup, .tweakui-sf-label, .tweakui-sf-window";
         function ours(e) { return !(e.target && e.target.closest && e.target.closest(SKIP)); }
+        function stop() {
+            if (on) {
+                box.removeEventListener("pointerdown", on.down, true);
+                box.removeEventListener("click", on.click, true);
+                on = null;
+            }
+            if (marker) { map.removeLayer(marker); marker = null; }
+        }
         return {
-            start: function (kind, done) {
-                clear();
-                drawing = {kind: kind, done: done, points: [], line: null, at: null};
-                drawing.down = function (e) { drawing.at = ours(e) ? {x: e.clientX, y: e.clientY} : null; };
-                drawing.click = function (e) {
-                    var at = drawing.at;
+            start: function (onSpot) {
+                stop();
+                on = {at: null};
+                on.down = function (e) { on.at = ours(e) ? {x: e.clientX, y: e.clientY} : null; };
+                on.click = function (e) {
+                    var at = on.at;
                     if (!ours(e)) return;
                     e.stopPropagation();
                     if (at && (Math.abs(e.clientX - at.x) > CLICK_SLOP || Math.abs(e.clientY - at.y) > CLICK_SLOP)) return;
                     var latlng = map.mouseEventToLatLng(e);
-                    if (drawing.kind === "spot") {
-                        stop();
-                        shape = L.circleMarker(latlng, {radius: 8, color: "#ffeb3b", weight: 3, fillOpacity: 0.3, interactive: false}).addTo(map);
-                        done({type: "Point", coordinates: [latlng.lng, latlng.lat]});
-                        return;
-                    }
-                    var pts = drawing.points;
-                    if (pts.length >= 3) {
-                        var first = map.latLngToContainerPoint(pts[0]), here = map.latLngToContainerPoint(latlng);
-                        if (first.distanceTo(here) <= CLOSE_PX) { finishArea(); return; }
-                    }
-                    pts.push(latlng);
-                    if (drawing.line) map.removeLayer(drawing.line);
-                    drawing.line = (pts.length > 2 ? L.polygon(pts, style()) : L.polyline(pts, style())).addTo(map);
+                    if (marker) marker.setLatLng(latlng);
+                    else marker = L.circleMarker(latlng, {radius: 8, color: "#ffeb3b", weight: 3, fillOpacity: 0.3, interactive: false}).addTo(map);
+                    onSpot({type: "Point", coordinates: [latlng.lng, latlng.lat]});
                 };
-                // A double click finishes an area and doesn't zoom the map
-                drawing.dblclick = function (e) {
-                    if (!ours(e)) return;
-                    e.stopPropagation();
-                    e.preventDefault();
-                    finishArea();
-                };
-                box.addEventListener("pointerdown", drawing.down, true);
-                box.addEventListener("click", drawing.click, true);
-                box.addEventListener("dblclick", drawing.dblclick, true);
+                box.addEventListener("pointerdown", on.down, true);
+                box.addEventListener("click", on.click, true);
             },
-            finish: finishArea,
-            cancel: stop,
-            clear: function () { stop(); clear(); }
+            stop: stop
         };
     }
 
-    // The 3D view's place: yellow spheres at its points and a line through them, three.js objects of TweakUI's own in
-    // the scene. Not Potree's measurements: WebODM saves those with the task's 3D scene
-    function modelMarks(THREE, viewer) {
-        var group = new THREE.Group(), line = null, points = [], closed = false;
+    // The 3D view's spot: a yellow sphere, a three.js object of TweakUI's own in the scene. Not Potree's
+    // measurements: WebODM saves those with the task's 3D scene
+    function modelMark(THREE, viewer) {
+        var group = new THREE.Group(), sphere = null;
         group.name = pick3d.MARKS;
         group.renderOrder = 999;
         viewer.scene.scene.add(group);
-        var color = 0xffeb3b;
-        function redraw() {
-            if (line) { group.remove(line); line.geometry.dispose(); line.material.dispose(); line = null; }
-            if (points.length < 2) return;
-            var geometry = new THREE.BufferGeometry().setFromPoints(points);
-            var material = new THREE.LineBasicMaterial({color: color, depthTest: false, transparent: true});
-            line = new (closed ? THREE.LineLoop : THREE.Line)(geometry, material);
-            line.renderOrder = 999;
-            group.add(line);
+        function drop() {
+            if (!sphere) return;
+            group.remove(sphere);
+            sphere.geometry.dispose();
+            sphere.material.dispose();
+            sphere = null;
         }
         return {
-            add: function (p) {
-                // A size that shows from where the place was picked
+            move: function (p) {
+                drop();
+                // A size that shows from where the spot was picked
                 var r = Math.max(viewer.scene.getActiveCamera().position.distanceTo(p) * 0.008, 0.05);
-                var sphere = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8),
-                    new THREE.MeshBasicMaterial({color: color, depthTest: false, transparent: true, opacity: 0.9}));
+                sphere = new THREE.Mesh(new THREE.SphereGeometry(r, 12, 8),
+                    new THREE.MeshBasicMaterial({color: 0xffeb3b, depthTest: false, transparent: true, opacity: 0.9}));
                 sphere.position.copy(p);
                 sphere.renderOrder = 999;
                 group.add(sphere);
-                points.push(p.clone());
-                redraw();
             },
-            close: function () { closed = true; redraw(); },
-            remove: function () {
-                viewer.scene.scene.remove(group);
-                group.traverse(function (o) {
-                    if (o.geometry) o.geometry.dispose();
-                    if (o.material) o.material.dispose();
-                });
-            },
+            remove: function () { drop(); viewer.scene.scene.remove(group); },
             group: group
         };
     }
 
-    // The 3D view's tool: a click on the point cloud or the model (not a drag, which orbits) is a spot or an area's
-    // corner
+    // The 3D view's tool: each click on the point cloud or the model (not a drag, which orbits) moves the spot there
     function modelTool(win, viewer) {
         var THREE = win.THREE;
-        var marks = null, drawing = null, dom = viewer.renderer.domElement;
-        function pickAt(e) {
-            var hit = pick3d.pick(win, viewer, e.clientX, e.clientY);
-            return hit && hit.point;
-        }
-        function clear() {
-            if (marks) { marks.remove(); marks = null; }
-        }
+        var mark = null, on = null, dom = viewer.renderer.domElement;
         function stop() {
-            if (!drawing) return;
-            dom.removeEventListener("pointerdown", drawing.down, true);
-            dom.removeEventListener("pointerup", drawing.up, true);
-            dom.removeEventListener("dblclick", drawing.dblclick, true);
-            drawing = null;
-        }
-        function finishArea() {
-            if (!drawing || drawing.points.length < 3) return;
-            var points = drawing.points.slice(), done = drawing.done;
-            stop();
-            marks.close();
-            var ring = points.map(function (p) { return [p.x, p.y, p.z]; });
-            ring.push(ring[0]);
-            done({type: "Polygon", coordinates: [ring], crs: "task"});
-        }
-        function toScreen(p) {
-            var camera = viewer.scene.getActiveCamera(), rect = dom.getBoundingClientRect();
-            var v = new THREE.Vector3(p.x, p.y, p.z).project(camera);
-            return {x: rect.left + (v.x + 1) / 2 * rect.width, y: rect.top + (1 - v.y) / 2 * rect.height};
+            if (on) {
+                dom.removeEventListener("pointerdown", on.down, true);
+                dom.removeEventListener("pointerup", on.up, true);
+                on = null;
+            }
+            if (mark) { mark.remove(); mark = null; }
         }
         var api = {
-            start: function (kind, done) {
-                clear();
-                marks = modelMarks(THREE, viewer);
-                drawing = {kind: kind, done: done, points: [], at: null};
-                drawing.down = function (e) { drawing.at = {x: e.clientX, y: e.clientY}; };
-                drawing.up = function (e) {
-                    var at = drawing.at;
-                    drawing.at = null;
+            start: function (onSpot) {
+                stop();
+                mark = modelMark(THREE, viewer);
+                on = {at: null};
+                on.down = function (e) { on.at = {x: e.clientX, y: e.clientY}; };
+                on.up = function (e) {
+                    var at = on.at;
+                    on.at = null;
                     if (!at || Math.abs(e.clientX - at.x) > CLICK_SLOP || Math.abs(e.clientY - at.y) > CLICK_SLOP) return;
                     if (e.button !== undefined && e.button !== 0) return;
-                    var p = pickAt(e);
-                    if (!p) {
+                    var hit = pick3d.pick(win, viewer, e.clientX, e.clientY);
+                    if (!hit) {
                         if (api.hint) api.hint("Nothing there: click on the points or the model.");
                         return;
                     }
-                    var pts = drawing.points;
-                    if (drawing.kind === "area" && pts.length >= 3) {
-                        var first = toScreen(pts[0]);
-                        if (Math.hypot(first.x - e.clientX, first.y - e.clientY) <= CLOSE_PX) { finishArea(); return; }
-                    }
-                    pts.push(new THREE.Vector3(p.x, p.y, p.z));
-                    marks.add(new THREE.Vector3(p.x, p.y, p.z));
-                    if (drawing.kind === "spot") {
-                        var d = drawing.done;
-                        stop();
-                        d({type: "Point", coordinates: [p.x, p.y, p.z], crs: "task"});
-                    }
+                    var p = hit.point;
+                    mark.move(new THREE.Vector3(p.x, p.y, p.z));
+                    onSpot({type: "Point", coordinates: [p.x, p.y, p.z], crs: "task"});
                 };
-                drawing.dblclick = function (e) { e.stopPropagation(); finishArea(); };
-                dom.addEventListener("pointerdown", drawing.down, true);
-                dom.addEventListener("pointerup", drawing.up, true);
-                dom.addEventListener("dblclick", drawing.dblclick, true);
+                dom.addEventListener("pointerdown", on.down, true);
+                dom.addEventListener("pointerup", on.up, true);
             },
-            finish: finishArea,
-            cancel: function () { var was = drawing; stop(); if (was) clear(); },
-            clear: function () { stop(); clear(); }
+            stop: stop
         };
         return api;
     }
@@ -741,7 +622,7 @@
         var wrap = el(doc, "div", "tweakui-sf-action");
         var b = el(doc, "button", "btn btn-sm btn-secondary tweakui-sf-button");
         b.type = "button";
-        b.title = "Source Frames: the photos that show a spot or an area";
+        b.title = "Source Frames: the photos that show a spot";
         b.setAttribute("aria-label", "Source Frames");
         b.appendChild(icon(doc, "fa-crosshairs"));
         b.addEventListener("click", onClick);
@@ -752,6 +633,13 @@
         }
         row.insertBefore(wrap, share || row.lastElementChild);
         return b;
+    }
+
+    // The button shows when Source Frames is on
+    function active(button, on) {
+        if (!button) return;
+        button.classList.toggle("active", on);
+        button.setAttribute("aria-pressed", on ? "true" : "false");
     }
 
     // The 3D view's task: the page gives it as JSON on [data-modelview]
@@ -774,17 +662,21 @@
                 if (!tasks.length || !args.map || !L) return;
                 var box = args.map.getContainer();
                 var row = box.parentNode && box.parentNode.querySelector(".actionButtons");
-                var c = controller(doc, win, box, mapTool(L, args.map), tasks);
-                addButton(doc, row, function () { c.toggle(); });
+                var button = null;
+                var c = controller(doc, win, box, mapTool(L, args.map), tasks, function (on) { active(button, on); });
+                button = addButton(doc, row, function () { c.toggle(); });
             });
         }
         if (settings.source_frames_3d && pick3d) {
             pick3d.whenViewer(doc, win, function (viewer, row) {
                 var task = modelTask(doc);
                 if (!task || (task.available_assets || []).indexOf("shots.geojson") === -1 || !win.Potree || !win.THREE) return;
-                var c = null;
-                addButton(doc, row, function () {
-                    if (!c) c = controller(doc, win, viewer.renderArea || viewer.renderer.domElement.parentNode, modelTool(win, viewer), [task]);
+                var c = null, button = null;
+                button = addButton(doc, row, function () {
+                    if (!c) {
+                        c = controller(doc, win, viewer.renderArea || viewer.renderer.domElement.parentNode, modelTool(win, viewer), [task],
+                            function (on) { active(button, on); });
+                    }
                     c.toggle();
                 });
             });
@@ -793,7 +685,7 @@
 
     return {
         start: start, tasksWithCameras: tasksWithCameras, merge: merge, findFrames: findFrames, overlay: overlay,
-        buildWindow: buildWindow, buildBar: buildBar, controller: controller, mapTool: mapTool, modelTool: modelTool, viewer: viewer,
+        buildWindow: buildWindow, buildLabel: buildLabel, controller: controller, mapTool: mapTool, modelTool: modelTool, viewer: viewer,
         modelTask: modelTask, formatTime: formatTime, imageUrl: imageUrl, addButton: addButton
     };
 });

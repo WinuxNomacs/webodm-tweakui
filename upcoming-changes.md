@@ -586,7 +586,7 @@ Decided (the user, 2026-11-06):
 - **Each move shows the window as if opened fresh at the new spot**: the best photo selected (the spot nearest
   the frame's centre); the same spot simply moves around and the window only updates.
 - **No bar**: a label "Click Map to View Source Frame" appears once the Source Frames action button is clicked
-  (read here as: until the first click opens the window). The button again, Esc, or the window's × ends Source
+  and stays on screen the whole time Source Frames is on. The button again, Esc, or the window's × ends Source
   Frames and removes the spot.
 
 ## Storage (request 5), to be designed with the user

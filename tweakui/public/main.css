@@ -84,11 +84,12 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
    viewer. The place drawn on a photo (and the map) is yellow with a dark edge, as it must show on any photo, not
    follow the theme */
 .tweakui-sf-picking, .tweakui-sf-picking canvas, .tweakui-sf-picking .leaflet-interactive { cursor: crosshair !important; }
-.tweakui-sf-bar { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1002; display: flex; align-items: center; gap: 6px; flex-wrap: wrap; max-width: calc(100% - 20px); padding: 6px 8px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4); }
-.tweakui-sf-bar .tweakui-sf-hint { font-size: 12px; }
-.tweakui-sf-bar .close { margin-left: 4px; float: none; }
-.tweakui-sf-bar .close, .tweakui-sf-head .close { color: inherit; text-shadow: none; opacity: 0.7; }
-.tweakui-sf-bar .close:hover, .tweakui-sf-head .close:hover { color: inherit; opacity: 1; }
+.tweakui-sf-label { position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1002; max-width: calc(100% - 20px); padding: 6px 10px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 1px 5px rgba(0, 0, 0, 0.4); font-weight: bold; text-align: center; pointer-events: none; }
+.tweakui-sf-label .tweakui-sf-hint { font-size: 12px; font-weight: normal; }
+.tweakui-sf-head .tweakui-sf-busy { margin: 0 8px; opacity: 0.7; }
+.tweakui-sf-head .close { color: inherit; text-shadow: none; opacity: 0.7; }
+.tweakui-sf-head .close:hover { color: inherit; opacity: 1; }
+.tweakui-sf-button.active { box-shadow: inset 0 3px 5px rgba(0, 0, 0, 0.25); }
 .tweakui-sf-window { position: absolute; right: 10px; top: 64px; z-index: 1002; width: 560px; max-width: calc(100% - 20px); max-height: calc(100% - 124px); display: flex; flex-direction: column; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 1px 8px rgba(0, 0, 0, 0.45); overflow: hidden; }
 .tweakui-sf-head { display: flex; align-items: center; padding: 6px 10px; cursor: move; touch-action: none; user-select: none; font-weight: bold; }
 .tweakui-sf-head .tweakui-sf-title { flex: 1; }
@@ -104,9 +105,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-sf-photo img { width: 100%; height: auto; display: block; border-radius: 3px; user-select: none; }
 .tweakui-sf-photo .tweakui-sf-overlay { position: absolute; left: 0; top: 0; width: 100%; height: 100%; overflow: hidden; pointer-events: none; }
 .tweakui-sf-main-photo { cursor: zoom-in; }
-.tweakui-sf-ring, .tweakui-sf-outline { fill: none; stroke: #ffeb3b; stroke-width: 2px; }
-.tweakui-sf-ring-outer, .tweakui-sf-outline-outer { fill: none; stroke: #000; stroke-opacity: 0.6; stroke-width: 4px; }
-.tweakui-sf-outline { fill: #ffeb3b; fill-opacity: 0.12; }
+.tweakui-sf-ring { fill: none; stroke: #ffeb3b; stroke-width: 2px; }
+.tweakui-sf-ring-outer { fill: none; stroke: #000; stroke-opacity: 0.6; stroke-width: 4px; }
 .tweakui-sf-actions { display: flex; gap: 6px; flex-wrap: wrap; margin: 8px 0; }
 .tweakui-sf-props { margin-bottom: 0; table-layout: fixed; font-size: 12px; }
 .tweakui-sf-props th { width: 120px; white-space: nowrap; }
@@ -123,5 +123,5 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-sf-list { width: auto; flex-direction: row; overflow-x: auto; overflow-y: hidden; border-width: 0 0 1px 0; }
     .tweakui-sf-item { width: 96px; flex: none; }
     .tweakui-sf-main { overflow: visible; }
-    .tweakui-sf-bar { top: 6px; }
+    .tweakui-sf-label { top: 6px; }
 }
