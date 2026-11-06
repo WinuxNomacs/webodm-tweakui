@@ -1,0 +1,8 @@
+# WebODM 3.3.2 runs Python 3.9 (4.0.0 runs 3.14): newer syntax (match, X | Y types, ...) is reported
+target-version = "py39"
+line-length = 120
+extend-exclude = ["ignored"]
+
+[lint]
+# Style rewrites, not compatibility: the code keeps its %-formatting and import order
+extend-ignore = ["UP031", "UP032", "I001"]
