@@ -3,8 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
-   Movable Controls on, the 2D map's popup panels can be dragged by their title.
+1. **2D Map and 3D Map settings, Movable Controls, Other Tasks** (requests 10, 15) — two new categories in the
+   settings; with Movable Controls on, the 2D map's popup panels can be dragged by their title; with Other Tasks
+   on, a task's map can show the orthophotos of the project's other tasks over its own.
 2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
@@ -135,6 +136,11 @@ Added 2026-11-06 (fifth new.md):
     Command, ...).
 14. An Enhanced Task Details option for running tasks: the current step's name and number out of the steps to
     complete, e.g. "Current Step (8/15): Texturing"; how the steps are found to be discussed.
+
+Added 2026-11-06 (sixth new.md):
+
+15. Request 11 again: in a task's 2D map (e.g. TestRGB's), pick another task's orthophoto of the same project
+    (TestThermalNoPlugin's) in Layers, to compare it with the task's own; the user couldn't find the built-in way.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -383,14 +389,24 @@ Design (branch `task-details-rows`):
   TestRGB from a late stage on 4.0.0 is not done (it changes the user's task): a task created by the check, or
   Jest only, to be seen when building.
 
-## 2D Map and 3D Map settings, Movable Controls (request 10)
+## 2D Map and 3D Map settings, Movable Controls, Other Tasks (requests 10, 15)
 
 What there is (the same in 3.3.2 and 4.0.0): the 2D map's popup panels are Leaflet controls in the map's top-right
 corner: Layers (`LayersControlPanel`), Contours and Object Detection (core plugins), each a `.open` wrapper with a
 `.title` bar and a `.close-button`; Measure (the measure plugin's `.plugin-measure.popup`); Base Maps (Leaflet's
 layers control, a list that opens while the pointer is over it).
 
-Decided (the user, 2026-11-06): 3D Map is added now, empty ("No settings yet").
+For Other Tasks (request 15; the same in 3.3.2 and 4.0.0): WebODM's project map (Dashboard > a project > "View
+Map", `/map/project/<p>/`) loads every task's layers, and its Layers panel lists each task with its own
+Orthophoto, Plant Health and Surface Model and a side-by-side button (checked live on 4.0.0 with TestProject:
+TestThermalNoPlugin and TestRGB). A task's map (`/map/project/<p>/task/<t>/`) loads only that task.
+`PluginsAPI.Map.didAddControls` gives the Leaflet map and the tiles (each with `meta.task`: id, project, crop);
+`/api/projects/<p>/tasks/?available_assets=orthophoto.tif` lists a project's tasks with an orthophoto, and
+`/api/projects/<p>/tasks/<t>/orthophoto/metadata` gives a layer's tile URL and bounds, as WebODM's map uses them
+(512-px tiles).
+
+Decided (the user, 2026-11-06): 3D Map is added now, empty ("No settings yet"). Other Tasks (request 15) is built,
+in this phase: a panel on a task's map (not only a shortcut to the project's map).
 
 Design:
 - **Settings > 2D Map** and **Settings > 3D Map**: two categories in the navigation pane.
@@ -398,6 +414,10 @@ Design:
   the map; when it closes (its wrapper loses `.open`, or it is removed) its position is cleared, so it reopens
   where WebODM puts it. Base Maps and Measure have no title bar: dragged by their own edge (Base Maps closes as
   soon as the pointer leaves it, so moving it helps little).
+- **2D Map > "Other Tasks"** (off by default): on a task's map (not the project's map, which has them all), a
+  button below Layers opens an "Other Tasks" panel, styled as Layers (title bar, close button, so Movable Controls
+  drags it too): the project's other tasks with an orthophoto, each with a checkbox (shown over the task's own
+  layers, cropped as its task is) and an opacity slider; none shown on opening. Nothing remembered between pages.
 
 ## Storage (request 5), to be designed with the user
 
