@@ -9,11 +9,11 @@ KEY = "settings"
 DEFAULTS = {
     # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
     "show_modified_options": False,
-    # General > Task Options: a task's details panel on the Dashboard shows its preset, its options as bubbles and
+    # General > Task Details: a task's details panel on the Dashboard shows its preset, its options as bubbles and
     # its ODX command
     "enhanced_task_details": False,
-    # Its parts, each turned off on its own: Started and Finished, Preset, Options as bubbles, ODX command, and the
-    # current step of a running task
+    # Its parts, each turned off on its own: Task Start and End Time, Show Configured Task Preset, Options as
+    # Bubbles, Show ODX Command and Show Current Processing Stage
     "task_details_times": True,
     "task_details_preset": True,
     "task_details_options": True,
