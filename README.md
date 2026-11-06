@@ -20,7 +20,11 @@ change is saved as soon as it is made and applies from the next page.
   including "Reset to default". A preset's own settings count too (the Default preset sets auto-boundary and
   dsm). Only in the grouped view; "Other Options" is counted while it is open.
 - **Task Options > Enhanced Task Details** (off by default): when a task is opened on the Dashboard, its details
-  show three rows in place of WebODM's one-line Options:
+  show when it started and finished, and three rows in place of WebODM's one-line Options:
+  - **Started** and **Finished**, after "Created on", in your local time. WebODM keeps no start or end time, so
+    they are worked out from what it has: Started is when the task was created, Finished that plus its processing
+    time ("Running" while it runs). Created means when its upload began, and a restart counts the processing
+    time again from the new run, so after a slow upload or a restart they are off by that much.
   - **Preset**: the preset the task's options match, found as WebODM's Edit dialog finds it (the first preset
     with exactly the same options and values), or "Custom". WebODM doesn't record a task's preset, so a preset
     edited since may no longer match.
@@ -39,7 +43,8 @@ Dark; Dracula; Nord; Gruvbox Dark and Light; One Dark. Each shows a swatch of it
 page in it.
 
 The **paintbrush** in the header, left of the user icon, is a shortcut to the same choice on every page: it opens
-the list of themes, with your current theme and WebODM's theme on top, and choosing one switches to it.
+the list of themes, with your current theme and WebODM's theme on top, and choosing one switches to it. **Theme
+Menu > Show the theme menu in the header** (on by default, at the top of Themes) turns it off.
 
 A preset fills the colours of WebODM's own theme, so it changes exactly what an administrator's theme can change,
 in each WebODM version. Places WebODM always shows in white keep their white background (some icons and controls

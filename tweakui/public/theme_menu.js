@@ -1,4 +1,4 @@
-// The header's theme menu: a paintbrush left of the user icon opens a list of the themes (window.TweakUI.themes,
+// The header's theme menu (unless Settings > Themes turns it off): a paintbrush left of the user icon opens a list of the themes (window.TweakUI.themes,
 // from settings.js): the current one, WebODM's theme, then the others. Choosing one saves it as the user's theme,
 // the same setting as Settings > Themes, and reloads the page in it. Bootstrap's dropdown (jQuery's data API)
 // opens and closes the menu. UMD, so Jest can load it.
@@ -58,10 +58,11 @@
         return li;
     }
 
-    // The menu's li, put before the user's dropdown; null when the page has no user icon or no themes
+    // The menu's li, put before the user's dropdown; null when it is turned off or the page has no user icon or themes
     function build(doc, win) {
         var tw = win.TweakUI, user = doc.querySelector(".navbar-top-links > li.dropdown > .dropdown-user");
-        if (!tw || !tw.themes || !tw.settings || !user || doc.querySelector(".tweakui-theme-menu")) return null;
+        if (!tw || !tw.themes || !tw.settings || tw.settings.show_theme_menu === false || !user ||
+            doc.querySelector(".tweakui-theme-menu")) return null;
         var current = tw.settings.theme, groups = ordered(tw.themes, current);
         var menu = el(doc, "li", "dropdown tweakui-theme-menu");
         var toggle = el(doc, "a", "dropdown-toggle");

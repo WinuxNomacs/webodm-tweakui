@@ -1,6 +1,6 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
-// false, a radio button (Themes) as its value. A new theme reloads the page to show it. UMD, so Jest can load it.
+// false, a radio button (Themes) as its value. A new theme, or the theme menu turned on or off, reloads the page to show it. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -58,7 +58,7 @@
                 if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
                 if (win.TweakUI) win.TweakUI.settings = body;
                 setStatus(page, "Saved", false);
-                if (name === "theme") win.location.reload();
+                if (name === "theme" || name === "show_theme_menu") win.location.reload();
             });
         }).then(null, function (e) {
             if (!radio) input.checked = !value;

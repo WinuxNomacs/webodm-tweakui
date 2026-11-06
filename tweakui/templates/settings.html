@@ -30,12 +30,22 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                             <input type="checkbox" data-setting="enhanced_task_details"{% if settings.enhanced_task_details %} checked{% endif %}>
                             {% trans "Enhanced Task Details" %}
                         </label>
-                        <p class="text-muted">{% trans "In a task's details on the Dashboard: the preset its options match, each option in its own bubble, and the ODX command to run it yourself, with a copy button." %}</p>
+                        <p class="text-muted">{% trans "In a task's details on the Dashboard: when it started and finished, the preset its options match, each option in its own bubble, and the ODX command to run it yourself, with a copy button." %}</p>
                     </div>
                 </div>
             </section>
             <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>
                 <h4>{% trans "Themes" %}</h4>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Theme Menu" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="show_theme_menu"{% if settings.show_theme_menu %} checked{% endif %}>
+                            {% trans "Show the theme menu in the header" %}
+                        </label>
+                        <p class="text-muted">{% trans "A paintbrush left of your user icon, to change the theme from any page." %}</p>
+                    </div>
+                </div>
                 <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">
                     {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header{% endcomment %}

@@ -115,3 +115,16 @@ test("a changed checkbox does not reload the page", async () => {
     await settingsPage.save(root, input, fetchFn, document, win);
     expect(win.location.reload).not.toHaveBeenCalled();
 });
+
+test("turning the theme menu on or off reloads the page to show it", async () => {
+    document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
+        <section data-section="themes"><input type="checkbox" data-setting="show_theme_menu"></section>
+        <p class="tweakui-status"></p></div>`;
+    const root = document.getElementById("tweakui-settings"), input = root.querySelector("input");
+    const win = {location: {reload: jest.fn()}};
+    const fetchFn = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({show_theme_menu: true})}));
+    input.checked = true;
+    await settingsPage.save(root, input, fetchFn, document, win);
+    expect(JSON.parse(fetchFn.mock.calls[0][1].body)).toEqual({show_theme_menu: true});
+    expect(win.location.reload).toHaveBeenCalled();
+});
