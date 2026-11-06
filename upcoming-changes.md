@@ -3,17 +3,26 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Previews in the settings** (request 19, docs phase 2): each setting's screenshot as a thumbnail beside it in
-   TweakUI's settings page, enlarged on a click.
+1. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
+   workflow on a release tag or by hand; the README becomes an overview with links.
 
 **Then**
-2. **Documentation site** (request 19, docs phase 3): VitePress in `docs/`, published to GitHub Pages by a
-   workflow on a release tag or by hand; the README becomes an overview with links.
+(nothing planned)
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Previews in the settings** (request 19, docs phase 2) — 2026-11-06, branch `settings-previews` (design below).
+  - Code: `templates/settings.html` (`data-previews` on the page, a `data-preview` on 10 settings and on the
+    Themes intro), `public/settings_page.js` (`addPreviews`: a lazy thumbnail titled with the setting's name,
+    hidden if its image doesn't load; `enlarge`: the overlay, closed by Esc, a click or its x, the focus back on
+    the thumbnail), `public/main.css` (thumbnail right of the description, under it on a phone; the overlay over
+    Bootstrap's modal backdrop, in the theme's colours, above the side menu).
+  - Tests: Jest 5 (`settings_page.test.js`); Django 1 (the page names exactly the screenshots in `previews/`).
+  - Live on 4.0.0 and 3.3.2, 1280 and 390 px wide, WebODM's theme and Catppuccin Mocha: all 11 images decode
+    (3.3.2 serves `.webp` as `application/octet-stream`, which browsers still show), Esc closes and refocuses;
+    settings restored.
 - **Feature screenshots** (request 19, docs phase 1) — 2026-11-06, branch `screenshots` (design below).
   - Code: `dev/screenshots.js` (the shot list, the login from `TW_USER` / `TW_PASSWORD`, the account's settings
     put back in a `finally`, the browser's own WebP encoding, pairs side by side with labels), `npm run

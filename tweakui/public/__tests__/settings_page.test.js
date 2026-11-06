@@ -148,3 +148,77 @@ test("turning the theme menu on or off reloads the page to show it", async () =>
     expect(JSON.parse(fetchFn.mock.calls[0][1].body)).toEqual({show_theme_menu: true});
     expect(win.location.reload).toHaveBeenCalled();
 });
+
+function previewPage() {
+    document.body.innerHTML = `
+      <div id="tweakui-settings" data-api="/api/plugins/tweakui/" data-previews="/plugins/tweakui/previews/">
+        <section data-section="general"><h4>General</h4>
+          <div class="tweakui-setting" data-preview="other-tasks"><label><input type="checkbox" data-setting="other_tasks">
+            Other   Tasks</label><p>desc</p></div>
+          <div class="tweakui-setting"><label><input type="checkbox" data-setting="task_details_times"> Started</label></div>
+        </section>
+        <section data-section="themes"><h4>Themes</h4><div class="tweakui-intro" data-preview="themes"><p>intro</p></div></section>
+      </div>
+      <button id="elsewhere">x</button>`;
+    return document.getElementById("tweakui-settings");
+}
+
+test("a setting with a data-preview gets a lazy thumbnail of its screenshot, named after the setting", () => {
+    const root = previewPage();
+    settingsPage.addPreviews(root, document);
+    settingsPage.addPreviews(root, document);
+    const buttons = root.querySelectorAll(".tweakui-preview");
+    expect(buttons.length).toBe(2);
+    const img = buttons[0].querySelector("img");
+    expect(img.getAttribute("src")).toBe("/plugins/tweakui/previews/other-tasks.webp");
+    expect(img.getAttribute("loading")).toBe("lazy");
+    expect(img.alt).toBe("Other Tasks");
+    expect(buttons[0].closest(".tweakui-setting").classList.contains("tweakui-has-preview")).toBe(true);
+    expect(buttons[1].querySelector("img").alt).toBe("Themes");
+});
+
+test("a screenshot that doesn't load hides its thumbnail", () => {
+    const root = previewPage();
+    settingsPage.addPreviews(root, document);
+    const button = root.querySelector(".tweakui-preview");
+    button.querySelector("img").dispatchEvent(new Event("error"));
+    expect(button.hidden).toBe(true);
+    expect(button.parentNode.classList.contains("tweakui-has-preview")).toBe(false);
+});
+
+test("clicking a thumbnail shows the screenshot full size, and Esc closes it and focuses the thumbnail again", () => {
+    const root = previewPage();
+    settingsPage.addPreviews(root, document);
+    const button = root.querySelector(".tweakui-preview");
+    button.click();
+    const overlay = document.querySelector(".tweakui-preview-overlay");
+    expect(overlay.getAttribute("role")).toBe("dialog");
+    expect(overlay.querySelector("figure img").getAttribute("src")).toBe("/plugins/tweakui/previews/other-tasks.webp");
+    expect(overlay.querySelector("figcaption").textContent).toBe("Other Tasks");
+    expect(document.activeElement).toBe(overlay.querySelector(".close"));
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+    expect(document.querySelector(".tweakui-preview-overlay")).toBeNull();
+    expect(document.activeElement).toBe(button);
+});
+
+test("a click on the overlay or its close button closes it, and a later Esc does nothing more", () => {
+    const root = previewPage();
+    settingsPage.addPreviews(root, document);
+    const button = root.querySelector(".tweakui-preview");
+    button.click();
+    document.querySelector(".tweakui-preview-overlay .close").click();
+    expect(document.querySelector(".tweakui-preview-overlay")).toBeNull();
+    button.click();
+    document.querySelector(".tweakui-preview-overlay figure img").click();
+    expect(document.querySelector(".tweakui-preview-overlay")).toBeNull();
+    document.getElementById("elsewhere").focus();
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+    expect(document.activeElement.id).toBe("elsewhere");
+});
+
+test("a page without a previews folder adds no thumbnails", () => {
+    const root = previewPage();
+    root.removeAttribute("data-previews");
+    settingsPage.addPreviews(root, document);
+    expect(root.querySelector(".tweakui-preview")).toBeNull();
+});
