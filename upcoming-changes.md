@@ -2,9 +2,12 @@
 
 ## Phases (current and upcoming)
 
-**Up next**
-1. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
+**Up next** (order to be confirmed by the user)
+1. **TweakUI menu item above About** (request 6) — small; details below.
+2. **Themes** — a Themes item in the settings page's navigation pane: each user picks a preset theme (Dracula,
    Nord, Catppuccin, Solarized, ...) or WebODM's own. Details below; its design is discussed before it is built.
+3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+   what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
@@ -45,6 +48,13 @@
 4. Under General, a "Task Options" section (settings that change WebODM's Task Options dialog), with "Show
    Modified Options": when on, the number after each option group's heading in that dialog shows how many of its
    options are not at their default, e.g. "Input & Preprocessing (1/13)" after enabling ignore-gsd.
+
+Added 2026-11-06 (second new.md):
+
+5. A Storage item in the TweakUI settings' navigation pane, where the user turns on a Storage view under
+   Diagnostic: the user's WebODM storage use at a glance, like LuxODM's Storage page (`~/gitrepos/web/luxodm`,
+   may be reused), and cleaning up / deleting unneeded tasks, projects and other items filling their quota.
+6. Move the TweakUI side-menu item near the bottom of the side menu, just above About.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -107,3 +117,42 @@ Proposed design (for the discussion):
 
 Open (for the discussion): which presets and variants (e.g. Dracula; Nord; Catppuccin Latte, Frappé, Macchiato,
 Mocha; Solarized Light and Dark; others); how far dark presets go on the hard-coded places (map, 3D view, admin).
+
+## TweakUI menu item above About (request 6)
+
+What WebODM offers (checked in 3.3.2 and 4.0.0, `app/templates/app/logged_in_base.html`, the same in both):
+plugins' `main_menu()` items are rendered right after Dashboard, in plugin order; then Processing Nodes,
+Administration (staff), Developer Tools (dev mode, superusers), and `<li id="about-menu">` last. There is no way
+to place a plugin's item elsewhere, so `main.js` (loaded in `<head>`) moves TweakUI's `<li>` just before
+`#about-menu` when the page is parsed. To avoid a flash, `main.css` hides the item in its first place
+(`#side-menu > li:has(> a[href="/plugins/tweakui/"])`) until the script has moved it. Always, not a setting.
+
+## Storage (request 5), to be designed with the user
+
+What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
+- **Diagnostic** is a core plugin (`coreplugins/diagnostic`): one side-menu item "Diagnostic" linking to
+  `/plugins/diagnostic/`, a page with the disk's and memory's free/used charts. It has no submenu and no tabs;
+  admins can disable it.
+- **Quota**: `Profile.quota` (MB, -1 = none); `used_quota()` is the sum of `Task.size` over the tasks of the
+  projects the user **owns**. Only tasks count: nothing else of a user's is in the quota.
+- `Task.size` (MB) is kept by WebODM (`update_size`, after processing, uploads, compacting) and is in the tasks
+  API. A per-kind breakdown (photos, orthophoto, DEM, point cloud, textured model) needs a walk of the task folder.
+- **Cleanup through WebODM's own API** (its permissions, node cleanup and quota cache): a task's `remove`
+  (`POST /api/projects/<p>/tasks/<t>/remove/`), `compact` (deletes the task's photos, keeps its results; only for
+  completed tasks), and `DELETE /api/projects/<p>/` (the owner deletes; a non-owner only loses access).
+- LuxODM's Storage page (a fork, `app/storage.py`, `StorageView.jsx`) has two parts: each user's projects and
+  tasks with sizes and their quota; and, for admins, the whole instance measured by a Celery job, with
+  clear-cut leftovers (failed/canceled tasks, partial uploads, folders without a row, caches, node copies),
+  opt-in daily rules and a deletion log (Django models). The admin part needs models, a beat schedule and
+  file deletion on the server, which a plugin can't add the same way (no models; data stores only).
+
+Proposed design (for the discussion):
+- **Settings > Storage**: a new category in the navigation pane with "Show the Storage view" (off by default).
+- **The view** (`/plugins/tweakui/storage/`, logged in): the user's quota bar ("X of Y used", or "X used"), and
+  their own projects, largest first, each with its tasks (name, status, date, size); a task's breakdown by kind
+  loaded when it is opened. Suggestions marked: failed / canceled tasks, completed tasks whose photos can be
+  compacted. Actions per task: Compact, Delete; per project: Delete; each with a confirmation naming what goes
+  and what it frees, done through WebODM's API above. Projects shared with the user are not listed (they are
+  not in the user's quota).
+
+Open (for the discussion): where the view appears under Diagnostic; whether admins also get an instance-wide part.
