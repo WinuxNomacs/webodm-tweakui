@@ -3,7 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Zoom Override** (request 17) — 2D Map and 3D Map settings to zoom in further: the 2D map 3 steps further, the
+   3D view toward what is under the pointer. Details below.
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -179,6 +181,11 @@ Added 2026-11-06 (seventh new.md):
 16. A Source Frames option in the 2D Map and 3D Map settings: a button to pick a spot or draw an area on the map,
     which opens a window with the source photos that see it, each photo's properties, and buttons to open the
     full frame or download it. For an area, the photos are ranked by how much of the area they show.
+
+Added 2026-11-06 (eighth new.md):
+
+17. Zoom Override in the 2D Map and 3D Map settings: on the 2D map, zoom in 3 steps further than WebODM allows; in
+    the 3D view, zoom in about 3x closer. The user isn't sure how the 3D control works and asked how it should.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -498,6 +505,32 @@ Decided (the user, 2026-11-06):
   area shown, then the same).
 - **"Open full frame" opens a full-screen viewer in the page** (zoom and pan, the spot or area drawn on it, Esc
   closes it).
+
+## Zoom Override (request 17)
+
+What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
+- **2D map**: the Leaflet map stops at zoom 24 (`Map.jsx`: `maxZoom: 24`); its layers would go further (an
+  orthophoto's tiles are enlarged past their own zoom, to `maxzoom + 99`; base maps alike). So zoom 24 is the only
+  limit, and `map.setMaxZoom()` from the map hook lifts it: 3 steps is zoom 27, each step twice as close (the
+  orthophoto's own pixels, enlarged; e.g. TestRGB's tiles stop at their native zoom and are scaled up beyond).
+- **3D view** (Potree's orbit controls): there is no limit. Each wheel step goes 10% of the remaining way to the
+  orbit centre (the point the view turns around, at first the middle of the scene), so it slows down as it nears
+  it and never passes it: measured on TestRGB, 98 m from the centre at first, 4 m after 30 steps, 0.18 m after 60.
+  What feels like a limit is the orbit centre: a surface in front of it can be neared, one beyond it can't.
+  Potree has two ways round it already: a double click on the point cloud jumps close to that point and makes it
+  the orbit centre (not on the textured model), and Tools > Navigation's Earth controls zoom toward the pointer.
+
+Proposed design (for the discussion):
+- **Settings**: 2D Map > Controls > "Zoom Override" and 3D Map > Controls > "Zoom Override" (each off by default).
+- **2D**: the map zooms 3 steps further (zoom 27), with the wheel, the + button and a pinch.
+- **3D**: the wheel zooms toward what is under the pointer (the point cloud or the textured model) instead of the
+  orbit centre, and the orbit centre moves there as it zooms: any surface can be neared, as closely as wanted;
+  once the pointer is on nothing, the wheel works as before.
+
+Decided (the user, 2026-11-06):
+- **Before Storage.**
+- **2D: 3 steps, fixed** (zoom 27); one on/off setting.
+- **3D: the wheel zooms toward what is under the pointer**, the orbit centre moving there (over nothing, as before).
 
 ## Storage (request 5), to be designed with the user
 
