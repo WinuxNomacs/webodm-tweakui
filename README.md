@@ -18,7 +18,8 @@ the settings is a screenshot of it; a click shows it full size. Every feature bu
   (Show Modified Options); a task's details on the Dashboard show when it started and finished, its preset, its
   options as bubbles, its ODX command and, while it runs, its current step (Enhanced Task Details).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, WebODM's theme or one of 11 presets (Catppuccin,
-  Solarized, Dracula, Nord, Gruvbox, One Dark), a sample of WebODM's controls in the current theme, and a theme
+  Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes made from a copy of any theme with a live preview,
+  a sample of WebODM's controls in the current theme, and a theme
   menu in the header.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels dragged anywhere within the map (Movable Controls), the project's other tasks'
   orthophotos over the task's own (Other Tasks), the task's photos that show a clicked spot (Source Frames), and 3
