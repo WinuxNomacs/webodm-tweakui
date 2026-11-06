@@ -118,8 +118,18 @@ Proposed design (for the discussion):
   made more specific (each prefixed with `html `) to win without a flash. "WebODM's theme" serves nothing.
 - Themes page: a list of presets with a preview swatch of their colours; choosing one saves and reloads the look.
 
+Decided (the user, 2026-11-06):
+- **Presets change only what WebODM's theme can change.** Places where WebODM hard-codes a white background (the
+  map's layers panel, the side-by-side slider, the loading screen, the 3D view's Potree panels, ...) keep it:
+  usually an icon or control there only works on white. Themes apply safely wherever possible and override
+  nothing else.
+- Consequence to handle: WebODM's theme sets the page's text colour (`body { color: primary }`), and those white
+  panels inherit it, so a dark preset's light text would be unreadable there. The preset's CSS gives those
+  panels the preset's own dark colour as text colour (a preset colour, not a hard-coded one), so they stay as
+  they look with WebODM's default theme. The live check covers each of them on both versions.
+
 Open (for the discussion): which presets and variants (e.g. Dracula; Nord; Catppuccin Latte, Frappé, Macchiato,
-Mocha; Solarized Light and Dark; others); how far dark presets go on the hard-coded places (map, 3D view, admin).
+Mocha; Solarized Light and Dark; others).
 
 ## TweakUI menu item above About (request 6) — done
 
