@@ -1,6 +1,7 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
-// false, a radio button (Themes) as its value. A new theme, or the theme menu turned on or off, reloads the page to show it. UMD, so Jest can load it.
+// false, a radio button (Themes) as its value. A new theme, or the theme menu turned on or off, reloads the page to show it.
+// Settings in a data-depends box are greyed out and disabled while the setting it names is off. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -36,6 +37,16 @@
         return name;
     }
 
+    // Greys out and disables the settings of each data-depends box whose setting is off
+    function applyDepends(page) {
+        each(page.querySelectorAll("[data-depends]"), function (box) {
+            var parent = page.querySelector("input[data-setting='" + box.getAttribute("data-depends") + "']");
+            var off = !!parent && !parent.checked;
+            box.className = box.className.replace(/\s*\btweakui-off\b/, "") + (off ? " tweakui-off" : "");
+            each(box.querySelectorAll("input"), function (input) { input.disabled = off; });
+        });
+    }
+
     function setStatus(page, text, failed) {
         var status = page.querySelector(".tweakui-status");
         status.textContent = text;
@@ -63,6 +74,7 @@
         }).then(null, function (e) {
             if (!radio) input.checked = !value;
             else if (previous) previous.checked = true;
+            applyDepends(page);
             setStatus(page, "Not saved: " + e.message, true);
         });
     }
@@ -71,6 +83,7 @@
         var page = doc.getElementById("tweakui-settings");
         if (!page) return;
         showSection(page, win.location.hash);
+        applyDepends(page);
         win.addEventListener("hashchange", function () { showSection(page, win.location.hash); });
         // A radio button's group remembers its checked one, to put it back if the change is refused
         var checked = {};
@@ -81,6 +94,7 @@
             input.addEventListener("change", function () {
                 var previous = checked[input.name];
                 if (input.type === "radio") checked[input.name] = input;
+                applyDepends(page);
                 save(page, input, win.fetch.bind(win), doc, win, previous).then(function () {
                     if (input.type === "radio" && !input.checked && previous) checked[input.name] = previous;
                 });
@@ -88,5 +102,5 @@
         });
     }
 
-    return {start: start, showSection: showSection, save: save, csrfToken: csrfToken};
+    return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends};
 });

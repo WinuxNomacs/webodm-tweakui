@@ -30,7 +30,44 @@ Colours come only from WebODM's theme classes.{% endcomment %}
                             <input type="checkbox" data-setting="enhanced_task_details"{% if settings.enhanced_task_details %} checked{% endif %}>
                             {% trans "Enhanced Task Details" %}
                         </label>
-                        <p class="text-muted">{% trans "In a task's details on the Dashboard: when it started and finished, the preset its options match, each option in its own bubble, and the ODX command to run it yourself, with a copy button." %}</p>
+                        <p class="text-muted">{% trans "In a task's details on the Dashboard, the parts turned on below." %}</p>
+                    </div>
+                    <div class="tweakui-subsettings" data-depends="enhanced_task_details">
+                        <div class="tweakui-setting">
+                            <label>
+                                <input type="checkbox" data-setting="task_details_times"{% if settings.task_details_times %} checked{% endif %}>
+                                {% trans "Started and Finished" %}
+                            </label>
+                            <p class="text-muted">{% trans "When the task started and finished, after Created on." %}</p>
+                        </div>
+                        <div class="tweakui-setting">
+                            <label>
+                                <input type="checkbox" data-setting="task_details_preset"{% if settings.task_details_preset %} checked{% endif %}>
+                                {% trans "Preset" %}
+                            </label>
+                            <p class="text-muted">{% trans "The preset the task's options match, or Custom." %}</p>
+                        </div>
+                        <div class="tweakui-setting">
+                            <label>
+                                <input type="checkbox" data-setting="task_details_options"{% if settings.task_details_options %} checked{% endif %}>
+                                {% trans "Options as bubbles" %}
+                            </label>
+                            <p class="text-muted">{% trans "Each option in its own bubble, in place of WebODM's one-line Options." %}</p>
+                        </div>
+                        <div class="tweakui-setting">
+                            <label>
+                                <input type="checkbox" data-setting="task_details_command"{% if settings.task_details_command %} checked{% endif %}>
+                                {% trans "ODX command" %}
+                            </label>
+                            <p class="text-muted">{% trans "The command to run the task yourself, with a copy button." %}</p>
+                        </div>
+                        <div class="tweakui-setting">
+                            <label>
+                                <input type="checkbox" data-setting="task_details_step"{% if settings.task_details_step %} checked{% endif %}>
+                                {% trans "Current step" %}
+                            </label>
+                            <p class="text-muted">{% trans "While the task runs, its current ODM stage, e.g. Current Step (8/13): Texturing." %}</p>
+                        </div>
                     </div>
                 </div>
             </section>

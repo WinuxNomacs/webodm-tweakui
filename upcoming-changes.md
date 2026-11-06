@@ -3,17 +3,27 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Enhanced Task Details: a toggle per row, Current Step** (requests 13, 14) — each row of Enhanced Task
-   Details can be turned off; a running task shows its current ODM stage, "Current Step (8/13): Texturing".
-2. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
+1. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
    Movable Controls on, the 2D map's popup panels can be dragged by their title.
-3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Enhanced Task Details: a toggle per row, Current Step** (requests 13, 14) — 2026-11-06, branch
+  `task-details-rows` (design below).
+  - Code: `tweakui/settings.py` (`task_details_*`), `templates/settings.html` (the toggles under Enhanced Task
+    Details), `public/settings_page.js` (`data-depends`: greyed out while it is off), `public/task_details.js`
+    (`parts`, `stages`, `readStep`, `stepText`; the console read on opening and at each 5 s fetch),
+    `public/main.css`.
+  - Tests: Jest 50 (`task_details` +7, `settings_page` +1), Django 30 on 4.0.0 and 3.3.2.
+  - Live on 4.0.0 and 3.3.2: the toggles (greyed out and disabled while Enhanced Task Details is off, saved),
+    parts left out on TestRGB (4.0.0) with WebODM's Options row back when bubbles are off; a 12-photo
+    fast-orthophoto task created by the check: "Starting", "Current Step (4/12): Structure from Motion", then
+    "(6/12): Meshing" as it ran; desktop and phone; no console errors; the task cancelled and its project deleted,
+    settings restored. Found while checking: the label wrapped ("Current Step / (4/12):"), kept on one line.
 - **Paintbrush toggle and task start/end times** (requests 9, 12) — 2026-11-06, branch `paintbrush-times`
   (design below).
   - Code: `tweakui/settings.py` (`show_theme_menu`), `templates/settings.html` (Themes > Theme Menu),
@@ -335,7 +345,7 @@ Design:
   canceled task that ran; "Running" while it runs; "—" otherwise. While a task that hasn't ended has its panel
   open, it is fetched again every 5 s, so the rows follow it.
 
-## Enhanced Task Details: a toggle per row, Current Step (requests 13, 14)
+## Enhanced Task Details: a toggle per row, Current Step (requests 13, 14) — done
 
 What there is: Enhanced Task Details (one setting, `enhanced_task_details`, `public/task_details.js`) adds
 Started/Finished after "Created on", and Preset, Options (bubbles, WebODM's Options row hidden) and ODX command;

@@ -1,7 +1,8 @@
 // General > Task Options > Enhanced Task Details: in a task's details panel on the Dashboard (TaskListItem in WebODM),
-// Started and Finished rows follow WebODM's "Created on", and WebODM's one-line Options row gives way to three rows:
-// the preset the options match (found as WebODM's Edit dialog does), each option in a bubble, and the ODX command to
-// run the task by hand, with a copy button.
+// Started and Finished rows and, while the task runs, its current ODM stage follow WebODM's "Created on"; after
+// WebODM's one-line Options row come the preset the options match (found as WebODM's Edit dialog does), each option in
+// a bubble (WebODM's row then hidden), and the ODX command to run the task by hand, with a copy button. Each of those
+// is a setting of its own under Enhanced Task Details.
 // WebODM gives the task through PluginsAPI.Dashboard.addTaskActionButton each time a panel opens (no button is
 // added); the rows go in after WebODM's rows, found by their text (the Options row is hidden). A MutationObserver
 // puts them back after React re-renders. UMD, so Jest can load it.
@@ -10,7 +11,7 @@
     if (typeof module === "object" && module.exports) module.exports = api;
     else if (root.PluginsAPI && root.PluginsAPI.Dashboard && root.PluginsAPI.Dashboard.addTaskActionButton) {
         var settings = (root.TweakUI && root.TweakUI.settings) || {};
-        if (settings.enhanced_task_details) api.start(root.document, root);
+        if (settings.enhanced_task_details) api.start(root.document, root, api.parts(settings));
     }
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
@@ -26,6 +27,60 @@
     var RUNNING = 20, ENDED = [30, 40, 50];
     // How often a task that hasn't ended is fetched again while its panel is open
     var POLL_MS = 5000;
+    // ODM's pipeline (stages/odm_app.py), with the names shown; fast-orthophoto leaves out openmvs
+    var STAGES = [["dataset", "Load Dataset"], ["split", "Split"], ["merge", "Merge"],
+        ["opensfm", "Structure from Motion"], ["openmvs", "Multi-View Stereo"], ["odm_filterpoints", "Filter Points"],
+        ["odm_meshing", "Meshing"], ["mvs_texturing", "Texturing"], ["odm_georeferencing", "Georeferencing"],
+        ["odm_dem", "Elevation Models"], ["odm_orthophoto", "Orthophoto"], ["odm_report", "Report"],
+        ["odm_postprocess", "Post-processing"]];
+    // The parts of the panel, each a setting under Enhanced Task Details (all on unless turned off)
+    var PARTS = ["times", "preset", "options", "command", "step"];
+
+    function parts(settings) {
+        var on = {};
+        PARTS.forEach(function (p) { on[p] = !settings || settings["task_details_" + p] !== false; });
+        return on;
+    }
+
+    function optionValue(options, name) {
+        for (var i = 0; i < (options || []).length; i++) if (options[i].name === name) return options[i].value;
+        return undefined;
+    }
+
+    // The stages ODM runs for these options: [name, shown name]; it stops after end-with's stage (or rerun's)
+    function stages(options) {
+        var list = STAGES.filter(function (s) {
+            return !(s[0] === "openmvs" && optionValue(options, "fast-orthophoto") === true);
+        });
+        var end = optionValue(options, "end-with") || optionValue(options, "rerun");
+        for (var i = 0; i < list.length; i++) if (list[i][0] === end) return list.slice(0, i + 1);
+        return list;
+    }
+
+    // Reads console lines into a step: {stage: the last stage started (or null), done: ODM has run its last stage}
+    function readStep(step, lines) {
+        var out = {stage: step ? step.stage : null, done: step ? step.done : false};
+        lines.forEach(function (line) {
+            var m = /\bRunning (\S+) stage\b/.exec(line);
+            if (m) {
+                out.stage = m[1];
+                out.done = false;
+            } else if (/\bNo more stages to run\b/.test(line)) out.done = true;
+        });
+        return out;
+    }
+
+    // The Current Step row's label and value, for a step (undefined: the console not read yet)
+    function stepText(options, step) {
+        if (!step) return ["Current Step:", "…"];
+        if (step.done) return ["Current Step:", "Downloading results"];
+        if (!step.stage) return ["Current Step:", "Starting"];
+        var list = stages(options);
+        for (var i = 0; i < list.length; i++) {
+            if (list[i][0] === step.stage) return ["Current Step (" + (i + 1) + "/" + list.length + "):", list[i][1]];
+        }
+        return ["Current Step:", step.stage];
+    }
 
     // WebODM's own text of the Options row (TaskListItem.optionsToList)
     function optionsText(options) {
@@ -138,8 +193,15 @@
         ];
     }
 
-    // The three rows for a task; preset is a preset, null (no match) or undefined (presets not loaded)
-    function rows(doc, win, task, preset) {
+    function stepRow(doc, task, step) {
+        var text = stepText(task.options, step);
+        return row(doc, text[0], el(doc, "span", "tweakui-task-step", text[1]), "step");
+    }
+
+    // The rows after the Options row, those turned on; preset is a preset, null (no match) or undefined (presets not
+    // loaded)
+    function rows(doc, win, task, preset, on) {
+        on = on || parts();
         var options = task.options || [];
         var name = preset ? preset.name : (preset === undefined ? "…" : (options.length ? "Custom" : "None"));
         var presetCell = el(doc, "span", "tweakui-task-preset", name);
@@ -180,8 +242,11 @@
         box.appendChild(code);
         box.appendChild(copy);
 
-        return [row(doc, "Preset:", presetCell, "preset"), row(doc, "Options:", bubbles, "options"),
-            row(doc, "ODX command:", box, "command")];
+        var all = {preset: row(doc, "Preset:", presetCell, "preset"), options: row(doc, "Options:", bubbles, "options"),
+            command: row(doc, "ODX command:", box, "command")};
+        return ["preset", "options", "command"].filter(function (p) { return on[p]; }).map(function (p) {
+            return all[p];
+        });
     }
 
     // The task id a details panel shows (WebODM's Task ID link)
@@ -210,10 +275,26 @@
         trs.forEach(function (tr) { target.parentNode.insertBefore(tr, next); });
     }
 
-    // Puts a task's rows in its panel, or brings them up to date: Started and Finished after WebODM's Created on (when
-    // found), the others after WebODM's Options row (hidden); leaves the panel as WebODM made it when the Options row
-    // isn't found
-    function enhance(doc, win, panel, task, preset) {
+    // Whether the rows after anchor are ours, with these names in this order
+    function inPlace(anchor, names) {
+        var tr = anchor;
+        for (var i = 0; i < names.length; i++) {
+            tr = tr.nextSibling;
+            if (!tr || tr.getAttribute("data-tweakui-row") !== names[i]) return false;
+        }
+        return true;
+    }
+
+    function rowNames(trs) {
+        return trs.map(function (tr) { return tr.getAttribute("data-tweakui-row"); });
+    }
+
+    // Puts a task's rows in its panel, or brings them up to date: Started, Finished and the current step after WebODM's
+    // Created on (when found; else the step goes after the Options row), the others after WebODM's Options row (hidden
+    // when the options are shown as bubbles); leaves the panel as WebODM made it when the Options row isn't found.
+    // on: the parts turned on (all when not given); step: what the console says (see readStep)
+    function enhance(doc, win, panel, task, preset, on, step) {
+        on = on || parts();
         var table = panel.querySelector(".info-table");
         if (!table) return false;
         var target = rowWithValue(table, optionsText(task.options)), old = table.querySelectorAll("[data-tweakui-row]");
@@ -222,22 +303,32 @@
             return false;
         }
         var created = rowWithValue(table, dateText(task.created_at));
+        var running = on.step && task.status === RUNNING;
         var key = JSON.stringify([task.options, preset ? preset.id : (preset === null ? "none" : "loading"),
-            task.created_at, task.status, task.processing_time, !!created]);
-        var count = created ? 5 : 3;
-        if (/\btweakui-hidden\b/.test(target.className) && old.length === count &&
-            old[count - 3] === target.nextSibling && (!created || old[0] === created.nextSibling) &&
+            task.created_at, task.status, task.processing_time, !!created, on, running ? step || null : null]);
+        var top = (on.times ? timeRows(doc, task) : []).concat(running ? [stepRow(doc, task, step)] : []);
+        var after = rows(doc, win, task, preset, on);
+        if (!created) {
+            after = top.filter(function (tr) { return tr.getAttribute("data-tweakui-row") === "step"; }).concat(after);
+            top = [];
+        }
+        var hidden = /\btweakui-hidden\b/.test(target.className);
+        if (hidden === !!on.options && old.length === top.length + after.length &&
+            (!created || inPlace(created, rowNames(top))) && inPlace(target, rowNames(after)) &&
             table.getAttribute("data-tweakui-key") === key) return true;
         removeAll(old);
-        if (!/\btweakui-hidden\b/.test(target.className)) target.className += " tweakui-hidden";
-        if (created) insertAfter(created, timeRows(doc, task));
-        insertAfter(target, rows(doc, win, task, preset));
+        if (on.options && !hidden) target.className += " tweakui-hidden";
+        if (!on.options && hidden) target.className = target.className.replace(/\s*\btweakui-hidden\b/, "");
+        if (created) insertAfter(created, top);
+        insertAfter(target, after);
         table.setAttribute("data-tweakui-key", key);
         return true;
     }
 
-    function start(doc, win) {
-        var tasks = {}, presets, scheduled = false, refetching = {}, polled = {};
+    function start(doc, win, on) {
+        on = on || parts();
+        // steps: per task id, what its console says ({stage, done}) and the next line to read (line)
+        var tasks = {}, presets, scheduled = false, refetching = {}, polled = {}, steps = {}, reading = {};
 
         function update() {
             scheduled = false;
@@ -246,9 +337,12 @@
                 var id = panelTaskId(panels[i]), task = id && tasks[id];
                 if (!task) continue;
                 var preset = presets === undefined ? undefined : matchPreset(presets, task.options || []);
-                if (!enhance(doc, win, panels[i], task, preset)) {
+                if (!enhance(doc, win, panels[i], task, preset, on, steps[id])) {
                     if (!refetching[id] && task.project) refetch(task);
-                } else if (!ended(task) && task.project && !polled[id]) poll(task);
+                } else if (!ended(task) && task.project) {
+                    if (!polled[id]) poll(task);
+                    if (on.step && task.status === RUNNING && !steps[id] && !reading[id]) readConsole(task);
+                }
             }
         }
 
@@ -273,7 +367,30 @@
                 }, function () {});
         }
 
-        // A task that hasn't ended, its panel open: fetched again after a while, so Started and Finished follow it
+        // The console's lines from the last one read: the current step. A console shorter than what was read was
+        // cleared (a restart): read again from its start
+        function readConsole(task) {
+            var id = task.id, step = steps[id], line = step ? step.line : 0;
+            reading[id] = true;
+            return win.fetch("/api/projects/" + task.project + "/tasks/" + id + "/output/?f=json&line=" + line,
+                {credentials: "same-origin"})
+                .then(function (res) { return res.ok ? res.json() : null; })
+                .then(function (out) {
+                    reading[id] = false;
+                    if (!out || !Array.isArray(out.lines)) return;
+                    if (out.count < line) {
+                        delete steps[id];
+                        return readConsole(task);
+                    }
+                    var next = readStep(step, out.lines);
+                    next.line = out.count;
+                    steps[id] = next;
+                    later();
+                }, function () { reading[id] = false; });
+        }
+
+        // A task that hasn't ended, its panel open: fetched again after a while (and its console, while it runs), so
+        // the rows follow it
         function poll(task) {
             polled[task.id] = true;
             win.setTimeout(function () {
@@ -281,6 +398,12 @@
                     .then(function (res) { return res.ok ? res.json() : null; })
                     .then(function (fresh) {
                         if (fresh && tasks[task.id] === task) tasks[task.id] = fresh;
+                        var now = tasks[task.id];
+                        if (on.step && now.status === RUNNING && steps[task.id] && !reading[task.id]) {
+                            return readConsole(now);
+                        }
+                    })
+                    .then(function () {
                         polled[task.id] = false;
                         later();
                     }, function () { polled[task.id] = false; });
@@ -309,5 +432,6 @@
     }
 
     return {start: start, enhance: enhance, rows: rows, command: command, matchPreset: matchPreset,
-        optionsText: optionsText, shellQuote: shellQuote, times: times};
+        optionsText: optionsText, shellQuote: shellQuote, times: times, parts: parts, stages: stages,
+        readStep: readStep, stepText: stepText};
 });

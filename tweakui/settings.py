@@ -12,6 +12,13 @@ DEFAULTS = {
     # General > Task Options: a task's details panel on the Dashboard shows its preset, its options as bubbles and
     # its ODX command
     "enhanced_task_details": False,
+    # Its parts, each turned off on its own: Started and Finished, Preset, Options as bubbles, ODX command, and the
+    # current step of a running task
+    "task_details_times": True,
+    "task_details_preset": True,
+    "task_details_options": True,
+    "task_details_command": True,
+    "task_details_step": True,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
     # Themes: "webodm" (WebODM's own theme) or a preset id of themes.PRESETS
