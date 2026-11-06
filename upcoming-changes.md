@@ -3,7 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Source Frames** (request 16) — a button on the 2D map and in the 3D view (each with its own setting) to pick a
+   spot or draw an area and see the source photos that show it, best first. Details below.
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
@@ -152,6 +154,12 @@ Added 2026-11-06 (sixth new.md):
 
 15. Request 11 again: in a task's 2D map (e.g. TestRGB's), pick another task's orthophoto of the same project
     (TestThermalNoPlugin's) in Layers, to compare it with the task's own; the user couldn't find the built-in way.
+
+Added 2026-11-06 (seventh new.md):
+
+16. A Source Frames option in the 2D Map and 3D Map settings: a button to pick a spot or draw an area on the map,
+    which opens a window with the source photos that see it, each photo's properties, and buttons to open the
+    full frame or download it. For an area, the photos are ranked by how much of the area they show.
 
 Decided (the user, 2026-11-06):
 - **Settings are each user's own**: every logged-in user has the TweakUI menu item and changes settings for
@@ -429,6 +437,48 @@ Design:
   button below Layers opens an "Other Tasks" panel, styled as Layers (title bar, close button, so Movable Controls
   drags it too): the project's other tasks with an orthophoto, each with a checkbox (shown over the task's own
   layers, cropped as its task is) and an opacity slider; none shown on opening. Nothing remembered between pages.
+
+## Source Frames (request 16)
+
+What WebODM offers (checked in 3.3.2 and 4.0.0, the same in both):
+- A task with cameras has `shots.geojson` (in `available_assets`; e.g. TestRGB, 220 photos): per photo its file
+  name, camera, focal length, width and height, capture time, and its pose (`translation`: the camera's position
+  in the task's UTM coordinates; `rotation`: axis-angle). `cameras.json` has each camera's lens distortion
+  (Brown: k1, k2, k3, p1, p2, centre). The 2D map shows the photos as a "Cameras" layer (camera markers, a popup
+  with the photo and "Download Image"); the 3D view shows them as frustums, a click opens the same popup.
+- `/api/projects/p/tasks/t/images/thumbnail/<file>` scales, crops, zooms and draws points on a photo
+  (`size`, `center_x/y`, `zoom`, `draw_point`); `.../images/download/<file>` sends the original.
+- No API gives the ground height at a spot, which a 2D spot needs (a 3D pick has it). The task's `dsm.tif` has it,
+  but ODM makes a DSM only when asked (fast-orthophoto tasks have none); the point cloud's `ept.json` gives the
+  points' mean height, a usable flat ground for a task without a DSM.
+- Plugins add buttons to the 2D map and the 3D view with `PluginsAPI.Map.addActionButton` and
+  `PluginsAPI.ModelView.addActionButton` (vanilla, as the Snapshot core plugin does: `React.createElement`); the 3D
+  view's Potree viewer is `window.viewer`, and its scene is in the same UTM coordinates as the poses.
+
+Proposed design (for the discussion):
+- **Settings**: 2D Map > Controls > "Source Frames" and 3D Map > "Source Frames" (each off by default; the 3D
+  category loses "No settings yet").
+- **The button** shows only on a map or 3D view with a task that has cameras. It opens a small bar: "Spot" (click
+  a place) or "Area" (click the corners, finish on the first one or with a double click; Esc cancels). The spot
+  or area stays drawn on the map while its window is open.
+- **Finding the photos** is a TweakUI API (`/api/plugins/tweakui/frames/<project>/<task>`, WebODM's task
+  permissions): it takes the spot or area, finds its ground height (the DSM, else the point cloud's mean height;
+  in 3D the picked point's own), projects it into every photo with its pose and lens, and returns the photos that
+  see it, each with where the spot or area falls in it. An area is sampled on a grid (a few hundred points), and
+  a photo's score is the share of the area it shows. Hidden places (a roof hiding the ground) are not detected:
+  a photo is counted when the place is inside its frame.
+- **The window** (inside the map, draggable like the map's panels): the photos, best first, as thumbnails with
+  their score; the chosen one large, with the spot or area drawn on it, and its properties (file name, camera,
+  capture time, size, the camera's altitude, the share of the area shown); "Open full frame" and "Download".
+- **Project maps**: a project's View Map searches every task on it with cameras, each photo labelled with its task.
+
+Decided (the user, 2026-11-06):
+- **Before Storage.**
+- **The 2D button is an action button** (the map's bottom-right row, beside Share and Snapshot), as in the 3D view.
+- **A spot's photos are ordered by how near the spot is to the frame's centre** (an area's by the share of the
+  area shown, then the same).
+- **"Open full frame" opens a full-screen viewer in the page** (zoom and pan, the spot or area drawn on it, Esc
+  closes it).
 
 ## Storage (request 5), to be designed with the user
 
