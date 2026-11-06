@@ -149,7 +149,10 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-storage .tweakui-storage-kinds { margin-left: 24px; }
 .tweakui-storage .tweakui-storage-kinds td { padding: 2px 12px 2px 0; }
 .tweakui-storage .tweakui-storage-share { width: 160px; }
-.tweakui-storage .tweakui-storage-share .progress { margin: 0; height: 10px; }
+.tweakui-storage .tweakui-storage-kinds td:first-child { white-space: nowrap; }
+/* A kind's share of the task: a bar in the text's colour within a theme-border outline */
+.tweakui-storage .tweakui-storage-bar { display: block; height: 10px; border-width: 1px; border-style: solid; border-radius: 5px; overflow: hidden; }
+.tweakui-storage .tweakui-storage-bar > span { display: block; height: 100%; background: currentColor; opacity: 0.6; }
 @media (max-width: 767px) {
     .tweakui-storage .tweakui-storage-date { display: none; }
     .tweakui-storage .tweakui-storage-table th:nth-child(4) { display: none; }

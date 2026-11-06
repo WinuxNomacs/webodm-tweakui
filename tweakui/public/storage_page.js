@@ -117,7 +117,7 @@
         return '<table class="tweakui-storage-kinds">' + KINDS.map(function (k) {
             var n = b.kinds[k[0]] || 0, perc = total ? n / total * 100 : 0;
             return '<tr data-kind="' + k[0] + '"><td>' + k[1] + '</td><td class="tweakui-storage-size">' + escapeHtml(formatBytes(n)) +
-                '</td><td class="tweakui-storage-share"><div class="progress"><div class="progress-bar" style="width: ' + perc.toFixed(1) + '%"></div></div></td></tr>';
+                '</td><td class="tweakui-storage-share"><span class="tweakui-storage-bar theme-border"><span style="width: ' + perc.toFixed(1) + '%"></span></span></td></tr>';
         }).join("") + "</table>";
     }
 
@@ -234,7 +234,7 @@
         return {
             title: "Delete " + parts.join(" and ") + "? This frees " + formatBytes(freed) + ".",
             lines: lines,
-            note: "A deleted project goes with all its tasks. What is deleted cannot be recovered.",
+            note: (action.projects.length ? "A deleted project goes with all its tasks. " : "") + "What is deleted cannot be recovered.",
             button: "Delete", danger: true
         };
     }

@@ -102,7 +102,7 @@ test("a task opens to its files by kind, measured once", async () => {
     await flush();
     const photos = row(root, '.tweakui-storage-breakdown [data-kind="photos"]');
     expect(photos.textContent).toMatch(/Photos600 B/);
-    expect(photos.querySelector(".progress-bar").style.width).toBe("60%");
+    expect(photos.querySelector(".tweakui-storage-bar > span").style.width).toBe("60%");
     click(row(root, '[data-task="t1"] [data-act=open-task]'));
     click(row(root, '[data-task="t1"] [data-act=open-task]'));
     await flush();
@@ -142,6 +142,7 @@ test("Delete asks first, naming each project and task and what it frees, and onl
     expect(box.textContent).toMatch(/Delete 1 project and 1 task\? This frees 330 MB\./);
     expect(Array.from(box.querySelectorAll("li")).map(li => li.textContent)).toEqual(
         ["Project Big (2 tasks): 320 MB", "Compacted in Small: 10 MB"]);
+    expect(box.textContent).toMatch(/A deleted project goes with all its tasks/);
     expect(fetchFn.calls.some(c => c[0] !== "GET")).toBe(false);
     click(box.querySelector("[data-act=confirm-yes]"));
     await flush(); await flush();
@@ -183,6 +184,13 @@ test("a task that can't be measured still compacts, its photos unknown", () => {
     const text = storagePage.confirmation(state, {compact: [state.index.tasks.t1]});
     expect(text.title).toBe("Compact 1 task? This frees 0 B and the photos of 1 more.");
     expect(text.lines).toEqual(["Done in Big: its photos"]);
+});
+
+test("deleting tasks alone does not speak of projects", () => {
+    const state = {breakdowns: {}, index: storagePage.indexReport(report())};
+    const text = storagePage.confirmation(state, {projects: [], tasks: [state.index.tasks.t2]});
+    expect(text.title).toBe("Delete 1 task? This frees 20 MB.");
+    expect(text.note).toBe("What is deleted cannot be recovered.");
 });
 
 test("a refused action says which and why", async () => {
