@@ -17,7 +17,7 @@ API = "/api/plugins/tweakui/settings"
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"show_modified_options": False, "theme": "webodm"}, **changes)
+    return dict({"show_modified_options": False, "enhanced_task_details": False, "theme": "webodm"}, **changes)
 
 
 class TweakUITestCase(BootTestCase):
@@ -158,6 +158,16 @@ class TestSettingsPage(TweakUITestCase):
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
         self.patch({"show_modified_options": True})
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
+
+    def test_enhanced_task_details_is_off_by_default_and_its_checkbox_shows_the_saved_value(self):
+        page = self.client.get("/plugins/tweakui/")
+        self.assertContains(page, 'data-setting="enhanced_task_details"')
+        self.assertNotContains(page, 'data-setting="enhanced_task_details" checked')
+        self.assertEqual(self.patch({"enhanced_task_details": True}).json(), defaults(enhanced_task_details=True))
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="enhanced_task_details" checked')
+
+    def test_the_dashboard_includes_the_task_details_script(self):
+        self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")
 
 
 class TestThemes(TweakUITestCase):

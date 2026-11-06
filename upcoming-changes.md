@@ -3,12 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Enhanced Task Details** (request 8) — a General > Task Options setting that enhances a task's details panel
+   on the Dashboard: the preset, the options as bubbles, the ODX command to copy. Design below.
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
-
-**To place** (request 8, order to be decided by the user)
-- **Enhanced Task Details** (request 8) — a General > Task Options setting that enhances a task's details panel
-  on the Dashboard: the preset, the options as bubbles, the ODX command to copy. Design below.
 
 **Later**
 (nothing planned)
@@ -225,7 +223,7 @@ to place a plugin's item elsewhere, so `main.js` (loaded in `<head>`) moves Twea
 `#about-menu` when the page is parsed. To avoid a flash, `main.css` hides the item in its first place
 (`#side-menu > li:has(> a[href="/plugins/tweakui/"])`) until the script has moved it. Always, not a setting.
 
-## Enhanced Task Details (request 8), to be designed with the user
+## Enhanced Task Details (request 8)
 
 What WebODM has (checked in 3.3.2 and 4.0.0, the same in both):
 - **The panel**: on the Dashboard, a task's row expands into a details table (`TaskListItem.jsx`): Task ID (with a
@@ -261,8 +259,13 @@ Proposed design (branch `task-details`):
   setting). Live on 4.0.0 (the completed TestRGB task) and 3.3.2 (a task created by the check, then deleted),
   desktop and phone, a light and a dark preset.
 
-Open (for the user): where it goes in the phases; how the preset is found; the command's form; whether it has
-the options the node adds.
+Decided (the user, 2026-11-06):
+- **Before Storage.**
+- **The preset is matched as WebODM does** (existing tasks too; an edited preset may no longer match), not
+  recorded at creation.
+- **The command is the docker command** of WebODM's docs (`/my/project` a placeholder for the user's folder).
+- **With the options the node adds** (`--pc-ept --cog --gltf`), so a run by hand gives the same outputs; false
+  booleans left out, as the node does.
 
 ## Storage (request 5), to be designed with the user
 
