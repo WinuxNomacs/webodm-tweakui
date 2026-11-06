@@ -36,12 +36,15 @@ Colours come only from WebODM's theme classes.{% endcomment %}
             </section>
             <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>
                 <h4>{% trans "Themes" %}</h4>
-                <div class="tweakui-setting">
-                    <label>
-                        <input type="checkbox" data-setting="show_theme_menu"{% if settings.show_theme_menu %} checked{% endif %}>
-                        {% trans "Show the theme menu in the header" %}
-                    </label>
-                    <p class="text-muted">{% trans "A paintbrush left of your user icon, to change the theme from any page." %}</p>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Theme Menu" %}</h5>
+                    <div class="tweakui-setting">
+                        <label>
+                            <input type="checkbox" data-setting="show_theme_menu"{% if settings.show_theme_menu %} checked{% endif %}>
+                            {% trans "Show the theme menu in the header" %}
+                        </label>
+                        <p class="text-muted">{% trans "A paintbrush left of your user icon, to change the theme from any page." %}</p>
+                    </div>
                 </div>
                 <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 <div class="tweakui-themes" role="radiogroup" aria-label="{% trans "Themes" %}">

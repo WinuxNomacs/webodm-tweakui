@@ -3,17 +3,24 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Paintbrush toggle and task start/end times** (requests 9, 12) — two small additions to settings that
-   exist: Themes > "Show the theme menu in the header", and Started/Finished rows in Enhanced Task Details.
-2. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
+1. **2D Map and 3D Map settings, Movable Controls** (request 10) — two new categories in the settings; with
    Movable Controls on, the 2D map's popup panels can be dragged by their title.
-3. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Paintbrush toggle and task start/end times** (requests 9, 12) — 2026-11-06, branch `paintbrush-times`
+  (design below).
+  - Code: `tweakui/settings.py` (`show_theme_menu`), `templates/settings.html` (Themes > Theme Menu),
+    `public/theme_menu.js` (no menu when off), `public/settings_page.js` (reloads on the toggle),
+    `public/task_details.js` (Started/Finished rows, polling a task that hasn't ended).
+  - Tests: Jest 42 (`task_details` +4, `theme_menu` +1, `settings_page` +1), Django 29 on 4.0.0 and 3.3.2.
+  - Live on 4.0.0 (TestRGB: Started 7:38:04, Finished 8:24:40 local, after Created on) and both stacks for the
+    toggle: off removes the paintbrush on the settings page and the dashboard, on brings it back; desktop and phone;
+    no console errors; settings restored. A running task was checked in Jest only (none on the dev stacks).
 - **Enhanced Task Details** (request 8) — 2026-11-06, branch `task-details` (design below).
   - Code: `tweakui/public/task_details.js` (the rows, preset matching, the command), `tweakui/settings.py`
     (`enhanced_task_details`), `templates/settings.html` (General > Task Options), `public/main.css`.
@@ -292,7 +299,7 @@ Decided (the user, 2026-11-06):
 - **With the options the node adds** (`--pc-ept --cog --gltf`), so a run by hand gives the same outputs; false
   booleans left out, as the node does.
 
-## Paintbrush toggle and task start/end times (requests 9, 12)
+## Paintbrush toggle and task start/end times (requests 9, 12) — done
 
 What there is: the paintbrush menu (`public/theme_menu.js`) is on for every user; Enhanced Task Details
 (`public/task_details.js`) replaces WebODM's Options row of a task's details panel. WebODM's panel (the same in
@@ -311,7 +318,7 @@ Decided (the user, 2026-11-06, asked again once the restart and upload caveats w
 WebODM's own fields (not `log.json`), with those caveats.
 
 Design:
-- **Themes > "Show the theme menu in the header"** (on by default), at the top of the Themes section; off, the
+- **Themes > Theme Menu > "Show the theme menu in the header"** (on by default), at the top of the Themes section; off, the
   paintbrush isn't added. Settings > Themes still picks the theme.
 - **Enhanced Task Details: "Started:" and "Finished:" rows** after WebODM's "Created on:" (found by its text),
   in the browser's local date and time like WebODM's. Started: `created_at` once the task has run (a
