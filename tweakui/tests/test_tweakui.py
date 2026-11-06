@@ -211,6 +211,12 @@ class TestThemes(TweakUITestCase):
         self.assertIn("html .admin-area,", css)
         self.assertIn("{color: %s;}" % PRESETS["dracula"]["colors"]["secondary"], css)
 
+    def test_dropdown_menu_items_get_the_preset_s_text_colour_over_webodm_s_hard_coded_one(self):
+        from coreplugins.tweakui.themes import PRESETS
+        self.patch({"theme": "nord"})
+        self.assertIn("html .dropdown-menu > li > a{color: %s !important;}" % PRESETS["nord"]["colors"]["primary"],
+                      self.theme_css())
+
     def test_the_header_text_stands_out_and_light_presets_have_a_header_dark_enough_for_the_white_logo(self):
         from coreplugins.tweakui.themes import PRESETS, _luminance
         for preset in PRESETS.values():

@@ -135,12 +135,16 @@ def _prefix_selectors(css):
 
 
 def preset_css(preset_id):
-    """The stylesheet for a preset: WebODM's theme with its colours, then the white panels' text colour"""
+    """The stylesheet for a preset: WebODM's theme with its colours, then the white panels' text colour and the
+    dropdown menus' text"""
     colors = PRESETS[preset_id]["colors"]
     context = {"SETTINGS": SimpleNamespace(theme=SimpleNamespace(**colors))}
     css = _prefix_selectors(render_to_string("app/theme.css", context))
     dark = min(colors["primary"], colors["secondary"], key=_luminance)
     css += "html %s{color: %s;}\n" % (",\nhtml ".join(WHITE_PANELS), dark)
+    # WebODM's theme gives the dropdown menus' items its text colour, but WebODM's main.scss sets them to #222
+    # !important, which would be dark on a dark preset's menu background: give them the theme's text colour
+    css += "html .dropdown-menu > li > a{color: %s !important;}\n" % colors["primary"]
     return css
 
 

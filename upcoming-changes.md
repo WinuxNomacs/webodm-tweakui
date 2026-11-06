@@ -3,15 +3,22 @@
 ## Phases (current and upcoming)
 
 **Up next** (order decided by the user, 2026-11-06)
-1. **Theme switcher in the header** (request 7) — a paintbrush in the header, left of the user icon, opens a list
-   of the themes; choosing one sets the user's theme. Planned below.
-2. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
+1. **Storage** (request 5) — a Storage category in the settings that turns on a Storage view under Diagnostic:
    what the user's projects and tasks take, and cleaning them up. Details below; to be designed with the user.
 
 **Later**
 (nothing planned)
 
 **Done**
+- **Theme switcher in the header** (request 7) — 2026-11-06, branch `theme-switcher` (design below).
+  - Code: `tweakui/public/theme_menu.js` (the menu), `tweakui/themes.py` (`theme_list`, swatches; dropdown text
+    colour), `tweakui/api.py` (`settings.js` gives `window.TweakUI.themes`), `templates/settings.html` (the same
+    list), `public/main.css`.
+  - Tests: Jest `theme_menu.test.js` (8), Django (26 in all, on 4.0.0 and 3.3.2).
+  - Live on 4.0.0 and 3.3.2: the paintbrush just left of the user icon on the dashboard and the map page, none
+    logged out; the order (current, WebODM's theme, divider, the rest); choosing a theme reloads in it and
+    Settings > Themes shows it; desktop and phone; no console errors; the admin's theme restored (Dracula on
+    4.0.0, WebODM's on 3.3.2).
 - **Phase 2: Themes** (request 3) — 2026-11-06, branch `themes` (design below).
   - Code: `tweakui/themes.py` (presets, `theme.css` view), `tweakui/settings.py` (`theme` setting and its
     choices), `tweakui/plugin.py` (mount, `include_css_files`), `templates/settings.html` (Themes section),
@@ -170,7 +177,7 @@ Plan (branch `themes`):
   preset on the dashboard, a task's map, the 3D view, the settings page and Administration; the white panels stay
   readable; the user's setting restored afterwards.
 
-## Theme switcher in the header (request 7), planned
+## Theme switcher in the header (request 7) — done
 
 Builds on Themes (the `theme` setting, `PATCH /api/plugins/tweakui/settings`, the presets).
 What WebODM has (the same in 3.3.2 and 4.0.0): the header's right side is `ul.nav.navbar-top-links.navbar-right`
@@ -193,6 +200,13 @@ Plan (branch `theme-switcher`):
   the user's theme restored.
 
 Open: none (single-user mode has no user icon, so no switcher, as the request places it by that icon).
+
+Found in the live check and built in:
+- WebODM's `main.scss` sets dropdown items to `#222 !important` (both versions), over its theme's text colour:
+  under a dark preset every dropdown (this menu, the user menu, Import) had dark text on a dark background.
+  Presets now give `.dropdown-menu > li > a` the preset's text colour (`!important`, more specific).
+- On a phone the paintbrush is not at the header's edge, so the right-aligned menu went off the left of the
+  screen; there it lines up with the header's right edge.
 
 ## TweakUI menu item above About (request 6) — done
 

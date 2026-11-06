@@ -38,6 +38,11 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .navbar-top-links .tweakui-theme-list .tweakui-swatch i { width: 10px; height: 16px; }
 .navbar-top-links .tweakui-theme-list .tweakui-unchecked { visibility: hidden; }
 .navbar-top-links .tweakui-theme-list .tweakui-theme-status { padding: 3px 16px; white-space: normal; }
+/* On a phone the paintbrush is not at the header's right edge: the menu lines up with the header's edge instead */
+@media (max-width: 767px) {
+    .navbar-top-links .tweakui-theme-menu { position: static; }
+    .navbar-top-links .tweakui-theme-list { right: 8px; left: auto; }
+}
 
 /* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
