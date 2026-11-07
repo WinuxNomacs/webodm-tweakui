@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Global Controls > Hide Navigation Pane: a tab on the side menu's divider hides the side menu, giving
+  the page the whole width, and shows it again; remembered in this browser.
 - 3D Map > Zoom Override: a scroll with the textured model shown no longer stutters; a burst of wheel events with
   the pointer still finds the point under it once, not on every event.
 - For developers: `npm run selector-check` checks a WebODM for every element TweakUI's scripts rely on (their

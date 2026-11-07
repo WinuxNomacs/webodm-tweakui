@@ -58,6 +58,11 @@ CATEGORIES = [
                       "choice as the units selector on the 2D and 3D maps, kept in step with it. In the side menu on "
                       "WebODM's Windows app, which has no header."),
                     preview="units-in-header", scripts=["units_menu.js"]),
+            Setting("hide_nav_pane", False, _("Hide Navigation Pane"),
+                    _("A small tab on the divider between the side menu and the page, near the top: click it to hide "
+                      "the side menu and give the page the whole width, and again to show it. Remembered in this "
+                      "browser. Not on a phone, where the side menu is already the header's menu button."),
+                    preview="hide-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
             Setting("show_modified_options", False, _("Show Modified Options"),

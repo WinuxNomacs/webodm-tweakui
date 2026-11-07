@@ -12,6 +12,18 @@ one changes the other. Like WebODM's own selector, the choice is kept in this br
 the menu shows only its ruler icon. WebODM's Windows app has no header, so there the menu is **Units** in the side
 menu, just above TweakUI, and opens below it.
 
+## Global Controls > Hide Navigation Pane
+
+Off by default.
+
+![A task's map with the side menu hidden and its tab at the left edge](../tweakui/public/previews/hide-navigation-pane.webp)
+
+A small tab sits on the divider between the side menu and the page, just below the header. Click it to hide the side
+menu: the page takes the whole width, which gives a map or the 3D view more room, and only the tab stays, at the left
+edge. Click it again to bring the side menu back. The choice is kept in this browser, so the next page opens the same
+way. On a phone the side menu is already behind the header's menu button, so there's no tab. On WebODM's Windows app
+the tab sits near the top of the window.
+
 ## Task Options > Show Modified Options
 
 Off by default.
