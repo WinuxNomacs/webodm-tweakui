@@ -94,9 +94,13 @@ Off by default.
 
 ![Fireworks over the Dashboard](../tweakui/public/previews/surprise-me.webp)
 
-Fireworks go off over every WebODM page at random moments until you turn this off. The first show starts 5 to 20
-seconds after a page opens, lasts 5 to 10 seconds, and the next follows 30 to 90 seconds after it ends. They're
-silent, and clicks go through them to the page. None starts while the tab is hidden.
+Fireworks go off over every WebODM page until you turn this off. The first show starts 4 to 8 seconds after a page
+opens, lasts 5 to 10 seconds, and the next follows 4 to 8 seconds after it ends. They're silent, and clicks go
+through them to the page. None starts while the tab is hidden.
+
+A **right-click** sends a rocket that bursts where the pointer is, in place of the browser's menu. Text fields keep
+their menu, and **Shift + right-click** opens it anywhere. Dragging with the right button (the 3D view's pan) sends
+none.
 
 Turning it on starts a show at once, on the settings page; turning it off ends the show going. The fireworks are
 [fireworks-js](https://fireworks.js.org/) (MIT licence), which comes with TweakUI and loads only when a show starts.

@@ -1,6 +1,7 @@
 // General > Just for Fun > Surprise Me: fireworks go off over every page at random moments, until the setting is
-// turned off. A show lasts a few seconds, the first comes some seconds after a page opens and the next a minute or so
-// later; none starts while the tab is hidden. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
+// turned off. A show lasts a few seconds and the next follows 4 to 8 seconds later; none starts while the tab is
+// hidden. A right-click sends a rocket that bursts where the pointer is, instead of the browser's menu (which text
+// fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
 // when a show starts, on a canvas over the page that clicks go through. The settings page announces each saved
 // change ("tweakuiSettingsChanged"), so turning it on there starts a show at once and turning it off ends it at once.
 // UMD, so Jest can load it.
@@ -17,7 +18,9 @@
 
     var LIBRARY = "/plugins/tweakui/vendor/fireworks-js/fireworks.umd.js", EVENT = "tweakuiSettingsChanged";
     // In seconds: the first show after a page opens, the gap between shows, and how long one lasts
-    var FIRST = [5, 20], GAP = [30, 90], LENGTH = [5, 10];
+    var FIRST = [4, 8], GAP = [4, 8], LENGTH = [5, 10];
+    // In pixels: how far the pointer may move between a right button's press and release for a right-click
+    var SLOP = 5;
     // Silent, and the mouse doesn't launch rockets (clicks go to the page)
     var OPTIONS = {
         autoresize: true, sound: {enabled: false}, mouse: {click: false, move: false, max: 1},
@@ -56,6 +59,34 @@
         return Math.round((range[0] + (range[1] - range[0]) * random()) * 1000);
     }
 
+    // A full-page layer for a fireworks canvas, which clicks go through
+    function overlay(doc) {
+        var box = doc.createElement("div");
+        box.className = "tweakui-fireworks";
+        box.setAttribute("aria-hidden", "true");
+        doc.body.appendChild(box);
+        return box;
+    }
+
+    // One rocket from the bottom of the page to (x, y) in the viewport. fireworks-js 2.10.8 aims its rockets at its
+    // mouse position while that is active (Fireworks.mouse, not part of its documented API); launch() starts the
+    // fireworks if they aren't going and stops them once the bursts fade.
+    function aim(fireworks, x, y) {
+        var mouse = fireworks.mouse;
+        mouse.x = x;
+        mouse.y = y;
+        mouse.active = true;
+        try {
+            fireworks.launch(1);
+        } finally {
+            mouse.active = false;
+        }
+    }
+
+    function editable(target) {
+        return !!(target && target.closest && target.closest("input, textarea, select, [contenteditable]"));
+    }
+
     // The shows: set(true) schedules them, set(false) ends the one going and cancels the next. env gives the timers,
     // the randomness and the loader, which tests replace.
     function create(doc, win, env) {
@@ -63,7 +94,7 @@
         var random = env.random || Math.random, loader = env.load || load;
         var later = env.setTimeout || function (f, ms) { return win.setTimeout(f, ms); };
         var cancel = env.clearTimeout || function (t) { win.clearTimeout(t); };
-        var on = false, timer = null, show = null;
+        var on = false, timer = null, show = null, clicks = null, press = null;
 
         function schedule(range) {
             if (timer !== null) cancel(timer);
@@ -76,10 +107,7 @@
             if (doc.hidden) return schedule(GAP);
             loader(doc, win).then(function (Fireworks) {
                 if (!on || show) return;
-                var box = doc.createElement("div");
-                box.className = "tweakui-fireworks";
-                box.setAttribute("aria-hidden", "true");
-                doc.body.appendChild(box);
+                var box = overlay(doc);
                 var fireworks = new Fireworks(box, OPTIONS);
                 fireworks.start();
                 show = {box: box, fireworks: fireworks, timer: later(end, between(LENGTH, random))};
@@ -111,6 +139,41 @@
                 remove(show.box);
                 show = null;
             }
+            press = null;
+            if (clicks) {
+                clicks.fireworks.stop(true);
+                remove(clicks.box);
+                clicks = null;
+            }
+        }
+
+        // Right-clicks have a layer of their own, kept until the setting is turned off, so they don't end a show
+        function rocket(x, y) {
+            loader(doc, win).then(function (Fireworks) {
+                if (!on) return;
+                if (!clicks) {
+                    var box = overlay(doc);
+                    clicks = {box: box, fireworks: new Fireworks(box, OPTIONS)};
+                } else if (!clicks.fireworks.isRunning) clicks.fireworks.updateSize();
+                aim(clicks.fireworks, x, y);
+            }, function () { /* no rocket this time */ });
+        }
+
+        // A right button pressed outside a text field, without Shift, and released where it was pressed is a
+        // right-click; its contextmenu event (on press or on release, by system) gets no browser menu
+        function mousedown(e) {
+            press = on && e.button === 2 && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY} : null;
+        }
+
+        function contextmenu(e) {
+            if (on && press && !e.shiftKey) e.preventDefault();
+        }
+
+        function mouseup(e) {
+            if (e.button !== 2 || !press) return;
+            var p = press;
+            press = null;
+            if (on && Math.abs(e.clientX - p.x) <= SLOP && Math.abs(e.clientY - p.y) <= SLOP) rocket(e.clientX, e.clientY);
         }
 
         // now: the first show starts at once (turned on in the settings page)
@@ -121,17 +184,31 @@
             } else if (!enabled && on) stop();
         }
 
-        return {set: set, stop: stop, showing: function () { return show !== null; }};
+        return {
+            set: set, stop: stop, showing: function () { return show !== null; },
+            mouse: {mousedown: mousedown, contextmenu: contextmenu, mouseup: mouseup}
+        };
     }
 
     function start(doc, win, env) {
         var shows = create(doc, win, env);
         var settings = (win.TweakUI && win.TweakUI.settings) || {};
-        shows.set(settings.surprise_me === true, false);
-        doc.addEventListener(EVENT, function (e) {
+        function changed(e) {
             shows.set(!!(e.detail && e.detail.surprise_me === true), true);
-        });
-        return shows;
+        }
+        shows.set(settings.surprise_me === true, false);
+        // Captured, so a page that stops a click's propagation (a map) still gets its rocket
+        Object.keys(shows.mouse).forEach(function (type) { doc.addEventListener(type, shows.mouse[type], true); });
+        doc.addEventListener(EVENT, changed);
+        return {
+            set: shows.set, showing: shows.showing,
+            // Ends the shows and stops listening
+            stop: function () {
+                shows.stop();
+                Object.keys(shows.mouse).forEach(function (type) { doc.removeEventListener(type, shows.mouse[type], true); });
+                doc.removeEventListener(EVENT, changed);
+            }
+        };
     }
 
     return {start: start, create: create, load: load, OPTIONS: OPTIONS, LIBRARY: LIBRARY};

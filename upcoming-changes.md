@@ -13,6 +13,10 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Surprise Me: every 4-8 s, and a rocket on a right-click** (asked in chat, 2026-11-07) — branch
+  `surprise-me-clicks`. Code in `public/surprise_me.js` (`aim`, the right-click handlers, `start()` now returns a
+  `stop()` that removes its listeners); tests in `public/__tests__/surprise_me.test.js`; `docs/general.md`,
+  settings text, README, CHANGELOG. See "Just for Fun: Surprise Me".
 - **Just for Fun: Surprise Me** (asked in chat, 2026-11-07) — branch `surprise-me`.
   - Settings > General > Just for Fun (a new group, last under General) > Surprise Me (off by default): fireworks
     over every page at random moments until it is turned off; see "Just for Fun: Surprise Me".
@@ -1068,5 +1072,10 @@ Built (defaults chosen by Claude, open to change):
   while the tab is hidden; a library that fails to load is retried at the next turn.
 - Silent, mouse launching off; a fixed full-page canvas (`z-index: 100000`, `pointer-events: none`) above dialogs
   and the maps' controls, so clicks go through. Random hues (the effect itself, not a theme colour).
+- Changed by the user (2026-11-07, branch `surprise-me-clicks`): shows every 4-8 s (the first 4-8 s after a page
+  opens; a show still lasts 5-10 s), and a right-click sends a rocket that bursts at the pointer. It has a layer of
+  its own so it never ends a show; it aims through fireworks-js's internal `mouse` (2.10.8), as the library has no
+  public "launch at". The browser's menu is suppressed for it, except in text fields and with Shift; a right-drag
+  of more than 5 px (the 3D view's pan) and a touch long-press send nothing.
 - Live on the settings page: turning it on starts a show at once, turning it off removes it at once (the settings
   page's new `tweakuiSettingsChanged` event); on other pages a change shows on the next page, like every setting.
