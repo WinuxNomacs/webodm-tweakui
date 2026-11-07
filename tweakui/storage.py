@@ -100,23 +100,38 @@ def task_entry(task):
     }
 
 
+# What task_entry reads: the rest of a task (its options, and in WebODM 3.3.2 its whole console output) stays in
+# the database
+TASK_FIELDS = ("id", "project_id", "name", "status", "created_at", "size", "compacted", "partial", "pending_action")
+
+
+def user_reports(users):
+    """Each user's storage, in a few queries whatever their number of projects and tasks: the projects they own
+    (largest first, each with its tasks, oldest first), what WebODM's quota counts as used (every task of theirs, a
+    project being deleted too) and the quota (bytes; None without one)"""
+    users = list(users)
+    projects = list(Project.objects.filter(owner__in=users, deleting=False).only("id", "name", "owner_id"))
+    tasks = {}
+    for t in Task.objects.filter(project__in=projects).only(*TASK_FIELDS).order_by("created_at"):
+        tasks.setdefault(t.project_id, []).append(task_entry(t))
+    used = dict(Task.objects.filter(project__owner__in=users).order_by().values_list("project__owner").annotate(total=Sum("size")))
+    reports = []
+    for user in users:
+        mine = [{"id": p.id, "name": p.name, "tasks": tasks.get(p.id, []),
+                 "size": sum(t["size"] for t in tasks.get(p.id, []))} for p in projects if p.owner_id == user.id]
+        mine.sort(key=lambda p: (-p["size"], p["name"].lower()))
+        profile = user.profile
+        reports.append({
+            "user": {"id": user.id, "username": user.get_username()},
+            "projects": mine,
+            "used": round((used.get(user.id) or 0) * MB),
+            "quota": round(profile.quota * MB) if profile.has_quota() else None,
+        })
+    return reports
+
+
 def user_report(user):
-    """A user's storage: the projects they own (largest first, each with its tasks, oldest first), what WebODM's
-    quota counts as used and the quota (bytes; None without one)"""
-    projects = []
-    for project in Project.objects.filter(owner=user, deleting=False):
-        tasks = [task_entry(t) for t in Task.objects.filter(project=project).order_by("created_at")]
-        projects.append({"id": project.id, "name": project.name, "tasks": tasks,
-                         "size": sum(t["size"] for t in tasks)})
-    projects.sort(key=lambda p: (-p["size"], p["name"].lower()))
-    profile = user.profile
-    used = Task.objects.filter(project__owner=user).aggregate(total=Sum("size"))["total"] or 0
-    return {
-        "user": {"id": user.id, "username": user.get_username()},
-        "projects": projects,
-        "used": round(used * MB),
-        "quota": round(profile.quota * MB) if profile.has_quota() else None,
-    }
+    return user_reports([user])[0]
 
 
 def is_admin(user):
@@ -129,7 +144,7 @@ def report(user):
     data = {"admin": is_admin(user), "me": user_report(user), "others": []}
     if data["admin"]:
         owners = get_user_model().objects.filter(project__isnull=False).exclude(pk=user.pk).distinct()
-        others = [user_report(u) for u in owners]
+        others = user_reports(owners.select_related("profile"))
         others.sort(key=lambda r: (-r["used"], r["user"]["username"].lower()))
         data["others"] = others
     return data
