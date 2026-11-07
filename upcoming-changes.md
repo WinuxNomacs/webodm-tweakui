@@ -3,7 +3,8 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests go in `new.md`.
+1. **Global Controls: Hide Navigation Pane and Resize Navigation Pane** (new.md, 2026-11-07) — two settings, a
+   branch each; see "Navigation pane: hide and resize". Decided; ready to build.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1568,3 +1569,48 @@ Mac, one branch each.
 
 **Decision (the user, 2026-11-07):** tested on 4.0.0 only, on the Mac (no 3.3.2 stack there); users on 3.3.2 are
 advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this phase.
+
+## Navigation pane: hide and resize (new.md, 2026-11-07)
+
+**Requests:**
+1. "Under Global Controls, add the option "Hide Navigation Pane" that when enabled provides a small visible tab on the
+   navigation pane divider near the top so when the user clicks it, it hides the navigation pane all except for the
+   tab. When the user clicks the tab again, the navigation pane unhides."
+2. "Under Global Controls, add the option "Resize Navigation Pane" that when enabled allows the user to hover the
+   navigation pane divider and resize it. Prevent the user from resizing it too small, no further than the icons
+   which always stay visible."
+
+**What WebODM has (checked in 4.0.0's code):**
+- The navigation pane is the side menu, `.navbar-default.sidebar` > `#side-menu` (`logged_in_base.html`). From 768 px
+  wide (`sb-admin-2.css`) it is `position: absolute`, 250 px wide, under the 51 px header, and the page beside it is
+  `#page-wrapper` with `margin-left: 250px` and a 1 px left border: that border is the divider. Narrower than 768 px
+  the pane is a collapsed menu under the header's hamburger button, with no divider.
+- On the Windows app (desktop mode, `base.html`) the pane is `position: fixed` at the top, with no header.
+- Each item is a link with a fixed-width icon and its label (`<i class="fa ... fa-fw"></i> Label`), Bootstrap's
+  10 px 15 px padding: the icons are a column about 48 px wide. Submenu items (Administration, TweakUI's Storage) are
+  indented 37 px (`.nav-second-level li a`), so their icons sit further right.
+- No PluginsAPI hook touches the side menu: the scripts use page elements, listed in `SELECTORS` (and in
+  `dev/selector-check.js` `WHERE`). No change to WebODM is needed.
+- The 2D map (Leaflet) and the 3D view (Potree) follow the window's size: after the pane changes width, a `resize`
+  event on the window makes them fill the new space.
+
+**Design (proposed):**
+- Two settings under General > Global Controls, both off by default: "Hide Navigation Pane" and "Resize Navigation
+  Pane"; scripts `nav_pane.js` (one script, both settings) and a section of `main.css`. Only from 768 px wide; on a
+  phone's width WebODM's hamburger menu is left as it is.
+- **Hide:** a small tab on the divider, near the top, in the theme's colours (`theme-background-highlight`,
+  `theme-border`), with a chevron. A click hides the pane: the page takes the whole width and only the tab stays, at
+  the left edge. A click again shows it. The tab has a tooltip ("Hide Navigation Pane" / "Show Navigation Pane") and
+  works from the keyboard (a button).
+- **Resize:** hovering the divider shows a resize cursor and highlights it; dragging (mouse, pen or touch) sets the
+  pane's width, from the icons' column (the narrowest) to about half the window. Double-click resets it to WebODM's
+  250 px. As it narrows, labels are cut off; at the narrowest, see the decisions.
+- Both on: the tab sits on the divider, which is also the resize handle (the tab itself doesn't start a drag).
+- Each change sends a window `resize` so maps fill the space. Tests in Jest; live on both stacks, a phone width, a
+  dark theme and the Windows app; screenshots `hide-navigation-pane`, `resize-navigation-pane`; docs `general.md`.
+
+**Decisions (the user, 2026-11-07):**
+- The hidden state and the width are remembered **in this browser** (localStorage, per device; wrapped in try/catch,
+  so a browser that blocks it just starts at WebODM's 250 px, shown), not in the account.
+- At the narrowest width, **icons only, names on hover**: labels and submenu arrows hidden, each link's name as its
+  tooltip, submenu items without their indent so their icons line up in the one column.
