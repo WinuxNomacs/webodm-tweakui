@@ -4,7 +4,7 @@ const controls = require("../task_controls");
 // (Task ID first) and the buttons. WebODM's toggle is handled at the document, as React 16 does
 function tasks(list) {
     document.body.innerHTML = list.map(t => '<div class="task-list-item" data-id="' + t.id + '"><div class="row"><div class="name">' +
-        '<i class="clickable far fa-plus-square"></i> <a href="#" class="name-link">' + t.id + "</a></div></div></div>").join("");
+        '<i class="clickable far fa-plus-square"></i> <a href="javascript:void(0);" class="name-link">' + t.id + "</a></div></div></div>").join("");
     list.forEach(t => { if (t.open) render(item(t.id), true); });
 }
 const item = id => document.querySelector('.task-list-item[data-id="' + id + '"]');
@@ -21,10 +21,23 @@ function render(el, open) {
     webodmToggles++;
 }
 let webodmToggles;
+// WebODM's toggle also adds the task to the address or takes it out (HistoryNav.toggleQSListItem), from its router's
+// copy of the location, which a popstate brings up to date
+let routerSearch;
+const expanded = () => (new URLSearchParams(location.search).get("project_task_expanded") || "").split(",").filter(Boolean);
+function onPop() { routerSearch = location.search; }
 function onDocument(e) {
     const hit = e.target.closest(".name > i.clickable, .name > .name-link");
     const el = hit && hit.closest(".task-list-item");
-    if (el) render(el, !el.querySelector(".expanded-panel"));
+    if (!el) return;
+    const open = !el.querySelector(".expanded-panel"), id = el.getAttribute("data-id");
+    const q = new URLSearchParams(routerSearch);
+    const ids = (q.get("project_task_expanded") || "").split(",").filter(x => x && x !== id);
+    if (open) ids.push(id);
+    q.set("project_task_expanded", ids.join(","));
+    routerSearch = "?" + decodeURIComponent(q.toString());
+    history.replaceState(history.state, "", location.pathname + routerSearch);
+    render(el, open);
 }
 const mode = id => item(id).getAttribute("data-tweakui-controls");
 const press = el => el.dispatchEvent(new MouseEvent("click", {bubbles: true}));
@@ -34,12 +47,16 @@ let watch;
 beforeEach(() => {
     webodmToggles = 0;
     sessionStorage.clear();
+    history.replaceState(null, "", "/dashboard/?page=2");
+    routerSearch = location.search;
     document.addEventListener("click", onDocument);
+    window.addEventListener("popstate", onPop);
 });
 afterEach(() => {
     if (watch) watch.stop();
     watch = null;
     document.removeEventListener("click", onDocument);
+    window.removeEventListener("popstate", onPop);
 });
 
 test("a minimized task is opened as buttons only, its +/- titled Expand", () => {
@@ -127,4 +144,37 @@ test("an edit panel's own task-list-item, which has no +/-, is left alone", () =
     document.body.innerHTML = '<div class="task-list-item"><div class="row no-padding"><form></form></div></div>';
     watch = controls.start(document, window);
     expect(document.querySelector(".task-list-item").hasAttribute("data-tweakui-controls")).toBe(false);
+});
+
+test("the address lists only the fully expanded tasks, not those TweakUI opens as buttons only", async () => {
+    tasks([{id: "a"}, {id: "b"}]);
+    watch = controls.start(document, window);
+    // WebODM added both as TweakUI opened them; TweakUI took them back out, and the router read the address again
+    expect(expanded()).toEqual([]);
+    expect(routerSearch).toBe(location.search);
+    expect(new URLSearchParams(location.search).get("page")).toBe("2");
+
+    press(icon("a")); // expanded: a click WebODM never sees, so TweakUI adds it
+    await tick();
+    expect(expanded()).toEqual(["a"]);
+
+    press(icon("b")); // b expanded too, then a fully minimized (WebODM takes it out, from the router's up-to-date copy)
+    await tick();
+    press(icon("a"));
+    await tick();
+    expect(expanded()).toEqual(["b"]);
+
+    press(icon("a")); // back to buttons only: WebODM adds it, TweakUI takes it out
+    await tick();
+    expect(mode("a")).toBe("buttons");
+    expect(expanded()).toEqual(["b"]);
+});
+
+test("the expanded tasks in the address change as WebODM writes them, other tasks and parameters kept", () => {
+    const p = "project_task_expanded";
+    expect(controls.expandedSearch("?page=2&" + p + "=x,a,b", {a: false, b: true, c: true})).toBe("?page=2&" + p + "=x,b,c");
+    expect(controls.expandedSearch("?" + p + "=a", {a: false})).toBe("?" + p + "=");
+    expect(controls.expandedSearch("?page=2", {a: true})).toBe("?page=2&" + p + "=a");
+    expect(controls.expandedSearch("?" + p + "=a&page=2", {a: true, b: false})).toBeNull();
+    expect(controls.expandedSearch("", {a: false})).toBeNull();
 });

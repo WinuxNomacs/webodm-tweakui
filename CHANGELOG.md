@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Task Details > Expand Task Controls: the page address lists only the tasks you expanded fully, not
+  every task shown as buttons only, so a project with hundreds of tasks no longer makes an address too long to reload.
 - 3D Map > Zoom Override: a trackpad's two-finger scroll zooms as far as it scrolls, not a wheel notch per scroll
   step (far too fast, as WebODM's own 3D view does).
 - Thanks, in the README and on the documentation site: the projects and people TweakUI builds on.
