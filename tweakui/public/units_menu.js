@@ -3,32 +3,26 @@
 // browser's localStorage "unit_system" and the document event "onUnitSystemChanged", which measurements, histograms
 // and the 3D view follow. WebODM's selectors on the maps (select.unit-selector) read it only when they appear, so a
 // choice here also sets theirs; a choice there fires the event, which updates this menu. Bootstrap's dropdown opens
-// and closes the menu. Where WebODM hides its header (desktop mode), it is an item of the side menu, as the theme menu
-// (theme_menu.js's place, loaded before this). UMD, so Jest can load it.
+// and closes the menu. Where WebODM hides its header (desktop mode), it is an item of the side menu, after the theme
+// menu (core.js's placeMenu). UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory(typeof module === "object" && module.exports ? require("./theme_menu").place :
-        function () { return root.TweakUI.placeMenu.apply(null, arguments); });
-    if (typeof module === "object" && module.exports) module.exports = api;
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
     else if (root.document) {
-        var settings = (root.TweakUI && root.TweakUI.settings) || {};
-        if (!settings.units_in_header) return;
-        if (root.document.readyState === "loading") {
-            root.document.addEventListener("DOMContentLoaded", function () { api.start(root.document, root); });
-        } else api.start(root.document, root);
+        root.TweakUI.feature(root, "units_menu", api.start, {ready: true, when: function (s) { return s.units_in_header; }});
     }
-})(typeof window !== "undefined" ? window : this, function (place) {
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
 
+    // The WebODM elements it relies on, to check against a new WebODM: the maps' unit selectors (core.js's placeMenu
+    // finds the header and the side menu)
+    var SELECTORS = {unitSelector: "select.unit-selector"};
+
+    var el = ui.el;
     var KEY = "unit_system", EVENT = "onUnitSystemChanged";
     // WebODM's systems (Units.js), in its order and with its names
     var SYSTEMS = [["metric", "Metric"], ["imperial", "Imperial"], ["imperialUS", "Imperial (US)"]];
-
-    function el(doc, tag, className, text) {
-        var e = doc.createElement(tag);
-        if (className) e.className = className;
-        if (text) e.textContent = text;
-        return e;
-    }
 
     function name(system) {
         for (var i = 0; i < SYSTEMS.length; i++) if (SYSTEMS[i][0] === system) return SYSTEMS[i][1];
@@ -61,7 +55,7 @@
             a.setAttribute("aria-checked", on ? "true" : "false");
             a.querySelector(".fa-check").classList.toggle("tweakui-unchecked", !on);
         });
-        Array.prototype.forEach.call(doc.querySelectorAll("select.unit-selector"), function (select) {
+        Array.prototype.forEach.call(doc.querySelectorAll(SELECTORS.unitSelector), function (select) {
             if (select.value !== system) select.value = system;
         });
     }
@@ -96,7 +90,7 @@
         });
         menu.appendChild(toggle);
         menu.appendChild(list);
-        if (!place(doc, win, menu, "Units:", "li.tweakui-theme-menu")) return null;
+        if (!ui.placeMenu(doc, win, menu, "Units:", {before: "li.tweakui-theme-menu"})) return null;
         show(doc, menu, current(win));
         return menu;
     }
@@ -111,9 +105,9 @@
             choose(doc, win, a.getAttribute("data-units"));
             show(doc, menu, current(win));
         }
-        function sync() { show(doc, menu, current(win)); }
+        var sync = ui.guard("units_menu", function () { show(doc, menu, current(win)); });
         // Another tab's change: WebODM's pages don't follow it, but the menu does
-        function onStorage(e) { if (e.key === KEY) sync(); }
+        var onStorage = ui.guard("units_menu", function (e) { if (e.key === KEY) sync(); });
         menu.addEventListener("click", onClick);
         doc.addEventListener(EVENT, sync);
         win.addEventListener("storage", onStorage);
@@ -127,5 +121,5 @@
         };
     }
 
-    return {start: start, build: build, choose: choose, current: current, SYSTEMS: SYSTEMS};
+    return {start: start, build: build, choose: choose, current: current, SYSTEMS: SYSTEMS, SELECTORS: SELECTORS};
 });

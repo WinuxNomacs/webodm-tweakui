@@ -10,20 +10,14 @@
 // (into the published themes, the panel's data-import-path), Delete, and Publish a copy of one of your own themes.
 // UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "theme_editor", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
 
     var OWN = "own:", PUBLISHED = "published:", HEX = /^#[0-9a-f]{6}$/, PREVIEW_DELAY = 250, MAX_FILE = 1024 * 1024;
-
-    function csrfToken(doc) {
-        var input = doc.querySelector("input[name=csrfmiddlewaretoken]");
-        if (input && input.value) return input.value;
-        var m = (doc.cookie || "").match(/(?:^|;\s*)csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : "";
-    }
 
     function each(list, fn) { Array.prototype.forEach.call(list, fn); }
 
@@ -32,7 +26,7 @@
         return state.fetch(state.page.getAttribute("data-api") + path, {
             method: method,
             credentials: "same-origin",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken(state.doc)},
+            headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(state.doc)},
             body: body === undefined ? undefined : JSON.stringify(body)
         }).then(function (res) {
             return res.json().then(null, function () { return {}; }).then(function (data) {
@@ -196,7 +190,7 @@
             icon.className = name;
             state.win.setTimeout(function () { icon.className = was; }, 2000);
         };
-        var copying = copy ? copy(JSON.stringify({name: theme.name, colors: theme.colors}, null, 2))
+        var copying = copy ? copy(JSON.stringify({name: theme.name, colors: theme.colors}, null, 2), state.doc, state.win)
             : Promise.reject(new Error("no clipboard"));
         return copying.then(function () { show("fa fa-check"); }, function () { show("fa fa-times"); });
     }

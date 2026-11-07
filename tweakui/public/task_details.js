@@ -7,18 +7,25 @@
 // added); the rows go in after WebODM's rows, found by their text (the Options row is hidden). A MutationObserver
 // puts them back after React re-renders. UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
     else if (root.document) {
-        // Its clipboard copy, for the other scripts (Settings > Themes' Copy JSON)
-        root.TweakUI = root.TweakUI || {};
-        root.TweakUI.copyText = function (text) { return api.copyText(text, root.document, root); };
-        var settings = root.TweakUI.settings || {};
-        if (settings.enhanced_task_details && root.PluginsAPI && root.PluginsAPI.Dashboard &&
-            root.PluginsAPI.Dashboard.addTaskActionButton) api.start(root.document, root, api.parts(settings));
+        root.TweakUI.feature(root, "task_details", function (doc, win) {
+            api.start(doc, win, api.parts(root.TweakUI.settings));
+        }, {when: function (s, win) {
+            return s.enhanced_task_details && win.PluginsAPI && win.PluginsAPI.Dashboard &&
+                win.PluginsAPI.Dashboard.addTaskActionButton;
+        }});
     }
-})(typeof window !== "undefined" ? window : this, function () {
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: a task's open panel on the Dashboard, its
+    // Task ID and its table of details (whose rows it finds by their text)
+    var SELECTORS = {panel: ".expanded-panel", taskId: ".task-id-link", table: ".info-table", rows: "tbody > tr"};
+    var NAME = "task_details";
+    var el = ui.el;
 
     // Added by NodeODX to every task when it supports them (the outputs WebODM's viewers need)
     var NODE_OPTIONS = ["pc-ept", "cog", "gltf"];
@@ -142,13 +149,6 @@
         return commandParts(options, windows).join(" ");
     }
 
-    function el(doc, tag, className, text) {
-        var e = doc.createElement(tag);
-        if (className) e.className = className;
-        if (text !== undefined) e.textContent = text;
-        return e;
-    }
-
     function row(doc, label, content, name) {
         var tr = el(doc, "tr", "tweakui-task-row"), th = el(doc, "td"), td = el(doc, "td");
         tr.setAttribute("data-tweakui-row", name);
@@ -157,23 +157,6 @@
         tr.appendChild(th);
         tr.appendChild(td);
         return tr;
-    }
-
-    function copyText(text, doc, win) {
-        if (win.navigator && win.navigator.clipboard && win.navigator.clipboard.writeText) {
-            return win.navigator.clipboard.writeText(text);
-        }
-        // Not a secure context (plain http on another host): the old way
-        var area = el(doc, "textarea");
-        area.value = text;
-        area.setAttribute("readonly", "");
-        area.style.position = "fixed";
-        area.style.opacity = "0";
-        doc.body.appendChild(area);
-        area.select();
-        var ok = doc.execCommand && doc.execCommand("copy");
-        doc.body.removeChild(area);
-        return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
     }
 
     function ended(task) {
@@ -247,7 +230,7 @@
         copy.setAttribute("aria-label", "Copy to clipboard");
         copy.appendChild(el(doc, "i", "far fa-clipboard"));
         copy.addEventListener("click", function () {
-            copyText(text, doc, win).then(function () {
+            ui.copyText(text, doc, win).then(function () {
                 copy.firstChild.className = "fa fa-check";
                 win.setTimeout(function () { copy.firstChild.className = "far fa-clipboard"; }, 2000);
             }, function () {
@@ -266,13 +249,13 @@
 
     // The task id a details panel shows (WebODM's Task ID link)
     function panelTaskId(panel) {
-        var link = panel.querySelector(".task-id-link");
+        var link = panel.querySelector(SELECTORS.taskId);
         return link ? (link.textContent || "").trim() : null;
     }
 
     // WebODM's row in a panel's table whose value cell has this text
     function rowWithValue(table, want) {
-        var trs = table.querySelectorAll("tbody > tr");
+        var trs = table.querySelectorAll(SELECTORS.rows);
         for (var i = 0; i < trs.length; i++) {
             var cells = trs[i].children;
             if (trs[i].getAttribute("data-tweakui-row") === null && cells.length === 2 &&
@@ -310,7 +293,7 @@
     // on: the parts turned on (all when not given); step: what the console says (see readStep)
     function enhance(doc, win, panel, task, preset, on, step) {
         on = on || parts();
-        var table = panel.querySelector(".info-table");
+        var table = panel.querySelector(SELECTORS.table);
         if (!table) return false;
         var target = rowWithValue(table, optionsText(task.options)), old = table.querySelectorAll("[data-tweakui-row]");
         if (!target) {
@@ -347,7 +330,7 @@
 
         function update() {
             scheduled = false;
-            var panels = doc.querySelectorAll(".expanded-panel");
+            var panels = doc.querySelectorAll(SELECTORS.panel);
             for (var i = 0; i < panels.length; i++) {
                 var id = panelTaskId(panels[i]), task = id && tasks[id];
                 if (!task) continue;
@@ -434,13 +417,13 @@
                 .then(function (list) { presets = Array.isArray(list) ? list : []; later(); },
                     function () { presets = []; later(); });
             if (win.MutationObserver) {
-                new win.MutationObserver(later).observe(doc.body || doc.documentElement, {
+                new win.MutationObserver(ui.guard(NAME, later)).observe(doc.body || doc.documentElement, {
                     childList: true, subtree: true, characterData: true
                 });
             }
         }
 
-        win.PluginsAPI.Dashboard.addTaskActionButton(function (args) {
+        win.PluginsAPI.Dashboard.addTaskActionButton(ui.guard(NAME, function (args) {
             if (args && args.task && args.task.id) {
                 if (!begun) begin();
                 tasks[args.task.id] = args.task;
@@ -448,10 +431,10 @@
                 later();
             }
             return null;
-        });
+        }));
     }
 
     return {start: start, enhance: enhance, rows: rows, command: command, matchPreset: matchPreset,
         optionsText: optionsText, shellQuote: shellQuote, times: times, parts: parts, stages: stages,
-        readStep: readStep, stepText: stepText, copyText: copyText};
+        readStep: readStep, stepText: stepText, SELECTORS: SELECTORS};
 });

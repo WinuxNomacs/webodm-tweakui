@@ -6,10 +6,17 @@
 // searches each of its tasks with cameras. Leaflet, Potree and three.js are the page's globals; the 3D pick is
 // pick3d.js's. UMD, so Jest can load it.
 (function (root, factory) {
-    if (typeof module === "object" && module.exports) module.exports = factory(require("./pick3d"));
-    else if (root.document) factory(root.TweakUI && root.TweakUI.pick3d).start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function (pick3d) {
+    var node = typeof module === "object" && module.exports;
+    var api = node ? factory(require("./core"), require("./pick3d")) : factory(root.TweakUI, root.TweakUI.pick3d);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "source_frames", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui, pick3d) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: the 2D map's row of action buttons and the
+    // Share button in it (the 3D view's come through pick3d.js), and the 3D view's task
+    var SELECTORS = {mapButtons: ".actionButtons", share: ".shareButton", modelView: "[data-modelview]"};
+    var NAME = "source_frames";
 
     var THUMB = 160, PHOTO = 1024;
     // How far a press may move and still be a click (the map pans and the 3D view orbits on a drag)
@@ -18,19 +25,9 @@
 
     // Helpers
 
-    function el(doc, tag, className, text) {
-        var e = doc.createElement(tag);
-        if (className) e.className = className;
-        if (text !== undefined) e.textContent = text;
-        return e;
-    }
+    var el = ui.el;
 
     function icon(doc, name) { return el(doc, "i", "fa " + name); }
-
-    function csrfToken(doc) {
-        var m = (doc.cookie || "").match(/(?:^|;\s*)csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : "";
-    }
 
     function imageUrl(frame, kind, size) {
         var url = "/api/projects/" + frame.task.project + "/tasks/" + frame.task.id + "/images/" + kind + "/" +
@@ -88,7 +85,7 @@
         return Promise.all(tasks.map(function (task) {
             var options = {
                 method: "POST", credentials: "same-origin",
-                headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken(doc)},
+                headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(doc)},
                 body: JSON.stringify(place)
             };
             if (signal) options.signal = signal;
@@ -273,13 +270,13 @@
             if (view.scale > 1) zoom(1 / view.scale); else zoom(3, e.clientX, e.clientY);
         });
 
-        keys = function (e) {
+        keys = ui.guard(NAME, function (e) {
             if (e.key === "Escape") { e.stopPropagation(); close(); }
             else if (e.key === "ArrowLeft") show(index - 1);
             else if (e.key === "ArrowRight") show(index + 1);
             else if (e.key === "+" || e.key === "=") zoom(1.5);
             else if (e.key === "-") zoom(1 / 1.5);
-        };
+        });
         doc.addEventListener("keydown", keys, true);
 
         function close() {
@@ -474,9 +471,9 @@
                 if (mine === latest && box === target) target.show(result);
             });
         }
-        function keys(e) {
+        var keys = ui.guard(NAME, function (e) {
             if (e.key === "Escape" && !doc.querySelector(".tweakui-sf-viewer")) off();
-        }
+        });
         function off() {
             if (!on) return;
             on = false;
@@ -629,7 +626,8 @@
         wrap.appendChild(b);
         var share = null;
         for (var i = 0; i < row.children.length; i++) {
-            if (row.children[i].querySelector(".shareButton") || row.children[i].classList.contains("shareButton")) { share = row.children[i]; break; }
+            var child = row.children[i];
+            if (child.querySelector(SELECTORS.share) || child.matches(SELECTORS.share)) { share = child; break; }
         }
         row.insertBefore(wrap, share || row.lastElementChild);
         return b;
@@ -644,7 +642,7 @@
 
     // The 3D view's task: the page gives it as JSON on [data-modelview]
     function modelTask(doc) {
-        var node = doc.querySelector("[data-modelview]");
+        var node = doc.querySelector(SELECTORS.modelView);
         try {
             return node ? JSON.parse(node.getAttribute("data-task")) : null;
         } catch (e) {
@@ -653,22 +651,22 @@
     }
 
     function start(doc, win) {
-        var settings = (win.TweakUI && win.TweakUI.settings) || {};
+        var settings = ui.settingsOf(win);
         var P = win.PluginsAPI;
         // The 2D map's action buttons are beside its container (Map.jsx); Leaflet is the page's global
         if (settings.source_frames_2d && P && P.Map && P.Map.didAddControls) {
-            P.Map.didAddControls(function (args) {
+            P.Map.didAddControls(ui.guard(NAME, function (args) {
                 var tasks = tasksWithCameras(args && args.tiles), L = win.L;
                 if (!tasks.length || !args.map || !L) return;
                 var box = args.map.getContainer();
-                var row = box.parentNode && box.parentNode.querySelector(".actionButtons");
+                var row = box.parentNode && box.parentNode.querySelector(SELECTORS.mapButtons);
                 var button = null;
                 var c = controller(doc, win, box, mapTool(L, args.map), tasks, function (on) { active(button, on); });
                 button = addButton(doc, row, function () { c.toggle(); });
-            });
+            }));
         }
         if (settings.source_frames_3d && pick3d) {
-            pick3d.whenViewer(doc, win, function (viewer, row) {
+            pick3d.whenViewer(doc, win, ui.guard(NAME, function (viewer, row) {
                 var task = modelTask(doc);
                 if (!task || (task.available_assets || []).indexOf("shots.geojson") === -1 || !win.Potree || !win.THREE) return;
                 var c = null, button = null;
@@ -679,13 +677,13 @@
                     }
                     c.toggle();
                 });
-            });
+            }));
         }
     }
 
     return {
         start: start, tasksWithCameras: tasksWithCameras, merge: merge, findFrames: findFrames, overlay: overlay,
         buildWindow: buildWindow, buildLabel: buildLabel, controller: controller, mapTool: mapTool, modelTool: modelTool, viewer: viewer,
-        modelTask: modelTask, formatTime: formatTime, imageUrl: imageUrl, addButton: addButton
+        modelTask: modelTask, formatTime: formatTime, imageUrl: imageUrl, addButton: addButton, SELECTORS: SELECTORS
     };
 });

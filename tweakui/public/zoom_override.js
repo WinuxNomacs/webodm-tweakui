@@ -5,10 +5,17 @@
 // model; pick3d.js) and the orbit centre moves to that depth, so any surface can be neared. Over nothing, and in
 // Potree's other navigation modes, the wheel is Potree's as before. UMD, so Jest can load it.
 (function (root, factory) {
-    if (typeof module === "object" && module.exports) module.exports = factory(require("./pick3d"));
-    else if (root.document) factory(root.TweakUI && root.TweakUI.pick3d).start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function (pick3d) {
+    var node = typeof module === "object" && module.exports;
+    var api = node ? factory(require("./core"), require("./pick3d")) : factory(root.TweakUI, root.TweakUI.pick3d);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "zoom_override", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui, pick3d) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: none of its own (the 2D map comes through the
+    // map hook, the 3D view through pick3d.js)
+    var SELECTORS = {};
+    var NAME = "zoom_override";
 
     var EXTRA_STEPS = 3, WEBODM_MAX_ZOOM = 24;
     // A wheel notch goes this share of the way to the point, as Potree's own wheel does to the orbit centre
@@ -46,7 +53,7 @@
 
     function attach3d(win, viewer) {
         var canvas = viewer.renderer.domElement, area = canvas.parentNode || canvas;
-        function wheel(e) {
+        var wheel = ui.guard(NAME, function (e) {
             if (e.target !== canvas) return;
             var controls = viewer.getControls ? viewer.getControls() : viewer.controls;
             if (!controls || controls !== viewer.orbitControls) return;
@@ -69,7 +76,7 @@
             view.radius = Math.max(depth, MIN_DISTANCE);
             controls.radiusDelta = 0;
             if (controls.stopTweens) controls.stopTweens();
-        }
+        });
         ["mousewheel", "DOMMouseScroll"].forEach(function (type) { area.addEventListener(type, wheel, {capture: true, passive: false}); });
         return function () {
             ["mousewheel", "DOMMouseScroll"].forEach(function (type) { area.removeEventListener(type, wheel, {capture: true}); });
@@ -77,17 +84,17 @@
     }
 
     function start(doc, win) {
-        var settings = (win.TweakUI && win.TweakUI.settings) || {};
+        var settings = ui.settingsOf(win);
         var P = win.PluginsAPI;
         if (settings.zoom_override_2d && P && P.Map && P.Map.didAddControls) {
-            P.Map.didAddControls(function (args) { if (args && args.map) extraZoom(args.map); });
+            P.Map.didAddControls(ui.guard(NAME, function (args) { if (args && args.map) extraZoom(args.map); }));
         }
         if (settings.zoom_override_3d && pick3d) {
-            pick3d.whenViewer(doc, win, function (viewer) {
+            pick3d.whenViewer(doc, win, ui.guard(NAME, function (viewer) {
                 if (win.THREE && win.Potree) attach3d(win, viewer);
-            });
+            }));
         }
     }
 
-    return {start: start, extraZoom: extraZoom, zoomAlong: zoomAlong, notch: notch, attach3d: attach3d};
+    return {start: start, extraZoom: extraZoom, zoomAlong: zoomAlong, notch: notch, attach3d: attach3d, SELECTORS: SELECTORS};
 });

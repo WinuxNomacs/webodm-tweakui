@@ -5,10 +5,11 @@
 // and remove, a project's delete), so its permissions, the processing node's cleanup and the quota apply. UMD, so
 // Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "storage_page", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
 
     // WebODM's task status codes (nodeodm/status_codes.py)
@@ -41,13 +42,6 @@
     function statusLabel(task) {
         if (task.partial) return "Uploading";
         return STATUS[task.status] || "Waiting";
-    }
-
-    function csrfToken(doc) {
-        var input = doc.querySelector("input[name=csrfmiddlewaretoken]");
-        if (input && input.value) return input.value;
-        var m = (doc.cookie || "").match(/(?:^|;\s*)csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : "";
     }
 
     // The report's projects and tasks by id: {projects: {id: {project, owner}}, tasks: {id: {task, project, owner}}}
@@ -275,7 +269,7 @@
         var failed = [];
         return list.reduce(function (chain, r) {
             return chain.then(function () {
-                return fetchFn(r.url, {method: r.method, credentials: "same-origin", headers: {"X-CSRFToken": csrfToken(doc)}})
+                return fetchFn(r.url, {method: r.method, credentials: "same-origin", headers: {"X-CSRFToken": ui.csrfToken(doc)}})
                     .then(function (res) {
                         if (res.ok) return;
                         return res.json().then(function (d) { failed.push(r.label + ": " + ((d && (d.detail || d.error)) || res.status)); },
