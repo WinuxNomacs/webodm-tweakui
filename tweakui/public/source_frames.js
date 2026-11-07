@@ -225,7 +225,8 @@
         bar.appendChild(button("fa-search-minus", "Zoom out", function () { zoom(1 / 1.5); }));
         bar.appendChild(button("fa-search-plus", "Zoom in", function () { zoom(1.5); }));
         bar.appendChild(download);
-        bar.appendChild(button("fa-times", "Close", close));
+        var closeButton = button("fa-times", "Close", close);
+        bar.appendChild(closeButton);
         root.appendChild(bar);
         root.appendChild(stage);
 
@@ -287,6 +288,8 @@
 
         show(index);
         doc.body.appendChild(root);
+        // The keyboard starts in the viewer
+        closeButton.focus();
         return {element: root, close: close, show: show};
     }
 
@@ -369,14 +372,20 @@
             main.appendChild(details(frame));
         }
 
+        // The full-frame viewer; closed, the focus goes back to what opened it, or to the Open Full Frame button of
+        // the photo chosen in the viewer
         function openFull() {
             if (full) return;
+            var opener = doc.activeElement;
             full = viewer(doc, win, frames, selected, function (i) {
                 full = null;
-                if (i !== selected && box.parentNode) {
+                if (!box.parentNode) return;
+                if (i !== selected) {
                     select(i);
                     if (list.children[i] && list.children[i].scrollIntoView) list.children[i].scrollIntoView({block: "nearest"});
                 }
+                var back = opener && box.contains(opener) ? opener : main.querySelector(".tweakui-sf-open");
+                if (back) back.focus();
             });
         }
 

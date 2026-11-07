@@ -407,3 +407,32 @@ test("in the 3D view a click on nothing says so and leaves the spot", () => {
     expect(onSpot).not.toHaveBeenCalled();
     tool.stop();
 });
+
+test("the full-frame viewer takes the focus, and gives it back to what opened it or to the photo chosen in it", () => {
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    const w = sf.buildWindow(document, window, container, {multiple: false});
+    w.show({frames: [frame("a.jpg"), frame("b.jpg")], errors: []});
+    const open = () => w.element.querySelector(".tweakui-sf-open");
+    const first = open();
+    first.focus();
+    first.click();
+    expect(document.activeElement.getAttribute("aria-label")).toBe("Close");
+    expect(document.activeElement.closest(".tweakui-sf-viewer")).not.toBeNull();
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+    expect(document.activeElement).toBe(first);
+
+    // Another photo chosen in the viewer: the window shows it, and its Open Full Frame button has the focus
+    first.click();
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowRight"}));
+    document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+    expect(first.isConnected).toBe(false);
+    expect(document.activeElement).toBe(open());
+    expect(w.element.querySelector(".tweakui-sf-props").textContent).toContain("b.jpg");
+
+    // Opened by a click on the photo, which takes no focus: back to the Open Full Frame button
+    document.body.focus();
+    w.element.querySelector(".tweakui-sf-main-photo").click();
+    document.querySelector(".tweakui-sf-viewer [aria-label=Close]").click();
+    expect(document.activeElement).toBe(open());
+});
