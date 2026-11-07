@@ -151,6 +151,27 @@ html.tweakui .tweakui-nav-tab { display: none; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-tab { left: 0; border-left-width: 0; border-radius: 0 4px 4px 0; }
 }
 
+/* Resize Navigation Pane (nav_pane.js): the side menu and the page beside it take the width the script puts in
+   --tweakui-nav-width; labels too long are cut off. The handle is a strip on the divider, from the header down,
+   highlighted while the pointer is on it; under Bootstrap's dialogs (1040 and up). Icons only (the narrowest): the
+   links' text at size 0 but their first icon, their tooltips the script's, submenu items unindented. */
+html.tweakui .tweakui-nav-handle { display: none; }
+@media (min-width: 768px) {
+    html.tweakui.tweakui-nav-sized .navbar-default.sidebar { width: var(--tweakui-nav-width); }
+    html.tweakui.tweakui-nav-sized:not(.tweakui-nav-hidden) #page-wrapper { margin-left: var(--tweakui-nav-width); }
+    html.tweakui.tweakui-nav-sized #side-menu > li > a, html.tweakui.tweakui-nav-sized #side-menu .nav-second-level > li > a,
+    html.tweakui.tweakui-nav-sized #side-menu .nav-third-level > li > a { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    html.tweakui.tweakui-nav-icons #side-menu > li > a, html.tweakui.tweakui-nav-icons #side-menu .nav-second-level > li > a,
+    html.tweakui.tweakui-nav-icons #side-menu .nav-third-level > li > a { font-size: 0; text-overflow: clip; }
+    html.tweakui.tweakui-nav-icons #side-menu > li > a > i:first-child, html.tweakui.tweakui-nav-icons #side-menu .nav-second-level > li > a > i:first-child,
+    html.tweakui.tweakui-nav-icons #side-menu .nav-third-level > li > a > i:first-child { font-size: var(--tweakui-nav-icon-size, 15px); line-height: 1.42857143; }
+    html.tweakui.tweakui-nav-icons .sidebar .nav-second-level li a, html.tweakui.tweakui-nav-icons .sidebar .nav-third-level li a { padding-left: 15px; }
+    html.tweakui .tweakui-nav-handle { display: block; position: fixed; z-index: 1039; bottom: 0; left: calc(var(--tweakui-nav-width, 250px) - 1px); width: 7px; cursor: col-resize; touch-action: none; }
+    html.tweakui .tweakui-nav-handle:hover, html.tweakui .tweakui-nav-handle:focus-visible, html.tweakui.tweakui-nav-dragging .tweakui-nav-handle { background-color: currentColor; opacity: 0.25; outline: none; }
+    html.tweakui.tweakui-nav-dragging, html.tweakui.tweakui-nav-dragging * { cursor: col-resize !important; user-select: none; }
+    html.tweakui.tweakui-nav-hidden .tweakui-nav-handle { display: none; }
+}
+
 /* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
 .option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }

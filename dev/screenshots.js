@@ -81,6 +81,21 @@ const SHOTS = [
         },
     },
     {
+        // A task's map with the side menu dragged down to its icons (a browser's tooltip isn't in a screenshot)
+        name: "resize-navigation-pane", settings: {resize_nav_pane: true},
+        async run(s) {
+            await s.openMap();
+            const x = await s.page.$eval(".tweakui-nav-handle", e => e.getBoundingClientRect().left + 3);
+            await s.page.mouse.move(x, 400);
+            await s.page.mouse.down();
+            await s.page.mouse.move(80, 400, {steps: 10});
+            await s.page.mouse.up();
+            await s.page.mouse.move(700, 400);
+            await s.page.waitForTimeout(800);
+            return "page";
+        },
+    },
+    {
         // Fireworks over the Dashboard: the first show starts 5-20 s after the page opens; taken once it's going
         name: "surprise-me", settings: {surprise_me: true, units_in_header: false},
         async run(s) {
