@@ -1366,3 +1366,26 @@ point cloud first and the meshes only when it misses.
 - 11 Source Frames' viewer: yes, it takes the focus (its Close button) and gives it back to the photo that opened it.
 - 12 The selector check: yes, a dev script built after the refactor from each feature's selector list, run by the
   `release-check` skill and when WebODM releases.
+
+**Structure for other developers: the design (2026-11-07):** a tweak is declared once and written as one script; what
+users see doesn't change. Three branches:
+1. `feature-registry`: `tweakui/features.py` lists the settings categories (General, Themes, 2D Map, 3D Map, Storage)
+   and their groups; each setting has its name, default, label, description, preview, the setting it depends on and
+   its scripts. `settings.py` `DEFAULTS`, `plugin.py`'s script list (all scripts kept, finding 7) and the settings
+   page's controls (one loop in `settings.html`) come from it. A category's own markup (the Themes groups, editor
+   and Sample Form) moves to a partial template included after its settings. Checked by comparing the settings page's
+   HTML before and after.
+2. `shared-helpers`: `tweakui/public/core.js`, loaded before the features, holds `TweakUI.el`, `csrfToken`,
+   `copyText`, the header/side-menu placement, waiting for an element and adding a side-menu item.
+   `TweakUI.feature(name, start)` starts a feature; its hook callbacks, observers and listeners are wrapped so an
+   error logs `TweakUI <name>: ...` and stops only that feature (finding 6). Each script begins with a `SELECTORS`
+   list of the WebODM elements it relies on (finding 8; read later by the selector check, finding 12). The scripts
+   stay ES5, flat in `public/`, with no build step; each feature's CSS stays in its own section of `main.css`.
+3. `adding-a-tweak-docs`: a docs page "Adding a Tweak" (the files, a worked example from the registry to the
+   script, its test and its screenshot, the checks, the plugin rules), `CONTRIBUTING.md` pointing to it, and
+   `CLAUDE.md` updated for the structure.
+Tested: Jest and Django, every feature live on both stacks, and on Windows after the user restarts it.
+
+**Decisions on the structure (the user, 2026-11-07):**
+- Contributions: pull requests are welcome directly (no issue needed first); discussion happens on the PR.
+- A new tweak is off by default, so an update never changes what a user sees; an exception gives its reason in the PR.
