@@ -3,9 +3,9 @@ const fs = require("fs");
 const path = require("path");
 const {SHOTS, OUT} = require("../screenshots");
 
-const settingsPy = fs.readFileSync(path.join(__dirname, "..", "..", "tweakui", "settings.py"), "utf8");
-const DEFAULTS = settingsPy.slice(settingsPy.indexOf("DEFAULTS = {"), settingsPy.indexOf("\n}\n"));
-const settingNames = [...DEFAULTS.matchAll(/^\s+"(\w+)":/gm)].map(m => m[1]);
+// Every setting is declared once, as Setting("name", ...) in features.py
+const featuresPy = fs.readFileSync(path.join(__dirname, "..", "..", "tweakui", "features.py"), "utf8");
+const settingNames = [...featuresPy.matchAll(/\bSetting\("(\w+)"/g)].map(m => m[1]);
 
 test("every shot has a name of its own, fit for a file name", () => {
     const names = SHOTS.map(s => s.name);
