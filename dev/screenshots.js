@@ -57,6 +57,19 @@ const SHOTS = [
         },
     },
     {
+        // The header's units menu open (the browser's unit system is the fresh profile's, Metric)
+        name: "units-in-header", settings: {units_in_header: true, show_theme_menu: true},
+        async run(s) {
+            await s.page.goto(s.base + "/dashboard/");
+            await s.page.click(".tweakui-units-menu > a");
+            await s.page.waitForSelector(".tweakui-units-list", {state: "visible"});
+            await s.page.waitForTimeout(300);
+            const box = await s.page.$eval(".tweakui-units-list", e => { const r = e.getBoundingClientRect(); return {x: r.left, y: 0, right: r.right, bottom: r.bottom}; });
+            const x = Math.max(0, box.x - 160);
+            return {clip: {x, y: 0, width: Math.min(WIDTH, box.right + 120) - x, height: box.bottom + 16}};
+        },
+    },
+    {
         name: "theme-menu", settings: {show_theme_menu: true},
         async run(s) {
             await s.page.goto(s.base + "/dashboard/");

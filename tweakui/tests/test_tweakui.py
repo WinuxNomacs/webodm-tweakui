@@ -23,7 +23,7 @@ API = "/api/plugins/tweakui/settings"
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
+    return dict({"units_in_header": False, "show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
@@ -72,8 +72,8 @@ class TestThePlugin(TweakUITestCase):
     def test_the_dashboard_includes_the_scripts_settings_first_and_the_stylesheet(self):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js"):
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
+                     "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
@@ -85,8 +85,9 @@ class TestThePlugin(TweakUITestCase):
                                 html=True)
 
     def test_the_scripts_and_stylesheet_are_served(self):
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "movable_controls.js",
-                     "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "settings_page.js",
+        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
+                     "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
+                     "settings_page.js",
                      "main.css", "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
@@ -220,6 +221,17 @@ class TestSettingsPage(TweakUITestCase):
         self.assertEqual(self.patch({"task_details_command": False}).json(), defaults(task_details_command=False))
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="task_details_command" checked')
         self.assertEqual(self.script_settings(self.client)["task_details_command"], False)
+
+    def test_units_in_header_is_off_by_default_first_under_general_global_controls_and_can_be_turned_on(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        general = page[page.index('<section id="tweakui-general"'):]
+        general = general[:general.index("</section>")]
+        self.assertLess(general.index("Global Controls"), general.index("Task Options"))
+        self.assertIn('data-setting="units_in_header">', general)
+        self.assertIn("Units in Header", general)
+        self.assertEqual(self.patch({"units_in_header": True}).json(), defaults(units_in_header=True))
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="units_in_header" checked')
+        self.assertEqual(self.script_settings(self.client)["units_in_header"], True)
 
     def test_the_theme_menu_is_on_by_default_and_its_checkbox_is_in_the_themes_section(self):
         page = self.client.get("/plugins/tweakui/").content.decode()

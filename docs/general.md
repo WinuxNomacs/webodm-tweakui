@@ -1,5 +1,16 @@
 # General
 
+## Global Controls > Units in Header
+
+Off by default.
+
+![The units menu open in the header](../tweakui/public/previews/units-in-header.webp)
+
+A units menu in the header, left of the paintbrush, sets the unit system for measurements: **Metric**, **Imperial**
+or **Imperial (US)**. It's the same choice as the units selector on the 2D map and in the 3D view, so changing either
+one changes the other. Like WebODM's own selector, the choice is kept in this browser, not in your account. On a phone
+the menu shows only its ruler icon.
+
 ## Task Options > Show Modified Options
 
 Off by default.

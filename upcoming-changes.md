@@ -9,9 +9,19 @@
 (nothing planned)
 
 **Later**
-(nothing planned)
+- **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
+  cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Global Controls: Units in Header** (new.md, 2026-11-07) — branch `global-units`.
+  - Settings > General > Global Controls (a new group, first under General) > Units in Header (off by default): a
+    units menu in the header, left of the paintbrush (a ruler and the system's name; only the ruler on a phone),
+    with WebODM's Metric, Imperial and Imperial (US). It is WebODM's own preference (`localStorage.unit_system` and
+    the `onUnitSystemChanged` event): a choice in the header sets the maps' `select.unit-selector`, a choice on a map
+    updates the header, as does another tab's.
+  - Code: `public/units_menu.js` (new, on every page), `settings.py` (`units_in_header`), `templates/settings.html`,
+    `public/main.css`, `plugin.py`. Tests: `test_tweakui.py` (the setting, the script included and served),
+    `units_menu.test.js` (6 tests). Screenshot `units-in-header`; docs `docs/general.md`.
 - **Theme Sample frame and My Themes buttons** (new.md, 2026-11-07) — branch `sample-frame`.
   - Settings > Themes: the Sample is headed "Sample Form for Viewing Theme Effects" and framed by a 2px border in the
     theme's text colour (`theme-border-primary`; decided with the user over a dashed border or an inset panel). The
@@ -999,4 +1009,42 @@ Proposed: one phase, branch `sample-frame`.
   Docs unchanged in substance (they say "beside New Theme" for Export, still true).
 
 Decided: a 2px solid border in the theme's text colour (Accent border). Done.
+
+## Global Controls: units and temperature in the header (new.md, 2026-11-07)
+
+Requests, as written:
+- "Under General add a section for Global Controls. Add a dropdown next to the paintbrush in the header row with the
+  user's unit preference (e.g. Metric, Imperial(US, etc...)) that normally appears on the 2D and 3D maps. This
+  dropdown should stay linked with those. It's essentially a shortcut for the user to set their unit preferences.
+  The dropdown should only be visible and changeable when this option is enabled."
+- "Under General's Global Controls, add a dropdown to the left of the Units in the header row that is only
+  changeable/visible when this option is enabled. This dropdown is linked to the user's temperature algorithm
+  settings in the Thermal Layers which currently only allows changing between Celsius and Kelvin. If possible, add
+  Fahrenheit to the available conversions."
+
+What WebODM does (checked in both 3.3.2 and 4.0.0, identical):
+- Units: `app/static/app/js/classes/Units.js` keeps the system in `localStorage.unit_system` (`metric`, `imperial`,
+  `imperialUS`; shown as Metric, Imperial, Imperial (US)) and fires a document event `onUnitSystemChanged` on a
+  change. The 2D map (Map.jsx) and 3D view (ModelView.jsx) render `UnitSelector` (`select.unit-selector`), which
+  reads the system once and doesn't listen for changes; measurements, histograms and the 3D view listen to the
+  event. Per browser, not per user (WebODM's choice).
+- Temperature: the 2D map's Thermal layer (Layers panel, a 2-band orthophoto) has an Algorithm select of server
+  formulas (`app/api/formulas.py`): Celsius (`L`) and Kelvin (`L * 100 + 27315`, really centikelvin). It is per
+  layer and per page (LayersControlLayer state), starts at Celsius on every map load, and its select exists only
+  while the layer is expanded. Fahrenheit is not a formula; adding one is a change to WebODM's server code, so it
+  would reach only future WebODM versions. WebODM's `Units.js` already shows temperatures in Fahrenheit for the
+  imperial systems where it formats them (and the DJI Thermal plugin follows that).
+
+Proposed:
+- Phase 1 (branch `global-units`): Settings > General > Global Controls > "Units in Header" (off by default). On, a
+  select in the header, left of the paintbrush, with WebODM's unit systems; it writes `unit_system` and fires
+  `onUnitSystemChanged` as WebODM's own selector does, follows changes made on the maps (the event), and updates
+  any map selector on the page so they agree. Docs `docs/general.md`, screenshot, tests.
+- Phase 2: the temperature select, left of Units — depends on the decisions below.
+
+Decided with the user (2026-11-07):
+- Names "Units in Header" and, later, "Temperature in Header".
+- Units only for now: the temperature select waits until Fahrenheit or a cleaner hook exists in WebODM (driving the
+  Thermal layer's Algorithm through its expanded panel was offered and declined).
+- No pull request to WebODM for a Fahrenheit formula for now.
 

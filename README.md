@@ -15,9 +15,10 @@ About, opens them. A change is saved as soon as it is made and takes effect on t
 feature in the settings is a screenshot of it; click it to see it full size. Every feature is off until you turn it
 on, except the theme menu.
 
-- [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): in the Task Options dialog, each group's count
-  of options not at their default (Show Modified Options) and those options shown under a collapsed group (Expand
-  Configured); on the Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
+- [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): a units menu in the header, linked to the
+  maps' units selector (Units in Header); in the Task Options dialog, each group's count of options not at their
+  default (Show Modified Options) and those options shown under a collapsed group (Expand Configured); on the
+  Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
   step (Enhanced Task Details), and a minimized task's buttons kept in view (Expand Task Controls).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, seen only by you: WebODM's theme,
   one of 11 presets (Catppuccin, Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes copied from any theme
