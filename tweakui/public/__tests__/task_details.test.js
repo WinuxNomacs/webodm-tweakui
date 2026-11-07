@@ -154,6 +154,25 @@ test("start adds the rows to a panel once WebODM gives its task, and adds no but
     expect(root.querySelector(".tweakui-task-preset").textContent).toBe("Mine");
 });
 
+test("a page without task panels (a map) fetches nothing and watches nothing until WebODM gives a task", async () => {
+    let hook;
+    const observe = jest.fn();
+    const win = Object.assign(Object.create(window), {
+        PluginsAPI: {Dashboard: {addTaskActionButton: cb => { hook = cb; }}},
+        fetch: jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve(presets)})),
+        setTimeout: (f) => setTimeout(f, 0),
+        MutationObserver: function () { this.observe = observe; }
+    });
+    details.start(document, win);
+    await new Promise(r => setTimeout(r, 10));
+    expect(win.fetch).not.toHaveBeenCalled();
+    expect(observe).not.toHaveBeenCalled();
+    hook({task: Object.assign({}, task, {id: "t8"})});
+    hook({task: Object.assign({}, task, {id: "t7"})});
+    expect(win.fetch).toHaveBeenCalledTimes(1);
+    expect(observe).toHaveBeenCalledTimes(1);
+});
+
 test("a task that hasn't ended is fetched again while its panel is open, and its rows follow it", async () => {
     jest.useFakeTimers();
     let hook;

@@ -425,25 +425,30 @@
             }, POLL_MS);
         }
 
+        // The presets and the page's changes, from the first task WebODM gives: only the Dashboard has task panels
+        var begun = false;
+        function begin() {
+            begun = true;
+            win.fetch("/api/presets/?ordering=-system,-created_at", {credentials: "same-origin"})
+                .then(function (res) { return res.ok ? res.json() : []; })
+                .then(function (list) { presets = Array.isArray(list) ? list : []; later(); },
+                    function () { presets = []; later(); });
+            if (win.MutationObserver) {
+                new win.MutationObserver(later).observe(doc.body || doc.documentElement, {
+                    childList: true, subtree: true, characterData: true
+                });
+            }
+        }
+
         win.PluginsAPI.Dashboard.addTaskActionButton(function (args) {
             if (args && args.task && args.task.id) {
+                if (!begun) begin();
                 tasks[args.task.id] = args.task;
                 refetching[args.task.id] = false;
                 later();
             }
             return null;
         });
-
-        win.fetch("/api/presets/?ordering=-system,-created_at", {credentials: "same-origin"})
-            .then(function (res) { return res.ok ? res.json() : []; })
-            .then(function (list) { presets = Array.isArray(list) ? list : []; later(); },
-                function () { presets = []; later(); });
-
-        if (win.MutationObserver) {
-            new win.MutationObserver(later).observe(doc.body || doc.documentElement, {
-                childList: true, subtree: true, characterData: true
-            });
-        }
     }
 
     return {start: start, enhance: enhance, rows: rows, command: command, matchPreset: matchPreset,
