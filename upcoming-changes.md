@@ -1478,6 +1478,26 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    - Theme menu and Units menu in the header; the settings page, previews and the Saved banner; Storage; TweakUI
      Themes; Task Options (Show Modified Options, Expand Configured); Expand Task Controls; Enhanced Task Details.
    - Light theme and a dark one, a narrow window (phone width).
+   **Found (2026-11-07).** By the user in real Safari: Show ODX Command's copy and Copy JSON (on a new theme "Live
+   check", made in the theme editor) paste correctly at `localhost` and at the Mac's LAN address (the fallback copy).
+   The user asked Claude to automate the rest; done in headless WebKit (Playwright 27.2), every feature on:
+   - Movable Controls: Layers, Compare Orthophotos, Object Detection, Contours and Measure, each opened and dragged
+     by its title, move exactly as far as the mouse, marked `tweakui-moved`; the map doesn't pan.
+   - Source Frames 2D: the window drags by its title; Open Full Frame shows the viewer, Escape closes it.
+   - Zoom Override 2D: the + button stops at zoom 24 with it off, 27 with it on. The wheel zooms the same with it
+     off and on (it doesn't touch the 2D wheel).
+   - Zoom Override 3D, trackpad speed: 25 small wheel events (-4 px each, like a two-finger scroll) move the camera
+     about 10 times as far as one mouse notch (-120), **with the setting off as with it on** (off: 10.9 vs 101.3;
+     on: 11.4 vs 105.4). Potree itself counts each event as a notch; TweakUI keeps that. Not a TweakUI bug; whether
+     the override should weigh events by their size is a question for the user.
+   - Surprise Me: right-click suppresses the browser's menu and sends a rocket; Shift + right-click keeps the menu.
+     (A first scripted run reported no suppression; two runs that logged every event showed it working in WebKit
+     and Chromium.)
+   - Theme menu: WebODM (light, white page) and Solarized Dark switch the page; put back to the user's "Live check".
+   - Saved banner: "Saved" shows after a change. Task Options: headings show counts such as (1/5), 4 configured
+     options and groups marked. Storage: "92 MB used", the task's size listed. No `TweakUI` error, no page error.
+   Left for the user (real trackpad only): a pinch on the 2D map, two-finger scroll in 2D and 3D, one panel dragged
+   with the trackpad, a two-finger click.
 6. **Install from the zip as a user would** (the `release-check` skill, steps 4–6): Administration > Plugins in
    Safari, upload the zip built on the Mac, check it loads.
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
