@@ -6,14 +6,19 @@
 1. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
    11 (Source Frames' viewer focus) and 12 (the selector check, built from each script's `SELECTORS`), and the Zoom
    Override measurement; 10 is left as is.
-2. **macOS check**, on the user's Mac, before the first release: Safari, the trackpad, Ctrl+click and the dev tools
-   there. See "macOS check before the first release".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **macOS check** (asked in chat, 2026-11-07; see "macOS check before the first release") — on the user's Mac
+  (Apple Silicon, macOS 26.6, Safari 26.6): the dev tools, checks, Docker stack, Django tests and `dev/package.sh`
+  work; every feature behaves the same in headless WebKit as in Chromium; the copy buttons and the trackpad checked
+  by the user in Safari. Two changes, each tested on 4.0.0 and checked by the user in Safari (3.3.2 not tested, by
+  the user's decision): `surprise-me-ctrl-click` (`surprise_me.js` `mousedown`/`contextmenu`; tests in
+  `surprise_me.test.js`), `zoom-3d-trackpad` (`zoom_override.js` `notch`; test in `zoom_override.test.js`); docs,
+  setting descriptions, CHANGELOG. The zip install step skipped by the user (WebODM's code).
 - **Structure for other developers** (new.md, 2026-11-07; see "Before the first release", "the design") — three
   branches, each on both Docker stacks (Jest, Django, every feature live):
   - `shared-helpers`: `tweakui/public/core.js` (`feature`, `guard`, `el`, `csrfToken`, `copyText`, `placeMenu`,
@@ -1502,7 +1507,11 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    Safari, upload the zip built on the Mac, check it loads. **Skipped (2026-11-07), by the user's decision**: the
    upload and install are WebODM's code, not TweakUI's.
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
-   "Done".
+   "Done". **Done (2026-11-07):** no bug found on macOS. Two changes from it, merged (see "Done"): Ctrl+click sends a
+   rocket (the user's decision above), and Zoom Override 3D weighs each wheel event by its size (asked by the user
+   after the trackpad check; confirmed with the trackpad and a mouse). Still open on the Mac: Pylance's import
+   resolution in VSCode, not yet seen with `tweakui/plugin.py` open. Cleaned up: admin's settings back to the
+   defaults, the "Live check" theme and the "Live check macOS" project deleted.
 
 Not on the Mac: Windows-only checks (the relay, desktop mode) and the 3.3.2 stack (covered on Linux; start it on the
 Mac only if something found there could differ on 3.3.2).
