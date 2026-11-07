@@ -122,12 +122,12 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                     </div>
                     {% elif group.id == "own" %}
                     <div class="tweakui-themes-heading tweakui-themes-heading-stacked">
+                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
                         <span class="tweakui-themes-buttons">
                             <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New Theme" %}</button>
                             <button type="button" class="btn btn-default btn-sm" data-theme-action="import"><i class="fa fa-upload"></i> {% trans "Import" %}</button>
                             {% if group.themes %}<a class="btn btn-default btn-sm" href="{{ api }}themes/export" download><i class="fa fa-download"></i> {% trans "Export" %}</a>{% endif %}
                         </span>
-                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
                     </div>
                     {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New Theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
                     {% endif %}
@@ -180,9 +180,10 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                         </div>
                     </form>
                 </div>
-                {% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them){% endcomment %}
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Sample" %}</h5>
+                {% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them).
+                Framed in the theme's text colour, thicker than the setting groups, so it reads as a sample{% endcomment %}
+                <div class="tweakui-group tweakui-sample-group theme-border-primary">
+                    <h5 class="theme-background-highlight">{% trans "Sample Form for Viewing Theme Effects" %}</h5>
                     <form class="tweakui-sample" aria-label="{% trans "Sample of the current theme" %}">
                         <div class="tweakui-sample-columns">
                             <div>

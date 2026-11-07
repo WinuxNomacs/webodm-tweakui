@@ -483,6 +483,14 @@ class TestCustomThemes(TweakUITestCase):
         self.assertEqual(bad.status_code, status.HTTP_400_BAD_REQUEST)
         self.assertEqual(self.client.get(THEMES).json(), [])
 
+    def test_my_themes_buttons_come_below_its_heading_and_the_sample_has_its_own_frame_and_heading(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        heading = page.index('id="tweakui-themes-own"')
+        self.assertLess(heading, page.index('data-theme-action="new"'))
+        self.assertLess(heading, page.index('data-theme-action="import"'))
+        self.assertIn('<div class="tweakui-group tweakui-sample-group theme-border-primary">', page)
+        self.assertIn("Sample Form for Viewing Theme Effects", page)
+
     def test_the_themes_section_lists_my_themes_with_edit_and_every_theme_with_copy(self):
         res = self.client.get("/plugins/tweakui/")
         self.assertContains(res, "My Themes")

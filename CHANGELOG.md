@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Themes: the Sample is framed and headed "Sample Form for Viewing Theme Effects"; the New Theme, Import and
+  Export buttons sit below the My Themes heading.
 - Clearer wording throughout the settings, messages and documentation; the settings "Show Theme Menu" and
   "Show Storage View" renamed in Title Case.
 - A TweakUI item in the side menu, just above About, and a settings page (navigation pane, General), with each user's own settings.
