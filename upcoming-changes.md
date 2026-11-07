@@ -1424,6 +1424,13 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    Docker Desktop, Node (version in `.nvmrc`), `uv`, then `npm install`, `npx playwright install chromium webkit`,
    `uv venv --python 3.9 .venv && uv pip install -r requirements-dev.txt`. The `ignored/` checkouts as CLAUDE.md
    says ("Dev environment"). The VSCode settings (local `.vscode/settings.json`).
+   **Found (2026-11-07, macOS 26.6.2, Apple Silicon):** already there: Docker Desktop (Engine 29.5.3, Compose
+   5.1.4, context `desktop-linux`, aarch64), Node 26.13.0 (matches `.nvmrc`) and npm 11.20.0 from Homebrew, uv
+   0.12.10, Git 2.56.0, Bash 3.2.57, `shasum`, Safari 26.6.2; VSCode with Python, Pylance, debugpy and ESLint
+   (no Ruff extension). Missing: `node_modules`, the Playwright browsers, `.venv` (the only Python 3.9 is the
+   Command Line Tools' 3.9.6; uv offers a managed 3.9.25), `ignored/` (none of the checkouts), `.vscode/settings.json`,
+   `.claude/settings.local.json`. No WebODM runs on the Mac yet (no listener on 8005). Proposed to the user; nothing
+   installed until approved.
 2. **Checks**: `npm test`, `npm run lint -- tweakui dev`, `.venv/bin/ruff check .`, `npm run docs:build`.
 3. **Dev stack**: `dev/webodm.sh up` (4.0.0, http://localhost:8005; the first start takes several minutes), the Django
    tests in `tw-webapp` (the `test` skill), `dev/package.sh` (its sha256 must match `shasum -a 256`). A task with an
