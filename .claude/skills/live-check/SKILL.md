@@ -35,7 +35,7 @@ screenshots back to look at them, and read the page's console messages.
 
 - The change itself, on the pages it touches (Dashboard, Map, 3D Model view, ...), at desktop and phone widths,
   in the light and the dark theme where colours are involved.
-- `html.tweakui` is set and `/plugins/tweakui/main.js` and `main.css` load.
+- `html.tweakui` is set, `/plugins/tweakui/core.js`, `main.js` and `main.css` load, and the console has no `TweakUI <feature>:` error (a feature's guarded error).
 - The browser console has no new errors.
 
 ## Before and afterwards
