@@ -3,18 +3,20 @@
 ## Phases (current and upcoming)
 
 **Up next** (planned with the user before each is built; see "Before the first release")
-1. **README splash image** — both logos in `docs/public/`, the medium one at the top of the README.
-2. **Review: breaking points, performance, WebODM UX** — read every part of the plugin as a whole, list the
+1. **Review: breaking points, performance, WebODM UX** — read every part of the plugin as a whole, list the
    findings here with a fix proposed for each; clear bugs are fixed on their own branches.
-3. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
+2. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
    guide to doing it.
-4. **Fixes from the review** that the refactor didn't already cover.
+3. **Fixes from the review** that the refactor didn't already cover.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **README splash image** (new.md, 2026-11-07) — branch `readme-splash`: `docs/public/tweakui-logo-med.jpg`
+  (shown at the top of `README.md`) and the full-size `docs/public/tweakui-logo.jpg`, moved from `ignored/`. See
+  "Before the first release".
 - **Windows: keep it covered** (new.md, 2026-11-07) — branch `windows-coverage`: README Requirements, the docs'
   Developing page ("WebODM's Windows app"), CLAUDE.md, and the `live-check` (what to check there, the relay, no
   login) and `release-check` (step 7, the upgrade and the user's restart) skills. The machine's details stay in

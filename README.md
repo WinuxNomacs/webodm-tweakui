@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/public/tweakui-logo-med.jpg" alt="TweakUI" width="100%"></p>
+
 # TweakUI for WebODM
 
 A [WebODM](https://github.com/WebODM/WebODM) plugin of small enhancements to WebODM's interface. It works through
