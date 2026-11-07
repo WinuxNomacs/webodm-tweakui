@@ -34,9 +34,9 @@ first (those where the spot is nearest the middle of the frame), with the best o
 click around it.
 
 The selected photo is shown with the spot marked on it, with its file name, capture time, camera, size and the
-camera's altitude, a **Download** button, and **Open full frame**: the photo full screen, with zoom (wheel, pinch,
+camera's altitude, a **Download** button, and **Open Full Frame**: the photo full screen, with zoom (wheel, pinch,
 buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. It takes the keyboard focus
-(on its Close button) and, closed, gives it back to Open full frame, of the photo you ended on. Clicking the button again,
+(on its Close button) and, closed, gives it back to Open Full Frame, of the photo you ended on. Clicking the button again,
 Esc, or the window's × turns Source Frames off. A project's map searches each of its tasks with cameras.
 
 How it finds the photos: from each photo's position, direction and lens (the task's camera shots, as WebODM shows

@@ -3,17 +3,18 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Zoom Override 3D's mouse speed on WebODM's Windows app**: the user scrolls a 3D model there by hand (it now
-   reads 120 a notch, as on the Mac; a smaller wheelDelta would zoom slower). A headless browser sends synthetic
-   wheel events, so it can't check this.
-2. **Open point from the review of the Mac session** (2026-11-07), for the user to decide: Source Frames' "Open full
-   frame" button is not in Title Case.
+- Nothing planned: new requests go in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Open Full Frame in Title Case** (the user's decision on the Mac review's open point, 2026-11-07) — branch
+  `open-full-frame-title-case`: `source_frames.js` (the button and the photo's tooltip), `docs/map-2d.md`, CHANGELOG,
+  screenshots `source-frames-2d` and `source-frames-3d` retaken.
+- **Windows app: the navigation pane and Zoom Override 3D** — the navigation pane checked live in desktop mode
+  (see its entry below); Zoom Override 3D's speed with a real mouse verified by the user (2026-11-07).
 - **Global Controls: Hide Navigation Pane and Resize Navigation Pane** (new.md, 2026-11-07; see "Navigation pane:
   hide and resize") — `tweakui/public/nav_pane.js` (`create`: the tab; `createResize`: the handle, `clampWidth`) and
   two sections of `main.css`, tests in `__tests__/nav_pane.test.js` and `TestSettingsPage`. Branches `hide-nav-pane`
