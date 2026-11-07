@@ -3,15 +3,17 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
-   skills gain the Windows instance (the relay, single-user and desktop mode, upgrading through `upgrade=1` and a
-   restart).
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Windows: keep it covered** (new.md, 2026-11-07) — branch `windows-coverage`: README Requirements, the docs'
+  Developing page ("WebODM's Windows app"), CLAUDE.md, and the `live-check` (what to check there, the relay, no
+  login) and `release-check` (step 7, the upgrade and the user's restart) skills. The machine's details stay in
+  memory. See "Windows native".
 - **Windows: check every feature, fix what differs** (new.md, 2026-11-07) — every category checked live on the
   Windows app through the relay, at desktop and phone width, data left as found (Compact and Delete not run on the
   user's data). Fixes, each on its branch and checked on both Docker stacks and on Windows:
