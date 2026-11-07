@@ -11,6 +11,22 @@ describes the dev environment, the tests and the release steps.
 plugins; `TW_WEBODM=3.3.2 dev/webodm.sh up` runs 3.3.2 on `localhost:8006`. The first start takes several
 minutes (WebODM's own npm install, webpack and migrations).
 
+## WebODM's Windows app
+
+TweakUI is also checked on WebODM's native Windows app, which differs from the Docker builds in a few ways the
+plugin handles: it hides WebODM's header (desktop mode), so the Theme and Units menus go in the side menu; it logs
+in by itself (single-user mode), so a check opens `/` first; it reads files in the system's encoding unless told
+otherwise, so the plugin opens them as UTF-8; and it runs ODX with `run.bat` rather than docker.
+
+From WSL, `node dev/windows-relay.js` makes it reachable on `localhost:8007`: the app listens only on Windows' own
+`127.0.0.1:29800`, out of WSL's reach, and the relay pipes each connection through the app's own `python.exe`.
+Nothing is installed or changed on Windows. `TW_WIN_PORT`, `TW_WIN_TARGET` and `TW_WIN_PYTHON` change the port,
+the app's port and its `python.exe` for an install elsewhere.
+
+The plugin is installed there from the zip, as a user would. A newer zip goes in as an upgrade (the plugin
+directory's Update, or a POST of the zip to `/admin/app/plugin/actions/upload/` with `upgrade=1`); WebODM must then
+be restarted for changes to Python code and templates.
+
 ## Checks
 
 - Django tests, in the dev container:

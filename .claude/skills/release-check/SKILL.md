@@ -1,6 +1,6 @@
 ---
 name: release-check
-description: Check a release of the TweakUI plugin before merging its release/X.Y.Z branch - build the zip, install it in WebODM through Administration > Plugins as a user would, and check it live.
+description: Check a release of the TweakUI plugin before merging its release/X.Y.Z branch - build the zip, install it in WebODM through Administration > Plugins as a user would (and on WebODM's Windows app), and check it live.
 ---
 
 # Release check
@@ -18,6 +18,13 @@ and committed.
 5. **Live check on the installed copy** (the `live-check` skill): every feature in the README.
 6. **Leave it as found:** remove the installed plugin in Administration > Plugins, then
    `dev/webodm.sh up --force-recreate webapp worker` without `TW_PLUGIN_DIR` to mount `tweakui/` again.
+
+7. **WebODM's Windows app**, if the user runs it (ask): start the relay (the `live-check` skill), open `/`, then
+   upgrade TweakUI with the zip as the plugin directory's Update does: a POST of the zip to
+   `/admin/app/plugin/actions/upload/` with the fields `upgrade=1`, `json=1` and the page's CSRF token (Load Plugin
+   refuses a plugin already installed). Ask the user to restart WebODM, then check that Administration > Plugins lists
+   the new version and check live what differs there (the `live-check` skill). Leave the new version
+   installed; stop the relay by its PID.
 
 Then merge the release branch into `main` and tell the user: the zip and its sha256, the tag to make
 (`vX.Y.Z`), where to attach the zip (the GitHub release), and the `directory.json` entry for WebODM-Plugins.

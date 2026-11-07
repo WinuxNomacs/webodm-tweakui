@@ -35,7 +35,7 @@ Every feature is off until you turn it on, except the theme menu.
 
 ## Requirements
 
-WebODM 3.3.2 or later (tested on 3.3.2 and 4.0.0).
+WebODM 3.3.2 or later (tested on 3.3.2 and 4.0.0, and on 4.0.0's native Windows app).
 
 ## Installing
 

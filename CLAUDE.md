@@ -57,6 +57,13 @@ It is committed and public: nothing private, nothing true only on one machine. K
   pinned by digest in `dev/webodm.sh`.
 - The first start runs WebODM's dev setup (npm install, webpack, migrations) for several minutes before the server
   answers. The startup log then shows `Registered [coreplugins.tweakui.plugin]`.
+- **WebODM's native Windows app** (4.0.0), when the user runs it: `node dev/windows-relay.js` makes it
+  http://localhost:8007 from WSL (stop the relay by its PID afterwards). It runs in single-user mode (opening `/`
+  logs in as its admin: scripts open `/` first, there is no login form) and desktop mode (no header bar: the Theme
+  and Units menus go in the side menu, `window.TweakUI.desktop`). Python reads files as cp1252 there unless told
+  `encoding="utf-8"`. TweakUI is installed from the zip; a newer one goes in with `upgrade=1` (the `release-check`
+  skill), and the user restarts WebODM for Python and template changes: never restart it yourself. Django tests
+  don't run there; the Docker 4.0.0 stack covers the same Python, Django and Postgres.
 - Host tools: `uv venv --python 3.9 .venv && uv pip install -r requirements-dev.txt` (Django and DRF for the IDE,
   Ruff); `npm install` (Jest, ESLint, Playwright). VSCode: interpreter `.venv`, `ignored/WebODM` on Pylance's
   extra paths (local `.vscode/settings.json`).

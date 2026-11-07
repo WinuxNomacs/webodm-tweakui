@@ -1,6 +1,6 @@
 ---
 name: live-check
-description: Check a UI change in a real headless browser against the plugin's dev servers (WebODM 4.0.0 on http://localhost:8005, 3.3.2 on http://localhost:8006), then remove whatever the check created. Use after building or fixing anything visible.
+description: Check a UI change in a real headless browser against the plugin's dev servers (WebODM 4.0.0 on http://localhost:8005, 3.3.2 on http://localhost:8006, and WebODM's Windows app through dev/windows-relay.js on http://localhost:8007), then remove whatever the check created. Use after building or fixing anything visible.
 ---
 
 # Live browser check
@@ -13,6 +13,16 @@ The change is checked on 4.0.0 (http://localhost:8005); before a merge of anythi
 Log in at `/login/` with the dev account the user has given for this machine (kept in the project memory, never
 in the repo). Without one, ask the user. Never look for credentials or cookies in files, transcripts, the database
 or the environment.
+
+### WebODM's Windows app
+
+When the user runs it, also check there what differs from Docker: Python code that reads files or paths, anything
+in or near the header or the side menu (desktop mode has no header), and Enhanced Task Details' ODX command. Start
+`node dev/windows-relay.js` in the background (http://localhost:8007), read its PID, and stop it by that PID
+afterwards. There is no login: open `/` first, which logs the browser in as the app's admin. The installed copy is
+the last zip uploaded there, not `tweakui/`: build one with `dev/package.sh` and upgrade it (the `release-check`
+skill, step 7); for Python or template changes, ask the user to restart WebODM and wait for them. The instance's
+tasks are the user's: use them, create none, and run nothing that writes to them (Compact, Delete).
 
 ## Driving the browser
 
