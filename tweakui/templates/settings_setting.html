@@ -1,0 +1,9 @@
+{% comment %}A setting on the settings page (features.py): a checkbox with its label and description, and its preview's
+name for settings_page.js{% endcomment %}
+<div class="tweakui-setting"{% if setting.preview %} data-preview="{{ setting.preview }}"{% endif %}>
+    <label>
+        <input type="checkbox" data-setting="{{ setting.name }}"{% if setting.value %} checked{% endif %}>
+        {{ setting.label }}
+    </label>
+    <p class="text-muted">{{ setting.help }}</p>
+</div>

@@ -1,0 +1,133 @@
+{% load i18n %}
+{% comment %}Settings > Themes, after its Theme Menu group (features.py names this template): the themes to choose from,
+the import panel, the theme editor and a sample of WebODM's controls in the current theme.{% endcomment %}
+<div class="tweakui-intro">
+    <p class="text-muted">{% trans "Colours for WebODM that only you see. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
+</div>
+<div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
+    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
+    opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit. Published
+    (only when an administrator has published any) sits between the presets and My Themes.{% endcomment %}
+    {% for group in theme_groups %}
+    {% if group.id == "published" %}
+    <div class="tweakui-themes-heading">
+        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
+        <span class="text-muted">{% trans "From your administrator" %}</span>
+    </div>
+    {% elif group.id == "own" %}
+    <div class="tweakui-themes-heading tweakui-themes-heading-stacked">
+        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
+        <span class="tweakui-themes-buttons">
+            <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New Theme" %}</button>
+            <button type="button" class="btn btn-default btn-sm" data-theme-action="import"><i class="fa fa-upload"></i> {% trans "Import" %}</button>
+            {% if group.themes %}<a class="btn btn-default btn-sm" href="{{ api }}themes/export" download><i class="fa fa-download"></i> {% trans "Export" %}</a>{% endif %}
+        </span>
+    </div>
+    {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New Theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
+    {% endif %}
+    <div class="tweakui-themes" data-group="{{ group.id }}"{% if group.title %} role="group" aria-labelledby="tweakui-themes-{{ group.id }}"{% endif %}>
+        {% for theme in group.themes %}
+        <div class="tweakui-theme theme-border" data-theme-id="{{ theme.id }}">
+            <label>
+                <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
+                <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
+                <span class="tweakui-theme-name">{{ theme.name }}</span>
+            </label>
+            <span class="tweakui-theme-actions">
+                {% if theme.group == "own" %}<button type="button" class="btn btn-default btn-xs" data-theme-action="edit" title="{% trans "Edit" %}" aria-label="{% blocktrans with name=theme.name %}Edit {{ name }}{% endblocktrans %}"><i class="fa fa-pencil-alt"></i></button>{% endif %}
+                <button type="button" class="btn btn-default btn-xs" data-theme-action="copy" title="{% trans "Copy" %}" aria-label="{% blocktrans with name=theme.name %}Copy {{ name }}{% endblocktrans %}"><i class="fa fa-copy"></i></button>
+                <button type="button" class="btn btn-default btn-xs" data-theme-action="json" title="{% trans "Copy JSON" %}" aria-label="{% blocktrans with name=theme.name %}Copy {{ name }} as JSON{% endblocktrans %}"><i class="fa fa-code"></i></button>
+                {% if theme.group == "own" %}<a class="btn btn-default btn-xs" href="{{ api }}themes/export?id={{ theme.id|slice:"4:" }}" download title="{% trans "Export" %}" aria-label="{% blocktrans with name=theme.name %}Export {{ name }}{% endblocktrans %}"><i class="fa fa-download"></i></a>{% endif %}
+            </span>
+        </div>
+        {% endfor %}
+    </div>
+    {% endfor %}
+</div>
+{% include import_panel with target="own" %}
+{% comment %}The theme editor (theme_editor.js): a name and WebODM's 13 theme colours, in Administration > Theme's
+order; while it is open the page shows the unsaved colours{% endcomment %}
+<div class="tweakui-group theme-border tweakui-editor" hidden>
+    <h5 class="theme-background-highlight" id="tweakui-editor-title">{% trans "New Theme" %}</h5>
+    <form class="tweakui-editor-form" aria-labelledby="tweakui-editor-title" novalidate>
+        <div class="form-group">
+            <label for="tweakui-editor-name">{% trans "Name" %}</label>
+            <input type="text" id="tweakui-editor-name" class="form-control" maxlength="60" required>
+        </div>
+        <div class="tweakui-editor-colors">
+            {% for field in theme_fields %}
+            <div class="tweakui-editor-color" data-field="{{ field.name }}">
+                <input type="color" id="tweakui-color-{{ field.name }}" aria-describedby="tweakui-color-{{ field.name }}-help">
+                <div>
+                    <label for="tweakui-color-{{ field.name }}">{{ field.label }}</label>
+                    <input type="text" class="form-control input-sm tweakui-editor-hex" maxlength="7" spellcheck="false" aria-label="{% blocktrans with label=field.label %}{{ label }}, as #rrggbb{% endblocktrans %}">
+                    <p class="text-muted" id="tweakui-color-{{ field.name }}-help">{{ field.help }}</p>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+        <p class="tweakui-editor-status" role="status" aria-live="polite"></p>
+        <div class="tweakui-editor-buttons">
+            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
+            <button type="button" class="btn btn-default" data-editor="cancel">{% trans "Cancel" %}</button>
+            <button type="button" class="btn btn-danger" data-editor="delete" hidden><i class="fa fa-trash"></i> {% trans "Delete" %}</button>
+        </div>
+    </form>
+</div>
+{% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them).
+Framed in the theme's text colour, thicker than the setting groups, so it reads as a sample{% endcomment %}
+<div class="tweakui-group tweakui-sample-group theme-border-primary">
+    <h5 class="theme-background-highlight">{% trans "Sample Form for Viewing Theme Effects" %}</h5>
+    <form class="tweakui-sample" aria-label="{% trans "Sample of the current theme" %}">
+        <div class="tweakui-sample-columns">
+            <div>
+                <h4>{% trans "Heading" %}</h4>
+                <p>{% trans "Body text, with" %} <a href="#">{% trans "a link" %}</a>.</p>
+                <p class="text-muted">{% trans "Muted text, as in descriptions." %}</p>
+                <p>
+                    <span class="tweakui-sample-status theme-background-success">{% trans "Completed" %}</span>
+                    <span class="tweakui-sample-status theme-background-failed">{% trans "Failed" %}</span>
+                </p>
+                <div class="progress"><div class="progress-bar progress-bar-success" style="width: 60%">60%</div></div>
+            </div>
+            <div>
+                <div class="form-group">
+                    <label for="tweakui-sample-name">{% trans "Text field" %}</label>
+                    <input type="text" id="tweakui-sample-name" class="form-control" value="{% trans "Some text" %}">
+                </div>
+                <div class="form-group">
+                    <label for="tweakui-sample-select">{% trans "Select" %}</label>
+                    <select id="tweakui-sample-select" class="form-control">
+                        <option>{% trans "First option" %}</option>
+                        <option>{% trans "Second option" %}</option>
+                        <option disabled>{% trans "Unavailable option" %}</option>
+                    </select>
+                </div>
+                <div class="btn-group">
+                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        {% trans "Dropdown" %} <span class="caret"></span>
+                    </button>
+                    <ul class="dropdown-menu">
+                        <li><a href="#"><i class="fa fa-edit fa-fw"></i> {% trans "An item" %}</a></li>
+                        <li><a href="#"><i class="fa fa-copy fa-fw"></i> {% trans "Another item" %}</a></li>
+                        <li class="divider" role="separator"></li>
+                        <li class="disabled"><a href="#">{% trans "Unavailable item" %}</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+        <div class="tweakui-sample-buttons">
+            <button type="button" class="btn btn-default btn-sm">{% trans "Default" %}</button>
+            <button type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{% trans "A tooltip" %}">{% trans "Primary" %}</button>
+            <button type="button" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> {% trans "Danger" %}</button>
+            <button type="button" class="btn btn-primary btn-sm" disabled>{% trans "Disabled" %}</button>
+        </div>
+        <ul class="pagination pagination-sm">
+            <li class="disabled"><a href="#">&laquo;</a></li>
+            <li class="active"><a href="#">1</a></li>
+            <li><a href="#">2</a></li>
+            <li><a href="#">3</a></li>
+            <li><a href="#">&raquo;</a></li>
+        </ul>
+    </form>
+</div>

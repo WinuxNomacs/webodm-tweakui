@@ -1,332 +1,45 @@
 {% extends "app/plugins/templates/base.html" %}
 {% load i18n %}
 {% block content %}
-{% comment %}The TweakUI settings: a navigation pane of categories and the selected category (settings_page.js).
-Colours come only from WebODM's theme classes; Themes has a sample of controls in the current theme. A data-preview names the setting's screenshot in public/previews
+{% comment %}The TweakUI settings: a navigation pane of categories and the selected category (settings_page.js). The
+categories, their groups and their settings come from features.py (the view's `categories`); a category with a
+template of its own (Themes) has it drawn after its groups. Colours come only from WebODM's theme classes; Themes has
+a sample of controls in the current theme. A data-preview names the setting's screenshot in public/previews
 (dev/screenshots.js takes them), shown beside it as a thumbnail that enlarges on a click.{% endcomment %}
 <div id="tweakui-settings" class="tweakui-settings" data-api="{{ api }}" data-previews="{{ public }}previews/">
     {% csrf_token %}
     <h3>{% trans "TweakUI" %}</h3>
     <div class="tweakui-layout">
         <ul class="tweakui-nav theme-border" role="tablist">
-            <li><a href="#general" role="tab" class="theme-background-highlight-hover" data-section="general">
-                <i class="fa fa-cog fa-fw"></i> {% trans "General" %}</a></li>
-            <li><a href="#themes" role="tab" class="theme-background-highlight-hover" data-section="themes">
-                <i class="fa fa-palette fa-fw"></i> {% trans "Themes" %}</a></li>
-            <li><a href="#map2d" role="tab" class="theme-background-highlight-hover" data-section="map2d">
-                <i class="fa fa-map fa-fw"></i> {% trans "2D Map" %}</a></li>
-            <li><a href="#map3d" role="tab" class="theme-background-highlight-hover" data-section="map3d">
-                <i class="fa fa-cube fa-fw"></i> {% trans "3D Map" %}</a></li>
-            <li><a href="#storage" role="tab" class="theme-background-highlight-hover" data-section="storage">
-                <i class="fa fa-database fa-fw"></i> {% trans "Storage" %}</a></li>
+            {% for category in categories %}
+            <li><a href="#{{ category.id }}" role="tab" class="theme-background-highlight-hover" data-section="{{ category.id }}">
+                <i class="{{ category.icon }}"></i> {{ category.label }}</a></li>
+            {% endfor %}
         </ul>
         <div class="tweakui-sections">
             {% comment %}The "Saved" banner over the top of the category, kept in view while the page scrolls{% endcomment %}
             <div class="tweakui-banner"><p class="tweakui-status theme-border" role="status" aria-live="polite"></p></div>
-            <section id="tweakui-general" data-section="general" role="tabpanel">
-                <h4>{% trans "General" %}</h4>
+            {% for category in categories %}
+            <section id="tweakui-{{ category.id }}" data-section="{{ category.id }}" role="tabpanel"{% if not forloop.first %} hidden{% endif %}>
+                <h4>{{ category.label }}</h4>
+                {% for group in category.groups %}
                 <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Global Controls" %}</h5>
-                    <div class="tweakui-setting" data-preview="units-in-header">
-                        <label>
-                            <input type="checkbox" data-setting="units_in_header"{% if settings.units_in_header %} checked{% endif %}>
-                            {% trans "Units in Header" %}
-                        </label>
-                        <p class="text-muted">{% trans "A units menu in the header, left of the paintbrush: Metric, Imperial or Imperial (US), the same choice as the units selector on the 2D and 3D maps, kept in step with it. In the side menu on WebODM's Windows app, which has no header." %}</p>
-                    </div>
-                </div>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Task Options" %}</h5>
-                    <div class="tweakui-setting" data-preview="show-modified-options">
-                        <label>
-                            <input type="checkbox" data-setting="show_modified_options"{% if settings.show_modified_options %} checked{% endif %}>
-                            {% trans "Show Modified Options" %}
-                        </label>
-                        <p class="text-muted">{% trans "In the Task Options dialog, each group's heading shows how many of its options are not at their default, e.g. (1/13)." %}</p>
-                    </div>
-                    <div class="tweakui-setting" data-preview="expand-configured">
-                        <label>
-                            <input type="checkbox" data-setting="expand_configured"{% if settings.expand_configured %} checked{% endif %}>
-                            {% trans "Expand Configured" %}
-                        </label>
-                        <p class="text-muted">{% trans "In the Task Options dialog, a collapsed group still shows its options that are not at their default, so you can change them there. The Expand/Collapse button cycles Expand All, Collapse All and Collapse All but Configured." %}</p>
-                    </div>
-                </div>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Task Details" %}</h5>
-                    <div class="tweakui-setting" data-preview="enhanced-task-details">
-                        <label>
-                            <input type="checkbox" data-setting="enhanced_task_details"{% if settings.enhanced_task_details %} checked{% endif %}>
-                            {% trans "Enhanced Task Details" %}
-                        </label>
-                        <p class="text-muted">{% trans "Adds the parts turned on below to a task's details on the Dashboard." %}</p>
-                    </div>
-                    <div class="tweakui-subsettings" data-depends="enhanced_task_details">
-                        <div class="tweakui-setting">
-                            <label>
-                                <input type="checkbox" data-setting="task_details_times"{% if settings.task_details_times %} checked{% endif %}>
-                                {% trans "Task Start and End Time" %}
-                            </label>
-                            <p class="text-muted">{% trans "When the task started and finished, after Created on." %}</p>
-                        </div>
-                        <div class="tweakui-setting">
-                            <label>
-                                <input type="checkbox" data-setting="task_details_preset"{% if settings.task_details_preset %} checked{% endif %}>
-                                {% trans "Show Configured Task Preset" %}
-                            </label>
-                            <p class="text-muted">{% trans "The preset the task's options match, or Custom." %}</p>
-                        </div>
-                        <div class="tweakui-setting">
-                            <label>
-                                <input type="checkbox" data-setting="task_details_options"{% if settings.task_details_options %} checked{% endif %}>
-                                {% trans "Options as Bubbles" %}
-                            </label>
-                            <p class="text-muted">{% trans "Each option in its own bubble, in place of WebODM's one-line Options." %}</p>
-                        </div>
-                        <div class="tweakui-setting">
-                            <label>
-                                <input type="checkbox" data-setting="task_details_command"{% if settings.task_details_command %} checked{% endif %}>
-                                {% trans "Show ODX Command" %}
-                            </label>
-                            <p class="text-muted">{% trans "The command to run the task yourself, with a copy button." %}</p>
-                        </div>
-                        <div class="tweakui-setting">
-                            <label>
-                                <input type="checkbox" data-setting="task_details_step"{% if settings.task_details_step %} checked{% endif %}>
-                                {% trans "Show Current Processing Stage" %}
-                            </label>
-                            <p class="text-muted">{% trans "While the task runs, the ODM stage it is in, e.g. Current Step (8/13): Texturing." %}</p>
-                        </div>
-                    </div>
-                    <div class="tweakui-setting" data-preview="expand-task-controls">
-                        <label>
-                            <input type="checkbox" data-setting="expand_task_controls"{% if settings.expand_task_controls %} checked{% endif %}>
-                            {% trans "Expand Task Controls" %}
-                        </label>
-                        <p class="text-muted">{% trans "On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The +/- beside its name cycles buttons only, expanded and fully minimized." %}</p>
-                    </div>
-                </div>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Just for Fun" %}</h5>
-                    <div class="tweakui-setting" data-preview="surprise-me">
-                        <label>
-                            <input type="checkbox" data-setting="surprise_me"{% if settings.surprise_me %} checked{% endif %}>
-                            {% trans "Surprise Me" %}
-                        </label>
-                        <p class="text-muted">{% trans "Fireworks go off over every page every few seconds until you turn this off, and a right-click sends one to the pointer (Shift + right-click for the browser's menu). They're silent and clicks go through them." %}</p>
-                    </div>
-                </div>
-            </section>
-            <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>
-                <h4>{% trans "Themes" %}</h4>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Theme Menu" %}</h5>
-                    <div class="tweakui-setting" data-preview="theme-menu">
-                        <label>
-                            <input type="checkbox" data-setting="show_theme_menu"{% if settings.show_theme_menu %} checked{% endif %}>
-                            {% trans "Show Theme Menu" %}
-                        </label>
-                        <p class="text-muted">{% trans "A paintbrush in the header, left of your user icon, to change the theme from any page (in the side menu on WebODM's Windows app, which has no header)." %}</p>
-                    </div>
-                </div>
-                <div class="tweakui-intro">
-                    <p class="text-muted">{% trans "Colours for WebODM that only you see. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
-                </div>
-                <div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
-                    {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
-                    opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit. Published
-                    (only when an administrator has published any) sits between the presets and My Themes.{% endcomment %}
-                    {% for group in theme_groups %}
-                    {% if group.id == "published" %}
-                    <div class="tweakui-themes-heading">
-                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
-                        <span class="text-muted">{% trans "From your administrator" %}</span>
-                    </div>
-                    {% elif group.id == "own" %}
-                    <div class="tweakui-themes-heading tweakui-themes-heading-stacked">
-                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
-                        <span class="tweakui-themes-buttons">
-                            <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New Theme" %}</button>
-                            <button type="button" class="btn btn-default btn-sm" data-theme-action="import"><i class="fa fa-upload"></i> {% trans "Import" %}</button>
-                            {% if group.themes %}<a class="btn btn-default btn-sm" href="{{ api }}themes/export" download><i class="fa fa-download"></i> {% trans "Export" %}</a>{% endif %}
-                        </span>
-                    </div>
-                    {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New Theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
-                    {% endif %}
-                    <div class="tweakui-themes" data-group="{{ group.id }}"{% if group.title %} role="group" aria-labelledby="tweakui-themes-{{ group.id }}"{% endif %}>
-                        {% for theme in group.themes %}
-                        <div class="tweakui-theme theme-border" data-theme-id="{{ theme.id }}">
-                            <label>
-                                <input type="radio" name="theme" value="{{ theme.id }}" data-setting="theme"{% if settings.theme == theme.id %} checked{% endif %}>
-                                <span class="tweakui-swatch theme-border">{% for color in theme.swatch %}<i style="background:{{ color }}"></i>{% endfor %}</span>
-                                <span class="tweakui-theme-name">{{ theme.name }}</span>
-                            </label>
-                            <span class="tweakui-theme-actions">
-                                {% if theme.group == "own" %}<button type="button" class="btn btn-default btn-xs" data-theme-action="edit" title="{% trans "Edit" %}" aria-label="{% blocktrans with name=theme.name %}Edit {{ name }}{% endblocktrans %}"><i class="fa fa-pencil-alt"></i></button>{% endif %}
-                                <button type="button" class="btn btn-default btn-xs" data-theme-action="copy" title="{% trans "Copy" %}" aria-label="{% blocktrans with name=theme.name %}Copy {{ name }}{% endblocktrans %}"><i class="fa fa-copy"></i></button>
-                                <button type="button" class="btn btn-default btn-xs" data-theme-action="json" title="{% trans "Copy JSON" %}" aria-label="{% blocktrans with name=theme.name %}Copy {{ name }} as JSON{% endblocktrans %}"><i class="fa fa-code"></i></button>
-                                {% if theme.group == "own" %}<a class="btn btn-default btn-xs" href="{{ api }}themes/export?id={{ theme.id|slice:"4:" }}" download title="{% trans "Export" %}" aria-label="{% blocktrans with name=theme.name %}Export {{ name }}{% endblocktrans %}"><i class="fa fa-download"></i></a>{% endif %}
-                            </span>
-                        </div>
+                    <h5 class="theme-background-highlight">{{ group.title }}</h5>
+                    {% for setting in group.settings %}
+                    {% include setting_template with setting=setting %}
+                    {% if setting.parts %}
+                    <div class="tweakui-subsettings" data-depends="{{ setting.name }}">
+                        {% for part in setting.parts %}
+                        {% include setting_template with setting=part %}
                         {% endfor %}
                     </div>
+                    {% endif %}
                     {% endfor %}
                 </div>
-                {% include import_panel with target="own" %}
-                {% comment %}The theme editor (theme_editor.js): a name and WebODM's 13 theme colours, in Administration > Theme's
-                order; while it is open the page shows the unsaved colours{% endcomment %}
-                <div class="tweakui-group theme-border tweakui-editor" hidden>
-                    <h5 class="theme-background-highlight" id="tweakui-editor-title">{% trans "New Theme" %}</h5>
-                    <form class="tweakui-editor-form" aria-labelledby="tweakui-editor-title" novalidate>
-                        <div class="form-group">
-                            <label for="tweakui-editor-name">{% trans "Name" %}</label>
-                            <input type="text" id="tweakui-editor-name" class="form-control" maxlength="60" required>
-                        </div>
-                        <div class="tweakui-editor-colors">
-                            {% for field in theme_fields %}
-                            <div class="tweakui-editor-color" data-field="{{ field.name }}">
-                                <input type="color" id="tweakui-color-{{ field.name }}" aria-describedby="tweakui-color-{{ field.name }}-help">
-                                <div>
-                                    <label for="tweakui-color-{{ field.name }}">{{ field.label }}</label>
-                                    <input type="text" class="form-control input-sm tweakui-editor-hex" maxlength="7" spellcheck="false" aria-label="{% blocktrans with label=field.label %}{{ label }}, as #rrggbb{% endblocktrans %}">
-                                    <p class="text-muted" id="tweakui-color-{{ field.name }}-help">{{ field.help }}</p>
-                                </div>
-                            </div>
-                            {% endfor %}
-                        </div>
-                        <p class="tweakui-editor-status" role="status" aria-live="polite"></p>
-                        <div class="tweakui-editor-buttons">
-                            <button type="submit" class="btn btn-primary">{% trans "Save" %}</button>
-                            <button type="button" class="btn btn-default" data-editor="cancel">{% trans "Cancel" %}</button>
-                            <button type="button" class="btn btn-danger" data-editor="delete" hidden><i class="fa fa-trash"></i> {% trans "Delete" %}</button>
-                        </div>
-                    </form>
-                </div>
-                {% comment %}A sample of WebODM's controls in the current theme: they do nothing (settings_page.js stops them).
-                Framed in the theme's text colour, thicker than the setting groups, so it reads as a sample{% endcomment %}
-                <div class="tweakui-group tweakui-sample-group theme-border-primary">
-                    <h5 class="theme-background-highlight">{% trans "Sample Form for Viewing Theme Effects" %}</h5>
-                    <form class="tweakui-sample" aria-label="{% trans "Sample of the current theme" %}">
-                        <div class="tweakui-sample-columns">
-                            <div>
-                                <h4>{% trans "Heading" %}</h4>
-                                <p>{% trans "Body text, with" %} <a href="#">{% trans "a link" %}</a>.</p>
-                                <p class="text-muted">{% trans "Muted text, as in descriptions." %}</p>
-                                <p>
-                                    <span class="tweakui-sample-status theme-background-success">{% trans "Completed" %}</span>
-                                    <span class="tweakui-sample-status theme-background-failed">{% trans "Failed" %}</span>
-                                </p>
-                                <div class="progress"><div class="progress-bar progress-bar-success" style="width: 60%">60%</div></div>
-                            </div>
-                            <div>
-                                <div class="form-group">
-                                    <label for="tweakui-sample-name">{% trans "Text field" %}</label>
-                                    <input type="text" id="tweakui-sample-name" class="form-control" value="{% trans "Some text" %}">
-                                </div>
-                                <div class="form-group">
-                                    <label for="tweakui-sample-select">{% trans "Select" %}</label>
-                                    <select id="tweakui-sample-select" class="form-control">
-                                        <option>{% trans "First option" %}</option>
-                                        <option>{% trans "Second option" %}</option>
-                                        <option disabled>{% trans "Unavailable option" %}</option>
-                                    </select>
-                                </div>
-                                <div class="btn-group">
-                                    <button type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
-                                        {% trans "Dropdown" %} <span class="caret"></span>
-                                    </button>
-                                    <ul class="dropdown-menu">
-                                        <li><a href="#"><i class="fa fa-edit fa-fw"></i> {% trans "An item" %}</a></li>
-                                        <li><a href="#"><i class="fa fa-copy fa-fw"></i> {% trans "Another item" %}</a></li>
-                                        <li class="divider" role="separator"></li>
-                                        <li class="disabled"><a href="#">{% trans "Unavailable item" %}</a></li>
-                                    </ul>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="tweakui-sample-buttons">
-                            <button type="button" class="btn btn-default btn-sm">{% trans "Default" %}</button>
-                            <button type="button" class="btn btn-primary btn-sm" data-toggle="tooltip" title="{% trans "A tooltip" %}">{% trans "Primary" %}</button>
-                            <button type="button" class="btn btn-danger btn-sm"><i class="fa fa-trash"></i> {% trans "Danger" %}</button>
-                            <button type="button" class="btn btn-primary btn-sm" disabled>{% trans "Disabled" %}</button>
-                        </div>
-                        <ul class="pagination pagination-sm">
-                            <li class="disabled"><a href="#">&laquo;</a></li>
-                            <li class="active"><a href="#">1</a></li>
-                            <li><a href="#">2</a></li>
-                            <li><a href="#">3</a></li>
-                            <li><a href="#">&raquo;</a></li>
-                        </ul>
-                    </form>
-                </div>
+                {% endfor %}
+                {% if category.template %}{% include templates|add:category.template %}{% endif %}
             </section>
-            <section id="tweakui-map2d" data-section="map2d" role="tabpanel" hidden>
-                <h4>{% trans "2D Map" %}</h4>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Controls" %}</h5>
-                    <div class="tweakui-setting" data-preview="movable-controls">
-                        <label>
-                            <input type="checkbox" data-setting="movable_controls"{% if settings.movable_controls %} checked{% endif %}>
-                            {% trans "Movable Controls" %}
-                        </label>
-                        <p class="text-muted">{% trans "Drag the map's panels (Layers, Base Maps, Measure, Contours…) by their title, anywhere within the map. A panel that closes reopens in its usual place." %}</p>
-                    </div>
-                    <div class="tweakui-setting" data-preview="other-tasks">
-                        <label>
-                            <input type="checkbox" data-setting="other_tasks"{% if settings.other_tasks %} checked{% endif %}>
-                            {% trans "Compare Orthophotos from Other Tasks" %}
-                        </label>
-                        <p class="text-muted">{% trans "On a task's map, a button below Layers lists the project's other tasks that have an orthophoto. Check one to show it over this task's, with its own opacity slider." %}</p>
-                    </div>
-                    <div class="tweakui-setting" data-preview="source-frames-2d">
-                        <label>
-                            <input type="checkbox" data-setting="source_frames_2d"{% if settings.source_frames_2d %} checked{% endif %}>
-                            {% trans "Source Frames" %}
-                        </label>
-                        <p class="text-muted">{% trans "A button beside Share turns it on. Then click the map: a window lists the task's photos that show that spot, best first, with each photo's details, a full-frame view and a download." %}</p>
-                    </div>
-                    <div class="tweakui-setting" data-preview="zoom-override-2d">
-                        <label>
-                            <input type="checkbox" data-setting="zoom_override_2d"{% if settings.zoom_override_2d %} checked{% endif %}>
-                            {% trans "Zoom Override" %}
-                        </label>
-                        <p class="text-muted">{% trans "The map zooms in 3 steps further than WebODM lets it (each step twice as close), with the wheel, the + button and a pinch." %}</p>
-                    </div>
-                </div>
-            </section>
-            <section id="tweakui-map3d" data-section="map3d" role="tabpanel" hidden>
-                <h4>{% trans "3D Map" %}</h4>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Controls" %}</h5>
-                    <div class="tweakui-setting" data-preview="source-frames-3d">
-                        <label>
-                            <input type="checkbox" data-setting="source_frames_3d"{% if settings.source_frames_3d %} checked{% endif %}>
-                            {% trans "Source Frames" %}
-                        </label>
-                        <p class="text-muted">{% trans "A button beside Share turns it on. Then click the model: a window lists the task's photos that show that spot, best first, with each photo's details, a full-frame view and a download." %}</p>
-                    </div>
-                    <div class="tweakui-setting" data-preview="zoom-override-3d">
-                        <label>
-                            <input type="checkbox" data-setting="zoom_override_3d"{% if settings.zoom_override_3d %} checked{% endif %}>
-                            {% trans "Zoom Override" %}
-                        </label>
-                        <p class="text-muted">{% trans "The mouse wheel zooms toward what is under the pointer (the points or the model) instead of the middle of the view, so you can get close to any surface. Over empty space it zooms as before." %}</p>
-                    </div>
-                </div>
-            </section>
-            <section id="tweakui-storage" data-section="storage" role="tabpanel" hidden>
-                <h4>{% trans "Storage" %}</h4>
-                <div class="tweakui-group theme-border">
-                    <h5 class="theme-background-highlight">{% trans "Storage View" %}</h5>
-                    <div class="tweakui-setting" data-preview="storage">
-                        <label>
-                            <input type="checkbox" data-setting="storage_view"{% if settings.storage_view %} checked{% endif %}>
-                            {% trans "Show Storage View" %}
-                        </label>
-                        <p class="text-muted">{% trans "Adds a Storage page under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It shows how much of your quota each project and task uses and each task's files by kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and projects." %}</p>
-                    </div>
-                </div>
-            </section>
+            {% endfor %}
         </div>
     </div>
 </div>

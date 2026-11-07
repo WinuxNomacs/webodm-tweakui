@@ -3,48 +3,13 @@ Each user's TweakUI settings: one JSON value in the plugin's per-user data store
 """
 from app.plugins.data_store import UserDataStore
 
+from . import features
+
 KEY = "settings"
 
-# Every setting with its default; the type of the default is the only type the setting takes
-DEFAULTS = {
-    # General > Global Controls: a units menu in the header, a shortcut to WebODM's unit system (the maps' selector)
-    "units_in_header": False,
-    # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
-    "show_modified_options": False,
-    # General > Task Options: a collapsed group of the Task Options dialog still shows its options not at their default
-    "expand_configured": False,
-    # General > Task Details: a task's details panel on the Dashboard shows its preset, its options as bubbles and
-    # its ODX command
-    "enhanced_task_details": False,
-    # Its parts, each turned off on its own: Task Start and End Time, Show Configured Task Preset, Options as
-    # Bubbles, Show ODX Command and Show Current Processing Stage
-    "task_details_times": True,
-    "task_details_preset": True,
-    "task_details_options": True,
-    "task_details_command": True,
-    "task_details_step": True,
-    # General > Task Details: a minimized task on the Dashboard still shows its action buttons
-    "expand_task_controls": False,
-    # General > Just for Fun: fireworks over every page at random moments
-    "surprise_me": False,
-    # 2D Map: the map's popup panels can be dragged by their title
-    "movable_controls": False,
-    # 2D Map: on a task's map, a panel of the project's other tasks' orthophotos to show over its own
-    "other_tasks": False,
-    # 2D Map and 3D Map: a button to pick a spot or draw an area and see the source photos that show it
-    "source_frames_2d": False,
-    "source_frames_3d": False,
-    # 2D Map: the map zooms 3 steps further; 3D Map: the wheel zooms toward what is under the pointer
-    "zoom_override_2d": False,
-    "zoom_override_3d": False,
-    # Storage: a Storage view under Diagnostic (or under TweakUI's side-menu item without Diagnostic)
-    "storage_view": False,
-    # Themes: the paintbrush menu of themes in the header
-    "show_theme_menu": True,
-    # Themes: "webodm" (WebODM's own theme), a preset id of themes.PRESETS, "own:<id>", one of the user's own
-    # themes, or "published:<id>", one an administrator published (custom_themes)
-    "theme": "webodm",
-}
+# Every setting with its default (features.py declares them); the type of the default is the only type the setting
+# takes
+DEFAULTS = features.defaults()
 
 
 def allowed(name, value, user=None):

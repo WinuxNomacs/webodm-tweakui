@@ -18,7 +18,7 @@ from app.plugins import disable_plugin, enable_plugin, get_plugin_by_name
 from app.models import Project, Task
 from app.plugins.data_store import UserDataStore
 from app.tests.classes import BootTestCase
-from coreplugins.tweakui import frames
+from coreplugins.tweakui import features, frames
 
 API = "/api/plugins/tweakui/settings"
 
@@ -319,6 +319,67 @@ class TestSettingsPage(TweakUITestCase):
         self.assertEqual(len(named), len(set(named)))
         self.assertEqual(self.client.get("/plugins/tweakui/previews/%s.webp" % named[0]).status_code,
                          status.HTTP_200_OK)
+
+class TestFeatures(TweakUITestCase):
+    """features.py, the one list of settings: what comes from it, and the rules a new tweak follows"""
+
+    PUBLIC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
+    # On by default, each for its reason: the theme menu came before its setting (turning it off is the choice), and
+    # Enhanced Task Details' parts are shown once Enhanced Task Details itself is turned on
+    ON_BY_DEFAULT = frozenset({"show_theme_menu", "task_details_times", "task_details_preset", "task_details_options",
+                               "task_details_command", "task_details_step"})
+
+    def test_each_setting_is_declared_once_and_its_default_is_the_settings_default(self):
+        names = [s.name for s in features.all_settings()]
+        self.assertEqual(len(names), len(set(names)))
+        res = self.client.get(API)
+        self.assertEqual(res.json(), features.defaults())
+
+    def test_a_new_tweak_is_off_by_default(self):
+        on = {s.name for s in features.all_settings() if s.default is True}
+        self.assertEqual(on, self.ON_BY_DEFAULT)
+
+    def test_each_setting_with_a_label_has_a_description_and_a_checkbox_on_the_settings_page(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        for s in features.all_settings():
+            if not s.label:
+                continue
+            self.assertIsInstance(s.default, bool, s.name)
+            self.assertTrue(s.help, s.name)
+            self.assertIn('data-setting="%s"' % s.name, page)
+
+    def test_a_settings_parts_sit_under_it_greyed_out_while_it_is_off(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        box = page.index('data-depends="enhanced_task_details"')
+        self.assertLess(page.index('data-setting="enhanced_task_details"'), box)
+        for part in ("task_details_times", "task_details_step"):
+            self.assertLess(box, page.index('data-setting="%s"' % part))
+
+    def test_each_category_is_a_link_and_a_section_and_only_the_first_section_shows(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        for i, c in enumerate(features.CATEGORIES):
+            self.assertIn('data-section="%s">' % c.id, page.replace(' role="tabpanel"', "").replace(" hidden", ""))
+            section = re.search(r'<section id="tweakui-%s"[^>]*>' % c.id, page).group(0)
+            self.assertEqual(" hidden" in section, i > 0, c.id)
+
+    def test_each_preview_named_is_a_screenshot_in_public(self):
+        for s in features.all_settings():
+            if s.preview:
+                self.assertTrue(os.path.isfile(os.path.join(self.PUBLIC, "previews", s.preview + ".webp")), s.preview)
+
+    def test_the_plugin_loads_the_core_scripts_first_then_each_scripts_a_setting_needs_once(self):
+        scripts = plugin_scripts()
+        self.assertEqual(scripts, features.scripts())
+        self.assertEqual(scripts[:3], features.CORE_SCRIPTS)
+        self.assertEqual(len(scripts), len(set(scripts)))
+        for s in features.all_settings():
+            for name in s.scripts:
+                self.assertIn(name, scripts)
+                self.assertTrue(os.path.isfile(os.path.join(self.PUBLIC, name)), name)
+        # A setting's scripts load in the order it gives (the 3D pick before the scripts that use it)
+        for name in ("source_frames.js", "zoom_override.js"):
+            self.assertLess(scripts.index("pick3d.js"), scripts.index(name))
+
 
 class TestThemes(TweakUITestCase):
     def theme_css(self, client=None):

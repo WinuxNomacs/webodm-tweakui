@@ -5,7 +5,7 @@ from django.utils.translation import gettext_lazy as _
 
 from app.plugins import Menu, MountPoint, PluginBase
 
-from . import custom_themes, settings, themes
+from . import custom_themes, features, settings, themes
 from .api import (FramesView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
                   SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
                   ThemesView, ThemeView, settings_script)
@@ -15,12 +15,12 @@ class Plugin(PluginBase):
     def main_menu(self):
         return [Menu(_("TweakUI"), self.public_url(""), "fa fa-sliders-h fa-fw")]
 
-    # On every WebODM page (base.html), in this order; paths are relative to public/, except settings.js, which is
-    # a view (app_mount_points come before public/); so is theme.css
+    # On every WebODM page (base.html), in this order (features.py): paths are relative to public/, except
+    # settings.js, which is a view (app_mount_points come before public/); so is theme.css. Every feature's script is
+    # on every page whatever the user's settings (WebODM asks for the list without a request); each one returns at
+    # once when its feature is off
     def include_js_files(self):
-        return ["settings.js", "core.js", "main.js", "task_options.js", "task_details.js", "task_controls.js", "theme_menu.js", "units_menu.js",
-                "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
-                "surprise_me.js"]
+        return features.scripts()
 
     def include_css_files(self):
         return ["main.css", "theme.css"]
@@ -28,11 +28,15 @@ class Plugin(PluginBase):
     def app_mount_points(self):
         @login_required
         def settings_page(request):
+            values = settings.load(request.user)
             return render(request, self.template_path("settings.html"), {
                 "title": _("TweakUI"),
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
-                "settings": settings.load(request.user),
+                "settings": values,
+                "categories": features.page(values),
+                "templates": self.template_path(""),
+                "setting_template": self.template_path("settings_setting.html"),
                 "theme_groups": themes.groups(request.user),
                 "theme_fields": themes.fields(),
                 "import_panel": self.template_path("import_panel.html"),

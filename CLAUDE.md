@@ -30,10 +30,12 @@ It is committed and public: nothing private, nothing true only on one machine. K
   version, `CHANGELOG.md`, `README.md`, `docs/`), builds the zip with `dev/package.sh`
   (`dist/tweakui-X.Y.Z.zip` and its sha256), runs the `release-check` skill and merges; the user tags `vX.Y.Z`,
   attaches the zip to the GitHub release and adds `{url, sha256}` to WebODM-Plugins' `directory.json`.
-- **Settings are per user**: a new setting is a name and default in `DEFAULTS` (`tweakui/settings.py`), a control
-  with `data-setting` in its category's section of `templates/settings.html` (a new category: a link in the
-  navigation pane and a `<section data-section>`), and reads `window.TweakUI.settings` in the page scripts:
-  `/plugins/tweakui/settings.js` is a view, loaded before the other scripts on every page.
+- **Settings are per user and declared once**, in `tweakui/features.py`: a setting's name, default (a new tweak is
+  off), category and group, label, description, preview and scripts. The defaults (`settings.DEFAULTS`), the settings
+  page's checkboxes (`templates/settings.html`, one loop) and the scripts on every page (`plugin.py`) come from it.
+  Page scripts read `window.TweakUI.settings` (`/plugins/tweakui/settings.js`, a view, loaded first) and use the
+  helpers of `public/core.js` (loaded next): a feature starts through `TweakUI.feature`, wraps every callback it
+  gives WebODM or the page in `TweakUI.guard`, and lists the WebODM elements it relies on in `SELECTORS` at its top.
 - **`README.md` is the plugin's overview, `docs/` its documentation** (VitePress, a page per settings category,
   published to GitHub Pages by `.github/workflows/docs.yml` on a `v*` tag or by hand): a feature change updates
   its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),
