@@ -25,7 +25,8 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* A theme: its radio button, swatch and name (the label), then its buttons (Edit and Export on your own, Copy and
    Copy JSON), which go under the name, at the right, when the card is too narrow for both */
 .tweakui-settings .tweakui-theme { display: flex; flex-wrap: wrap; align-items: center; column-gap: 4px; padding: 0 8px 0 0; border-width: 1px; border-style: solid; border-radius: 4px; }
-.tweakui-settings .tweakui-theme label { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 0 8px 12px; font-weight: normal; cursor: pointer; flex: 1 1 200px; }
+.tweakui-settings .tweakui-theme label, .tweakui-settings .tweakui-theme-label { display: flex; align-items: center; gap: 8px; min-width: 0; margin: 0; padding: 8px 0 8px 12px; font-weight: normal; cursor: pointer; flex: 1 1 200px; }
+.tweakui-settings .tweakui-theme-label { cursor: default; }
 .tweakui-settings .tweakui-theme input { margin: 0; flex: none; }
 .tweakui-settings .tweakui-theme-name { overflow-wrap: anywhere; }
 .tweakui-settings .tweakui-theme:has(input:checked) { border-color: currentColor; font-weight: bold; }
@@ -37,6 +38,14 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-import-report p, .tweakui-settings .tweakui-import-report ul { margin: 0 0 6px; }
 .tweakui-settings .tweakui-import code { white-space: normal; }
 .tweakui-settings .tweakui-themes-empty { margin: 0; }
+/* Administration > TweakUI Themes (published.html) */
+.tweakui-published .tweakui-themes-heading { margin-top: 0; }
+.tweakui-published .tweakui-published-status { margin: 12px 0 0; }
+.tweakui-published .tweakui-published-status:empty { display: none; }
+.tweakui-published .tweakui-group { margin-top: 16px; }
+.tweakui-published .tweakui-publish p { margin: 0 0 8px; }
+.tweakui-published .tweakui-publish-row { display: flex; flex-wrap: wrap; gap: 6px; }
+.tweakui-published .tweakui-publish-row select { width: auto; max-width: 100%; flex: 0 1 320px; }
 /* Bootstrap's .btn display wins over the hidden attribute: hidden stays hidden on the settings page */
 .tweakui-settings [hidden] { display: none !important; }
 /* The theme editor: the colours in a grid of pickers, each with its name, hex value and WebODM's description */

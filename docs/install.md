@@ -15,4 +15,4 @@ features they want. An administrator can turn the whole plugin off at any time i
 ## Outside services
 
 None: the plugin calls no outside service. It keeps each user's settings, including their theme, in WebODM's
-database, in the plugin's per-user data store.
+database, in the plugin's per-user data store, and the published themes in its global data store.

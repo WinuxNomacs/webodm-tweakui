@@ -115,3 +115,44 @@ describe("the Storage view in the side menu", () => {
         expect(document.querySelectorAll("#side-menu ul").length).toBe(1);
     });
 });
+
+describe("Administration > TweakUI Themes in the side menu", () => {
+    afterEach(() => { delete window.TweakUI; delete window.jQuery; window.history.replaceState(null, "", "/"); });
+
+    const admin = () => sideMenu('<li><a href="#">Administration<span class="fa arrow"></span></a><ul class="nav nav-second-level">' +
+        '<li><a href="/admin/app/setting/1/change/">Brand</a></li><li><a href="/admin/app/theme/1/change/">Theme</a></li>' +
+        '<li><a href="/admin/app/plugin/">Plugins</a></li></ul></li>');
+    const adminItems = () => Array.from(document.querySelectorAll(".nav-second-level > li")).map(li => li.textContent.trim());
+
+    test("a superuser gets the link right after Theme", () => {
+        window.TweakUI = {settings: {}, superuser: true};
+        admin();
+        new Function(source)();
+        expect(adminItems()).toEqual(["Brand", "Theme", "TweakUI Themes", "Plugins"]);
+        const link = document.querySelector('a[href="/plugins/tweakui/admin/themes/"]');
+        expect(link.querySelector("i").className).toBe("fa fa-palette fa-fw");
+        expect(link.classList.contains("active")).toBe(false);
+        new Function(source)();
+        expect(adminItems().length).toBe(4);
+    });
+
+    test("other users, staff included, get no link", () => {
+        window.TweakUI = {settings: {}};
+        admin();
+        new Function(source)();
+        expect(adminItems()).toEqual(["Brand", "Theme", "Plugins"]);
+    });
+
+    test("on the page itself, the link is active and Administration open", () => {
+        window.TweakUI = {settings: {}, superuser: true};
+        window.history.replaceState(null, "", "/plugins/tweakui/admin/themes/");
+        window.jQuery = () => ({data: name => name === "metisMenu" ? {} : undefined});
+        admin();
+        new Function(source)();
+        const link = document.querySelector('a[href="/plugins/tweakui/admin/themes/"]');
+        expect(link.classList.contains("active")).toBe(true);
+        const list = document.querySelector(".nav-second-level");
+        expect(list.parentNode.classList.contains("active")).toBe(true);
+        expect(list.classList.contains("in")).toBe(true);
+    });
+});

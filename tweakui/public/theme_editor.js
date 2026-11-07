@@ -6,6 +6,8 @@
 // Also: Copy JSON on every theme (the theme as {name, colors} on the clipboard, through task_details.js's copy), and
 // Import, a panel that takes a JSON file or text of one theme or a list (themes/import) and says what was added,
 // replaced or refused; Close then reloads the page to list them. Export is a plain download link (themes/export).
+// Administration > TweakUI Themes (templates/published.html) uses it too, without the editor: Copy JSON, Import
+// (into the published themes, the panel's data-import-path), Delete, and Publish a copy of one of your own themes.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
@@ -14,7 +16,7 @@
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
 
-    var OWN = "own:", HEX = /^#[0-9a-f]{6}$/, PREVIEW_DELAY = 250, MAX_FILE = 1024 * 1024;
+    var OWN = "own:", PUBLISHED = "published:", HEX = /^#[0-9a-f]{6}$/, PREVIEW_DELAY = 250, MAX_FILE = 1024 * 1024;
 
     function csrfToken(doc) {
         var input = doc.querySelector("input[name=csrfmiddlewaretoken]");
@@ -266,7 +268,8 @@
             report(state, "Not imported: this isn't JSON (" + e.message + ")");
             return Promise.resolve();
         }
-        return request(state, "POST", "themes/import", data).then(function (result) {
+        var path = state.importer.getAttribute("data-import-path") || "themes/import";
+        return request(state, "POST", path, data).then(function (result) {
             if (result.added.length || result.replaced.length) state.imported = true;
             report(state, result);
         }, function (e) {
@@ -274,10 +277,43 @@
         });
     }
 
+    // Administration > TweakUI Themes: a failure of Delete or Publish
+    function publishedStatus(state, text) {
+        var status = state.page.querySelector(".tweakui-published-status");
+        if (!status) return;
+        status.textContent = text;
+        status.className = "tweakui-published-status" + (text ? " text-danger" : "");
+    }
+
+    // Deletes a published theme, after asking, and reloads
+    function removePublished(state, id) {
+        var theme = state.themes[id];
+        if (!theme || id.indexOf(PUBLISHED) !== 0 || !state.win.confirm("Delete the published theme “" + theme.name +
+            "”? Users who chose it get WebODM's theme.")) return Promise.resolve();
+        return request(state, "DELETE", "published/" + id.slice(PUBLISHED.length)).then(function () {
+            state.win.location.reload();
+        }, function (e) {
+            publishedStatus(state, "Not deleted: " + e.message);
+        });
+    }
+
+    // Publishes a copy of the chosen one of your own themes and reloads
+    function publish(state) {
+        var select = state.page.querySelector("#tweakui-publish-theme");
+        if (!select || !select.value) return Promise.resolve();
+        publishedStatus(state, "");
+        return request(state, "POST", "published", {id: select.value}).then(function () {
+            state.win.location.reload();
+        }, function (e) {
+            publishedStatus(state, "Not published: " + e.message);
+        });
+    }
+
     function start(doc, win) {
-        var page = doc.getElementById("tweakui-settings"), data = doc.getElementById("tweakui-theme-colors");
+        var page = doc.getElementById("tweakui-settings") || doc.getElementById("tweakui-published");
+        var data = doc.getElementById("tweakui-theme-colors");
         var editor = page && page.querySelector(".tweakui-editor"), importer = page && page.querySelector(".tweakui-import");
-        if (!editor || !importer || !data) return null;
+        if (!importer || !data) return null;
         var state = {page: page, editor: editor, importer: importer, doc: doc, win: win, fetch: win.fetch.bind(win),
             themes: JSON.parse(data.textContent), editing: null, seq: 0, timer: null, imported: false};
         page.addEventListener("click", function (e) {
@@ -287,7 +323,8 @@
             var id = theme ? theme.getAttribute("data-theme-id") : null;
             if (action === "json") copyJson(state, id, button);
             else if (action === "import") openImport(state);
-            else open(state, action, id);
+            else if (action === "delete") removePublished(state, id);
+            else if (editor) open(state, action, id);
         });
         var form = importer.querySelector("form");
         form.addEventListener("submit", function (e) { e.preventDefault(); importThemes(state); });
@@ -295,6 +332,9 @@
         importer.querySelector("#tweakui-import-file").addEventListener("change", function (e) {
             readFile(state, e.target.files && e.target.files[0]);
         });
+        var publishForm = page.querySelector(".tweakui-publish");
+        if (publishForm) publishForm.addEventListener("submit", function (e) { e.preventDefault(); publish(state); });
+        if (!editor) return state;
         editor.querySelector("form").addEventListener("submit", function (e) { e.preventDefault(); save(state); });
         editor.querySelector("[data-editor=cancel]").addEventListener("click", function () { close(state); });
         editor.querySelector("[data-editor=delete]").addEventListener("click", function () { remove(state); });
@@ -304,5 +344,5 @@
 
     return {start: start, open: open, close: close, save: save, remove: remove, preview: preview, colors: colors,
         onInput: onInput, copyJson: copyJson, openImport: openImport, closeImport: closeImport,
-        readFile: readFile, importThemes: importThemes};
+        readFile: readFile, importThemes: importThemes, removePublished: removePublished, publish: publish};
 });

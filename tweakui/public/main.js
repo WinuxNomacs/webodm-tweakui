@@ -4,7 +4,8 @@
     "use strict";
     document.documentElement.className += " tweakui";
 
-    var TWEAKUI = "/plugins/tweakui/", DIAGNOSTIC = "/plugins/diagnostic/", STORAGE = "/plugins/tweakui/storage/";
+    var TWEAKUI = "/plugins/tweakui/", DIAGNOSTIC = "/plugins/diagnostic/", STORAGE = "/plugins/tweakui/storage/",
+        PUBLISHED = "/plugins/tweakui/admin/themes/";
 
     function sideItem(href) {
         var link = document.querySelector('#side-menu > li > a[href="' + href + '"]');
@@ -71,9 +72,37 @@
         }
     }
 
+    // Administration > TweakUI Themes, for superusers (settings.js says so): WebODM has no hook in Administration, so
+    // the link goes right after its Theme item. On the page itself, Administration is open with the link active.
+    function publishedMenu() {
+        if (!window.TweakUI || !window.TweakUI.superuser || document.querySelector('#side-menu a[href="' + PUBLISHED + '"]')) return;
+        var theme = document.querySelector('#side-menu .nav-second-level a[href^="/admin/app/theme/"]');
+        if (!theme) return;
+        var li = document.createElement("li"), a = document.createElement("a"), i = document.createElement("i");
+        a.setAttribute("href", PUBLISHED);
+        i.className = "fa fa-palette fa-fw";
+        a.appendChild(i);
+        a.appendChild(document.createTextNode(" TweakUI Themes"));
+        li.appendChild(a);
+        var item = theme.parentNode, list = item.parentNode;
+        list.insertBefore(li, item.nextSibling);
+        if (window.location.pathname === PUBLISHED) {
+            a.className = "active";
+            var admin = list.parentNode;
+            if (!/\bactive\b/.test(admin.className)) admin.className += " active";
+            // metisMenu has started: show the list open, as it would for the active item
+            var $ = window.jQuery;
+            if ($ && $(document.getElementById("side-menu")).data("metisMenu")) {
+                list.className += " collapse in";
+                list.setAttribute("aria-expanded", "true");
+            }
+        }
+    }
+
     function menus() {
         moveMenuItem();
         storageMenu();
+        publishedMenu();
     }
 
     if (document.readyState === "loading") {

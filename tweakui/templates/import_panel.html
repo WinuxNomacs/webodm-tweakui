@@ -1,0 +1,21 @@
+{% load i18n %}{% comment %}Import (theme_editor.js): a JSON file or text of one theme or a list, into My themes (target "own",
+Settings > Themes) or the published themes (target "published", Administration > TweakUI Themes){% endcomment %}
+<div class="tweakui-group theme-border tweakui-import" data-import-path="{% if target == "published" %}published{% else %}themes{% endif %}/import" hidden>
+    <h5 class="theme-background-highlight" id="tweakui-import-title">{% trans "Import themes" %}</h5>
+    <form class="tweakui-editor-form" aria-labelledby="tweakui-import-title" novalidate>
+        <p class="text-muted">{% trans "A JSON file or text of one theme or a list of them, as Export and Copy JSON give, with all 13 colours:" %} <code>{"name": "…", "colors": {"primary": "#rrggbb", …}}</code>. {% if target == "published" %}{% trans "A theme with the name of a published one replaces it." %}{% else %}{% trans "A theme with the name of one of yours replaces it." %}{% endif %}</p>
+        <div class="form-group">
+            <label for="tweakui-import-file">{% trans "File" %}</label>
+            <input type="file" id="tweakui-import-file" accept=".json,application/json">
+        </div>
+        <div class="form-group">
+            <label for="tweakui-import-text">{% trans "JSON" %}</label>
+            <textarea id="tweakui-import-text" class="form-control tweakui-import-text" rows="6" spellcheck="false"></textarea>
+        </div>
+        <div class="tweakui-import-report" role="status" aria-live="polite"></div>
+        <div class="tweakui-editor-buttons">
+            <button type="submit" class="btn btn-primary">{% trans "Import" %}</button>
+            <button type="button" class="btn btn-default" data-import="close">{% trans "Close" %}</button>
+        </div>
+    </form>
+</div>

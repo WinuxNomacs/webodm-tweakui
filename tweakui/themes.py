@@ -1,5 +1,5 @@
 """
-Settings > Themes: preset colour schemes, the user's own themes (custom_themes), and /plugins/tweakui/theme.css,
+Settings > Themes: preset colour schemes, the published themes and the user's own (custom_themes), and /plugins/tweakui/theme.css,
 which applies the user's theme.
 
 A preset (or an own theme) fills the 13 colours of WebODM's own theme (app/models/theme.py) and changes nothing else: the CSS is
@@ -112,31 +112,39 @@ def _entry(theme_id, name, colors, group):
 
 def theme_list(user=None, with_colors=False):
     """Every theme the user can pick, in the order of the Themes list: WebODM's theme (with the colours of the
-    instance's theme) and the presets ("builtin"), then the user's own ("own", id "own:<id>"); each with its id,
-    name, group and swatch colours, and with its 13 colours when asked (the theme editor copies them)"""
+    instance's theme) and the presets ("builtin"), the published ones ("published", id "published:<id>"), then the
+    user's own ("own", id "own:<id>"); each with its id, name, group and swatch colours, and with its 13 colours
+    when asked (the theme editor copies them)"""
     themes = [(DEFAULT, _("WebODM's theme"), webodm_colors(), "builtin")]
     themes += [(k, v["name"], v["colors"], "builtin") for k, v in PRESETS.items()]
+    if user is not None and user.is_authenticated:
+        themes += [(custom_themes.PUBLISHED + t["id"], t["name"], t["colors"], "published")
+                   for t in custom_themes.published()]
     themes += [(custom_themes.OWN + t["id"], t["name"], t["colors"], "own") for t in custom_themes.own(user)]
     return [dict(_entry(*t), **({"colors": t[2]} if with_colors else {})) for t in themes]
 
 
 def groups(user):
-    """The Themes list's groups: WebODM's theme and the presets, then the user's own (always shown, with New
-    theme)"""
+    """The Themes list's groups: WebODM's theme and the presets, the published themes (only when there are any),
+    then the user's own (always shown, with New theme)"""
     themes = theme_list(user)
-    return [{"id": "builtin", "title": "", "themes": [t for t in themes if t["group"] == "builtin"]},
-            {"id": "own", "title": _("My themes"), "themes": [t for t in themes if t["group"] == "own"]}]
+    out = [{"id": "builtin", "title": "", "themes": [t for t in themes if t["group"] == "builtin"]},
+           {"id": "published", "title": _("Published"), "themes": [t for t in themes if t["group"] == "published"]},
+           {"id": "own", "title": _("My themes"), "themes": [t for t in themes if t["group"] == "own"]}]
+    return [g for g in out if g["themes"] or g["id"] != "published"]
 
 
 def colors_of(theme_id, user):
-    """The colours of the theme the setting names (a preset or one of the user's own), or None for WebODM's theme
-    or a theme that is gone"""
+    """The colours of the theme the setting names (a preset, a published one or one of the user's own), or None for
+    WebODM's theme or a theme that is gone"""
     if theme_id in PRESETS:
         return PRESETS[theme_id]["colors"]
+    theme = None
     if theme_id.startswith(custom_themes.OWN):
         theme = custom_themes.find(user, theme_id[len(custom_themes.OWN):])
-        return theme["colors"] if theme else None
-    return None
+    elif theme_id.startswith(custom_themes.PUBLISHED):
+        theme = custom_themes.find_published(theme_id[len(custom_themes.PUBLISHED):])
+    return theme["colors"] if theme else None
 
 
 # WebODM's places that hard-code a white background but take the page's text colour (the theme's primary); with a

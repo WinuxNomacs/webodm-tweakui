@@ -3,9 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Custom themes: published** (request 21, phase C): Administration > TweakUI Themes, where an administrator
-   imports, exports, deletes and publishes (from their own) the themes every user sees, read-only to them;
-   superusers only.
+(nothing planned)
 
 **Then**
 (nothing planned)
@@ -14,6 +12,28 @@
 (nothing planned)
 
 **Done**
+- **Custom themes: published** (request 21, phase C) — 2026-11-07, branch `custom-themes-published`.
+  - Code: `custom_themes.py` (the published themes in the global data store, `published_themes`, checked as your
+    own; `_import` shared by both lists; `publish` copies one of your own, replacing a published one of the same
+    name, which keeps its id; `delete_published`), `settings.py` (`published:<id>` while it exists, else WebODM's
+    theme), `themes.py` (a Published group between the presets and My themes, only when there are any; its CSS),
+    `api.py` (`published` GET / POST {id}, `published/import`, `published/export[?id=]`, `published/<id>` DELETE,
+    all `IsSuperuser`; settings.js sets `window.TweakUI.superuser`), `plugin.py` (the page `admin/themes/`, 403 for
+    anyone but a superuser), `templates/published.html` (the list with Copy JSON, Export, Delete; Import and Export;
+    Publish one of your themes), `templates/import_panel.html` (the Import panel, shared with Settings > Themes,
+    its API path in `data-import-path`), `public/theme_editor.js` (starts without the editor; Delete, Publish),
+    `public/main.js` (Administration > TweakUI Themes after Theme, for superusers; active and open on its page),
+    `public/main.css`. Screenshot `theme-published` (`dev/screenshots.js` gained a shot `cleanup`: it adds two
+    sample published themes and, without any, an own theme, and deletes them), docs `themes.md` (Published themes),
+    `install.md`, README, CHANGELOG.
+  - Tests: Django 9 (superusers only, also not staff, and CSRF; settings.js's flag; publish and replace by name;
+    every user lists, chooses and copies but can't change one; the group only when there are any; a deleted one
+    falls back; import and export round trip; 50 at most; the page), Jest 8 (the page without the editor, Copy
+    JSON, Import into the published, Delete, Publish, no own themes; the menu link for superusers only, active on
+    its page). Live on 4.0.0 and 3.3.2: the link after Theme (active and open on the page), Publish, Import with a
+    refusal, Copy JSON (the clipboard read back), Export of all and one (the files read), Published on Settings >
+    Themes, choosing it (theme.css), the header menu, Delete (the setting back to WebODM's theme), 390 px without
+    overflow; everything the check made deleted and the settings put back.
 - **Custom themes: import and export** (request 21, phase B) — 2026-11-06, branch `custom-themes-import`.
   - Code: `custom_themes.py` (`import_themes`: one object or a list of up to 500; a theme with the name of one of
     yours replaces its colours and keeps its id, so a user's current theme stays; others added while under 50;

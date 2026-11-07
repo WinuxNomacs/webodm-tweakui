@@ -2,7 +2,8 @@
 // WebODM: `TW_USER=... TW_PASSWORD=... npm run screenshots [-- name ...]`, by default against the 4.0.0 dev server
 // (TW_BASE=http://localhost:8005). It uses the account's own data, read only: the first completed task with an
 // orthophoto and a textured model (or TW_TASK=<project>/<task>). It turns on the settings each shot needs and puts
-// the account's settings back afterwards, also after a failure. Each image is a WebP, at most 1280 px wide, in
+// the account's settings back afterwards, also after a failure; a shot that has to add something (theme-published,
+// as a superuser) deletes it again in its cleanup, also after a failure. Each image is a WebP, at most 1280 px wide, in
 // tweakui/public/previews/<name>.webp.
 "use strict";
 const path = require("path");
@@ -14,6 +15,7 @@ const WIDTH = 1280, HEIGHT = 800, MAX_WIDTH = 1280;
 // Every shot: its name (the image's), the settings it turns on (on top of WebODM's theme, the rest as they are),
 // and what it does to show the feature, returning what to capture: an element's selector, "page" for the
 // viewport, or {pair: [[label, png], ...]} for images side by side (two or three). A pair turns its setting on itself.
+// An optional cleanup(s) runs after the shot, also when it failed.
 const SHOTS = [
     {
         name: "show-modified-options", settings: {show_modified_options: true},
@@ -77,6 +79,35 @@ const SHOTS = [
             await s.page.$eval("#tweakui-import-text", e => { e.setSelectionRange(0, 0); e.scrollTop = 0; });
             await s.page.waitForTimeout(300);
             return ".tweakui-import";
+        },
+    },
+    {
+        // Administration > TweakUI Themes with two sample published themes (Nord's and Gruvbox Dark's colours) and,
+        // without own themes, one of the account's own to publish: added for the shot (under names not used yet) and
+        // deleted afterwards
+        name: "theme-published", settings: {},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/");
+            const colors = await s.page.$eval("#tweakui-theme-colors", e => JSON.parse(e.textContent));
+            const published = await s.api("GET", "/api/plugins/tweakui/published");
+            const names = published.map(t => t.name);
+            s.publishedBefore = published.map(t => t.id);
+            const samples = [["Harbour", colors.nord.colors], ["Field Office", colors["gruvbox-dark"].colors]]
+                .filter(([name]) => !names.includes(name)).map(([name, c]) => ({name, colors: c}));
+            if (samples.length) await s.api("POST", "/api/plugins/tweakui/published/import", samples);
+            if (!(await s.api("GET", "/api/plugins/tweakui/themes")).length) {
+                s.ownAdded = (await s.api("POST", "/api/plugins/tweakui/themes", {name: "Survey Day", colors: colors["solarized-light"].colors})).id;
+            }
+            await s.page.goto(s.base + "/plugins/tweakui/admin/themes/");
+            await s.page.waitForTimeout(300);
+            return ".tweakui-published";
+        },
+        async cleanup(s) {
+            if (s.ownAdded) await s.api("DELETE", "/api/plugins/tweakui/themes/" + s.ownAdded);
+            if (!s.publishedBefore) return;
+            for (const t of await s.api("GET", "/api/plugins/tweakui/published")) {
+                if (!s.publishedBefore.includes(t.id)) await s.api("DELETE", "/api/plugins/tweakui/published/" + t.id);
+            }
         },
     },
     {
@@ -246,13 +277,13 @@ async function main(names) {
         const res = await fetch(url, {method, credentials: "same-origin",
             headers: {"Content-Type": "application/json", "X-CSRFToken": csrf}, body: body ? JSON.stringify(body) : undefined});
         if (!res.ok) throw new Error(method + " " + url + ": " + res.status);
-        return res.json();
+        return res.status === 204 ? null : res.json();
     }, [method, url, body]);
 
     const task = await findTask(api);
     const before = await api("GET", "/api/plugins/tweakui/settings");
     const s = {
-        page, base, task,
+        page, base, task, api,
         settings: values => api("PATCH", "/api/plugins/tweakui/settings", values),
         async openTask() {
             await page.goto(base + "/dashboard/");
@@ -326,7 +357,8 @@ async function main(names) {
         for (const shot of shots) {
             await page.setViewportSize({width: WIDTH, height: HEIGHT});
             await api("PATCH", "/api/plugins/tweakui/settings", {...before, theme: "webodm", ...shot.settings});
-            const what = await shot.run(s);
+            let what;
+            try { what = await shot.run(s); } finally { if (shot.cleanup) await shot.cleanup(s); }
             let pngs;
             if (what === "page") pngs = [["", await page.screenshot()]];
             else if (typeof what === "string") pngs = [["", await page.locator(what).first().screenshot()]];
