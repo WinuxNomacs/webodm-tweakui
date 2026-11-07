@@ -126,11 +126,11 @@ def theme_list(user=None, with_colors=False):
 
 def groups(user):
     """The Themes list's groups: WebODM's theme and the presets, the published themes (only when there are any),
-    then the user's own (always shown, with New theme)"""
+    then the user's own (always shown, with New Theme)"""
     themes = theme_list(user)
     out = [{"id": "builtin", "title": "", "themes": [t for t in themes if t["group"] == "builtin"]},
            {"id": "published", "title": _("Published"), "themes": [t for t in themes if t["group"] == "published"]},
-           {"id": "own", "title": _("My themes"), "themes": [t for t in themes if t["group"] == "own"]}]
+           {"id": "own", "title": _("My Themes"), "themes": [t for t in themes if t["group"] == "own"]}]
     return [g for g in out if g["themes"] or g["id"] != "published"]
 
 

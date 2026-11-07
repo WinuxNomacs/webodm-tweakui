@@ -12,6 +12,12 @@
 (nothing planned)
 
 **Done**
+- **My Themes heading and Title Case** (asked directly, 2026-11-07) — branch `themes-heading-buttons`.
+  - Settings > Themes: New Theme, Import (and Export, when you have themes) now sit on the left, above the My Themes
+    heading (`templates/settings.html`, `.tweakui-themes-heading-stacked` in `main.css`). "My themes" became "My
+    Themes", "New theme" "New Theme", the editor's "Edit theme" "Edit Theme". Names in the UI are Title Case from
+    now on (`CLAUDE.md`). Tests: the renamed labels in `test_tweakui.py` and `theme_editor.test.js`; screenshot
+    `theme-editor` retaken.
 - **Custom themes: published** (request 21, phase C) — 2026-11-07, branch `custom-themes-published`.
   - Code: `custom_themes.py` (the published themes in the global data store, `published_themes`, checked as your
     own; `_import` shared by both lists; `publish` copies one of your own, replacing a published one of the same

@@ -1,4 +1,4 @@
-{% load i18n %}{% comment %}Import (theme_editor.js): a JSON file or text of one theme or a list, into My themes (target "own",
+{% load i18n %}{% comment %}Import (theme_editor.js): a JSON file or text of one theme or a list, into My Themes (target "own",
 Settings > Themes) or the published themes (target "published", Administration > TweakUI Themes){% endcomment %}
 <div class="tweakui-group theme-border tweakui-import" data-import-path="{% if target == "published" %}published{% else %}themes{% endif %}/import" hidden>
     <h5 class="theme-background-highlight" id="tweakui-import-title">{% trans "Import themes" %}</h5>

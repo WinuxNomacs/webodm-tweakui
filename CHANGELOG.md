@@ -10,10 +10,10 @@
   (8/13): Texturing"). Each part can be turned off on its own.
 - Themes: each user picks WebODM's theme or one of 11 presets (Catppuccin ×4, Solarized ×2, Dracula, Nord,
   Gruvbox ×2, One Dark), applied through WebODM's own theme template.
-- Themes > My themes: each user's own themes; New theme (from the current theme) or Copy (any theme) opens an
+- Themes > My Themes: each user's own themes; New Theme (from the current theme) or Copy (any theme) opens an
   editor of WebODM's 13 theme colours, which the page previews before Save; Edit and Delete on your own themes.
   They are also in the header's theme menu.
-- Themes > My themes: Import (a JSON file or pasted text of one theme or a list; a theme with the name of one of
+- Themes > My Themes: Import (a JSON file or pasted text of one theme or a list; a theme with the name of one of
   yours replaces it; a report of what was added, replaced and refused), Export (all your themes, or one), and Copy
   JSON on every theme.
 - Administration > TweakUI Themes (superusers only, linked after Administration > Theme): publish a copy of one
