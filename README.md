@@ -11,9 +11,9 @@ Administration > Plugins.
 The full documentation, with a screenshot of each feature, is at **https://winuxnomacs.github.io/webodm-tweakui/**.
 
 Each user has their own TweakUI settings: the **TweakUI** item near the bottom of WebODM's side menu, just above
-About, opens them. A change is saved as soon as it is made and takes effect on the next page you open. Beside each
-feature in the settings is a screenshot of it; click it to see it full size. Every feature is off until you turn it
-on, except the theme menu.
+About, opens them. A change is saved as soon as it is made (a green "Saved" banner confirms it) and takes effect on
+the next page you open. Beside each feature in the settings is a screenshot of it; click it to see it full size.
+Every feature is off until you turn it on, except the theme menu.
 
 - [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): a units menu in the header, linked to the
   maps' units selector (Units in Header); in the Task Options dialog, each group's count of options not at their

@@ -1,7 +1,8 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
 // false, a radio button (Themes) as its value. A new theme, or the theme menu or the Storage view turned on or off,
-// reloads the page to show it (the header, the side menu).
+// reloads the page to show it (the header, the side menu). A save shows a green "Saved" banner at the top of the
+// category for 3 seconds (after the reload too); a refused one, a red banner saying why, until the next change.
 // Settings in a data-depends box are greyed out and disabled while the setting it names is off. A setting with a
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
 // overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
@@ -50,10 +51,36 @@
         });
     }
 
+    // How long the "Saved" banner stays, and the flag that shows it again after a save reloads the page
+    var SHOWN = 3000, RELOADED = "tweakuiSaved";
+
+    // The banner: "Saved" for 3 seconds, a failure until the next change, nothing for an empty text
     function setStatus(page, text, failed) {
         var status = page.querySelector(".tweakui-status");
-        status.textContent = text;
-        status.className = "tweakui-status" + (failed ? " text-danger" : " text-muted");
+        if (!status) return;
+        clearTimeout(status.tweakuiTimer);
+        if (!text) {
+            status.className = "tweakui-status theme-border";
+            return;
+        }
+        var doc = status.ownerDocument, icon = doc.createElement("i"), label = doc.createElement("span");
+        icon.className = "fa " + (failed ? "fa-exclamation-circle" : "fa-check-circle");
+        icon.setAttribute("aria-hidden", "true");
+        label.textContent = text;
+        status.textContent = "";
+        status.appendChild(icon);
+        status.appendChild(label);
+        status.className = "tweakui-status theme-border tweakui-shown " +
+            (failed ? "theme-background-failed" : "theme-background-success");
+        if (!failed) status.tweakuiTimer = setTimeout(function () { setStatus(page, "", false); }, SHOWN);
+    }
+
+    function storage(win) {
+        try {
+            return win.sessionStorage || null;
+        } catch (e) {
+            return null;
+        }
     }
 
     // PATCHes one setting; a failure puts the control back as it was and says why
@@ -74,7 +101,13 @@
                 // The page's scripts that follow a change at once (Surprise Me)
                 if (typeof win.CustomEvent === "function") doc.dispatchEvent(new win.CustomEvent("tweakuiSettingsChanged", {detail: body}));
                 setStatus(page, "Saved", false);
-                if (name === "theme" || name === "show_theme_menu" || name === "storage_view") win.location.reload();
+                if (name === "theme" || name === "show_theme_menu" || name === "storage_view") {
+                    var store = storage(win);
+                    try {
+                        if (store) store.setItem(RELOADED, "1");
+                    } catch (e) { /* no banner after the reload */ }
+                    win.location.reload();
+                }
             });
         }).then(null, function (e) {
             if (!radio) input.checked = !value;
@@ -173,6 +206,14 @@
         applyDepends(page);
         addPreviews(page, doc);
         inertSample(page, win);
+        // A save that reloaded the page
+        var store = storage(win);
+        try {
+            if (store && store.getItem(RELOADED)) {
+                store.removeItem(RELOADED);
+                setStatus(page, "Saved", false);
+            }
+        } catch (e) { /* no banner */ }
         win.addEventListener("hashchange", function () { showSection(page, win.location.hash); });
         // A radio button's group remembers its checked one, to put it back if the change is refused
         var checked = {};
@@ -192,5 +233,5 @@
     }
 
     return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends,
-        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample};
+        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus};
 });

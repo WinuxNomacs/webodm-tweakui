@@ -3,7 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-(nothing planned)
+1. **README: Thanks** (new.md, 2026-11-07) — branch `readme-thanks`; see "Saved banner and thanks".
 
 **Then**
 (nothing planned)
@@ -13,6 +13,10 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Settings: a "Saved" banner** (new.md, 2026-11-07) — branch `saved-banner`. Code in `public/settings_page.js`
+  (`setStatus`, the `tweakuiSaved` sessionStorage flag), `templates/settings.html` (`.tweakui-banner` at the top of
+  `.tweakui-sections`, the bottom line removed), `main.css`; tests in `public/__tests__/settings_page.test.js`;
+  `docs/index.md`, README, CHANGELOG. See "Saved banner and thanks".
 - **Surprise Me: every 4-8 s, and a rocket on a right-click** (asked in chat, 2026-11-07) — branch
   `surprise-me-clicks`. Code in `public/surprise_me.js` (`aim`, the right-click handlers, `start()` now returns a
   `stop()` that removes its listeners); tests in `public/__tests__/surprise_me.test.js`; `docs/general.md`,
@@ -1079,3 +1083,60 @@ Built (defaults chosen by Claude, open to change):
   of more than 5 px (the 3D view's pan) and a touch long-press send nothing.
 - Live on the settings page: turning it on starts a show at once, turning it off removes it at once (the settings
   page's new `tweakuiSettingsChanged` event); on other pages a change shows on the next page, like every setting.
+
+## Saved banner and thanks (new.md, 2026-11-07)
+
+### Requests
+- "When settings are saved, show a green checkmark "Saved" banner popup at the top of settings for 3 seconds."
+- "Create a thank you section in the README and list all known projects and developers that made this plugin
+  possible."
+
+### Phase 1: a "Saved" banner (branch `saved-banner`)
+Builds on: the settings page (`/plugins/tweakui/`, `public/settings_page.js`). Today each setting is PATCHed as soon
+as it changes and `setStatus` writes "Saved" (muted text) or "Not saved: ..." (red) into `p.tweakui-status`, a
+`role="status"` line at the **bottom** of the page, below the last section, where it is often out of sight.
+
+Proposed design:
+- A banner at the top of the settings page's content pane (beside the navigation pane), fixed while the page
+  scrolls: a green check (`fa fa-check-circle`) and "Saved", in WebODM's success colours (theme variables, as
+  `theme-background-success`), fading in and out; it goes after 3 s, and a new save restarts the 3 s. It covers
+  nothing you click (pointer events off) and keeps `role="status"`, so a screen reader still hears "Saved".
+- It replaces the bottom status line (one place for the message).
+- Phone width: the banner spans the page's width under WebODM's header.
+- Tests: Jest (`settings_page.test.js`: shown on a save, gone after 3 s, restarted by a second save, a failure),
+  live check on both stacks, the settings screenshots if one shows it; `docs/index.md` ("A change is saved...").
+
+Decided (the user, 2026-11-07): 1 a red banner, kept until the next change; 2 the banner after the reload; 3 the
+theme editor's own status left as it is.
+
+Decisions were (the user's):
+1. **A failed save**: the same banner in red with "Not saved: <reason>", kept until the next change (recommended),
+   or left as today's red line at the bottom?
+2. **Saves that reload the page** (Theme, Show Theme Menu, Show Storage View): show the banner after the reload
+   (recommended; one sessionStorage flag), or no banner for those?
+3. **Theme editor and My Themes** (New Theme, Save, Import, Publish) have their own status line in the editor:
+   leave them as they are (recommended), or use the banner there too?
+
+### Phase 2: README Thanks (branch `readme-thanks`)
+A "Thanks" section in the README, before License (the fireworks-js credit under License moves into it), and the
+same on the docs site (a short section on `docs/index.md`, or its own page). Known so far, from the code:
+- **WebODM** and **OpenDroneMap** (ODM, ODX, NodeODM): the platform the plugin extends; Piero Toffanin and the
+  contributors (linked to their contributors pages rather than listing hundreds of names).
+- **In the plugin**: fireworks-js (Vitalij Ryndin, MIT).
+- **What the plugin builds on through WebODM**: Leaflet (2D map), Potree (3D view), Bootstrap, Font Awesome, Django
+  and Django REST framework.
+- **Theme presets' palettes**: Catppuccin (the Catppuccin org), Solarized (Ethan Schoonover), Dracula (Zeno Rocha),
+  Nord (Sven Greb / Arctic Ice Studio), Gruvbox (Pavel Pertsev), One Dark (Atom / GitHub).
+- **Tools to build and test it**: VitePress, Jest, Playwright, ESLint, Ruff; WebODM's plugin guide and
+  WebODM-Plugins directory.
+Each name with its link and, for anything shipped in the zip, its licence. The names and authors are checked
+against each project's own page before writing them.
+
+Decided (the user, 2026-11-07): 4 everything listed, major contributors only (no long lists of names); 5 Piero
+Toffanin named, for making WebODM possible; 6 the README and the docs site both.
+
+Decisions were (the user's):
+4. **Scope**: everything above (recommended), or only what runs in the plugin (WebODM, ODM, fireworks-js, the
+   palettes)?
+5. **People you want named** (testers, the WebODM maintainers by name, Claude/Anthropic as co-author)?
+6. **Docs site too** (recommended), or the README only?
