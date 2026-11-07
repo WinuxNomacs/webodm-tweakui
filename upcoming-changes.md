@@ -3,7 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next** (planned with the user before each is built; see "Before the first release")
-1. **README splash image** — `ignored/tweakui-logo-med.jpg` at the top of the README, checked in.
+1. **README splash image** — both logos in `docs/public/`, the medium one at the top of the README.
 2. **Review: breaking points, performance, WebODM UX** — read every part of the plugin as a whole, list the
    findings here with a fix proposed for each; clear bugs are fixed on their own branches.
 3. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
@@ -1274,7 +1274,7 @@ the checks use those and create none; (3) on Windows, Enhanced Task Details show
      keyboard and screen-reader use of what it adds, phone width, and what turning the plugin off leaves behind.
    The findings go in this section, each with where it is, what happens and a proposed fix. Clear bugs are fixed
    on their own branches with tests; anything that changes what a user sees, or is a larger change, is asked first.
-3. **Structure for other developers.** Proposed, decided after the review (decision 3):
+3. **Structure for other developers** (decision 4):
    - One place that declares a feature (setting name, default, category, label, description, script, preview)
      from which the defaults, the settings page's control and the script list come, in place of three hand-kept
      lists.
@@ -1283,9 +1283,17 @@ the checks use those and create none; (3) on Windows, Enhanced Task Details show
      stops only that feature.
    - A docs page "Adding a Tweak" (and CONTRIBUTING.md pointing to it): the files, a worked example, the tests and
      the checks, and the plugin rules (only WebODM's extension points, theme variables, ES5).
+   - Whether a page loads only the scripts of features that are on is weighed with the review's findings.
    - The scripts stay ES5 with no build step, as now: no bundler for contributors to learn.
 4. **Fixes from the review** that the refactor didn't cover, each on its branch, on both Docker stacks and,
    where it matters there, on Windows.
 
-**Open decisions:** listed in the question to the user; the answers go here.
+**Decisions (the user, 2026-11-07):**
+1. The logo goes in `docs/public/` (the docs site serves it too, so its home page can show it); the README uses
+   `docs/public/tweakui-logo-med.jpg`.
+2. Both files are checked in: the medium one for the README and the full-size original.
+3. The review fixes clear bugs on their own branches with tests; anything that changes what a user sees, or is a
+   larger change, is listed here and asked first.
+4. The refactor goes all the way: a registry that declares each feature once (defaults, settings page control,
+   script list), shared `TweakUI.*` helpers with each feature's errors isolated, and an "Adding a Tweak" docs page.
 
