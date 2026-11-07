@@ -463,7 +463,7 @@ class TestCustomThemes(TweakUITestCase):
 
     def test_the_themes_section_lists_my_themes_with_edit_and_every_theme_with_copy(self):
         res = self.client.get("/plugins/tweakui/")
-        self.assertContains(res, "My themes")
+        self.assertContains(res, "My Themes")
         self.assertContains(res, 'data-theme-action="new"')
         self.assertContains(res, "None yet")
         self.assertContains(res, 'data-theme-action="copy"', count=12)

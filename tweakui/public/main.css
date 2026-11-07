@@ -34,6 +34,9 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-themes-heading { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px; margin: 20px 0 8px; }
 .tweakui-settings .tweakui-themes-heading h5 { margin: 0; font-weight: bold; white-space: nowrap; }
 .tweakui-settings .tweakui-themes-buttons { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+/* My Themes: its buttons on the left, above the heading */
+.tweakui-settings .tweakui-themes-heading-stacked { flex-direction: column; align-items: flex-start; }
+.tweakui-settings .tweakui-themes-heading-stacked .tweakui-themes-buttons { justify-content: flex-start; }
 .tweakui-settings .tweakui-import-text { font-family: monospace; font-size: 12px; resize: vertical; }
 .tweakui-settings .tweakui-import-report p, .tweakui-settings .tweakui-import-report ul { margin: 0 0 6px; }
 .tweakui-settings .tweakui-import code { white-space: normal; }

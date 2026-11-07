@@ -99,7 +99,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 <div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
                     {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
                     opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit. Published
-                    (only when an administrator has published any) sits between the presets and My themes.{% endcomment %}
+                    (only when an administrator has published any) sits between the presets and My Themes.{% endcomment %}
                     {% for group in theme_groups %}
                     {% if group.id == "published" %}
                     <div class="tweakui-themes-heading">
@@ -107,15 +107,15 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                         <span class="text-muted">{% trans "From your administrator" %}</span>
                     </div>
                     {% elif group.id == "own" %}
-                    <div class="tweakui-themes-heading">
-                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
+                    <div class="tweakui-themes-heading tweakui-themes-heading-stacked">
                         <span class="tweakui-themes-buttons">
-                            <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New theme" %}</button>
+                            <button type="button" class="btn btn-primary btn-sm" data-theme-action="new"><i class="fa fa-plus"></i> {% trans "New Theme" %}</button>
                             <button type="button" class="btn btn-default btn-sm" data-theme-action="import"><i class="fa fa-upload"></i> {% trans "Import" %}</button>
                             {% if group.themes %}<a class="btn btn-default btn-sm" href="{{ api }}themes/export" download><i class="fa fa-download"></i> {% trans "Export" %}</a>{% endif %}
                         </span>
+                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
                     </div>
-                    {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
+                    {% if not group.themes %}<p class="text-muted tweakui-themes-empty">{% trans "None yet: New Theme starts one from the current theme, Copy from any theme." %}</p>{% endif %}
                     {% endif %}
                     <div class="tweakui-themes" data-group="{{ group.id }}"{% if group.title %} role="group" aria-labelledby="tweakui-themes-{{ group.id }}"{% endif %}>
                         {% for theme in group.themes %}
@@ -140,7 +140,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 {% comment %}The theme editor (theme_editor.js): a name and WebODM's 13 theme colours, in Administration > Theme's
                 order; while it is open the page shows the unsaved colours{% endcomment %}
                 <div class="tweakui-group theme-border tweakui-editor" hidden>
-                    <h5 class="theme-background-highlight" id="tweakui-editor-title">{% trans "New theme" %}</h5>
+                    <h5 class="theme-background-highlight" id="tweakui-editor-title">{% trans "New Theme" %}</h5>
                     <form class="tweakui-editor-form" aria-labelledby="tweakui-editor-title" novalidate>
                         <div class="form-group">
                             <label for="tweakui-editor-name">{% trans "Name" %}</label>

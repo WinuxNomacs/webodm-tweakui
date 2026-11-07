@@ -1,7 +1,7 @@
 // The header's theme menu (unless Settings > Themes turns it off): a paintbrush left of the user icon opens a list of the themes (window.TweakUI.themes,
 // from settings.js): the current one, WebODM's theme, then the others. Choosing one saves it as the user's theme,
 // the same setting as Settings > Themes, and reloads the page in it. Bootstrap's dropdown (jQuery's data API)
-// opens and closes the menu. The user's own themes (Settings > Themes > My themes) come after the presets. UMD, so Jest can load it.
+// opens and closes the menu. The user's own themes (Settings > Themes > My Themes) come after the presets. UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;

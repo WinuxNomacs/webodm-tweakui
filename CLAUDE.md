@@ -38,6 +38,8 @@ It is committed and public: nothing private, nothing true only on one machine. K
   published to GitHub Pages by `.github/workflows/docs.yml` on a `v*` tag or by hand): a feature change updates
   its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),
   on the same branch.
+- **Names in the UI are in Title Case**: headings, buttons, menu items and setting names ("My Themes", "New Theme",
+  "Show Modified Options"); descriptions and messages are sentences.
 - Planned in `upcoming-changes.md`; new requests arrive in `new.md` (untracked).
 
 ## Dev environment

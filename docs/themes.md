@@ -7,11 +7,11 @@ Administration > Theme) or one of 11 presets: Catppuccin Latte, Frappé, Macchia
 Dark; Dracula; Nord; Gruvbox Dark and Light; One Dark. Each shows a swatch of its colours; choosing one reloads the
 page in it.
 
-## My themes
+## My Themes
 
 ![The theme editor on a copy of Catppuccin Mocha](../tweakui/public/previews/theme-editor.webp)
 
-Your own themes, listed under **My themes** below the presets, for you only. **New theme** starts one from your
+Your own themes, listed under **My Themes** below the presets, for you only. **New Theme** starts one from your
 current theme's colours, and **Copy** beside any theme (WebODM's, a preset or one of your own) starts one from that
 theme's. Only your own themes have **Edit**: WebODM's theme and the presets can be copied but not changed.
 
@@ -39,7 +39,7 @@ Administration > Theme, and a file can hold one theme or a list of them.
   "dialog_warning": "#d08770", "failed": "#523f4a", "success": "#4b5653"}}
 ```
 
-- **Export**, beside New theme, downloads all your themes as `tweakui-themes.json`; the download button on one of
+- **Export**, beside New Theme, downloads all your themes as `tweakui-themes.json`; the download button on one of
   your themes downloads just it.
 - **Copy JSON** beside any theme (WebODM's, a preset or your own) puts it on the clipboard, to paste into a
   message or another WebODM's Import.
@@ -52,14 +52,14 @@ Administration > Theme, and a file can hold one theme or a list of them.
 
 ![Administration > TweakUI Themes with two published themes](../tweakui/public/previews/theme-published.webp)
 
-Themes an administrator gives every user. They're listed under **Published**, between the presets and My themes,
+Themes an administrator gives every user. They're listed under **Published**, between the presets and My Themes,
 only when there are any. Everyone can choose one, **Copy** it into a theme of their own, or **Copy JSON** it, but
 nobody can change it there. If a published theme you're using is deleted, you're back on WebODM's theme.
 
 Superusers manage them in **Administration > TweakUI Themes**, a link TweakUI adds after Administration > Theme in
 the side menu (other staff don't see it, and the page and its API refuse them):
 
-- **Publish one of your themes**: choose one of your own themes (make it in Settings > Themes > My themes) and
+- **Publish one of your themes**: choose one of your own themes (make it in Settings > Themes > My Themes) and
   **Publish**. Every user gets a copy, so later changes to your theme aren't published until you publish it again. A
   published theme with the same name is replaced, and users who chose it keep it.
 - **Import** takes a file or pasted JSON, as under [Import and export](#import-and-export), into the published

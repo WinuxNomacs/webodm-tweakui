@@ -16,7 +16,7 @@ function page(checked) {
     document.body.innerHTML = `
       <div id="tweakui-settings" data-api="/api/plugins/tweakui/">
         <input type="hidden" name="csrfmiddlewaretoken" value="tok">
-        <button type="button" data-theme-action="new">New theme</button>
+        <button type="button" data-theme-action="new">New Theme</button>
         <button type="button" data-theme-action="import">Import</button>
         ${Object.keys(THEMES).map(theme).join("")}
         <div class="tweakui-editor" hidden><h5 id="tweakui-editor-title"></h5>
@@ -60,7 +60,7 @@ test("Copy opens the editor on a copy of any theme, without Delete, and shows it
     const {win} = start("webodm", previewing);
     el('[data-theme-id=nord] [data-theme-action=copy]').click();
     expect(el(".tweakui-editor").hidden).toBe(false);
-    expect(el("#tweakui-editor-title").textContent).toBe("New theme");
+    expect(el("#tweakui-editor-title").textContent).toBe("New Theme");
     expect(el("#tweakui-editor-name").value).toBe("Nord (copy)");
     expect(hex("secondary").value).toBe("#2e3440");
     expect(picker("secondary").value).toBe("#2e3440");
@@ -75,7 +75,7 @@ test("Copy opens the editor on a copy of any theme, without Delete, and shows it
     expect(el("link").disabled).toBe(true);
 });
 
-test("New theme starts from the current theme's colours with no name", () => {
+test("New Theme starts from the current theme's colours with no name", () => {
     start("own:abc", previewing);
     el("[data-theme-action=new]").click();
     expect(el("#tweakui-editor-name").value).toBe("");
@@ -88,7 +88,7 @@ test("only your own themes open for editing, with their name and Delete", () => 
     expect(editor.open(state, "edit", "nord")).toBe(false);
     expect(el(".tweakui-editor").hidden).toBe(true);
     el('[data-theme-id="own:abc"] [data-theme-action=edit]').click();
-    expect(el("#tweakui-editor-title").textContent).toBe("Edit theme");
+    expect(el("#tweakui-editor-title").textContent).toBe("Edit Theme");
     expect(el("#tweakui-editor-name").value).toBe("Mine");
     expect(el("[data-editor=delete]").hidden).toBe(false);
     expect(state.editing).toBe("abc");

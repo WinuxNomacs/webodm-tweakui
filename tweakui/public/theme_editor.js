@@ -1,4 +1,4 @@
-// Settings > Themes: the theme editor (templates/settings.html). New theme (from the current theme), Copy (any
+// Settings > Themes: the theme editor (templates/settings.html). New Theme (from the current theme), Copy (any
 // theme) or Edit (your own themes only) opens it under the themes, with a name and WebODM's 13 theme colours, each a
 // colour picker and its #rrggbb value. While it is open the page shows the unsaved colours: the server renders their
 // stylesheet (themes/preview), which takes the place of theme.css until Cancel. Save keeps the theme and makes it
@@ -122,7 +122,7 @@
         var source = action === "new" ? currentTheme(state) : id, theme = state.themes[source];
         if (!theme || (action === "edit" && source.indexOf(OWN) !== 0)) return false;
         state.editing = action === "edit" ? source.slice(OWN.length) : null;
-        state.editor.querySelector("#tweakui-editor-title").textContent = action === "edit" ? "Edit theme" : "New theme";
+        state.editor.querySelector("#tweakui-editor-title").textContent = action === "edit" ? "Edit Theme" : "New Theme";
         state.editor.querySelector("#tweakui-editor-name").value = action === "edit" ? theme.name
             : action === "copy" ? theme.name + " (copy)" : "";
         state.editor.querySelector("[data-editor=delete]").hidden = action !== "edit";
