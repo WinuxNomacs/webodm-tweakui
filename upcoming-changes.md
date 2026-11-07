@@ -3,17 +3,23 @@
 ## Phases (current and upcoming)
 
 **Up next** (planned with the user before each is built; see "Before the first release")
-1. **Review: breaking points, performance, WebODM UX** — read every part of the plugin as a whole, list the
-   findings here with a fix proposed for each; clear bugs are fixed on their own branches.
-2. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
-   guide to doing it.
-3. **Fixes from the review** that the refactor didn't already cover.
+1. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
+   guide to doing it; takes in review findings 6–8 (hook callbacks isolated, the script list kept, each feature's
+   WebODM selectors named in one place).
+2. **Fixes from the review** that the refactor didn't already cover: findings 9–12 as the user decides, and the
+   Zoom Override measurement.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Review: breaking points, performance, WebODM UX** (new.md, 2026-11-07) — the findings are in "Before the first
+  release". The clear bugs, each on its branch with tests, on both Docker stacks: `storage-api-errors` (`api.py`
+  `StorageTaskView`, `storage.breakdown`), `storage-report-queries` (`storage.user_reports`), `frames-malformed-shots`
+  (`frames.rank`, `find`, `mean_height`), `task-details-dashboard-only` (`task_details.js` `start`),
+  `other-tasks-layer-error` (`other_tasks.js` `show`); Django tests in `TestStorage` and `TestSourceFrames`, Jest in
+  `task_details.test.js` and `other_tasks.test.js`.
 - **README splash image** (new.md, 2026-11-07) — branch `readme-splash`: `docs/public/tweakui-logo-med.jpg`
   (shown at the top of `README.md`) and the full-size `docs/public/tweakui-logo.jpg`, moved from `ignored/`. See
   "Before the first release".
@@ -1309,7 +1315,7 @@ they reach CSS; nothing is left behind when the plugin is disabled but its data 
 views on every page, `settings.js` and `theme.css`, take about 13 ms and 6 queries together (with a preset theme);
 the 13 scripts are revalidated from the browser's cache (Last-Modified).
 
-*Clear bugs, fixed on their own branches with tests (nothing a user sees changes):*
+*Clear bugs, fixed on their own branches with tests (nothing a user sees changes) — done, see "Done":*
 1. `api.py` `StorageTaskView`: a task id that isn't a UUID raises Django's `ValidationError`, which isn't caught →
    a 500 in place of a 404. `storage.breakdown` also lets an `OSError` from the assets folder through (a 500).
 2. `frames.py` `rank`/`project`: a shot in `shots.geojson` without `width`, `height`, `translation` or `rotation`
