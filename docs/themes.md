@@ -11,16 +11,16 @@ choosing one reloads the page in it.
 
 ![The theme editor on a copy of Catppuccin Mocha](../tweakui/public/previews/theme-editor.webp)
 
-Your own themes, listed under **My Themes** below the presets, for you only. **New Theme** starts one from your
-current theme's colours, and **Copy** beside any theme (WebODM's, a preset or one of your own) starts one from that
-theme's. Only your own themes have **Edit**: WebODM's theme, the presets and published themes can be copied but
-not changed.
+Your own themes, listed under **My Themes** below the presets, for you only. **New Theme**, below the heading,
+starts one from your current theme's colours, and **Copy** beside any theme (WebODM's, a preset or one of your own)
+starts one from that theme's. Only your own themes have **Edit**: WebODM's theme, the presets and published themes
+can be copied but not changed.
 
 The editor opens below the themes, with a name and the 13 colours of WebODM's theme, named and described as in
 Administration > Theme. Each colour has a picker and its value as `#rrggbb`, which you can also type (the `#` is
-optional). While the editor is open, the whole page, the Sample included, previews the colours before you save. **Save** keeps the theme and makes it your theme; **Cancel** puts the page back in your theme;
-**Delete** (when editing) deletes the theme, after asking. If you delete the theme you're using, you're back on
-WebODM's theme.
+optional). While the editor is open, the whole page, the Sample included, previews the colours before you save.
+**Save** keeps the theme and makes it your theme; **Cancel** puts the page back in your theme; **Delete** (when
+editing) deletes the theme, after asking. If you delete the theme you're using, you're back on WebODM's theme.
 
 A theme needs a name of up to 60 characters, and you can have up to 50. Your themes are also in the header's theme
 menu, after the presets and the published themes.
@@ -71,11 +71,12 @@ the side menu (other staff don't see it, and the page and its API refuse them):
 
 There can be up to 50 published themes.
 
-## Sample
+## Sample Form for Viewing Theme Effects
 
-Below the themes, a **Sample** shows WebODM's controls in the current theme: text, a link and muted text, status
-labels, a progress bar, a text field, a select, a dropdown menu, buttons (one with a tooltip, one disabled) and page
-numbers. They do nothing: they show how the theme looks on controls the settings page doesn't otherwise have.
+Below the themes, a framed **Sample Form for Viewing Theme Effects** shows WebODM's controls in the current theme:
+text, a link and muted text, status labels, a progress bar, a text field, a select, a dropdown menu, buttons (one
+with a tooltip, one disabled) and page numbers. They do nothing: they show how the theme looks on controls the
+settings page doesn't otherwise have.
 
 A preset fills the colours of WebODM's own theme, so it changes exactly what an administrator's theme can change,
 in each WebODM version. Places WebODM always shows in white keep their white background (some icons and controls

@@ -12,6 +12,13 @@
 (nothing planned)
 
 **Done**
+- **Theme Sample frame and My Themes buttons** (new.md, 2026-11-07) — branch `sample-frame`.
+  - Settings > Themes: the Sample is headed "Sample Form for Viewing Theme Effects" and framed by a 2px border in the
+    theme's text colour (`theme-border-primary`; decided with the user over a dashed border or an inset panel). The
+    New Theme, Import and Export buttons sit below the "My Themes" heading.
+  - Code: `templates/settings.html`, `public/main.css`. Test: `test_tweakui.py` (button order, the Sample's frame
+    and heading). Docs `docs/themes.md`; screenshots `theme-import` and `theme-published` retaken (their text
+    changed in the wording review).
 - **"Other Tasks" setting renamed** (asked directly, 2026-11-07) — branch `rename-other-tasks`: Settings > 2D Map >
   Controls > Other Tasks is now "Compare Orthophotos from Other Tasks" (the setting's name only; the map's button and
   panel are still titled "Other Tasks"). `templates/settings.html`, `docs/map-2d.md`, README, CHANGELOG.
@@ -972,4 +979,24 @@ Phases:
    user's, after a tag or by hand.
 
 Open: none.
+
+## Theme Sample frame and My Themes buttons (new.md, 2026-11-07)
+
+Requests, as written:
+- "Create a border around the Sample form under Themes to make it stand out as the Sample form area. Give it a
+  heading of "Sample Form for Viewing Theme Effects"."
+- "Move the "New Theme", Import and Export buttons underneath the "My Themes" heading"
+
+Builds on: Settings > Themes, the Sample group (`templates/settings.html`, a `.tweakui-group theme-border` with the
+h5 "Sample", like every settings group, so its 1px border doesn't set it apart) and the My Themes heading (buttons
+above the h5 since the "My Themes" change earlier today, `.tweakui-themes-heading-stacked`).
+
+Proposed: one phase, branch `sample-frame`.
+- Settings > Themes > Sample: heading "Sample Form for Viewing Theme Effects"; a frame that sets it apart, colours
+  from WebODM's theme classes only. Docs `docs/themes.md` (Sample section), screenshot of the settings page retaken
+  if it shows it.
+- Settings > Themes > My Themes: the New Theme, Import and Export buttons below the "My Themes" heading, left-aligned.
+  Docs unchanged in substance (they say "beside New Theme" for Export, still true).
+
+Decided: a 2px solid border in the theme's text colour (Accent border). Done.
 
