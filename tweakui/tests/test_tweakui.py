@@ -1007,6 +1007,21 @@ class TestStorage(TweakUITestCase):
         self.assertEqual(r["others"][0]["used"], 335 * self.MB)
         self.assertEqual([p["name"] for p in r["others"][1]["projects"]], ["Theirs", "User 2 Test Project"])
 
+    def test_an_admins_report_takes_as_many_queries_however_many_projects_and_tasks_there_are(self):
+        from django.db import connection
+        from django.test.utils import CaptureQueriesContext
+        client = self.login("testsuperuser")
+        with CaptureQueriesContext(connection) as before:
+            self.report(client)
+        for i in range(3):
+            project = Project.objects.create(owner=User.objects.get(username="testuser2"), name="More %d" % i)
+            Task.objects.create(project=project, name="More", size=1.0)
+        with CaptureQueriesContext(connection) as after:
+            r = self.report(client)
+        self.assertEqual(len(after), len(before))
+        self.assertEqual(r["others"][1]["used"], 53 * self.MB)
+        self.assertEqual(len(r["others"][1]["projects"]), 5)
+
     def test_a_tasks_breakdown_sorts_its_files_by_kind(self):
         self.write(os.path.join(self.done.task_path(), "a.jpg"), 1000)
         self.write(os.path.join(self.done.task_path(), "b.jpg"), 500)
