@@ -93,4 +93,5 @@ On by default.
 
 The **paintbrush** in the header, left of the user icon, changes the theme from any page. It lists your current
 theme and WebODM's theme first, then the presets, the published themes and your own; choosing one switches to it.
-This setting, at the top of Themes, turns it off.
+This setting, at the top of Themes, turns it off. WebODM's Windows app has no header, so there it is **Theme** in
+the side menu, just above TweakUI, and opens below it.

@@ -9,7 +9,8 @@ Off by default.
 A units menu in the header, left of the paintbrush, sets the unit system for measurements: **Metric**, **Imperial**
 or **Imperial (US)**. It's the same choice as the units selector on the 2D map and in the 3D view, so changing either
 one changes the other. Like WebODM's own selector, the choice is kept in this browser, not in your account. On a phone
-the menu shows only its ruler icon.
+the menu shows only its ruler icon. WebODM's Windows app has no header, so there the menu is **Units** in the side
+menu, just above TweakUI, and opens below it.
 
 ## Task Options > Show Modified Options
 
