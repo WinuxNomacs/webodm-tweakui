@@ -21,9 +21,9 @@
 - General > Task Details > Expand Task Controls: on the Dashboard, a minimized task still shows its buttons; the
   square beside its name cycles buttons only, expanded and fully minimized.
 - General > Task Details > Enhanced Task Details: a task's details on the Dashboard show the preset its options
-  match, each option in a bubble, and its ODX command (docker) with a copy button; and when it started and
-  finished (worked out from its creation and processing time); while it runs, its current ODM stage ("Current Step
-  (8/13): Texturing"). Each part can be turned off on its own.
+  match, each option in a bubble, and its ODX command (docker, or ODX's run.bat when WebODM runs on Windows) with a
+  copy button; and when it started and finished (worked out from its creation and processing time); while it runs,
+  its current ODM stage ("Current Step (8/13): Texturing"). Each part can be turned off on its own.
 - Themes: each user picks WebODM's theme or one of 11 presets (Catppuccin ×4, Solarized ×2, Dracula, Nord,
   Gruvbox ×2, One Dark), applied through WebODM's own theme template.
 - Themes > My Themes: each user's own themes; New Theme (from the current theme) or Copy (any theme) opens an

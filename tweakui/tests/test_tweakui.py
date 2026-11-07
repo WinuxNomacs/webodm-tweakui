@@ -8,6 +8,7 @@ import math
 import os
 import re
 import shutil
+from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import Client
@@ -150,6 +151,12 @@ class TestSettings(TweakUITestCase):
         self.assertEqual(res["Cache-Control"], "no-store")
         self.assertEqual(self.script_settings(self.client), defaults(show_modified_options=True))
         self.assertEqual(self.script_settings(Client()), defaults())
+
+    def test_settings_js_says_windows_only_when_webodm_runs_on_windows(self):
+        self.assertIsNone(self.script_value(self.client.get("/plugins/tweakui/settings.js").content.decode(), "windows"))
+        with mock.patch("coreplugins.tweakui.api.WINDOWS", True):
+            script = self.client.get("/plugins/tweakui/settings.js").content.decode()
+        self.assertIs(self.script_value(script, "windows"), True)
 
     def test_a_patch_without_the_csrf_token_is_refused(self):
         client = Client(enforce_csrf_checks=True)
