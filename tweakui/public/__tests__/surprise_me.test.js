@@ -248,3 +248,16 @@ test("a long press on a touch screen (a contextmenu with no right button pressed
     document.body.dispatchEvent(menu);
     expect(menu.defaultPrevented).toBe(false);
 });
+
+test("after a Ctrl+click on Windows or Linux (no contextmenu), the keyboard's menu key still opens the browser's menu", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    start(f.env);
+    await ctrlClick(document.body, 10, 10, {menu: false});
+    // The menu key or Shift+F10: a contextmenu with no mouse press before it
+    const menu = new MouseEvent("contextmenu", {bubbles: true, cancelable: true});
+    document.body.dispatchEvent(menu);
+    await new Promise(r => setTimeout(r, 0));
+    expect(menu.defaultPrevented).toBe(false);
+    expect(f.made.length).toBe(0);
+});
