@@ -124,8 +124,10 @@ def rank(spot, shots, cameras):
 
 
 def load_json(path):
+    """A JSON file of the task's (ODM writes them in UTF-8, whatever the system's encoding: cp1252 on Windows), or
+    None"""
     try:
-        with open(path) as f:
+        with open(path, encoding="utf-8") as f:
             return json.load(f)
     except (OSError, ValueError):
         return None
