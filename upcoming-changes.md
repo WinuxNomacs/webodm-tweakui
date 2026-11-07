@@ -3,13 +3,11 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Windows: reach and install** (new.md, 2026-11-07) — a headless browser in WSL reaches the Windows WebODM;
-   TweakUI installed there from the release zip through Administration > Plugins; see "Windows native".
+1. **Windows: check every feature, fix what differs** — every settings category live on Windows; fixes on their
+   own branches (first known one: `frames.py` reads JSON without `encoding="utf-8"`).
 
 **Then**
-2. **Windows: check every feature, fix what differs** — every settings category live on Windows; fixes on their
-   own branches (first known one: `frames.py` reads JSON without `encoding="utf-8"`).
-3. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
+2. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
    skills gain the Windows instance.
 
 **Later**
@@ -17,6 +15,11 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Windows: reach and install** (new.md, 2026-11-07) — branch `windows-install`. `dev/windows-relay.js` (new):
+  http://localhost:8007 in WSL relays each connection through WSL interop to WebODM's own `python.exe`, which pipes
+  it to Windows' 127.0.0.1:29800. `dist/tweakui-0.1.0.zip` installed through Administration > Plugins > Load
+  Plugin (.zip); it registers without a restart, and its menu items, pages and 15 files load with no console errors.
+  See "Windows native".
 - **README: Thanks** (new.md, 2026-11-07) — branch `readme-thanks`. README "Thanks" (before License; the
   fireworks-js credit moved into it), `docs/thanks.md` (in the sidebar under Using TweakUI), CHANGELOG. Names and
   links checked against each project's site or GitHub profile; WebODM's README says it is not affiliated with
@@ -1188,6 +1191,15 @@ when needed. Same admin/admin account is used to access because it's a throwaway
 **Decisions (the user, 2026-11-07):** (1) the relay through WSL interop; (2) the instance already has tasks, so
 the checks use those and create none; (3) on Windows, Enhanced Task Details shows Windows' own ODX command
 (`run.bat`) in place of the docker one (built in phase 2).
+
+**Found while building phase 1:**
+- The Windows build runs in single-user mode (`SINGLE_USER_MODE = not WO_HEADLESS` in its `local_settings.py`):
+  opening `/` logs any browser in as its admin, with no login page. A fresh browser that opens another page first
+  is sent to the Dashboard, so check scripts open `/` first. (admin/admin is still the account.)
+- Load Plugin (.zip) posts the file at once; WebODM registers TweakUI without a restart (it has no root mount
+  points). TweakUI stays installed there for phase 2. A later zip goes in with WebODM's upgrade (`upgrade=1`),
+  which asks for a restart.
+- The relay costs about 0.13 s per new connection.
 
 **Decisions as asked:**
 1. **How WSL reaches the Windows WebODM.** Proposed: a relay through WSL interop. A small script in WSL listens on
