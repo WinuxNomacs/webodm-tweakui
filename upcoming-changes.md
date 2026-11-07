@@ -1429,9 +1429,14 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    0.12.10, Git 2.56.0, Bash 3.2.57, `shasum`, Safari 26.6.2; VSCode with Python, Pylance, debugpy and ESLint
    (no Ruff extension). Missing: `node_modules`, the Playwright browsers, `.venv` (the only Python 3.9 is the
    Command Line Tools' 3.9.6; uv offers a managed 3.9.25), `ignored/` (none of the checkouts), `.vscode/settings.json`,
-   `.claude/settings.local.json`. No WebODM runs on the Mac yet (no listener on 8005). Proposed to the user; nothing
-   installed until approved.
+   `.claude/settings.local.json`. No WebODM runs on the Mac yet (no listener on 8005).
+   **Set up (approved by the user, 2026-11-07):** uv's Python 3.9.25 and `.venv` (`--managed-python`; Django 2.2.27,
+   DRF 3.13.1, Ruff 0.17.3), `npm ci`, Playwright's Chromium 156 and WebKit 27.2 (both launch headless),
+   `ignored/WebODM` at `v4.0.0` (`6de2314f`), `ignored/WebODM-Docs`, `ignored/WebODM-Plugins` (no 3.3.2 worktree),
+   `.vscode/settings.json`, the VSCode Ruff extension. Claude's tool refused to write `.claude/settings.local.json`
+   (its own permissions): left to the user. Pylance not yet confirmed (needs a VSCode reload).
 2. **Checks**: `npm test`, `npm run lint -- tweakui dev`, `.venv/bin/ruff check .`, `npm run docs:build`.
+   **Found (2026-11-07):** all pass on the Mac: Jest 16 suites, 203 tests; ESLint and Ruff clean; the docs build.
 3. **Dev stack**: `dev/webodm.sh up` (4.0.0, http://localhost:8005; the first start takes several minutes), the Django
    tests in `tw-webapp` (the `test` skill), `dev/package.sh` (its sha256 must match `shasum -a 256`). A task with an
    orthophoto, a textured model and `shots.geojson` is needed for the map checks: a small dataset processed there,
