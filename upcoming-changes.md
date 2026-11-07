@@ -1537,6 +1537,25 @@ Mac, one branch each.
 4. **Zoom Override measurement:** time one wheel notch's pick (`pick3d.pick`) in the real 3D view with test meshes of
    200k, 1M and 2M triangles added to the scene (the Mac's only task is small). Over one frame (16 ms) at a realistic
    size: a fix is proposed before it is built.
+   **Measured (2026-11-07):** ODM's default `mesh-size` is 200,000 vertices (the node's options), about 400k
+   triangles. One notch's `pick3d.pick` in the real 3D view (a 5-image task) with a flat test mesh over the model
+   (`PlaneBufferGeometry`, three.js r124, which raycasts every triangle: no spatial index), median of 20 picks:
+
+   | Mesh in the scene | Headless WebKit | Headless Chromium |
+   |---|---|---|
+   | none (point cloud only) | 4 ms | 40 ms (software WebGL: Potree's pick reads pixels back) |
+   | 0.4M triangles (default mesh size) | 22 ms | 50 ms |
+   | 1M triangles | 49 ms | 64 ms |
+   | 2M triangles | 97 ms | 86 ms |
+
+   The mesh costs about 10 ms (Chromium) to 18 ms (WebKit) per 400k triangles, linear in its size, whenever the
+   textured model is shown. Over a frame at the default size in WebKit, and a trackpad sends dozens of wheel events a
+   second, each a pick: at a few hundred ms a second, the view stutters. A fix is asked of the user.
+   **Decision (the user, 2026-11-07):** reuse the pick within a burst: while the pointer stays within 3 px, a wheel
+   event less than 250 ms after the last reuses its point (exact: the camera moves along the ray through it).
+   **Built** (`zoom_override.js` `attach3d` `pickAt`; test in `zoom_override.test.js`): 30 trackpad-sized events
+   (wheelDelta 12) over a 0.4M-triangle mesh take 54 ms with the pointer still against 739 ms picking each time
+   (WebKit; Chromium 139 against 1618 ms), and zoom as far.
 
 **Decision (the user, 2026-11-07):** tested on 4.0.0 only, on the Mac (no 3.3.2 stack there); users on 3.3.2 are
 advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this phase.

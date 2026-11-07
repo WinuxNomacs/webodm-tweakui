@@ -22,6 +22,10 @@
     var STEP = 0.1;
     // Never nearer the point than this (metres, the task's units)
     var MIN_DISTANCE = 0.05;
+    // A pick tests every triangle of the textured model (about 20 ms at ODM's default mesh size), and a trackpad's
+    // scroll sends dozens of wheel events a second: while the pointer stays within this many pixels, an event this soon
+    // after the last reuses its point. Exact, since the camera moves along the ray through that point
+    var REUSE_PX = 3, REUSE_MS = 250;
 
     function extraZoom(map) {
         var max = map.options && typeof map.options.maxZoom === "number" ? map.options.maxZoom : WEBODM_MAX_ZOOM;
@@ -55,13 +59,24 @@
 
     function attach3d(win, viewer) {
         var canvas = viewer.renderer.domElement, area = canvas.parentNode || canvas;
+        var last = null;
+        function pickAt(x, y) {
+            var now = Date.now();
+            if (last && now - last.time < REUSE_MS && Math.abs(x - last.x) <= REUSE_PX && Math.abs(y - last.y) <= REUSE_PX) {
+                last.time = now;
+                return last.hit;
+            }
+            var hit = pick3d.pick(win, viewer, x, y);
+            last = hit ? {x: x, y: y, time: now, hit: hit} : null;
+            return hit;
+        }
         var wheel = ui.guard(NAME, function (e) {
             if (e.target !== canvas) return;
             var controls = viewer.getControls ? viewer.getControls() : viewer.controls;
             if (!controls || controls !== viewer.orbitControls) return;
             var n = notch(e);
             if (!n) return;
-            var hit = pick3d.pick(win, viewer, e.clientX, e.clientY);
+            var hit = pickAt(e.clientX, e.clientY);
             if (!hit) return;
             // Potree's own zoom doesn't run
             e.preventDefault();
