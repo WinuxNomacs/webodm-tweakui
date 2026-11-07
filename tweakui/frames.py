@@ -91,15 +91,18 @@ def altitude(shot):
 
 def rank(spot, shots, cameras):
     """The photos that show a spot ([x, y, z], the task's coordinates), ordered by how near it is to the frame's
-    centre"""
+    centre; a shot or a camera that lacks what this needs (a size, a pose) is left out"""
     pts = np.asarray([spot], dtype=float)
     found = []
     for shot in shots:
-        props = shot.get("properties") or {}
+        props = (shot.get("properties") if isinstance(shot, dict) else None) or {}
         cam = cameras.get(camera_id(props.get("camera")))
-        if cam is None or not props.get("filename"):
+        if not isinstance(cam, dict) or not props.get("filename"):
             continue
-        projected = project(pts, shot, cam)
+        try:
+            projected = project(pts, shot, cam)
+        except (KeyError, TypeError, ValueError, ZeroDivisionError):
+            continue
         if projected is None:
             continue
         xy, front = projected
@@ -133,11 +136,15 @@ def load_json(path):
         return None
 
 
+def _dict(value):
+    return value if isinstance(value, dict) else {}
+
+
 def mean_height(task):
     """The point cloud's mean height (its Entwine statistics), or None"""
-    ept = load_json(task.assets_path("entwine_pointcloud", "ept.json")) or {}
-    for dim in ept.get("schema") or []:
-        if dim.get("name") == "Z" and dim.get("mean") is not None:
+    schema = _dict(load_json(task.assets_path("entwine_pointcloud", "ept.json"))).get("schema")
+    for dim in schema if isinstance(schema, list) else []:
+        if isinstance(dim, dict) and dim.get("name") == "Z" and isinstance(dim.get("mean"), (int, float)):
             return float(dim["mean"])
     return None
 
@@ -204,8 +211,9 @@ def find(task, data):
     point, crs = parse(data)
     if "shots.geojson" not in (task.available_assets or []):
         raise FramesError("This task has no cameras")
-    shots = (load_json(task.assets_path("odm_report", "shots.geojson")) or {}).get("features") or []
-    cameras = load_json(task.assets_path("cameras.json")) or {}
+    shots = _dict(load_json(task.assets_path("odm_report", "shots.geojson"))).get("features")
+    shots = shots if isinstance(shots, list) else []
+    cameras = _dict(load_json(task.assets_path("cameras.json")))
     coords = to_task_xy(task, [point], crs)
     x, y = coords[0][0], coords[0][1]
     if crs == "task":
