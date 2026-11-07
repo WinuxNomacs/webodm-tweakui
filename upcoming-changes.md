@@ -3,14 +3,24 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Global Controls: Hide Navigation Pane and Resize Navigation Pane** (new.md, 2026-11-07) — two settings, a
-   branch each; see "Navigation pane: hide and resize". Decided; ready to build.
+1. **Check on WebODM's Windows app** when the user next runs it: Hide and Resize Navigation Pane in desktop mode
+   (the side menu fixed at the top, no header: the tab and the handle should start at the top), and Zoom Override
+   3D's mouse speed there (it now reads 120 a notch, as on the Mac; a smaller wheelDelta would zoom slower).
+2. **Open points from the review of the Mac session** (2026-11-07), for the user to decide: the README and Install
+   page say "tested on 3.3.2 and 4.0.0" while the Mac session's changes had only Django tests on 3.3.2 (a live
+   check there, or reword); Source Frames' "Open full frame" button is not in Title Case.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Global Controls: Hide Navigation Pane and Resize Navigation Pane** (new.md, 2026-11-07; see "Navigation pane:
+  hide and resize") — `tweakui/public/nav_pane.js` (`create`: the tab; `createResize`: the handle, `clampWidth`) and
+  two sections of `main.css`, tests in `__tests__/nav_pane.test.js` and `TestSettingsPage`. Branches `hide-nav-pane`
+  and `resize-nav-pane`, each on both Docker stacks (Jest, Django, live: Dashboard and a map on 4.0.0, the Dashboard
+  on 3.3.2, which has no task), the selector check on 4.0.0; screenshots `hide-navigation-pane` and
+  `resize-navigation-pane`, `docs/general.md`. Not yet on the Windows app (Up next).
 - **Fixes from the review** (see "Fixes from the review"; findings in "Before the first release") — tested on 4.0.0
   only, on the Mac (the user's decision). Four branches, each checked live:
   - `task-controls-address` (finding 9): `task_controls.js` `expandedSearch`, `syncAddress`; the address lists only
@@ -1614,3 +1624,12 @@ advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this 
   so a browser that blocks it just starts at WebODM's 250 px, shown), not in the account.
 - At the narrowest width, **icons only, names on hover**: labels and submenu arrows hidden, each link's name as its
   tooltip, submenu items without their indent so their icons line up in the one column.
+
+**Built (2026-11-07), and what the build found:**
+- The tab is in the header (`#navbar-top`), not the body: the header has z-index 99999 and holds the side menu, so a
+  tab outside it was half under the side menu. The handle is in the body, under Bootstrap's dialogs (z-index 1039).
+- A width under 120 px snaps to the icons (50 px): between the two, labels showed only their first letters.
+- With both on, hiding wins over the width (`:not(.tweakui-nav-hidden)`); the tab follows the width.
+- The handle works from the keyboard (a `separator`: arrows, Home for the icons, End for WebODM's width).
+- The Adding a Tweak guide said a new setting needed no change to the Django tests; `defaults()` in
+  `test_tweakui.py` lists every setting, so it now says so.
