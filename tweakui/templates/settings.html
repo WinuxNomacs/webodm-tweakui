@@ -37,7 +37,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <input type="checkbox" data-setting="expand_configured"{% if settings.expand_configured %} checked{% endif %}>
                             {% trans "Expand Configured" %}
                         </label>
-                        <p class="text-muted">{% trans "In the Task Options dialog, a collapsed group still shows its options that are not at their default, ready to change; the Expand/Collapse button goes through Expand All, Collapse All and Collapse All but Configured." %}</p>
+                        <p class="text-muted">{% trans "In the Task Options dialog, a collapsed group still shows its options that are not at their default, so you can change them there. The Expand/Collapse button cycles Expand All, Collapse All and Collapse All but Configured." %}</p>
                     </div>
                 </div>
                 <div class="tweakui-group theme-border">
@@ -47,7 +47,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <input type="checkbox" data-setting="enhanced_task_details"{% if settings.enhanced_task_details %} checked{% endif %}>
                             {% trans "Enhanced Task Details" %}
                         </label>
-                        <p class="text-muted">{% trans "In a task's details on the Dashboard, the parts turned on below." %}</p>
+                        <p class="text-muted">{% trans "Adds the parts turned on below to a task's details on the Dashboard." %}</p>
                     </div>
                     <div class="tweakui-subsettings" data-depends="enhanced_task_details">
                         <div class="tweakui-setting">
@@ -83,7 +83,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                                 <input type="checkbox" data-setting="task_details_step"{% if settings.task_details_step %} checked{% endif %}>
                                 {% trans "Show Current Processing Stage" %}
                             </label>
-                            <p class="text-muted">{% trans "While the task runs, its current ODM stage, e.g. Current Step (8/13): Texturing." %}</p>
+                            <p class="text-muted">{% trans "While the task runs, the ODM stage it is in, e.g. Current Step (8/13): Texturing." %}</p>
                         </div>
                     </div>
                     <div class="tweakui-setting" data-preview="expand-task-controls">
@@ -91,7 +91,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <input type="checkbox" data-setting="expand_task_controls"{% if settings.expand_task_controls %} checked{% endif %}>
                             {% trans "Expand Task Controls" %}
                         </label>
-                        <p class="text-muted">{% trans "On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The +/- beside its name goes through buttons only, expanded and fully minimized." %}</p>
+                        <p class="text-muted">{% trans "On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The +/- beside its name cycles buttons only, expanded and fully minimized." %}</p>
                     </div>
                 </div>
             </section>
@@ -102,13 +102,13 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                     <div class="tweakui-setting" data-preview="theme-menu">
                         <label>
                             <input type="checkbox" data-setting="show_theme_menu"{% if settings.show_theme_menu %} checked{% endif %}>
-                            {% trans "Show the theme menu in the header" %}
+                            {% trans "Show Theme Menu" %}
                         </label>
-                        <p class="text-muted">{% trans "A paintbrush left of your user icon, to change the theme from any page." %}</p>
+                        <p class="text-muted">{% trans "A paintbrush in the header, left of your user icon, to change the theme from any page." %}</p>
                     </div>
                 </div>
                 <div class="tweakui-intro">
-                    <p class="text-muted">{% trans "Your own colours for WebODM, for you only. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
+                    <p class="text-muted">{% trans "Colours for WebODM that only you see. A theme changes the colours WebODM's theme sets; places WebODM always shows in white stay white." %}</p>
                 </div>
                 <div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
                     {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
@@ -246,21 +246,21 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <input type="checkbox" data-setting="movable_controls"{% if settings.movable_controls %} checked{% endif %}>
                             {% trans "Movable Controls" %}
                         </label>
-                        <p class="text-muted">{% trans "Drag the map's panels (Layers, Base Maps, Measure, Contours, ...) by their title, within the map. A panel that closes reopens in its usual place." %}</p>
+                        <p class="text-muted">{% trans "Drag the map's panels (Layers, Base Maps, Measure, Contours…) by their title, anywhere within the map. A panel that closes reopens in its usual place." %}</p>
                     </div>
                     <div class="tweakui-setting" data-preview="other-tasks">
                         <label>
                             <input type="checkbox" data-setting="other_tasks"{% if settings.other_tasks %} checked{% endif %}>
                             {% trans "Other Tasks" %}
                         </label>
-                        <p class="text-muted">{% trans "On a task's map, a button below Layers lists the project's other tasks with an orthophoto, to show over the task's own, each with its opacity." %}</p>
+                        <p class="text-muted">{% trans "On a task's map, a button below Layers lists the project's other tasks that have an orthophoto. Check one to show it over this task's, with its own opacity slider." %}</p>
                     </div>
                     <div class="tweakui-setting" data-preview="source-frames-2d">
                         <label>
                             <input type="checkbox" data-setting="source_frames_2d"{% if settings.source_frames_2d %} checked{% endif %}>
                             {% trans "Source Frames" %}
                         </label>
-                        <p class="text-muted">{% trans "A button beside Share turns it on: each click on the map moves a spot there and a window lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
+                        <p class="text-muted">{% trans "A button beside Share turns it on. Then click the map: a window lists the task's photos that show that spot, best first, with each photo's details, a full-frame view and a download." %}</p>
                     </div>
                     <div class="tweakui-setting" data-preview="zoom-override-2d">
                         <label>
@@ -280,14 +280,14 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <input type="checkbox" data-setting="source_frames_3d"{% if settings.source_frames_3d %} checked{% endif %}>
                             {% trans "Source Frames" %}
                         </label>
-                        <p class="text-muted">{% trans "A button beside Share turns it on: each click on the model moves a spot there and a window lists the task's photos that show it, best first, each with its properties, the full frame and a download." %}</p>
+                        <p class="text-muted">{% trans "A button beside Share turns it on. Then click the model: a window lists the task's photos that show that spot, best first, with each photo's details, a full-frame view and a download." %}</p>
                     </div>
                     <div class="tweakui-setting" data-preview="zoom-override-3d">
                         <label>
                             <input type="checkbox" data-setting="zoom_override_3d"{% if settings.zoom_override_3d %} checked{% endif %}>
                             {% trans "Zoom Override" %}
                         </label>
-                        <p class="text-muted">{% trans "The mouse wheel zooms toward what is under the pointer, the points or the model, instead of the middle of the view, so any surface can be neared. Over empty space it zooms as before." %}</p>
+                        <p class="text-muted">{% trans "The mouse wheel zooms toward what is under the pointer (the points or the model) instead of the middle of the view, so you can get close to any surface. Over empty space it zooms as before." %}</p>
                     </div>
                 </div>
             </section>
@@ -298,9 +298,9 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                     <div class="tweakui-setting" data-preview="storage">
                         <label>
                             <input type="checkbox" data-setting="storage_view"{% if settings.storage_view %} checked{% endif %}>
-                            {% trans "Show the Storage view" %}
+                            {% trans "Show Storage View" %}
                         </label>
-                        <p class="text-muted">{% trans "Diagnostic in the side menu opens to System and Storage (without Diagnostic, TweakUI does). Storage shows what your projects and tasks take of your quota, each task's files by kind, and cleans them up: compact a task (its photos go, its results stay) or delete tasks and projects." %}</p>
+                        <p class="text-muted">{% trans "Adds a Storage page under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It shows how much of your quota each project and task uses and each task's files by kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and projects." %}</p>
                     </div>
                 </div>
             </section>

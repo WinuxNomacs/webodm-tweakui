@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Clearer wording throughout the settings, messages and documentation; the settings "Show Theme Menu" and
+  "Show Storage View" renamed in Title Case.
 - A TweakUI item in the side menu, just above About, and a settings page (navigation pane, General), with each user's own settings.
 - General > Task Options > Show Modified Options: the Task Options dialog's group headings show (modified/total).
 - General > Task Options > Expand Configured: a collapsed group of the Task Options dialog still shows its options

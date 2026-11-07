@@ -12,6 +12,16 @@
 (nothing planned)
 
 **Done**
+- **Wording review** (asked directly, 2026-11-07) — branch `wording-review`.
+  - The README, `docs/` and the plugin's UI text reworded to be direct, accurate and concise: settings descriptions
+    rewritten as plain sentences, Title Case for the two settings and two headings that lacked it ("Show Theme Menu",
+    "Show Storage View", "Import Themes", "Publish One of Your Themes"), Storage labels ("Deleting", "Failed: can be
+    deleted"), error messages ("every colour must be #rrggbb", "Too many themes: at most 50"), the docs' Task Details
+    list in the settings' order, and "Every feature but the themes is off" corrected to "except the theme menu".
+    User-chosen names (e.g. Show Current Processing Stage, Click Map to View Source Frame) kept.
+  - Code: `templates/settings.html`, `published.html`, `import_panel.html`, `public/storage_page.js`,
+    `public/theme_editor.js`, `custom_themes.py`; tests updated in `test_tweakui.py`, `storage_page.test.js`,
+    `theme_editor.test.js`.
 - **Expand Task Controls** (asked directly, 2026-11-07) — branch `expand-task-controls`.
   - General > Task Details > Expand Task Controls (off by default): on the Dashboard, a minimized task still shows its
     action buttons (WebODM's and the plugins'). WebODM leaves a minimized task's panel out of the page, so buttons

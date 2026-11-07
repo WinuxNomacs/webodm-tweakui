@@ -161,7 +161,7 @@
     function save(state) {
         var name = state.editor.querySelector("#tweakui-editor-name").value.trim(), values = colors(state);
         if (!name) { setStatus(state, "Not saved: a theme needs a name"); return Promise.resolve(); }
-        if (!values) { setStatus(state, "Not saved: every colour is #rrggbb"); return Promise.resolve(); }
+        if (!values) { setStatus(state, "Not saved: every colour must be #rrggbb"); return Promise.resolve(); }
         var body = {name: name, colors: values};
         var saving = state.editing ? request(state, "PUT", "themes/" + state.editing, body)
             : request(state, "POST", "themes", body);

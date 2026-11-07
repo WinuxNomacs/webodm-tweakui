@@ -16,7 +16,7 @@ Off by default.
 ![The Other Tasks panel with another task's orthophoto shown over the task's own](../tweakui/public/previews/other-tasks.webp)
 
 On a task's map, a button below Layers opens an **Other Tasks** panel listing the project's other tasks that have
-an orthophoto. Check one to show its orthophoto over the task's own (cropped as its task is), and set its opacity
+an orthophoto. Check one to show its orthophoto over the task's own (cropped as in its own task), and set its opacity
 with the slider beside it, e.g. to compare before and after. None is shown when the map opens, and nothing is
 remembered. A project's own map (Dashboard > the project's **View Map**) already lists every task's layers, so it
 has no such button.
@@ -27,21 +27,21 @@ Off by default.
 
 ![The Source Frames window listing the photos that show a spot on the map](../tweakui/public/previews/source-frames-2d.webp)
 
-A button beside **Share** (bottom right of the map) finds the task's photos that show a spot. Click it and a label
-"Click Map to View Source Frame" shows at the top of the map while Source Frames is on; each click on the map (not
-a drag, which pans) moves the spot there. The first opens a window, and each later one updates it in place: the
-photos best first (those where the spot is nearest the middle of the frame), the best one chosen. To look over an
-area, move the spot around it.
+A button beside **Share** (bottom right of the map) finds the task's photos that show a spot. Click it and the label
+"Click Map to View Source Frame" shows at the top of the map while Source Frames is on. Each click on the map (a drag
+still pans) moves the spot there. The first click opens a window, and each later one updates it: the photos best
+first (those where the spot is nearest the middle of the frame), with the best one selected. To look over an area,
+click around it.
 
-The chosen photo is shown with the spot drawn on it, with its file name, capture time, camera, size and the
+The selected photo is shown with the spot marked on it, with its file name, capture time, camera, size and the
 camera's altitude, a **Download** button, and **Open full frame**: the photo full screen, with zoom (wheel, pinch,
-buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. The button again, Esc, or
-the window's × turns Source Frames off. A project's map searches each of its tasks with cameras.
+buttons, double click), pan, the previous and next photos (arrow keys), and Esc to close. Clicking the button again,
+Esc, or the window's × turns Source Frames off. A project's map searches each of its tasks with cameras.
 
 How it finds the photos: from each photo's position, direction and lens (the task's camera shots, as WebODM shows
 them in its Cameras layer) and the ground's height (the task's DSM; without one, the point cloud's mean height). A
-spot counts as shown when it falls inside the photo's frame: something in front of it (a roof, a tree) isn't
-detected. Only tasks with camera shots have the button.
+spot counts as shown when it falls inside the photo's frame, even if something (a roof, a tree) hides it in the
+photo. Only tasks with camera shots have the button.
 
 ## Controls > Zoom Override
 

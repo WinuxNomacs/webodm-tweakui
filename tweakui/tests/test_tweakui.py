@@ -423,7 +423,7 @@ class TestCustomThemes(TweakUITestCase):
         UserDataStore("tweakui", user).set_json("themes", [dict(a_theme(str(i)), id="%x" % i) for i in range(50)])
         res = self.post(a_theme())
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertIn("At most 50", res.json()["detail"])
+        self.assertIn("at most 50", res.json()["detail"])
 
     def test_a_theme_is_changed_and_deleted_by_its_id(self):
         theme = self.post(a_theme()).json()
@@ -568,7 +568,7 @@ class TestCustomThemes(TweakUITestCase):
         res = self.import_([a_theme("A"), a_theme("B"), a_theme("0", primary="#000000")]).json()
         self.assertEqual(res["added"], ["A"])
         self.assertEqual(res["replaced"], ["0"])
-        self.assertEqual(res["refused"], [{"index": 2, "name": "B", "reason": "At most 50 themes"}])
+        self.assertEqual(res["refused"], [{"index": 2, "name": "B", "reason": "Too many themes: at most 50"}])
         self.assertEqual(len(self.client.get(THEMES).json()), 50)
 
     def test_an_import_that_is_not_a_theme_or_a_list_of_them_is_refused_and_changes_nothing(self):
@@ -738,7 +738,7 @@ class TestPublishedThemes(TweakUITestCase):
                                             [dict(a_theme(str(i)), id="%x" % i) for i in range(50)])
         res = self.publish(self.own_theme("One more")["id"])
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
-        self.assertEqual(res.json()["detail"], "At most 50 themes")
+        self.assertEqual(res.json()["detail"], "Too many themes: at most 50")
         self.assertEqual(self.publish(self.own_theme("0", primary="#000000")["id"]).status_code, status.HTTP_200_OK)
 
     def test_the_page_lists_published_themes_with_their_actions_and_the_superuser_s_own_to_publish(self):

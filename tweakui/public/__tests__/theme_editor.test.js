@@ -121,7 +121,7 @@ test("a value that isn't #rrggbb is marked and neither previewed nor saved", asy
     runTimers();
     await editor.save(state);
     expect(win.fetch).not.toHaveBeenCalled();
-    expect(el(".tweakui-editor-status").textContent).toBe("Not saved: every colour is #rrggbb");
+    expect(el(".tweakui-editor-status").textContent).toBe("Not saved: every colour must be #rrggbb");
 });
 
 test("Cancel closes the editor and gives the page back its theme, even with a preview still on its way", async () => {

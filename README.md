@@ -11,25 +11,25 @@ Administration > Plugins.
 The full documentation, with a screenshot of each feature, is at **https://winuxnomacs.github.io/webodm-tweakui/**.
 
 Each user has their own TweakUI settings: the **TweakUI** item near the bottom of WebODM's side menu, just above
-About, opens them. A change is saved as soon as it is made and applies from the next page. Beside each feature in
-the settings is a screenshot of it; a click shows it full size. Every feature but the themes is off until turned on.
+About, opens them. A change is saved as soon as it is made and takes effect on the next page you open. Beside each
+feature in the settings is a screenshot of it; click it to see it full size. Every feature is off until you turn it
+on, except the theme menu.
 
-- [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): the Task Options dialog counts each group's options that are not at their default
-  (Show Modified Options) and shows them under a collapsed group's heading (Expand Configured); a task's details on the Dashboard show when it started and finished, its preset, its
-  options as bubbles, its ODX command and, while it runs, its current step (Enhanced Task Details); a minimized task
-  keeps its buttons (Expand Task Controls).
-- [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, WebODM's theme or one of 11 presets (Catppuccin,
-  Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes made from a copy of any theme with a live preview
-  (imported and exported as JSON), themes an administrator publishes to every user,
-  a sample of WebODM's controls in the current theme, and a theme
-  menu in the header.
-- [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels dragged anywhere within the map (Movable Controls), the project's other tasks'
-  orthophotos over the task's own (Other Tasks), the task's photos that show a clicked spot (Source Frames), and 3
-  more zoom steps (Zoom Override).
-- [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a wheel that zooms toward what is under the pointer
-  (Zoom Override).
-- [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): what your projects and tasks take of your quota, each task's files by kind, and
-  compacting or deleting them; administrators see every user's.
+- [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): in the Task Options dialog, each group's count
+  of options not at their default (Show Modified Options) and those options shown under a collapsed group (Expand
+  Configured); on the Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
+  step (Enhanced Task Details), and a minimized task's buttons kept in view (Expand Task Controls).
+- [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, seen only by you: WebODM's theme,
+  one of 11 presets (Catppuccin, Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes copied from any theme
+  with a live preview (imported and exported as JSON) or themes an administrator publishes to every user; a sample of
+  WebODM's controls in the current theme, and a theme menu in the header.
+- [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
+  (Movable Controls), the project's other tasks' orthophotos over the task's own (Other Tasks), the task's photos
+  that show a clicked spot (Source Frames), and 3 more zoom steps (Zoom Override).
+- [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel
+  that zooms toward what is under the pointer (Zoom Override).
+- [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): how much of your quota each project and task
+  uses, each task's files by kind, and compacting or deleting them; administrators see every user's.
 
 ## Requirements
 
@@ -42,8 +42,8 @@ Once released: in WebODM, Administration > Plugins, install TweakUI from the plu
 
 ## Outside services
 
-None: the plugin calls no outside service. It keeps each user's settings, including their theme, in WebODM's
-database, in the plugin's per-user data store, and the published themes in its global data store.
+None: the plugin calls no outside service. It keeps each user's settings and themes in the plugin's per-user data
+store in WebODM's database, and the published themes in its global data store.
 
 ## Developing
 
