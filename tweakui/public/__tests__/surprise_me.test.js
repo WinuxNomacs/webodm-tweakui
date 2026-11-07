@@ -210,6 +210,37 @@ test("off, a right-click is the browser's; turning it off removes the right-clic
     expect(await rightClick(document.body, 10, 10)).toBe(false);
 });
 
+// A Mac's Ctrl+click: a left press with Ctrl, the contextmenu event, and (not always) the release
+async function ctrlClick(target, x, y, {shift = false, menu = true} = {}) {
+    const opts = {bubbles: true, cancelable: true, button: 0, clientX: x, clientY: y, ctrlKey: true, shiftKey: shift};
+    const context = new MouseEvent("contextmenu", opts);
+    target.dispatchEvent(new MouseEvent("mousedown", opts));
+    if (menu) target.dispatchEvent(context);
+    target.dispatchEvent(new MouseEvent("mouseup", opts));
+    await new Promise(r => setTimeout(r, 0));
+    return context.defaultPrevented;
+}
+
+test("a Mac's Ctrl+click sends one rocket to the pointer instead of the browser's menu", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    start(f.env);
+    expect(await ctrlClick(document.body, 120, 80)).toBe(true);
+    expect(f.made.length).toBe(1);
+    expect(f.made[0].launched).toEqual([{count: 1, x: 120, y: 80, active: true}]);
+});
+
+test("Ctrl+click with no contextmenu (Windows, Linux), Ctrl+Shift+click and Ctrl+click in a text field send no rocket", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    document.body.innerHTML = "<input type='text'>";
+    const f = fake();
+    start(f.env);
+    await ctrlClick(document.body, 10, 10, {menu: false});
+    expect(await ctrlClick(document.body, 10, 10, {shift: true})).toBe(false);
+    expect(await ctrlClick(document.querySelector("input"), 10, 10)).toBe(false);
+    expect(f.made.length).toBe(0);
+});
+
 test("a long press on a touch screen (a contextmenu with no right button pressed) keeps its menu", () => {
     window.TweakUI = {settings: {surprise_me: true}};
     start(fake().env);

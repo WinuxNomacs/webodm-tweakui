@@ -21,3 +21,7 @@ middle of the view, and the view then turns around that depth, so you can get as
 WebODM's 3D view has no zoom limit as such, but its wheel slows down as it nears the middle of the view and never
 passes it. Over empty space, in Potree's other navigation modes and with a pinch on a touch screen, zooming is as
 before.
+
+A two-finger scroll on a trackpad zooms as far as it scrolls. WebODM's 3D view counts each of a trackpad's many
+small scroll steps as a whole wheel notch, which zooms far too fast; with Zoom Override, a mouse notch still zooms
+as before.
