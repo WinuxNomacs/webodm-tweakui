@@ -23,8 +23,8 @@ API = "/api/plugins/tweakui/settings"
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"show_modified_options": False, "enhanced_task_details": False, "task_details_times": True,
-                 "task_details_preset": True, "task_details_options": True, "task_details_command": True,
+    return dict({"show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
+                 "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
                  "zoom_override_3d": False, "storage_view": False, "show_theme_menu": True, "theme": "webodm"},
@@ -179,6 +179,16 @@ class TestSettingsPage(TweakUITestCase):
         for name in ("Task Start and End Time", "Show Configured Task Preset", "Options as Bubbles",
                      "Show ODX Command", "Show Current Processing Stage"):
             self.assertGreater(page.index(name), details)
+
+    def test_expand_configured_is_under_task_options_off_by_default_and_shows_the_saved_value(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        options, details = page.index(">Task Options</h5>"), page.index(">Task Details</h5>")
+        self.assertLess(options, page.index('data-setting="expand_configured"'))
+        self.assertLess(page.index('data-setting="expand_configured"'), details)
+        self.assertIn("Expand Configured", page)
+        self.assertNotIn('data-setting="expand_configured" checked', page)
+        self.patch({"expand_configured": True})
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_configured" checked')
 
     def test_the_checkbox_shows_the_saved_value(self):
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')

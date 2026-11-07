@@ -32,6 +32,13 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                         </label>
                         <p class="text-muted">{% trans "In the Task Options dialog, each group's heading shows how many of its options are not at their default, e.g. (1/13)." %}</p>
                     </div>
+                    <div class="tweakui-setting" data-preview="expand-configured">
+                        <label>
+                            <input type="checkbox" data-setting="expand_configured"{% if settings.expand_configured %} checked{% endif %}>
+                            {% trans "Expand Configured" %}
+                        </label>
+                        <p class="text-muted">{% trans "In the Task Options dialog, a collapsed group still shows its options that are not at their default, ready to change." %}</p>
+                    </div>
                 </div>
                 <div class="tweakui-group theme-border">
                     <h5 class="theme-background-highlight">{% trans "Task Details" %}</h5>
