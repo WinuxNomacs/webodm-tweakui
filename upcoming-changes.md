@@ -1185,7 +1185,11 @@ when needed. Same admin/admin account is used to access because it's a throwaway
    Developing page, CLAUDE.md, and the `live-check` and `release-check` skills gain the Windows instance and the
    relay. Your machine's port and path go in memory, not the repo.
 
-**Open decisions:**
+**Decisions (the user, 2026-11-07):** (1) the relay through WSL interop; (2) the instance already has tasks, so
+the checks use those and create none; (3) on Windows, Enhanced Task Details shows Windows' own ODX command
+(`run.bat`) in place of the docker one (built in phase 2).
+
+**Decisions as asked:**
 1. **How WSL reaches the Windows WebODM.** Proposed: a relay through WSL interop. A small script in WSL listens on
    localhost:8007 and, for each connection, starts WebODM's own `python.exe` to pipe it to 127.0.0.1:29800. Nothing
    is installed or changed on Windows, it needs no admin and no firewall rule, and it runs only during a check.
