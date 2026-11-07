@@ -857,6 +857,26 @@ class TestSourceFrames(TweakUITestCase):
         from pyproj import Transformer
         return list(Transformer.from_crs("EPSG:%s" % self.EPSG, "EPSG:4326", always_xy=True).transform(x, y))
 
+    def test_shots_without_a_size_or_a_pose_are_left_out_and_the_others_still_found(self):
+        broken = [self.shot("no-size.jpg", self.X, 1), self.shot("no-pose.jpg", self.X, 2),
+                  self.shot("bad-rotation.jpg", self.X, 3), "not a shot", {"properties": None}]
+        del broken[0]["properties"]["width"]
+        del broken[1]["properties"]["translation"]
+        broken[2]["properties"]["rotation"] = "down"
+        shots = {"type": "FeatureCollection", "features": broken + [self.shot("a.jpg", self.X, 1000)]}
+        with open(self.task.assets_path("odm_report", "shots.geojson"), "w") as f:
+            json.dump(shots, f)
+        res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual([f["filename"] for f in res.json()["frames"]], ["a.jpg"])
+
+    def test_a_cameras_file_that_is_not_an_object_finds_no_photo(self):
+        with open(self.task.assets_path("cameras.json"), "w") as f:
+            json.dump(["not", "cameras"], f)
+        res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json()["frames"], [])
+
     def test_a_spots_photos_are_those_that_show_it_nearest_their_centre_first(self):
         res = self.post({"type": "Point", "coordinates": self.lnglat(self.X, self.Y)})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
