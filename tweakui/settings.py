@@ -9,6 +9,8 @@ KEY = "settings"
 DEFAULTS = {
     # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
     "show_modified_options": False,
+    # General > Task Options: a collapsed group of the Task Options dialog still shows its options not at their default
+    "expand_configured": False,
     # General > Task Details: a task's details panel on the Dashboard shows its preset, its options as bubbles and
     # its ODX command
     "enhanced_task_details": False,

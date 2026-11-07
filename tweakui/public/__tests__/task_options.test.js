@@ -84,3 +84,72 @@ test("without a dialog on the page nothing is watched", () => {
     document.body.innerHTML = "";
     expect(taskOptions.watch(document, {}, window)).toBeNull();
 });
+
+describe("Expand Configured", () => {
+    // A dialog with subgroups, as EditPresetDialog renders a group with more than one; collapsed groups' content
+    // has WebODM's inline display: none
+    function grouped(groups) {
+        document.body.innerHTML = '<div class="edit-preset-dialog">' + groups.map(g =>
+            '<div class="option-group"><div class="option-group-header"><span class="option-count">(0)</span></div>' +
+            '<div class="option-group-content" style="display: ' + (g.collapsed ? "none" : "block") + '">' +
+            g.subgroups.map(sub => '<div class="option-subgroup"><div class="option-subgroup-content">' +
+                sub.map(o => '<div class="processing-node-option"><label>' + o + ' <i></i></label></div>').join("") +
+                "</div></div>").join("") + "</div></div>").join("") + "</div>";
+        return document.querySelector(".edit-preset-dialog");
+    }
+    const expanded = root => Array.from(root.querySelectorAll(".option-group")).map(g => g.hasAttribute("data-tweakui-expand"));
+    const configured = root => Array.from(root.querySelectorAll(".processing-node-option[data-tweakui-configured] label"))
+        .map(l => l.firstChild.nodeValue.trim());
+
+    test("a collapsed group with configured options is marked, with those options and their subgroups", () => {
+        const root = grouped([
+            {collapsed: true, subgroups: [["min-num-features", "feature-quality"], ["matcher-type"]]},
+            {collapsed: true, subgroups: [["pc-quality"]]},
+        ]);
+        taskOptions.update(root, components({"feature-quality": "ultra", "min-num-features": undefined}), {expand: true});
+        expect(expanded(root)).toEqual([true, false]);
+        expect(configured(root)).toEqual(["feature-quality"]);
+        const subs = root.querySelectorAll(".option-subgroup");
+        expect([subs[0], subs[1]].map(s => s.hasAttribute("data-tweakui-configured"))).toEqual([true, false]);
+    });
+
+    test("an open group is not marked, so it shows all its options as WebODM does", () => {
+        const root = grouped([{collapsed: false, subgroups: [["feature-quality"]]}]);
+        taskOptions.update(root, components({"feature-quality": "ultra"}), {expand: true});
+        expect(expanded(root)).toEqual([false]);
+    });
+
+    test("without Show Modified Options the headings keep WebODM's own number", () => {
+        const root = grouped([{collapsed: true, subgroups: [["feature-quality"]]}]);
+        taskOptions.update(root, components({"feature-quality": "ultra"}), {expand: true});
+        expect(counts(root)).toEqual([null]);
+    });
+
+    test("without Expand Configured nothing is marked", () => {
+        const root = grouped([{collapsed: true, subgroups: [["feature-quality"]]}]);
+        taskOptions.update(root, components({"feature-quality": "ultra"}), {count: true});
+        expect(expanded(root)).toEqual([false]);
+        expect(configured(root)).toEqual([]);
+        expect(counts(root)).toEqual(["(1/1)"]);
+    });
+
+    test("an option reset to its default leaves the collapsed group at once, and opening the group unmarks it", async () => {
+        const root = grouped([{collapsed: true, subgroups: [["feature-quality", "pc-quality"]]}]);
+        const values = {"feature-quality": "ultra", "pc-quality": "high"};
+        const options = {};
+        Object.keys(values).forEach(n => { options[n] = {getValue: () => values[n]}; });
+        taskOptions.watch(document, options, window, {expand: true});
+        expect(configured(root)).toEqual(["feature-quality", "pc-quality"]);
+
+        values["pc-quality"] = undefined;
+        root.querySelector("label").dispatchEvent(new Event("click", {bubbles: true}));
+        await tick();
+        expect(configured(root)).toEqual(["feature-quality"]);
+        expect(expanded(root)).toEqual([true]);
+
+        root.querySelector(".option-group-content").style.display = "block"; // the group opened (a click)
+        root.querySelector(".option-group-header").dispatchEvent(new Event("click", {bubbles: true}));
+        await tick();
+        expect(expanded(root)).toEqual([false]);
+    });
+});

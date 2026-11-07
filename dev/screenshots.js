@@ -29,6 +29,17 @@ const SHOTS = [
         },
     },
     {
+        name: "expand-configured", settings: {show_modified_options: true, expand_configured: true},
+        async run(s) {
+            await s.openTask();
+            await s.page.click(".expanded-panel .edit-button");
+            await s.page.click('button[title="Edit Task Options"]');
+            await s.page.waitForSelector(".edit-preset-dialog .option-group[data-tweakui-expand]");
+            await s.page.waitForTimeout(500);
+            return ".edit-preset-dialog .modal-content";
+        },
+    },
+    {
         name: "enhanced-task-details", settings: {enhanced_task_details: true},
         async run(s) {
             await s.openTask();

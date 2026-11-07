@@ -15,7 +15,7 @@ About, opens them. A change is saved as soon as it is made and applies from the 
 the settings is a screenshot of it; a click shows it full size. Every feature but the themes is off until turned on.
 
 - [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): the Task Options dialog counts each group's options that are not at their default
-  (Show Modified Options); a task's details on the Dashboard show when it started and finished, its preset, its
+  (Show Modified Options) and shows them under a collapsed group's heading (Expand Configured); a task's details on the Dashboard show when it started and finished, its preset, its
   options as bubbles, its ODX command and, while it runs, its current step (Enhanced Task Details).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, WebODM's theme or one of 11 presets (Catppuccin,
   Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes made from a copy of any theme with a live preview

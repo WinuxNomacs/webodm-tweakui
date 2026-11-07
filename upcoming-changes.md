@@ -12,6 +12,17 @@
 (nothing planned)
 
 **Done**
+- **Expand Configured** (asked directly, 2026-11-07) — branch `expand-configured`.
+  - General > Task Options > Expand Configured (off by default): in the Task Options dialog, a collapsed group shows
+    its options not at ODM's default (the same ones Show Modified Options counts) under its heading, as WebODM's own
+    controls. Decided with the user: the real option, not a read-only line; an option reset to its default leaves
+    the list at once. Works without Show Modified Options; "Other Options" is not on the page while closed, so it
+    shows nothing; the flat view is unchanged.
+  - Code: `settings.py` (`expand_configured`), `templates/settings.html`, `public/task_options.js` (marks
+    `data-tweakui-expand` on a collapsed group with configured options, `data-tweakui-configured` on those options
+    and their subgroups), `public/main.css` (shows them over WebODM's inline `display: none`). Tests:
+    `test_tweakui.py` (the setting and its checkbox), `task_options.test.js` (5 tests). Screenshot
+    `expand-configured`; docs `docs/general.md`.
 - **My Themes heading and Title Case** (asked directly, 2026-11-07) — branch `themes-heading-buttons`.
   - Settings > Themes: New Theme, Import (and Export, when you have themes) now sit on the left, above the My Themes
     heading (`templates/settings.html`, `.tweakui-themes-heading-stacked` in `main.css`). "My themes" became "My

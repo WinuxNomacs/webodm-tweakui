@@ -11,6 +11,18 @@ its options are not at ODM's default, out of how many it has: "Input & Preproces
 enabled. The count follows your changes, including "Reset to default". A preset's own settings count too (the
 Default preset sets auto-boundary and dsm). Only in the grouped view; "Other Options" is counted while it is open.
 
+## Task Options > Expand Configured
+
+Off by default.
+
+![The Task Options dialog with the configured options under each collapsed group](../tweakui/public/previews/expand-configured.webp)
+
+In the Task Options dialog, a collapsed group still shows the options in it that are not at ODM's default, under
+its heading: "Structure From Motion" shows feature-quality when it is set to ultra. They're WebODM's own controls,
+so you can change one there, or reset it to its default, and it leaves the list. Opening a group shows all its
+options as usual, and closing it shows only the configured ones again. It works with or without Show Modified
+Options, which counts the same options. Only in the grouped view; "Other Options" shows nothing while it is closed.
+
 ## Task Details > Enhanced Task Details
 
 Off by default.
