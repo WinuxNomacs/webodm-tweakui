@@ -19,7 +19,8 @@ class Plugin(PluginBase):
     # a view (app_mount_points come before public/); so is theme.css
     def include_js_files(self):
         return ["settings.js", "main.js", "task_options.js", "task_details.js", "task_controls.js", "theme_menu.js", "units_menu.js",
-                "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js"]
+                "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
+                "surprise_me.js"]
 
     def include_css_files(self):
         return ["main.css", "theme.css"]

@@ -71,6 +71,8 @@
             return res.json().then(null, function () { return {}; }).then(function (body) {
                 if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
                 if (win.TweakUI) win.TweakUI.settings = body;
+                // The page's scripts that follow a change at once (Surprise Me)
+                if (typeof win.CustomEvent === "function") doc.dispatchEvent(new win.CustomEvent("tweakuiSettingsChanged", {detail: body}));
                 setStatus(page, "Saved", false);
                 if (name === "theme" || name === "show_theme_menu" || name === "storage_view") win.location.reload();
             });

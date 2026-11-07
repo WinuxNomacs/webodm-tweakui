@@ -104,6 +104,16 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                         <p class="text-muted">{% trans "On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The +/- beside its name cycles buttons only, expanded and fully minimized." %}</p>
                     </div>
                 </div>
+                <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Just for Fun" %}</h5>
+                    <div class="tweakui-setting" data-preview="surprise-me">
+                        <label>
+                            <input type="checkbox" data-setting="surprise_me"{% if settings.surprise_me %} checked{% endif %}>
+                            {% trans "Surprise Me" %}
+                        </label>
+                        <p class="text-muted">{% trans "Fireworks go off over every page at random moments, about once a minute, until you turn this off. They're silent and clicks go through them." %}</p>
+                    </div>
+                </div>
             </section>
             <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>
                 <h4>{% trans "Themes" %}</h4>

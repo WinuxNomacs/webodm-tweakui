@@ -3,7 +3,7 @@ import js from "@eslint/js";
 import globals from "globals";
 
 export default [
-    {ignores: ["**/node_modules/", "**/build/", "**/dist/", "ignored/"]},
+    {ignores: ["**/node_modules/", "**/build/", "**/dist/", "ignored/", "tweakui/public/vendor/"]},
     {
         // The plugin's scripts: plain ES5, loaded by <script> tags on every WebODM page and by Jest
         files: ["tweakui/public/*.js"],
