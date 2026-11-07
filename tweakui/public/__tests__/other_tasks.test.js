@@ -124,6 +124,23 @@ test("an orthophoto that cannot be loaded unchecks its task", async () => {
     expect(map.addLayer).not.toHaveBeenCalled();
 });
 
+test("an orthophoto whose metadata makes no layer (no bounds) unchecks its task, ready to try again", async () => {
+    const map = fakeMap();
+    const panel = otherTasks.build(document, fakeLeaflet(), map, own, respond({
+        "/api/projects/3/tasks/?": [{id: "b", project: 3, name: "B"}],
+        "/api/projects/3/tasks/b/orthophoto/metadata": Object.assign({}, metadata, {bounds: undefined})
+    }));
+    await panel.open();
+    const checkbox = panel.container.querySelector("input[type=checkbox]");
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event("change"));
+    await flush();
+    expect(checkbox.checked).toBe(false);
+    expect(checkbox.disabled).toBe(false);
+    expect(checkbox.parentNode.title).toMatch(/^Could not load the orthophoto: /);
+    expect(map.addLayer).not.toHaveBeenCalled();
+});
+
 test("with Other Tasks on, the map hook adds the control in the top right corner of a task's map only", () => {
     const hook = jest.fn();
     const win = loc => ({TweakUI: {settings: {other_tasks: true}}, PluginsAPI: {Map: {didAddControls: hook}},
