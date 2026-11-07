@@ -1424,17 +1424,48 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    Docker Desktop, Node (version in `.nvmrc`), `uv`, then `npm install`, `npx playwright install chromium webkit`,
    `uv venv --python 3.9 .venv && uv pip install -r requirements-dev.txt`. The `ignored/` checkouts as CLAUDE.md
    says ("Dev environment"). The VSCode settings (local `.vscode/settings.json`).
+   **Found (2026-11-07, macOS 26.6.2, Apple Silicon):** already there: Docker Desktop (Engine 29.5.3, Compose
+   5.1.4, context `desktop-linux`, aarch64), Node 26.13.0 (matches `.nvmrc`) and npm 11.20.0 from Homebrew, uv
+   0.12.10, Git 2.56.0, Bash 3.2.57, `shasum`, Safari 26.6.2; VSCode with Python, Pylance, debugpy and ESLint
+   (no Ruff extension). Missing: `node_modules`, the Playwright browsers, `.venv` (the only Python 3.9 is the
+   Command Line Tools' 3.9.6; uv offers a managed 3.9.25), `ignored/` (none of the checkouts), `.vscode/settings.json`,
+   `.claude/settings.local.json`. No WebODM runs on the Mac yet (no listener on 8005).
+   **Set up (approved by the user, 2026-11-07):** uv's Python 3.9.25 and `.venv` (`--managed-python`; Django 2.2.27,
+   DRF 3.13.1, Ruff 0.17.3), `npm ci`, Playwright's Chromium 156 and WebKit 27.2 (both launch headless),
+   `ignored/WebODM` at `v4.0.0` (`6de2314f`), `ignored/WebODM-Docs`, `ignored/WebODM-Plugins` (no 3.3.2 worktree),
+   `.vscode/settings.json`, the VSCode Ruff extension. Claude's tool refused to write `.claude/settings.local.json`
+   (its own permissions): left to the user. Pylance not yet confirmed (needs a VSCode reload).
 2. **Checks**: `npm test`, `npm run lint -- tweakui dev`, `.venv/bin/ruff check .`, `npm run docs:build`.
+   **Found (2026-11-07):** all pass on the Mac: Jest 16 suites, 203 tests; ESLint and Ruff clean; the docs build.
 3. **Dev stack**: `dev/webodm.sh up` (4.0.0, http://localhost:8005; the first start takes several minutes), the Django
    tests in `tw-webapp` (the `test` skill), `dev/package.sh` (its sha256 must match `shasum -a 256`). A task with an
    orthophoto, a textured model and `shots.geojson` is needed for the map checks: a small dataset processed there,
    named "Live check …", deleted afterwards. The admin account there is the user's to create or give.
+   **Found (2026-11-07):** Docker Desktop pulled the pinned arm64 images and the stack started
+   (`Registered [coreplugins.tweakui.plugin]`); admin created with the user's login (in memory, not here). Django
+   tests: 95 pass. `dev/package.sh` works with macOS's tools: `dist/tweakui-0.1.0.zip`, 60 entries under the single
+   root `tweakui/`, no `.DS_Store`, `__MACOSX`, `._*` or `__pycache__`, and its sha256 matches `shasum -a 256`. Task
+   "Live check macOS" (project "Live check macOS"): WebODM's own 5 test images (`nodeodm/fixtures/test_images`),
+   default options, done in 70 s with an orthophoto, a textured model and `shots.geojson`.
 4. **Headless WebKit** (Playwright's `webkit`, on the Mac): the live checks of `live-check` with every feature on, as
    on the other platforms, run in WebKit instead of Chromium: the console must stay free of `TweakUI <feature>:`
    errors. Put the settings back afterwards.
+   **Found (2026-11-07):** Playwright WebKit 27.2, with Chromium 156 run alongside to compare; every boolean setting
+   on through the settings API and put back to the defaults afterwards (checked in the database). Dashboard,
+   TweakUI's settings page, Storage, TweakUI Themes, a task's 2D map and its 3D model, at 1400 px and 390 px:
+   `html.tweakui` set and TweakUI's scripts loaded on each, no `TweakUI <feature>:` error, no page error. The only
+   console error is the expected `localhost:35729/livereload.js`. Interactions, the same in both engines: the
+   Dashboard's task expanded (Expand Task Controls' buttons, Enhanced Task Details' rows: times, preset, option
+   bubbles), the Theme menu (12 themes) and the Units menu (3 systems), Source Frames on the 2D map (4 photos) and the
+   3D model (5 photos). No difference between WebKit and Chromium. Not a TweakUI issue: a task's map page can take
+   over 20 s to fire `load` in either engine, with or without TweakUI, while the basemap's Google tiles
+   (`mt*.google.com`) load; the scripts wait for `domcontentloaded` instead. Left for step 5 (needs real input):
+   trackpad drags and pinch, two-finger scroll, Ctrl+click, copying to the clipboard.
 5. **Real Safari, by hand with the user** (what headless can't show), every feature on:
    - Copy buttons: Show ODX Command's copy (Dashboard, a task's details) and Copy JSON (TweakUI > Themes, My Themes).
      Also from another machine's address (http://<the Mac's IP>:8005, not a secure context): the fallback copy.
+     The user has no other device (2026-11-07): Safari on the Mac itself at its LAN address does the same, since
+     only `localhost` counts as secure (headless WebKit there: `isSecureContext` false).
    - Movable Controls (a task's 2D map): drag Layers, Measure and the others by their title, with the trackpad.
    - Source Frames (2D and 3D): click to list the photos, drag the window by its title, the full-frame view.
    - Zoom Override 2D: pinch on the trackpad and the + button past WebODM's limit (zoom 24); two-finger scroll.
@@ -1442,10 +1473,31 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
      every wheel event as a notch, and so does TweakUI, so a trackpad may zoom much faster than a mouse.
    - Surprise Me: a two-finger click (right-click) sends a rocket; Shift + two-finger click gives the browser's menu;
      **Ctrl+click** today gives the browser's menu and no rocket (`surprise_me.js` looks at `button === 2` only).
-     Decision for the user: should Ctrl+click send a rocket too?
+     Decision for the user: should Ctrl+click send a rocket too? **Decided (2026-11-07): yes**, Ctrl+click sends a
+     rocket too (Shift still gives the browser's menu); built on its own branch after step 5, with a Jest test.
    - Theme menu and Units menu in the header; the settings page, previews and the Saved banner; Storage; TweakUI
      Themes; Task Options (Show Modified Options, Expand Configured); Expand Task Controls; Enhanced Task Details.
    - Light theme and a dark one, a narrow window (phone width).
+   **Found (2026-11-07).** By the user in real Safari: Show ODX Command's copy and Copy JSON (on a new theme "Live
+   check", made in the theme editor) paste correctly at `localhost` and at the Mac's LAN address (the fallback copy).
+   The user asked Claude to automate the rest; done in headless WebKit (Playwright 27.2), every feature on:
+   - Movable Controls: Layers, Compare Orthophotos, Object Detection, Contours and Measure, each opened and dragged
+     by its title, move exactly as far as the mouse, marked `tweakui-moved`; the map doesn't pan.
+   - Source Frames 2D: the window drags by its title; Open Full Frame shows the viewer, Escape closes it.
+   - Zoom Override 2D: the + button stops at zoom 24 with it off, 27 with it on. The wheel zooms the same with it
+     off and on (it doesn't touch the 2D wheel).
+   - Zoom Override 3D, trackpad speed: 25 small wheel events (-4 px each, like a two-finger scroll) move the camera
+     about 10 times as far as one mouse notch (-120), **with the setting off as with it on** (off: 10.9 vs 101.3;
+     on: 11.4 vs 105.4). Potree itself counts each event as a notch; TweakUI keeps that. Not a TweakUI bug; whether
+     the override should weigh events by their size is a question for the user.
+   - Surprise Me: right-click suppresses the browser's menu and sends a rocket; Shift + right-click keeps the menu.
+     (A first scripted run reported no suppression; two runs that logged every event showed it working in WebKit
+     and Chromium.)
+   - Theme menu: WebODM (light, white page) and Solarized Dark switch the page; put back to the user's "Live check".
+   - Saved banner: "Saved" shows after a change. Task Options: headings show counts such as (1/5), 4 configured
+     options and groups marked. Storage: "92 MB used", the task's size listed. No `TweakUI` error, no page error.
+   By the user in Safari with the trackpad: a pinch zooms the 2D map smoothly, Layers drags by its title, a
+   two-finger click sends a rocket with no menu; two-finger scroll in 3D "feels a bit too fast" (as measured above).
 6. **Install from the zip as a user would** (the `release-check` skill, steps 4–6): Administration > Plugins in
    Safari, upload the zip built on the Mac, check it loads.
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to

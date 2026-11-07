@@ -103,7 +103,8 @@ Fireworks go off over every WebODM page until you turn this off. The first show 
 opens, lasts 5 to 10 seconds, and the next follows 4 to 8 seconds after it ends. They're silent, and clicks go
 through them to the page. None starts while the tab is hidden.
 
-A **right-click** sends a rocket that bursts where the pointer is, in place of the browser's menu. Text fields keep
+A **right-click** (on a Mac also **Ctrl+click**) sends a rocket that bursts where the pointer is, in place of the
+browser's menu. Text fields keep
 their menu, and **Shift + right-click** opens it anywhere. Dragging with the right button (the 3D view's pan) sends
 none.
 
