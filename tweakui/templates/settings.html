@@ -86,6 +86,13 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                             <p class="text-muted">{% trans "While the task runs, its current ODM stage, e.g. Current Step (8/13): Texturing." %}</p>
                         </div>
                     </div>
+                    <div class="tweakui-setting" data-preview="expand-task-controls">
+                        <label>
+                            <input type="checkbox" data-setting="expand_task_controls"{% if settings.expand_task_controls %} checked{% endif %}>
+                            {% trans "Expand Task Controls" %}
+                        </label>
+                        <p class="text-muted">{% trans "On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The +/- beside its name goes through buttons only, expanded and fully minimized." %}</p>
+                    </div>
                 </div>
             </section>
             <section id="tweakui-themes" data-section="themes" role="tabpanel" hidden>

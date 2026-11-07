@@ -122,6 +122,19 @@ const SHOTS = [
         },
     },
     {
+        // Every task of the project minimized, as buttons only
+        name: "expand-task-controls", settings: {expand_task_controls: true},
+        async run(s) {
+            await s.page.goto(s.base + "/dashboard/");
+            await s.page.waitForSelector(".project-list-item");
+            const project = '.project-list-item:has(.project-links a:has-text("Task"))';
+            if (!(await s.page.$(project + " .task-list-item"))) await s.page.click(project + ' .project-links a:has-text("Task")');
+            await s.page.waitForSelector(project + ' .task-list-item[data-tweakui-controls="buttons"] .action-buttons');
+            await s.page.waitForTimeout(1000);
+            return project;
+        },
+    },
+    {
         name: "movable-controls", settings: {movable_controls: true},
         async run(s) {
             await s.openMap();

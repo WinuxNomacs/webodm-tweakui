@@ -25,7 +25,7 @@ def defaults(**changes):
     """Every setting at its default, but for the given changes"""
     return dict({"show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
-                 "task_details_step": True, "movable_controls": False, "other_tasks": False,
+                 "task_details_step": True, "expand_task_controls": False, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
                  "zoom_override_3d": False, "storage_view": False, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
@@ -190,6 +190,16 @@ class TestSettingsPage(TweakUITestCase):
         self.patch({"expand_configured": True})
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_configured" checked')
 
+    def test_expand_task_controls_is_under_task_details_off_by_default_and_shows_the_saved_value(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        details = page.index(">Task Details</h5>")
+        self.assertLess(details, page.index('data-setting="expand_task_controls"'))
+        self.assertLess(page.index('data-setting="expand_task_controls"'), page.index('id="tweakui-themes"'))
+        self.assertIn("Expand Task Controls", page)
+        self.assertNotIn('data-setting="expand_task_controls" checked', page)
+        self.patch({"expand_task_controls": True})
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_task_controls" checked')
+
     def test_the_checkbox_shows_the_saved_value(self):
         self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
         self.patch({"show_modified_options": True})
@@ -245,8 +255,10 @@ class TestSettingsPage(TweakUITestCase):
                          defaults(source_frames_3d=True, zoom_override_3d=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="source_frames_3d" checked')
 
-    def test_the_dashboard_includes_the_task_details_script(self):
-        self.assertContains(self.client.get("/dashboard/"), "/plugins/tweakui/task_details.js")
+    def test_the_dashboard_includes_the_task_details_and_task_controls_scripts(self):
+        page = self.client.get("/dashboard/")
+        self.assertContains(page, "/plugins/tweakui/task_details.js")
+        self.assertContains(page, "/plugins/tweakui/task_controls.js")
 
 
     def test_every_preview_the_page_names_is_a_screenshot_in_the_previews_folder(self):

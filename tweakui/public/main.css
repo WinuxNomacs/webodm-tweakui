@@ -124,6 +124,10 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .option-group[data-tweakui-expand] .option-subgroup:not([data-tweakui-configured]),
 .option-group[data-tweakui-expand] .processing-node-option:not([data-tweakui-configured]) { display: none; }
 
+/* General > Task Details > Expand Task Controls (task_controls.js): a task as buttons only, its +/- a caret */
+.task-list-item[data-tweakui-controls="buttons"] > .expanded-panel > .row:first-child { display: none; }
+.task-list-item[data-tweakui-controls="buttons"] > .row > .name > i.fa-minus-square::before { content: "\f150"; }
+
 /* General > Task Options > Enhanced Task Details: the rows TweakUI puts in a task's details panel */
 .expanded-panel .info-table tr.tweakui-hidden { display: none; }
 .tweakui-option-bubbles { display: flex; flex-wrap: wrap; gap: 4px; }

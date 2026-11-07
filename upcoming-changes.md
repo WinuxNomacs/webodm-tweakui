@@ -12,6 +12,19 @@
 (nothing planned)
 
 **Done**
+- **Expand Task Controls** (asked directly, 2026-11-07) — branch `expand-task-controls`.
+  - General > Task Details > Expand Task Controls (off by default): on the Dashboard, a minimized task still shows its
+    action buttons (WebODM's and the plugins'). WebODM leaves a minimized task's panel out of the page, so buttons
+    only is WebODM's expanded task with its first row (details, thumbnail, console, warnings) hidden. The +/- (and
+    the name) cycle buttons only (caret icon), expanded, fully minimized; the step from buttons only to expanded is
+    TweakUI's alone. Decided with the user: tasks start as buttons only (TweakUI clicks their +); the checkbox is
+    under Task Details, not Task Options. Fully expanded tasks are kept in sessionStorage, so a reload (which
+    reopens the tasks in WebODM's `project_task_expanded`) shows them as they were; fully minimized ones come back
+    as buttons only.
+  - Code: `public/task_controls.js` (new, included on every page, runs on `/dashboard/`), `settings.py`
+    (`expand_task_controls`), `templates/settings.html`, `public/main.css`. Tests: `test_tweakui.py` (the setting,
+    the script on the Dashboard), `task_controls.test.js` (8 tests). Screenshot `expand-task-controls`; docs
+    `docs/general.md`.
 - **Expand Configured: a three-step Expand/Collapse button** (asked directly, 2026-11-07) — branch
   `expand-configured-cycle`.
   - With Expand Configured on, the Task Options dialog's Expand/Collapse button cycles Expand All (WebODM), Collapse

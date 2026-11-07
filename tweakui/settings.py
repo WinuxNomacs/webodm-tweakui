@@ -21,6 +21,8 @@ DEFAULTS = {
     "task_details_options": True,
     "task_details_command": True,
     "task_details_step": True,
+    # General > Task Details: a minimized task on the Dashboard still shows its action buttons
+    "expand_task_controls": False,
     # 2D Map: the map's popup panels can be dragged by their title
     "movable_controls": False,
     # 2D Map: on a task's map, a panel of the project's other tasks' orthophotos to show over its own
