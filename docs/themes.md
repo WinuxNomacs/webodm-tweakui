@@ -23,7 +23,7 @@ anything is saved. **Save** keeps the theme and makes it your theme; **Cancel** 
 WebODM's theme.
 
 A theme needs a name of up to 60 characters, and you can have up to 50. Your themes are also in the header's theme
-menu, after the presets.
+menu, after the presets and the published themes.
 
 ## Import and export
 
@@ -48,6 +48,28 @@ Administration > Theme, and a file can hold one theme or a list of them.
   The panel says what was added, replaced and refused, and why (a colour that isn't `#rrggbb`, a missing colour,
   no name, more than 50 themes). **Close** then reloads the page to list them.
 
+## Published themes
+
+![Administration > TweakUI Themes with two published themes](../tweakui/public/previews/theme-published.webp)
+
+Themes an administrator gives every user. They're listed under **Published**, between the presets and My themes,
+only when there are any. Everyone can choose one, **Copy** it into a theme of their own, or **Copy JSON** it, but
+nobody can change it there. If a published theme you're using is deleted, you're back on WebODM's theme.
+
+Superusers manage them in **Administration > TweakUI Themes**, a link TweakUI adds after Administration > Theme in
+the side menu (other staff don't see it, and the page and its API refuse them):
+
+- **Publish one of your themes**: choose one of your own themes (make it in Settings > Themes > My themes) and
+  **Publish**. Every user gets a copy, so later changes to your theme aren't published until you publish it again. A
+  published theme with the same name is replaced, and users who chose it keep it.
+- **Import** takes a file or pasted JSON, as under [Import and export](#import-and-export), into the published
+  themes. A theme with the name of a published one replaces it.
+- **Export** downloads all the published themes as `tweakui-published-themes.json`; each theme's download button
+  downloads just it, and **Copy JSON** puts it on the clipboard.
+- **Delete** deletes a published theme, after asking.
+
+There can be up to 50 published themes.
+
 ## Sample
 
 Below the themes, a **Sample** shows WebODM's controls in the current theme: text, a link and muted text, status
@@ -69,5 +91,5 @@ On by default.
 ![The theme menu open in the header](../tweakui/public/previews/theme-menu.webp)
 
 The **paintbrush** in the header, left of the user icon, is a shortcut to the same choice on every page: it opens
-the list of themes, with your current theme and WebODM's theme on top, then the presets and your own themes, and choosing one switches to it. This
+the list of themes, with your current theme and WebODM's theme on top, then the presets, the published themes and your own, and choosing one switches to it. This
 setting, at the top of Themes, turns it off.

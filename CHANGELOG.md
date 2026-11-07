@@ -16,6 +16,9 @@
 - Themes > My themes: Import (a JSON file or pasted text of one theme or a list; a theme with the name of one of
   yours replaces it; a report of what was added, replaced and refused), Export (all your themes, or one), and Copy
   JSON on every theme.
+- Administration > TweakUI Themes (superusers only, linked after Administration > Theme): publish a copy of one
+  of your own themes, import, export and delete the published themes, which every user sees under Themes >
+  Published and can choose and copy; a deleted one puts its users back on WebODM's theme.
 - Themes > Sample: WebODM's controls (text, labels, a progress bar, a field, a select, a dropdown, buttons,
   pagination) in the current theme, doing nothing, below the themes.
 - A paintbrush in the header, left of the user icon: a menu of the themes to switch on any page; Themes > Theme
