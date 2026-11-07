@@ -3,9 +3,11 @@
 // browser's localStorage "unit_system" and the document event "onUnitSystemChanged", which measurements, histograms
 // and the 3D view follow. WebODM's selectors on the maps (select.unit-selector) read it only when they appear, so a
 // choice here also sets theirs; a choice there fires the event, which updates this menu. Bootstrap's dropdown opens
-// and closes the menu. UMD, so Jest can load it.
+// and closes the menu. Where WebODM hides its header (desktop mode), it is an item of the side menu, as the theme menu
+// (theme_menu.js's place, loaded before this). UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
+    var api = factory(typeof module === "object" && module.exports ? require("./theme_menu").place :
+        function () { return root.TweakUI.placeMenu.apply(null, arguments); });
     if (typeof module === "object" && module.exports) module.exports = api;
     else if (root.document) {
         var settings = (root.TweakUI && root.TweakUI.settings) || {};
@@ -14,7 +16,7 @@
             root.document.addEventListener("DOMContentLoaded", function () { api.start(root.document, root); });
         } else api.start(root.document, root);
     }
-})(typeof window !== "undefined" ? window : this, function () {
+})(typeof window !== "undefined" ? window : this, function (place) {
     "use strict";
 
     var KEY = "unit_system", EVENT = "onUnitSystemChanged";
@@ -64,10 +66,10 @@
         });
     }
 
-    // The menu's li, before the theme menu or the user's dropdown; null without a user icon or when already there
+    // The menu's li, before the theme menu or the user's dropdown (or in the side menu, after the theme menu); null
+    // without a place for it or when already there
     function build(doc, win) {
-        var user = doc.querySelector(".navbar-top-links > li.dropdown > .dropdown-user");
-        if (!user || doc.querySelector(".tweakui-units-menu")) return null;
+        if (doc.querySelector(".tweakui-units-menu")) return null;
         var menu = el(doc, "li", "dropdown tweakui-units-menu");
         var toggle = el(doc, "a", "dropdown-toggle");
         toggle.href = "#";
@@ -94,8 +96,7 @@
         });
         menu.appendChild(toggle);
         menu.appendChild(list);
-        var before = doc.querySelector(".navbar-top-links > li.tweakui-theme-menu") || user.parentNode;
-        before.parentNode.insertBefore(menu, before);
+        if (!place(doc, win, menu, "Units:", "li.tweakui-theme-menu")) return null;
         show(doc, menu, current(win));
         return menu;
     }

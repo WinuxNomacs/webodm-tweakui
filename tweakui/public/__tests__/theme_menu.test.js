@@ -7,11 +7,15 @@ const THEMES = [
     {id: "nord", name: "Nord", swatch: ["#2e3440"]}
 ];
 
-function header() {
+// WebODM's header and side menu: the user icon's menu in its header links, which single-user mode leaves out
+function header(singleUser) {
     document.body.innerHTML = `
-      <nav id="navbar-top"><ul class="nav navbar-top-links navbar-right">
+      <nav id="navbar-top"><div class="navbar-header">` + (singleUser ? "" : `<ul class="nav navbar-top-links navbar-right">
         <li class="dropdown"><a class="dropdown-toggle"><i class="fa fa-user"></i></a><ul class="dropdown-menu dropdown-user"></ul></li>
-      </ul></nav>`;
+      </ul>`) + `<a class="navbar-brand" href="/"></a></div>
+      <div class="sidebar"><ul class="nav" id="side-menu">
+        <li><a href="/dashboard/">Dashboard</a></li><li><a href="/plugins/tweakui/">TweakUI</a></li><li id="about-menu"><a href="/about/">About</a></li>
+      </ul></div></nav>`;
 }
 
 function win(theme, extra) {
@@ -56,8 +60,8 @@ test("there is no menu when Settings > Themes turns it off", () => {
     expect(themeMenu.build(document, w)).not.toBeNull();
 });
 
-test("there is no menu without the user icon, without the themes, or a second time", () => {
-    document.body.innerHTML = "<nav id='navbar-top'></nav>";
+test("there is no menu on a page without the side menu (signed out), without the themes, or a second time", () => {
+    document.body.innerHTML = "<nav id='navbar-top'><div class='navbar-header'></div></nav>";
     expect(themeMenu.build(document, win("webodm"))).toBeNull();
     header();
     expect(themeMenu.build(document, {TweakUI: {settings: {theme: "webodm"}}})).toBeNull();
@@ -122,4 +126,37 @@ test("the user's own themes come after the presets, behind a divider of their ow
     const children = Array.from(menu.querySelector("ul").children).map(li => li.className || li.textContent);
     expect(children.filter(c => c === "divider").length).toBe(2);
     expect(children[children.length - 3]).toBe("divider");
+});
+
+test("in single-user mode, without the user icon, the menu goes in header links of its own where WebODM puts them", () => {
+    header(true);
+    const menu = themeMenu.build(document, win("webodm"));
+    const links = document.querySelector(".navbar-header > .navbar-top-links.navbar-right");
+    expect(links.firstElementChild).toBe(menu);
+    expect(links.nextElementSibling.classList.contains("navbar-brand")).toBe(true);
+    expect(menu.querySelector(".dropdown-toggle").getAttribute("data-toggle")).toBe("dropdown");
+});
+
+test("in desktop mode, where WebODM hides its header, the menu is a side menu item above TweakUI's that opens below", () => {
+    header(true);
+    const w = win("dracula");
+    w.TweakUI.desktop = true;
+    const menu = themeMenu.build(document, w);
+    expect(document.querySelector(".navbar-top-links")).toBeNull();
+    expect(menu.parentNode.id).toBe("side-menu");
+    expect(menu.nextElementSibling.querySelector('a[href="/plugins/tweakui/"]')).not.toBeNull();
+    const toggle = menu.querySelector(":scope > a"), list = menu.querySelector(":scope > ul");
+    expect(toggle.textContent.trim()).toBe("Theme");
+    expect(toggle.hasAttribute("data-toggle")).toBe(false);
+    expect(toggle.querySelector(".fa-paint-brush")).not.toBeNull();
+    expect(toggle.querySelector(".arrow")).not.toBeNull();
+    expect(list.className).toBe("tweakui-theme-list nav nav-second-level collapse");
+    expect(list.querySelector(".dropdown-header")).toBeNull();
+    expect(names(menu)).toEqual(["dracula", "webodm", "catppuccin-latte", "nord"]);
+    toggle.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}));
+    expect(list.classList.contains("in")).toBe(true);
+    expect(menu.classList.contains("active")).toBe(true);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    toggle.dispatchEvent(new MouseEvent("click", {bubbles: true, cancelable: true}));
+    expect(list.classList.contains("in")).toBe(false);
 });

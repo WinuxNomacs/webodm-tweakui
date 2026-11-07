@@ -121,6 +121,14 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* The header's units menu (units_menu.js): the current system's name beside a ruler, the systems checked as in the
    theme menu */
 .navbar-top-links .tweakui-units-list .tweakui-unchecked { visibility: hidden; }
+/* The same menus in the side menu, where WebODM hides its header (desktop mode): items whose lists open below them;
+   the theme list scrolls when long */
+#side-menu .tweakui-theme-list { max-height: 50vh; overflow-y: auto; }
+#side-menu .tweakui-theme-list li a.tweakui-theme-item { display: flex; align-items: center; gap: 8px; }
+#side-menu .tweakui-theme-list .tweakui-swatch i { width: 10px; height: 16px; }
+#side-menu .tweakui-side-item .tweakui-unchecked { visibility: hidden; }
+#side-menu .tweakui-theme-list .tweakui-theme-status { padding: 3px 16px 3px 37px; white-space: normal; }
+#side-menu .tweakui-theme-list li.divider { border-top: 1px solid; margin: 4px 0 4px 37px; opacity: 0.4; }
 /* On a phone the paintbrush is not at the header's right edge: the menu lines up with the header's edge instead; the
    units menu shows only its ruler */
 @media (max-width: 767px) {

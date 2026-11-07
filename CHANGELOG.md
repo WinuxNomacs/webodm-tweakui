@@ -52,4 +52,5 @@
   page shows the quota and the projects you own, largest first, opening to their tasks and a task's files by kind.
   Tasks and projects are compacted or deleted one by one or ticked together, with one confirmation of what goes
   and what it frees, through WebODM's own API. Administrators also see every user's.
+- On WebODM's Windows app, which has no header, the theme menu and Units in Header are items of the side menu.
 - Experimental.

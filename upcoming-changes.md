@@ -1192,6 +1192,16 @@ when needed. Same admin/admin account is used to access because it's a throwaway
 the checks use those and create none; (3) on Windows, Enhanced Task Details shows Windows' own ODX command
 (`run.bat`) in place of the docker one (built in phase 2).
 
+**Found in phase 2 (live on Windows):**
+- WebODM's Windows app runs in desktop mode (`DESKTOP_MODE`), which hides the whole header bar
+  (`.navbar-header`), and in single-user mode, which leaves out the user icon's menu: the Theme Menu and Units in
+  Header had nowhere to go. **Decision (the user, 2026-11-07):** when WebODM hides its header, both go in the side
+  menu, just above TweakUI ("Theme" with the paintbrush, "Units" with the ruler), each opening its list as a
+  submenu; Docker WebODM stays as it is.
+- Source Frames, Compare Orthophotos, Movable Controls, Zoom Override, the Task Options dialog, Expand Task
+  Controls, Surprise Me, Themes (presets, My Themes, import, Published) and Storage work as on Docker.
+- `dev/screenshots.js` opened the wrong project on an account with several (fixed, branch `screenshots-projects`).
+
 **Found while building phase 1:**
 - The Windows build runs in single-user mode (`SINGLE_USER_MODE = not WO_HEADLESS` in its `local_settings.py`):
   opening `/` logs any browser in as its admin, with no login page. A fresh browser that opens another page first

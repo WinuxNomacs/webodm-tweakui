@@ -1,6 +1,7 @@
 import json
 import os
 
+from django.conf import settings as django_settings
 from django.http import HttpResponse
 from django.utils.text import slugify
 from rest_framework import exceptions, permissions, status
@@ -227,8 +228,8 @@ def _script_json(value):
 def settings_script(request):
     """/plugins/tweakui/settings.js, on every page before main.js: the user's settings as window.TweakUI.settings
     (the defaults when logged out) and, for a logged-in user, the themes they can pick (the header's theme menu)
-    as window.TweakUI.themes, for a superuser window.TweakUI.superuser, and window.TweakUI.windows when WebODM runs
-    on Windows. Never cached, so a change shows on the
+    as window.TweakUI.themes, for a superuser window.TweakUI.superuser, window.TweakUI.desktop in WebODM's desktop
+    mode and window.TweakUI.windows when WebODM runs on Windows. Never cached, so a change shows on the
     next page."""
     script = "window.TweakUI = window.TweakUI || {};\nwindow.TweakUI.settings = %s;\n" % _script_json(
         settings.load(request.user))
@@ -237,6 +238,9 @@ def settings_script(request):
     if request.user.is_authenticated and request.user.is_superuser:
         # main.js adds Administration > TweakUI Themes to the side menu
         script += "window.TweakUI.superuser = true;\n"
+    if getattr(django_settings, "DESKTOP_MODE", False):
+        # WebODM hides its header (its Windows app): the theme and units menus go in the side menu
+        script += "window.TweakUI.desktop = true;\n"
     if WINDOWS:
         script += "window.TweakUI.windows = true;\n"
     response = HttpResponse(script, content_type="application/javascript; charset=utf-8")
