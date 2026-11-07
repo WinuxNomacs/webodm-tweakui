@@ -33,6 +33,7 @@ export default defineConfig({
         items: [
           { text: "Install", link: "/install" },
           { text: "Developing", link: "/developing" },
+          { text: "Adding a Tweak", link: "/adding-a-tweak" },
           { text: "Thanks", link: "/thanks" },
         ],
       },

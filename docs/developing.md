@@ -3,7 +3,8 @@
 The plugin is the `tweakui/` folder of the [repository](https://github.com/WinuxNomacs/webodm-tweakui); the tools
 around it (the dev servers, tests, screenshots, this site) stay outside it. It uses only WebODM's plugin system:
 the extension points of `app/plugins/plugin_base.py` and the `PluginsAPI` hooks. The repository's `CLAUDE.md`
-describes the dev environment, the tests and the release steps.
+describes the dev environment, the tests and the release steps. To add a tweak of your own, see
+[Adding a Tweak](./adding-a-tweak); pull requests are welcome.
 
 ## Dev servers
 

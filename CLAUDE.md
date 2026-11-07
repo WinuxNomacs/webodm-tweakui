@@ -36,6 +36,8 @@ It is committed and public: nothing private, nothing true only on one machine. K
   Page scripts read `window.TweakUI.settings` (`/plugins/tweakui/settings.js`, a view, loaded first) and use the
   helpers of `public/core.js` (loaded next): a feature starts through `TweakUI.feature`, wraps every callback it
   gives WebODM or the page in `TweakUI.guard`, and lists the WebODM elements it relies on in `SELECTORS` at its top.
+  `docs/adding-a-tweak.md` (with `CONTRIBUTING.md`) is the guide for outside developers, with a worked example: a
+  change to `features.py`, `core.js` or the scripts' pattern updates it on the same branch.
 - **`README.md` is the plugin's overview, `docs/` its documentation** (VitePress, a page per settings category,
   published to GitHub Pages by `.github/workflows/docs.yml` on a `v*` tag or by hand): a feature change updates
   its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),

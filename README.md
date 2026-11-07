@@ -51,6 +51,12 @@ store in WebODM's database, and the published themes in its global data store.
 
 ## Developing
 
+Pull requests are welcome. To add a tweak of your own, see
+[CONTRIBUTING.md](CONTRIBUTING.md) and the documentation's
+[Adding a Tweak](https://winuxnomacs.github.io/webodm-tweakui/adding-a-tweak) page. Each setting is declared once
+in `tweakui/features.py`, and each tweak is one script in `tweakui/public/` built on the shared helpers of
+`core.js`.
+
 See [CLAUDE.md](CLAUDE.md) for the dev environment (`dev/webodm.sh`), tests and the release steps, and the
 documentation's [Developing](https://winuxnomacs.github.io/webodm-tweakui/developing) page. The features' screenshots in `tweakui/public/previews/` (the
 settings page's previews and the documentation's images) are retaken from a running WebODM with
