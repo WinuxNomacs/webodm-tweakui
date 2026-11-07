@@ -181,6 +181,8 @@
         }
 
         function mouseup(e) {
+            // A Ctrl+click released with no contextmenu (Windows, Linux) is over: a later menu key gets its menu
+            if (press && press.ctrl && e.button === 0) press = null;
             if (e.button !== 2 || !press || press.ctrl) return;
             var p = press;
             press = null;
