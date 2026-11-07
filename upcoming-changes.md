@@ -3,17 +3,28 @@
 ## Phases (current and upcoming)
 
 **Up next** (planned with the user before each is built; see "Before the first release")
-1. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
-   guide to doing it; takes in review findings 6–8 (hook callbacks isolated, the script list kept, each feature's
-   WebODM selectors named in one place).
-2. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
-   11 (Source Frames' viewer focus) and 12 (the selector check), and the Zoom Override measurement; 10 is left as is.
+1. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
+   11 (Source Frames' viewer focus) and 12 (the selector check, built from each script's `SELECTORS`), and the Zoom
+   Override measurement; 10 is left as is. Also: the structure phase's check on WebODM's Windows app (after the user
+   restarts it for the new templates and script list).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Structure for other developers** (new.md, 2026-11-07; see "Before the first release", "the design") — three
+  branches, each on both Docker stacks (Jest, Django, every feature live):
+  - `shared-helpers`: `tweakui/public/core.js` (`feature`, `guard`, `el`, `csrfToken`, `copyText`, `placeMenu`,
+    `whenElement`, `sideItem`, `sideLink`), every script started through `feature` with its hook callbacks, observers
+    and page-wide listeners guarded (finding 6), a `SELECTORS` list at the top of each (finding 8); the theme and
+    units menus no longer depend on load order. Tests: `__tests__/core.test.js`.
+  - `feature-registry`: `tweakui/features.py` declares every setting; `settings.DEFAULTS`, the settings page
+    (`settings.html` loop, `settings_setting.html`, `settings_themes.html`) and `plugin.py`'s script list come from
+    it; the page renders the same as before. Tests: `TestFeatures` (including "a new tweak is off by default").
+  - `adding-a-tweak-docs`: `docs/adding-a-tweak.md` (worked example Scale Bar, built and checked live, then removed),
+    `CONTRIBUTING.md`, links from the README, Developing and the sidebar; CLAUDE.md updated.
+  Not yet checked on WebODM's Windows app: moved to "Fixes from the review".
 - **Review: breaking points, performance, WebODM UX** (new.md, 2026-11-07) — the findings are in "Before the first
   release". The clear bugs, each on its branch with tests, on both Docker stacks: `storage-api-errors` (`api.py`
   `StorageTaskView`, `storage.breakdown`), `storage-report-queries` (`storage.user_reports`), `frames-malformed-shots`
