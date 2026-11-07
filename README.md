@@ -19,8 +19,8 @@ on, except the theme menu.
   maps' units selector (Units in Header); in the Task Options dialog, each group's count of options not at their
   default (Show Modified Options) and those options shown under a collapsed group (Expand Configured); on the
   Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
-  step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks at
-  random moments (Surprise Me).
+  step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks every
+  few seconds, or at the pointer on a right-click (Surprise Me).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, seen only by you: WebODM's theme,
   one of 11 presets (Catppuccin, Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes copied from any theme
   with a live preview (imported and exported as JSON) or themes an administrator publishes to every user; a sample of
