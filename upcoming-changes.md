@@ -6,8 +6,8 @@
 1. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
    guide to doing it; takes in review findings 6–8 (hook callbacks isolated, the script list kept, each feature's
    WebODM selectors named in one place).
-2. **Fixes from the review** that the refactor didn't already cover: findings 9–12 as the user decides, and the
-   Zoom Override measurement.
+2. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
+   11 (Source Frames' viewer focus) and 12 (the selector check), and the Zoom Override measurement; 10 is left as is.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1359,3 +1359,10 @@ the 13 scripts are revalidated from the browser's cache (Last-Modified).
 *To measure in the fixes phase:* Zoom Override's 3D wheel raycasts every mesh shown on each notch (three.js, no
 spatial index); on a large textured model that may lag. Measure on the largest model at hand; if it does, pick the
 point cloud first and the meshes only when it misses.
+
+**Decisions on the findings (the user, 2026-11-07):**
+- 9 Expand Task Controls: yes, TweakUI takes the tasks it opened itself back out of the address.
+- 10 Surprise Me and reduced motion: leave as is (the fireworks run whatever the system's setting).
+- 11 Source Frames' viewer: yes, it takes the focus (its Close button) and gives it back to the photo that opened it.
+- 12 The selector check: yes, a dev script built after the refactor from each feature's selector list, run by the
+  `release-check` skill and when WebODM releases.
