@@ -6,9 +6,8 @@
 1. **Zoom Override 3D's mouse speed on WebODM's Windows app**: the user scrolls a 3D model there by hand (it now
    reads 120 a notch, as on the Mac; a smaller wheelDelta would zoom slower). A headless browser sends synthetic
    wheel events, so it can't check this.
-2. **Open points from the review of the Mac session** (2026-11-07), for the user to decide: the README and Install
-   page say "tested on 3.3.2 and 4.0.0" while the Mac session's changes had only Django tests on 3.3.2 (a live
-   check there, or reword); Source Frames' "Open full frame" button is not in Title Case.
+2. **Open point from the review of the Mac session** (2026-11-07), for the user to decide: Source Frames' "Open full
+   frame" button is not in Title Case.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -25,7 +24,11 @@
   999 → 1249 px, icons mode with the Theme and Units menus in the side menu, nothing at phone width, no console
   errors, settings restored.
 - **Fixes from the review** (see "Fixes from the review"; findings in "Before the first release") — tested on 4.0.0
-  only, on the Mac (the user's decision). Four branches, each checked live:
+  on the Mac; then live on 3.3.2 too (2026-11-07, asked by the user), on a task processed there from 30 of TestRGB's
+  images and deleted afterwards: the address keeps only the fully expanded task (and a reload brings it back fully
+  expanded), the full-frame viewer takes the focus and gives it back on Escape, ten trackpad-sized wheel events zoom
+  as far as one notch (4.5 against 5.0; 27.5 with Zoom Override off), a Ctrl+click leaves the menu key's menu
+  alone; every feature on, no console errors, no writes. Four branches, each checked live:
   - `task-controls-address` (finding 9): `task_controls.js` `expandedSearch`, `syncAddress`; the address lists only
     the fully expanded tasks. Tests in `task_controls.test.js`.
   - `source-frames-focus` (11): `source_frames.js` `viewer`, `openFull`; checked with the keyboard on the 2D map.
