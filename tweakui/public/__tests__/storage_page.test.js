@@ -87,7 +87,7 @@ test("a project opens to its tasks with their marks, and a busy task can't be ti
     const {root} = await started(report());
     click(row(root, '[data-project="11"] [data-act=open-project]'));
     const going = row(root, '[data-task="t4"]');
-    expect(going.textContent).toMatch(/Being deleted/);
+    expect(going.textContent).toMatch(/Deleting/);
     expect(going.querySelector("input").disabled).toBe(true);
     expect(going.querySelector("[data-act=delete-task]")).toBeNull();
     expect(row(root, '[data-task="t3"]').textContent).toMatch(/Completed \(compacted\)/);

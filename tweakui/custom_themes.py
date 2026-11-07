@@ -42,7 +42,7 @@ def clean(data):
     if not name:
         errors.append("A theme needs a name")
     elif len(name) > MAX_NAME:
-        errors.append("A theme's name is at most %d characters" % MAX_NAME)
+        errors.append("A theme's name can be at most %d characters" % MAX_NAME)
     colors = data.get("colors")
     if not isinstance(colors, dict):
         errors.append("A theme needs its colours")
@@ -115,7 +115,7 @@ def create(user, data):
     theme = clean(data)
     themes = own(user)
     if len(themes) >= MAX_THEMES:
-        raise InvalidTheme("At most %d themes" % MAX_THEMES)
+        raise InvalidTheme("Too many themes: at most %d" % MAX_THEMES)
     theme = dict(theme, id=uuid.uuid4().hex[:12])
     _save(user, themes + [theme])
     return theme
@@ -156,7 +156,7 @@ def _import(themes, data):
     if not isinstance(entries, list) or not entries:
         raise InvalidTheme("Expected a theme object or a list of them")
     if len(entries) > MAX_IMPORT:
-        raise InvalidTheme("At most %d themes in one import" % MAX_IMPORT)
+        raise InvalidTheme("Too many themes in one import: at most %d" % MAX_IMPORT)
     report = {"added": [], "replaced": [], "refused": []}
     for index, entry in enumerate(entries, 1):
         try:
@@ -173,7 +173,7 @@ def _import(themes, data):
                 report["replaced"].append(theme["name"])
         elif len(themes) >= MAX_THEMES:
             report["refused"].append({"index": index, "name": theme["name"],
-                                      "reason": "At most %d themes" % MAX_THEMES})
+                                      "reason": "Too many themes: at most %d" % MAX_THEMES})
         else:
             themes.append(dict(theme, id=uuid.uuid4().hex[:12]))
             report["added"].append(theme["name"])

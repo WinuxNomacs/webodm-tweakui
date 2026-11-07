@@ -16,7 +16,7 @@ minutes (WebODM's own npm install, webpack and migrations).
 - Django tests, in the dev container:
   `docker exec -w /webodm tw-webapp python manage.py test --noinput coreplugins.tweakui.tests.test_tweakui`
   (and the same in `tw3-webapp` for 3.3.2).
-- `npm test` (Jest), `npm run lint -- tweakui dev` (ESLint), `ruff check .`.
+- `npm test` (Jest), `npm run lint -- tweakui dev` (ESLint), `.venv/bin/ruff check .` (Ruff).
 
 ## Screenshots
 

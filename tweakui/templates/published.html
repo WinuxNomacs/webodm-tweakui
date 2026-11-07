@@ -7,7 +7,7 @@ come only from WebODM's theme classes; the swatches show each theme's own.{% end
 <div id="tweakui-published" class="tweakui-settings tweakui-published" data-api="{{ api }}">
     {% csrf_token %}
     <h3>{% trans "TweakUI Themes" %}</h3>
-    <p class="text-muted">{% blocktrans %}Themes every user sees in TweakUI &gt; Themes, under Published, and can choose and copy, but not change. A user whose theme is deleted here gets WebODM's theme.{% endblocktrans %}</p>
+    <p class="text-muted">{% blocktrans %}Themes every user sees in TweakUI &gt; Themes, under Published. Users can choose and copy them but not change them. A user whose theme is deleted here goes back to WebODM's theme.{% endblocktrans %}</p>
     <div class="tweakui-themes-heading">
         <h5 id="tweakui-themes-published">{% trans "Published" %}</h5>
         <span class="tweakui-themes-buttons">
@@ -33,10 +33,10 @@ come only from WebODM's theme classes; the swatches show each theme's own.{% end
     </div>
     <p class="tweakui-published-status" role="status" aria-live="polite"></p>
     <div class="tweakui-group theme-border">
-        <h5 class="theme-background-highlight" id="tweakui-publish-title">{% trans "Publish one of your themes" %}</h5>
+        <h5 class="theme-background-highlight" id="tweakui-publish-title">{% trans "Publish One of Your Themes" %}</h5>
         <form class="tweakui-editor-form tweakui-publish" aria-labelledby="tweakui-publish-title" novalidate>
             {% if own %}
-            <p class="text-muted">{% trans "Every user gets a copy of it; later changes to your theme are not published until you publish it again. A published theme of the same name is replaced." %}</p>
+            <p class="text-muted">{% trans "Every user gets a copy: later changes to your theme are not published until you publish it again. A published theme with the same name is replaced." %}</p>
             <div class="tweakui-publish-row">
                 <label for="tweakui-publish-theme" class="sr-only">{% trans "Theme" %}</label>
                 <select id="tweakui-publish-theme" class="form-control">

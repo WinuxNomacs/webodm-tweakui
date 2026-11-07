@@ -16,8 +16,8 @@
     var KINDS = [["photos", "Photos"], ["orthophoto", "Orthophoto"], ["elevation", "Elevation"],
         ["point_cloud", "Point cloud"], ["textured_model", "Textured model"], ["other", "Other"]];
     var MARKS = {
-        removing: ["Being deleted", "label-default"], compacting: ["Being compacted", "label-default"],
-        failed: ["Failed: can go", "label-danger"], canceled: ["Canceled: can go", "label-warning"],
+        removing: ["Deleting", "label-default"], compacting: ["Compacting", "label-default"],
+        failed: ["Failed: can be deleted", "label-danger"], canceled: ["Canceled: can be deleted", "label-warning"],
         compactable: ["Can be compacted", "label-info"]
     };
     // WebODM's own words for compacting (TaskListItem.jsx)
