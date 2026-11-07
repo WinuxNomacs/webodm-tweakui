@@ -24,6 +24,16 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
             <section id="tweakui-general" data-section="general" role="tabpanel">
                 <h4>{% trans "General" %}</h4>
                 <div class="tweakui-group theme-border">
+                    <h5 class="theme-background-highlight">{% trans "Global Controls" %}</h5>
+                    <div class="tweakui-setting" data-preview="units-in-header">
+                        <label>
+                            <input type="checkbox" data-setting="units_in_header"{% if settings.units_in_header %} checked{% endif %}>
+                            {% trans "Units in Header" %}
+                        </label>
+                        <p class="text-muted">{% trans "A units menu in the header, left of the paintbrush: Metric, Imperial or Imperial (US), the same choice as the units selector on the 2D and 3D maps, kept in step with it." %}</p>
+                    </div>
+                </div>
+                <div class="tweakui-group theme-border">
                     <h5 class="theme-background-highlight">{% trans "Task Options" %}</h5>
                     <div class="tweakui-setting" data-preview="show-modified-options">
                         <label>

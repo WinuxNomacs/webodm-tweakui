@@ -7,6 +7,8 @@ KEY = "settings"
 
 # Every setting with its default; the type of the default is the only type the setting takes
 DEFAULTS = {
+    # General > Global Controls: a units menu in the header, a shortcut to WebODM's unit system (the maps' selector)
+    "units_in_header": False,
     # General > Task Options: the Task Options dialog's group headings show "(modified/total)"
     "show_modified_options": False,
     # General > Task Options: a collapsed group of the Task Options dialog still shows its options not at their default

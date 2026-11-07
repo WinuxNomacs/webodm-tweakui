@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Global Controls > Units in Header: a units menu in the header (Metric, Imperial, Imperial (US)),
+  WebODM's own unit preference, kept in step with the 2D map's and 3D view's selectors.
 - Themes: the Sample is framed and headed "Sample Form for Viewing Theme Effects"; the New Theme, Import and
   Export buttons sit below the My Themes heading.
 - Clearer wording throughout the settings, messages and documentation; the settings "Show Theme Menu" and
