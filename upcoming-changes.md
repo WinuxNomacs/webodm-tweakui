@@ -3,7 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **README: Thanks** (new.md, 2026-11-07) — branch `readme-thanks`; see "Saved banner and thanks".
+(nothing planned)
 
 **Then**
 (nothing planned)
@@ -13,6 +13,10 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **README: Thanks** (new.md, 2026-11-07) — branch `readme-thanks`. README "Thanks" (before License; the
+  fireworks-js credit moved into it), `docs/thanks.md` (in the sidebar under Using TweakUI), CHANGELOG. Names and
+  links checked against each project's site or GitHub profile; WebODM's README says it is not affiliated with
+  OpenDroneMap and that 4.0.0 processes with ODX, so ODX and ODM are credited as the two versions' engines.
 - **Settings: a "Saved" banner** (new.md, 2026-11-07) — branch `saved-banner`. Code in `public/settings_page.js`
   (`setStatus`, the `tweakuiSaved` sessionStorage flag), `templates/settings.html` (`.tweakui-banner` at the top of
   `.tweakui-sections`, the bottom line removed), `main.css`; tests in `public/__tests__/settings_page.test.js`;
