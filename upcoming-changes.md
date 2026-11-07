@@ -1441,9 +1441,26 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    tests in `tw-webapp` (the `test` skill), `dev/package.sh` (its sha256 must match `shasum -a 256`). A task with an
    orthophoto, a textured model and `shots.geojson` is needed for the map checks: a small dataset processed there,
    named "Live check …", deleted afterwards. The admin account there is the user's to create or give.
+   **Found (2026-11-07):** Docker Desktop pulled the pinned arm64 images and the stack started
+   (`Registered [coreplugins.tweakui.plugin]`); admin created with the user's login (in memory, not here). Django
+   tests: 95 pass. `dev/package.sh` works with macOS's tools: `dist/tweakui-0.1.0.zip`, 60 entries under the single
+   root `tweakui/`, no `.DS_Store`, `__MACOSX`, `._*` or `__pycache__`, and its sha256 matches `shasum -a 256`. Task
+   "Live check macOS" (project "Live check macOS"): WebODM's own 5 test images (`nodeodm/fixtures/test_images`),
+   default options, done in 70 s with an orthophoto, a textured model and `shots.geojson`.
 4. **Headless WebKit** (Playwright's `webkit`, on the Mac): the live checks of `live-check` with every feature on, as
    on the other platforms, run in WebKit instead of Chromium: the console must stay free of `TweakUI <feature>:`
    errors. Put the settings back afterwards.
+   **Found (2026-11-07):** Playwright WebKit 27.2, with Chromium 156 run alongside to compare; every boolean setting
+   on through the settings API and put back to the defaults afterwards (checked in the database). Dashboard,
+   TweakUI's settings page, Storage, TweakUI Themes, a task's 2D map and its 3D model, at 1400 px and 390 px:
+   `html.tweakui` set and TweakUI's scripts loaded on each, no `TweakUI <feature>:` error, no page error. The only
+   console error is the expected `localhost:35729/livereload.js`. Interactions, the same in both engines: the
+   Dashboard's task expanded (Expand Task Controls' buttons, Enhanced Task Details' rows: times, preset, option
+   bubbles), the Theme menu (12 themes) and the Units menu (3 systems), Source Frames on the 2D map (4 photos) and the
+   3D model (5 photos). No difference between WebKit and Chromium. Not a TweakUI issue: a task's map page can take
+   over 20 s to fire `load` in either engine, with or without TweakUI, while the basemap's Google tiles
+   (`mt*.google.com`) load; the scripts wait for `domcontentloaded` instead. Left for step 5 (needs real input):
+   trackpad drags and pinch, two-finger scroll, Ctrl+click, copying to the clipboard.
 5. **Real Safari, by hand with the user** (what headless can't show), every feature on:
    - Copy buttons: Show ODX Command's copy (Dashboard, a task's details) and Copy JSON (TweakUI > Themes, My Themes).
      Also from another machine's address (http://<the Mac's IP>:8005, not a secure context): the fallback copy.
