@@ -355,14 +355,14 @@
             });
             main.textContent = "";
             var big = photo(doc, frame, PHOTO, "tweakui-sf-main-photo");
-            big.title = "Open full frame";
+            big.title = "Open Full Frame";
             big.addEventListener("click", function () { openFull(); });
             main.appendChild(big);
             var actions = el(doc, "div", "tweakui-sf-actions");
             var open = el(doc, "button", "btn btn-sm btn-primary tweakui-sf-open");
             open.type = "button";
             open.appendChild(icon(doc, "fa-expand"));
-            open.appendChild(doc.createTextNode(" Open full frame"));
+            open.appendChild(doc.createTextNode(" Open Full Frame"));
             open.addEventListener("click", openFull);
             var download = downloadButton(doc, win, "tweakui-sf-download", "Download");
             download.setAttribute("data-href", imageUrl(frame, "download"));

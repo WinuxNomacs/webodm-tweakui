@@ -2,6 +2,7 @@
 
 ## Unreleased
 
+- Source Frames: the button reads "Open Full Frame", in Title Case like the rest of the interface.
 - General > Global Controls > Resize Navigation Pane: drag the divider to resize the side menu, down to its icons
   alone (their names on hover); a double click puts back the usual width; remembered in this browser.
 - General > Global Controls > Hide Navigation Pane: a tab on the side menu's divider hides the side menu, giving
@@ -10,8 +11,8 @@
   the pointer still finds the point under it once, not on every event.
 - For developers: `npm run selector-check` checks a WebODM for every element TweakUI's scripts rely on (their
   `SELECTORS`), for a new WebODM version.
-- Source Frames: the full-frame viewer takes the keyboard focus when it opens and gives it back to Open full
-  frame when it closes.
+- Source Frames: the full-frame viewer takes the keyboard focus when it opens and gives it back to Open Full
+  Frame when it closes.
 - General > Task Details > Expand Task Controls: the page address lists only the tasks you expanded fully, not
   every task shown as buttons only, so a project with hundreds of tasks no longer makes an address too long to reload.
 - 3D Map > Zoom Override: a trackpad's two-finger scroll zooms as far as it scrolls, not a wheel notch per scroll
