@@ -32,7 +32,7 @@
   Menu turns it off.
 - 2D Map > Movable Controls: the 2D map's panels can be dragged by their title within the map; a panel that closes
   reopens in its usual place.
-- 2D Map > Other Tasks: on a task's map, a panel to show the project's other tasks' orthophotos over the task's
+- 2D Map > Compare Orthophotos from Other Tasks: on a task's map, a panel to show the project's other tasks' orthophotos over the task's
   own, each with an opacity slider.
 - 2D Map and 3D Map > Source Frames: a button beside Share turns it on; each click on the 2D map or the 3D model
   moves a spot there, and a window, updated in place, lists the task's photos that show it, best first, each with

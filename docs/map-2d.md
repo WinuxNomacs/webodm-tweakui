@@ -9,7 +9,7 @@ Off by default.
 Drag the map's panels (Layers, Base Maps, Measure, Contours, Object Detection, Other Tasks) by their title, with
 the mouse or a finger, anywhere within the map. A panel that closes reopens in its usual place.
 
-## Controls > Other Tasks
+## Controls > Compare Orthophotos from Other Tasks
 
 Off by default.
 

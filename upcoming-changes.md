@@ -12,6 +12,9 @@
 (nothing planned)
 
 **Done**
+- **"Other Tasks" setting renamed** (asked directly, 2026-11-07) — branch `rename-other-tasks`: Settings > 2D Map >
+  Controls > Other Tasks is now "Compare Orthophotos from Other Tasks" (the setting's name only; the map's button and
+  panel are still titled "Other Tasks"). `templates/settings.html`, `docs/map-2d.md`, README, CHANGELOG.
 - **Wording review** (asked directly, 2026-11-07) — branch `wording-review`.
   - The README, `docs/` and the plugin's UI text reworded to be direct, accurate and concise: settings descriptions
     rewritten as plain sentences, Title Case for the two settings and two headings that lacked it ("Show Theme Menu",
