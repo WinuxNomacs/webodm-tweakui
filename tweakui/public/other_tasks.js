@@ -134,13 +134,15 @@
             }
             checkbox.disabled = true;
             var url = "/api/projects/" + t.project + "/tasks/" + t.id + "/orthophoto/metadata" + (t.crop ? "?crop=1" : "");
+            // An orthophoto whose metadata can't make a layer (no bounds) fails as one that can't be loaded
             return getJSON(fetchFn, url).then(function (meta) {
+                var layer = layerFor(L, t, meta, index);
                 checkbox.disabled = false;
-                var layer = layers[key] = layerFor(L, t, meta, index);
+                layers[key] = layer;
                 layer.setOpacity(slider.value / 100);
                 if (checkbox.checked) map.addLayer(layer);
                 return layer;
-            }, function (e) {
+            }).then(null, function (e) {
                 checkbox.disabled = false;
                 checkbox.checked = false;
                 checkbox.parentNode.title = "Could not load the orthophoto: " + e.message;
