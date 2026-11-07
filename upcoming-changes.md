@@ -3,9 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Check on WebODM's Windows app** when the user next runs it: Hide and Resize Navigation Pane in desktop mode
-   (the side menu fixed at the top, no header: the tab and the handle should start at the top), and Zoom Override
-   3D's mouse speed there (it now reads 120 a notch, as on the Mac; a smaller wheelDelta would zoom slower).
+1. **Zoom Override 3D's mouse speed on WebODM's Windows app**: the user scrolls a 3D model there by hand (it now
+   reads 120 a notch, as on the Mac; a smaller wheelDelta would zoom slower). A headless browser sends synthetic
+   wheel events, so it can't check this.
 2. **Open points from the review of the Mac session** (2026-11-07), for the user to decide: the README and Install
    page say "tested on 3.3.2 and 4.0.0" while the Mac session's changes had only Django tests on 3.3.2 (a live
    check there, or reword); Source Frames' "Open full frame" button is not in Title Case.
@@ -20,7 +20,10 @@
   two sections of `main.css`, tests in `__tests__/nav_pane.test.js` and `TestSettingsPage`. Branches `hide-nav-pane`
   and `resize-nav-pane`, each on both Docker stacks (Jest, Django, live: Dashboard and a map on 4.0.0, the Dashboard
   on 3.3.2, which has no task), the selector check on 4.0.0; screenshots `hide-navigation-pane` and
-  `resize-navigation-pane`, `docs/general.md`. Not yet on the Windows app (Up next).
+  `resize-navigation-pane`, `docs/general.md`. On WebODM's Windows app (upgraded from the zip, restarted by the
+  user), in desktop mode: the tab 10 px from the top and the handle from the top of the window, the map widened
+  999 → 1249 px, icons mode with the Theme and Units menus in the side menu, nothing at phone width, no console
+  errors, settings restored.
 - **Fixes from the review** (see "Fixes from the review"; findings in "Before the first release") — tested on 4.0.0
   only, on the Mac (the user's decision). Four branches, each checked live:
   - `task-controls-address` (finding 9): `task_controls.js` `expandedSearch`, `syncAddress`; the address lists only
