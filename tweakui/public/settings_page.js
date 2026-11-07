@@ -7,18 +7,12 @@
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
 // overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "settings_page", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
-
-    function csrfToken(doc) {
-        var input = doc.querySelector("input[name=csrfmiddlewaretoken]");
-        if (input && input.value) return input.value;
-        var m = (doc.cookie || "").match(/(?:^|;\s*)csrftoken=([^;]+)/);
-        return m ? decodeURIComponent(m[1]) : "";
-    }
 
     function each(list, fn) { Array.prototype.forEach.call(list, fn); }
 
@@ -92,7 +86,7 @@
         return fetchFn(page.getAttribute("data-api") + "settings", {
             method: "PATCH",
             credentials: "same-origin",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken(doc)},
+            headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(doc)},
             body: JSON.stringify(changes)
         }).then(function (res) {
             return res.json().then(null, function () { return {}; }).then(function (body) {
@@ -232,6 +226,6 @@
         });
     }
 
-    return {start: start, showSection: showSection, save: save, csrfToken: csrfToken, applyDepends: applyDepends,
+    return {start: start, showSection: showSection, save: save, applyDepends: applyDepends,
         addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus};
 });

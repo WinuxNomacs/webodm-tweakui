@@ -5,16 +5,23 @@
 // the pointer events of its controls from reaching the map, so the drag listens on the document in the capture
 // phase. UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "movable_controls", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
 
-    // The title bars a panel is dragged by: WebODM's panels' .title (Layers, Contours, Object Detection), Base Maps'
+    // The WebODM elements it relies on, to check against a new WebODM: the map (Leaflet) and its controls, and the
+    // title bars a panel is dragged by: WebODM's panels' .title (Layers, Contours, Object Detection), Base Maps'
     // title and Measure's heading
-    var HANDLES = ".leaflet-control .title, .leaflet-control .leaflet-control-autolayers-title, " +
-        ".leaflet-control-measure h3";
+    var SELECTORS = {
+        map: ".leaflet-container", control: ".leaflet-control", corner: ".leaflet-control-container",
+        handles: ".leaflet-control .title, .leaflet-control .leaflet-control-autolayers-title, .leaflet-control-measure h3",
+        titles: ".title, .leaflet-control-autolayers-title, h3"
+    };
+    var HANDLES = SELECTORS.handles;
+    var NAME = "movable_controls";
     var MOVED = "tweakui-moved";
     // How far the pointer goes before a press becomes a drag (a click on a title stays a click)
     var SLOP = 3;
@@ -26,14 +33,14 @@
         if (!target || !target.closest) return null;
         var handle = target.closest(HANDLES);
         if (!handle) return null;
-        var control = handle.closest(".leaflet-control");
-        return control && control.closest(".leaflet-container") ? control : null;
+        var control = handle.closest(SELECTORS.control);
+        return control && control.closest(SELECTORS.map) ? control : null;
     }
 
     // Whether a moved control is still open: one of its title bars is shown
     function isOpen(control, shown) {
         if (!control.isConnected) return false;
-        var handles = control.querySelectorAll(".title, .leaflet-control-autolayers-title, h3");
+        var handles = control.querySelectorAll(SELECTORS.titles);
         for (var i = 0; i < handles.length; i++) if (shown(handles[i])) return true;
         return false;
     }
@@ -66,8 +73,7 @@
 
     // Starts listening; `shown` tells whether an element is laid out (jsdom lays nothing out, so tests give their own)
     function start(doc, win, shown) {
-        var settings = (win.TweakUI && win.TweakUI.settings) || {};
-        if (!settings.movable_controls) return null;
+        if (!ui.settingsOf(win).movable_controls) return null;
         shown = shown || shownByLayout;
         var moved = [], observed = [], drag = null, swallowUntil = 0;
 
@@ -81,10 +87,10 @@
         }
 
         function observe(control) {
-            var corner = control.closest(".leaflet-control-container") || control.parentNode;
+            var corner = control.closest(SELECTORS.corner) || control.parentNode;
             if (!win.MutationObserver || observed.indexOf(corner) !== -1) return;
             observed.push(corner);
-            new win.MutationObserver(check).observe(corner, {
+            new win.MutationObserver(ui.guard(NAME, check)).observe(corner, {
                 attributes: true, attributeFilter: ["class", "style"], childList: true, subtree: true
             });
         }
@@ -109,7 +115,7 @@
                 // The box the control has without an offset, and the map's, measured once per drag
                 var box = drag.control.getBoundingClientRect();
                 drag.base = {left: box.left - drag.x, right: box.right - drag.x, top: box.top - drag.y, bottom: box.bottom - drag.y};
-                drag.area = drag.control.closest(".leaflet-container").getBoundingClientRect();
+                drag.area = drag.control.closest(SELECTORS.map).getBoundingClientRect();
                 doc.documentElement.classList.add("tweakui-dragging");
                 if (moved.indexOf(drag.control) === -1) moved.push(drag.control);
                 observe(drag.control);
@@ -138,6 +144,7 @@
             e.preventDefault();
         };
 
+        Object.keys(listeners).forEach(function (type) { listeners[type] = ui.guard(NAME, listeners[type]); });
         Object.keys(listeners).forEach(function (type) { doc.addEventListener(type, listeners[type], true); });
         doc.documentElement.classList.add("tweakui-movable");
         return {
@@ -149,5 +156,5 @@
         };
     }
 
-    return {start: start, clamp: clamp, controlFor: controlFor, isOpen: isOpen, HANDLES: HANDLES};
+    return {start: start, clamp: clamp, controlFor: controlFor, isOpen: isOpen, HANDLES: HANDLES, SELECTORS: SELECTORS};
 });

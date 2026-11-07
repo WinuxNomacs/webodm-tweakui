@@ -2,6 +2,13 @@ const fs = require("fs");
 const path = require("path");
 
 const source = fs.readFileSync(path.join(__dirname, "..", "main.js"), "utf8");
+const core = require("../core");
+
+// As on a page: core.js puts its helpers beside the settings, then main.js runs
+function run() {
+    core.install(window);
+    new Function(source)();
+}
 
 function sideMenu(extra) {
     document.body.innerHTML =
@@ -20,28 +27,28 @@ function labels() {
 
 test("loading the script marks the page with the tweakui class and keeps its other classes", () => {
     document.documentElement.className = "theme";
-    new Function(source)();
+    run();
     expect(document.documentElement.classList.contains("tweakui")).toBe(true);
     expect(document.documentElement.classList.contains("theme")).toBe(true);
 });
 
 test("the TweakUI menu item moves just above About and is marked as moved", () => {
     sideMenu("<li><a href=\"#\">Administration</a></li>");
-    new Function(source)();
+    run();
     expect(labels()).toEqual(["Dashboard", "Diagnostic", "Administration", "TweakUI", "About"]);
     expect(document.querySelector('a[href="/plugins/tweakui/"]').parentNode.classList.contains("tweakui-menu")).toBe(true);
 });
 
 test("without an About item the TweakUI menu item stays where it is but is still shown", () => {
     document.body.innerHTML = '<ul id="side-menu"><li><a href="/plugins/tweakui/">TweakUI</a></li><li><a href="/x/">X</a></li></ul>';
-    new Function(source)();
+    run();
     expect(labels()).toEqual(["TweakUI", "X"]);
     expect(document.querySelector("#side-menu > li").classList.contains("tweakui-menu")).toBe(true);
 });
 
 test("a page without the side menu is left alone", () => {
     document.body.innerHTML = "<p>Welcome</p>";
-    expect(() => new Function(source)()).not.toThrow();
+    expect(() => run()).not.toThrow();
 });
 
 describe("the Storage view in the side menu", () => {
@@ -52,7 +59,7 @@ describe("the Storage view in the side menu", () => {
     test("turned off, the side menu is WebODM's", () => {
         window.TweakUI = {settings: {storage_view: false}};
         sideMenu();
-        new Function(source)();
+        run();
         expect(document.querySelectorAll("#side-menu ul").length).toBe(0);
         expect(document.querySelector('a[href="/plugins/diagnostic/"]')).not.toBeNull();
     });
@@ -60,7 +67,7 @@ describe("the Storage view in the side menu", () => {
     test("turned on, Diagnostic opens to System and Storage, closed until its page or a click", () => {
         window.TweakUI = {settings: {storage_view: true}};
         sideMenu();
-        new Function(source)();
+        run();
         const item = Array.from(document.querySelectorAll("#side-menu > li")).find(li => /Diagnostic/.test(li.textContent));
         expect(item.querySelector("a").getAttribute("href")).toBe("#");
         expect(item.querySelector("a .arrow")).not.toBeNull();
@@ -74,7 +81,7 @@ describe("the Storage view in the side menu", () => {
         window.TweakUI = {settings: {storage_view: true}};
         window.history.replaceState(null, "", "/plugins/tweakui/storage/");
         sideMenu();
-        new Function(source)();
+        run();
         const item = document.querySelector("#side-menu ul").parentNode;
         expect(item.classList.contains("active")).toBe(true);
         expect(item.querySelector("a.active").textContent.trim()).toBe("Storage");
@@ -84,7 +91,7 @@ describe("the Storage view in the side menu", () => {
         window.TweakUI = {settings: {storage_view: true}};
         document.body.innerHTML = '<ul id="side-menu"><li><a href="/dashboard/">Dashboard</a></li>' +
             '<li><a href="/plugins/tweakui/">TweakUI</a></li><li id="about-menu"><a href="/about/">About</a></li></ul>';
-        new Function(source)();
+        run();
         const item = document.querySelector(".tweakui-menu");
         expect(labels()[1]).toMatch(/^TweakUI/);
         expect(subs(item)).toEqual([["Settings", "/plugins/tweakui/"], ["Storage", "/plugins/tweakui/storage/"]]);
@@ -95,7 +102,7 @@ describe("the Storage view in the side menu", () => {
         window.TweakUI = {settings: {storage_view: true}};
         window.jQuery = () => ({data: name => name === "metisMenu" ? {} : undefined});
         sideMenu();
-        new Function(source)();
+        run();
         const list = document.querySelector("#side-menu ul");
         const link = list.parentNode.querySelector("a");
         expect(list.classList.contains("collapse")).toBe(true);
@@ -110,8 +117,8 @@ describe("the Storage view in the side menu", () => {
     test("running twice does not add a second submenu", () => {
         window.TweakUI = {settings: {storage_view: true}};
         sideMenu();
-        new Function(source)();
-        new Function(source)();
+        run();
+        run();
         expect(document.querySelectorAll("#side-menu ul").length).toBe(1);
     });
 });
@@ -127,19 +134,19 @@ describe("Administration > TweakUI Themes in the side menu", () => {
     test("a superuser gets the link right after Theme", () => {
         window.TweakUI = {settings: {}, superuser: true};
         admin();
-        new Function(source)();
+        run();
         expect(adminItems()).toEqual(["Brand", "Theme", "TweakUI Themes", "Plugins"]);
         const link = document.querySelector('a[href="/plugins/tweakui/admin/themes/"]');
         expect(link.querySelector("i").className).toBe("fa fa-palette fa-fw");
         expect(link.classList.contains("active")).toBe(false);
-        new Function(source)();
+        run();
         expect(adminItems().length).toBe(4);
     });
 
     test("other users, staff included, get no link", () => {
         window.TweakUI = {settings: {}};
         admin();
-        new Function(source)();
+        run();
         expect(adminItems()).toEqual(["Brand", "Theme", "Plugins"]);
     });
 
@@ -148,7 +155,7 @@ describe("Administration > TweakUI Themes in the side menu", () => {
         window.history.replaceState(null, "", "/plugins/tweakui/admin/themes/");
         window.jQuery = () => ({data: name => name === "metisMenu" ? {} : undefined});
         admin();
-        new Function(source)();
+        run();
         const link = document.querySelector('a[href="/plugins/tweakui/admin/themes/"]');
         expect(link.classList.contains("active")).toBe(true);
         const list = document.querySelector(".nav-second-level");

@@ -7,14 +7,24 @@
 // +); the tasks fully expanded are kept for the tab (sessionStorage), so a reload, which reopens every task WebODM
 // lists in the address as expanded, shows them as they were. UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
     else if (root.document) {
-        var settings = (root.TweakUI && root.TweakUI.settings) || {};
-        if (settings.expand_task_controls && /^\/dashboard\//.test(root.location.pathname)) api.start(root.document, root);
+        root.TweakUI.feature(root, "task_controls", api.start, {when: function (s, win) {
+            return s.expand_task_controls && /^\/dashboard\//.test(win.location.pathname);
+        }});
     }
-})(typeof window !== "undefined" ? window : this, function () {
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: a task on the Dashboard (TaskListItem), its
+    // +/- and name, its open panel and that panel's Task ID
+    var SELECTORS = {
+        task: ".task-list-item", toggle: ".name > i.clickable", nameLink: ".name > .name-link",
+        open: "fa-minus-square", taskId: ".expanded-panel .task-id-link"
+    };
+    var NAME = "task_controls";
 
     var MODE = "data-tweakui-controls", SEEN = "data-tweakui-controls-seen", BUTTONS = "buttons", MIN = "min";
     var KEY = "tweakui-task-controls-full";
@@ -24,18 +34,18 @@
     function toggle(item) {
         var name = item.firstElementChild;
         while (name && !(name.classList.contains("row") && name.querySelector(".name"))) name = name.nextElementSibling;
-        var icon = name && name.querySelector(".name > i.clickable");
+        var icon = name && name.querySelector(SELECTORS.toggle);
         return icon || null;
     }
 
     function isOpen(item) {
         var icon = toggle(item);
-        return !!icon && icon.classList.contains("fa-minus-square");
+        return !!icon && icon.classList.contains(SELECTORS.open);
     }
 
     // The task's id, from its panel's Task ID (only while it's open)
     function taskId(item) {
-        var link = item.querySelector(".expanded-panel .task-id-link");
+        var link = item.querySelector(SELECTORS.taskId);
         var text = link && link.textContent.trim();
         return text ? text.split(/\s+/)[0] : null;
     }
@@ -70,7 +80,7 @@
     // only, one WebODM opened itself (from the address) is buttons only unless it was fully expanded in this tab; a
     // task WebODM opens or closes by itself (Edit, Restart) is taken as it is. The +/- title names the next step
     function apply(doc, win, click) {
-        Array.prototype.forEach.call(doc.querySelectorAll(".task-list-item"), function (item) {
+        Array.prototype.forEach.call(doc.querySelectorAll(SELECTORS.task), function (item) {
             var icon = toggle(item);
             if (!icon) return;
             var open = isOpen(item), mode = item.getAttribute(MODE);
@@ -100,8 +110,8 @@
     // WebODM minimizes it fully; from fully minimized, WebODM opens it, as buttons only
     function onToggle(win, e) {
         var target = e.target;
-        var hit = target && target.closest && target.closest(".name > i.clickable, .name > .name-link");
-        var item = hit && hit.closest(".task-list-item");
+        var hit = target && target.closest && target.closest(SELECTORS.toggle + ", " + SELECTORS.nameLink);
+        var item = hit && hit.closest(SELECTORS.task);
         if (!item || !toggle(item)) return false;
         var open = isOpen(item), mode = item.getAttribute(MODE), id = taskId(item);
         if (open && mode === BUTTONS) {
@@ -136,11 +146,11 @@
                 apply(doc, win, click);
             }, 0);
         }
-        function onClick(e) {
+        var onClick = ui.guard(NAME, function (e) {
             if (!auto && onToggle(win, e)) later();
-        }
+        });
         doc.addEventListener("click", onClick, true);
-        var observer = win.MutationObserver ? new win.MutationObserver(later) : null;
+        var observer = win.MutationObserver ? new win.MutationObserver(ui.guard(NAME, later)) : null;
         if (observer) observer.observe(doc.body || doc.documentElement, {childList: true, subtree: true});
         apply(doc, win, click);
         return {
@@ -151,5 +161,5 @@
         };
     }
 
-    return {start: start, apply: apply, onToggle: onToggle, taskId: taskId, isOpen: isOpen, KEY: KEY};
+    return {start: start, apply: apply, onToggle: onToggle, taskId: taskId, isOpen: isOpen, KEY: KEY, SELECTORS: SELECTORS};
 });

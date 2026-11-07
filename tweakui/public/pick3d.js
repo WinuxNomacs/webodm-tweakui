@@ -12,6 +12,10 @@
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
 
+    // The WebODM elements it relies on, to check against a new WebODM: the 3D view (ModelView, which also sets
+    // window.viewer, Potree's viewer) and its row of action buttons
+    var SELECTORS = {modelView: "[data-modelview]", actionButtons: ".model-action-buttons"};
+
     // TweakUI's marks in the 3D scene (Source Frames' place) are a group of this name
     var MARKS = "tweakui-source-frames";
 
@@ -52,8 +56,8 @@
     function whenViewer(doc, win, callback) {
         var tries = 0;
         function check() {
-            if (!doc.querySelector("[data-modelview]")) return;
-            var viewer = win.viewer, buttons = doc.querySelector(".model-action-buttons");
+            if (!doc.querySelector(SELECTORS.modelView)) return;
+            var viewer = win.viewer, buttons = doc.querySelector(SELECTORS.actionButtons);
             if (viewer && viewer.renderer && viewer.scene && buttons) callback(viewer, buttons);
             else if (++tries < 400) win.setTimeout(check, 300);
         }
@@ -61,5 +65,5 @@
         else check();
     }
 
-    return {pick: pick, skipped: skipped, whenViewer: whenViewer, MARKS: MARKS};
+    return {pick: pick, skipped: skipped, whenViewer: whenViewer, MARKS: MARKS, SELECTORS: SELECTORS};
 });

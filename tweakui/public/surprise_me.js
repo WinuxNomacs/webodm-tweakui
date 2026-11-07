@@ -6,15 +6,17 @@
 // change ("tweakuiSettingsChanged"), so turning it on there starts a show at once and turning it off ends it at once.
 // UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) {
-        if (root.document.readyState === "loading") {
-            root.document.addEventListener("DOMContentLoaded", function () { api.start(root.document, root); });
-        } else api.start(root.document, root);
-    }
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    // On every page whether on or off: the settings page turns it on and off as it saves
+    else if (root.document) root.TweakUI.feature(root, "surprise_me", api.start, {ready: true});
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: none (it draws over the whole page)
+    var SELECTORS = {};
+    var NAME = "surprise_me";
 
     var LIBRARY = "/plugins/tweakui/vendor/fireworks-js/fireworks.umd.js", EVENT = "tweakuiSettingsChanged";
     // In seconds: the first show after a page opens, the gap between shows, and how long one lasts
@@ -192,24 +194,25 @@
 
     function start(doc, win, env) {
         var shows = create(doc, win, env);
-        var settings = (win.TweakUI && win.TweakUI.settings) || {};
-        function changed(e) {
+        var settings = ui.settingsOf(win), mouse = {};
+        var changed = ui.guard(NAME, function (e) {
             shows.set(!!(e.detail && e.detail.surprise_me === true), true);
-        }
+        });
         shows.set(settings.surprise_me === true, false);
+        Object.keys(shows.mouse).forEach(function (type) { mouse[type] = ui.guard(NAME, shows.mouse[type]); });
         // Captured, so a page that stops a click's propagation (a map) still gets its rocket
-        Object.keys(shows.mouse).forEach(function (type) { doc.addEventListener(type, shows.mouse[type], true); });
+        Object.keys(mouse).forEach(function (type) { doc.addEventListener(type, mouse[type], true); });
         doc.addEventListener(EVENT, changed);
         return {
             set: shows.set, showing: shows.showing,
             // Ends the shows and stops listening
             stop: function () {
                 shows.stop();
-                Object.keys(shows.mouse).forEach(function (type) { doc.removeEventListener(type, shows.mouse[type], true); });
+                Object.keys(mouse).forEach(function (type) { doc.removeEventListener(type, mouse[type], true); });
                 doc.removeEventListener(EVENT, changed);
             }
         };
     }
 
-    return {start: start, create: create, load: load, OPTIONS: OPTIONS, LIBRARY: LIBRARY};
+    return {start: start, create: create, load: load, OPTIONS: OPTIONS, LIBRARY: LIBRARY, SELECTORS: SELECTORS};
 });

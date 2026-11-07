@@ -6,11 +6,18 @@
 // layers are built as WebODM's map builds an orthophoto's (Map.jsx: 512-px tiles, rescaled to the RGB bands'
 // statistics). UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.document) api.start(root.document, root);
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "other_tasks", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: none (its control comes through the map hook,
+    // with the classes of WebODM's Layers control for its look)
+    var SELECTORS = {};
+    var NAME = "other_tasks";
+    var el = ui.el;
 
     var TILESIZE = 512;
     // Above the task's own layers (WebODM gives them 11 to 14)
@@ -77,13 +84,6 @@
             detectRetina: true,
             zIndex: ZINDEX + index
         });
-    }
-
-    function el(doc, tag, className, text) {
-        var e = doc.createElement(tag);
-        if (className) e.className = className;
-        if (text !== undefined) e.textContent = text;
-        return e;
     }
 
     function getJSON(fetchFn, url) {
@@ -220,10 +220,9 @@
     }
 
     function start(doc, win) {
-        var settings = (win.TweakUI && win.TweakUI.settings) || {};
-        if (!settings.other_tasks || !win.PluginsAPI || !win.PluginsAPI.Map) return;
-        win.PluginsAPI.Map.didAddControls(["leaflet"], function (args, L) { add(args, L, doc, win); });
+        if (!ui.settingsOf(win).other_tasks || !win.PluginsAPI || !win.PluginsAPI.Map) return;
+        win.PluginsAPI.Map.didAddControls(["leaflet"], ui.guard(NAME, function (args, L) { add(args, L, doc, win); }));
     }
 
-    return {start: start, add: add, build: build, mapTask: mapTask, tileUrl: tileUrl};
+    return {start: start, add: add, build: build, mapTask: mapTask, tileUrl: tileUrl, SELECTORS: SELECTORS};
 });

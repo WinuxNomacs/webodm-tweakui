@@ -23,6 +23,11 @@ from coreplugins.tweakui import frames
 API = "/api/plugins/tweakui/settings"
 
 
+def plugin_scripts():
+    """The scripts the plugin puts on every page, in order"""
+    return get_plugin_by_name("tweakui").include_js_files()
+
+
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
     return dict({"units_in_header": False, "show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
@@ -71,14 +76,17 @@ class TestThePlugin(TweakUITestCase):
         self.assertIsNotNone(plugin)
         self.assertEqual(plugin.get_manifest()["name"], "TweakUI")
 
-    def test_the_dashboard_includes_the_scripts_settings_first_and_the_stylesheet(self):
+    def test_the_dashboard_includes_the_scripts_settings_and_the_helpers_first_and_the_stylesheet(self):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
+        for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
                      "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "surprise_me.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
-        self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/main.js"))
+        # The settings, then the helpers (core.js), before every other script
+        self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/core.js"))
+        for name in plugin_scripts()[2:]:
+            self.assertLess(html.index("/plugins/tweakui/core.js"), html.index("/plugins/tweakui/" + name), name)
         # The 3D pick before the scripts that use it
         for name in ("source_frames.js", "zoom_override.js"):
             self.assertLess(html.index("/plugins/tweakui/pick3d.js"), html.index("/plugins/tweakui/" + name))
@@ -87,7 +95,7 @@ class TestThePlugin(TweakUITestCase):
                                 html=True)
 
     def test_the_scripts_and_stylesheet_are_served(self):
-        for name in ("settings.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
+        for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
                      "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
                      "surprise_me.js", "settings_page.js", "vendor/fireworks-js/fireworks.umd.js",
                      "main.css", "theme.css"):

@@ -11,17 +11,21 @@
 // data-tweakui-plain on the dialog for a Collapse All that hides the configured options too (skipped when there are
 // none). UMD, so Jest can load it.
 (function (root, factory) {
-    var api = factory();
-    if (typeof module === "object" && module.exports) module.exports = api;
-    else if (root.PluginsAPI && root.PluginsAPI.Dashboard && root.PluginsAPI.Dashboard.presetDialogOptionsReady) {
-        root.PluginsAPI.Dashboard.presetDialogOptionsReady(function (args) {
-            var settings = (root.TweakUI && root.TweakUI.settings) || {};
-            var features = {count: !!settings.show_modified_options, expand: !!settings.expand_configured};
-            if (features.count || features.expand) api.watch(root.document, args.options, root, features);
-        });
-    }
-})(typeof window !== "undefined" ? window : this, function () {
+    var node = typeof module === "object" && module.exports;
+    var api = factory(node ? require("./core") : root.TweakUI);
+    if (node) module.exports = api;
+    else if (root.document) root.TweakUI.feature(root, "task_options", api.start);
+})(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
+
+    // The WebODM elements it relies on, to check against a new WebODM: the Task Options dialog (EditPresetDialog),
+    // its groups, their headings and contents, the options and subgroups, and the Expand/Collapse button's icons
+    var SELECTORS = {
+        dialog: ".edit-preset-dialog", group: ".option-group", header: ".option-group-header",
+        content: ".option-group-content", option: ".processing-node-option", subgroup: ".option-subgroup",
+        toggle: "button > .fa-angle-double-down, button > .fa-angle-double-up", allOpen: ".fa-angle-double-up"
+    };
+    var NAME = "task_options";
 
     var ATTR = "data-tweakui-count", EXPAND = "data-tweakui-expand", CONFIGURED = "data-tweakui-configured";
     var PLAIN = "data-tweakui-plain";
@@ -53,20 +57,20 @@
     // marks the configured options, and the collapsed groups that have any, for main.css to show
     function update(dialog, options, features) {
         features = features || ALL;
-        Array.prototype.forEach.call(dialog.querySelectorAll(".option-group"), function (group) {
-            var header = group.querySelector(".option-group-header");
+        Array.prototype.forEach.call(dialog.querySelectorAll(SELECTORS.group), function (group) {
+            var header = group.querySelector(SELECTORS.header);
             if (!header) return;
-            var shown = group.querySelectorAll(".processing-node-option"), modified = 0;
+            var shown = group.querySelectorAll(SELECTORS.option), modified = 0;
             Array.prototype.forEach.call(shown, function (el) {
                 var on = isModified(options[optionName(el)]);
                 if (on) modified++;
                 if (features.expand) flag(el, CONFIGURED, on);
             });
             if (features.expand) {
-                Array.prototype.forEach.call(group.querySelectorAll(".option-subgroup"), function (sub) {
-                    flag(sub, CONFIGURED, !!sub.querySelector(".processing-node-option[" + CONFIGURED + "]"));
+                Array.prototype.forEach.call(group.querySelectorAll(SELECTORS.subgroup), function (sub) {
+                    flag(sub, CONFIGURED, !!sub.querySelector(SELECTORS.option + "[" + CONFIGURED + "]"));
                 });
-                var content = group.querySelector(".option-group-content");
+                var content = group.querySelector(SELECTORS.content);
                 flag(group, EXPAND, modified > 0 && !!content && content.style.display === "none" && !dialog.hasAttribute(PLAIN));
             }
             if (!features.count) return;
@@ -81,12 +85,12 @@
 
     // The dialog's Expand/Collapse button (its icon is the one way to tell it) and whether WebODM has all groups open
     function toggleButton(dialog) {
-        var icon = dialog.querySelector("button > .fa-angle-double-down, button > .fa-angle-double-up");
+        var icon = dialog.querySelector(SELECTORS.toggle);
         return icon ? icon.parentNode : null;
     }
 
     function allOpen(button) {
-        return !!button.querySelector(".fa-angle-double-up");
+        return !!button.querySelector(SELECTORS.allOpen);
     }
 
     // Its title names what a click does next
@@ -103,7 +107,7 @@
         var button = toggleButton(dialog);
         if (!button || button.disabled || !button.contains(e.target)) return;
         if (allOpen(button)) {
-            if (dialog.querySelector(".processing-node-option[" + CONFIGURED + "]")) dialog.setAttribute(PLAIN, "");
+            if (dialog.querySelector(SELECTORS.option + "[" + CONFIGURED + "]")) dialog.setAttribute(PLAIN, "");
         } else if (dialog.hasAttribute(PLAIN)) {
             e.stopPropagation();
             e.preventDefault();
@@ -115,7 +119,7 @@
     // groups opened or searched (new options on the page), values set by code (React writes the value attribute).
     // Opening and closing a group, or Expand/Collapse, is a click
     function watch(doc, options, win, features) {
-        var dialogs = doc.querySelectorAll(".edit-preset-dialog");
+        var dialogs = doc.querySelectorAll(SELECTORS.dialog);
         if (!dialogs.length || !options) return null;
         var dialog = dialogs[dialogs.length - 1];
         if (dialog.tweakuiWatch) dialog.tweakuiWatch.stop();
@@ -134,7 +138,7 @@
         if (features && features.expand) dialog.addEventListener("click", onCycle, true);
         var events = ["input", "change", "click"];
         events.forEach(function (e) { dialog.addEventListener(e, later, true); });
-        var observer = win.MutationObserver ? new win.MutationObserver(later) : null;
+        var observer = win.MutationObserver ? new win.MutationObserver(ui.guard(NAME, later)) : null;
         if (observer) observer.observe(dialog, {childList: true, subtree: true, attributes: true, attributeFilter: ["value"]});
         dialog.tweakuiWatch = {
             stop: function () {
@@ -148,5 +152,16 @@
         return dialog.tweakuiWatch;
     }
 
-    return {watch: watch, update: update, optionName: optionName, isModified: isModified};
+    // WebODM gives each Task Options dialog's options as it opens (its fields' components, by option name)
+    function start(doc, win) {
+        var P = win.PluginsAPI;
+        if (!P || !P.Dashboard || !P.Dashboard.presetDialogOptionsReady) return;
+        P.Dashboard.presetDialogOptionsReady(ui.guard(NAME, function (args) {
+            var settings = ui.settingsOf(win);
+            var features = {count: !!settings.show_modified_options, expand: !!settings.expand_configured};
+            if ((features.count || features.expand) && args) watch(doc, args.options, win, features);
+        }));
+    }
+
+    return {start: start, watch: watch, update: update, optionName: optionName, isModified: isModified, SELECTORS: SELECTORS};
 });

@@ -1,23 +1,24 @@
-// TweakUI, loaded on every WebODM page. Plain ES5, no build step. Features hook in through window.PluginsAPI
-// (WebODM's app/static/app/js/classes/plugins); the "tweakui" class on <html> scopes the plugin's CSS.
+// TweakUI, loaded on every WebODM page after core.js: the "tweakui" class on <html>, which scopes the plugin's CSS,
+// and TweakUI's items in the side menu. Plain ES5, no build step. The features are scripts of their own.
 (function () {
     "use strict";
     document.documentElement.className += " tweakui";
 
+    var ui = window.TweakUI, NAME = "menus";
     var TWEAKUI = "/plugins/tweakui/", DIAGNOSTIC = "/plugins/diagnostic/", STORAGE = "/plugins/tweakui/storage/",
         PUBLISHED = "/plugins/tweakui/admin/themes/";
+    // The WebODM elements it relies on, to check against a new WebODM: the side menu, its About item and
+    // Administration's Theme item
+    var SELECTORS = {sideMenu: "#side-menu", about: "#about-menu", adminTheme: '#side-menu .nav-second-level a[href^="/admin/app/theme/"]'};
 
-    function sideItem(href) {
-        var link = document.querySelector('#side-menu > li > a[href="' + href + '"]');
-        return link ? link.parentNode : null;
-    }
+    function sideItem(href) { return ui.sideItem(document, href); }
 
     // WebODM puts plugins' side-menu items right after Dashboard; TweakUI's goes just above About instead.
     // main.css hides it until it is moved (html.tweakui ... :not(.tweakui-menu)), so it doesn't jump.
     function moveMenuItem() {
         var item = sideItem(TWEAKUI);
         if (!item || /\btweakui-menu\b/.test(item.className)) return;
-        var about = document.getElementById("about-menu");
+        var about = document.querySelector(SELECTORS.about);
         if (about && about.parentNode === item.parentNode) item.parentNode.insertBefore(item, about);
         item.className += " tweakui-menu";
     }
@@ -26,8 +27,8 @@
     // disabled it), TweakUI's item opens to Settings and Storage, expanded. WebODM's metisMenu makes a parent item
     // open and close when it starts (end of the page); when it has already started, the item does so itself.
     function storageMenu() {
-        var settings = (window.TweakUI && window.TweakUI.settings) || {};
-        var menu = document.getElementById("side-menu");
+        var settings = ui.settingsOf(window);
+        var menu = document.querySelector(SELECTORS.sideMenu);
         if (!settings.storage_view || !menu || menu.getAttribute("data-tweakui-storage")) return;
         var item = sideItem(DIAGNOSTIC), subs, expanded = false;
         if (item) subs = [["System", DIAGNOSTIC, "fa fa-chart-pie fa-fw"], ["Storage", STORAGE, "fa fa-database fa-fw"]];
@@ -46,13 +47,8 @@
         var list = document.createElement("ul");
         list.className = "nav nav-second-level tweakui-storage-menu";
         subs.forEach(function (s) {
-            var li = document.createElement("li"), a = document.createElement("a"), i = document.createElement("i");
-            a.setAttribute("href", s[1]);
-            i.className = s[2];
-            a.appendChild(i);
-            a.appendChild(document.createTextNode(" " + s[0]));
-            if (path === s[1]) { a.className = "active"; expanded = true; }
-            li.appendChild(a);
+            var li = ui.sideLink(document, s[0], s[1], s[2]);
+            if (path === s[1]) { li.firstChild.className = "active"; expanded = true; }
             list.appendChild(li);
         });
         item.appendChild(list);
@@ -75,15 +71,10 @@
     // Administration > TweakUI Themes, for superusers (settings.js says so): WebODM has no hook in Administration, so
     // the link goes right after its Theme item. On the page itself, Administration is open with the link active.
     function publishedMenu() {
-        if (!window.TweakUI || !window.TweakUI.superuser || document.querySelector('#side-menu a[href="' + PUBLISHED + '"]')) return;
-        var theme = document.querySelector('#side-menu .nav-second-level a[href^="/admin/app/theme/"]');
+        if (!ui.superuser || document.querySelector(SELECTORS.sideMenu + ' a[href="' + PUBLISHED + '"]')) return;
+        var theme = document.querySelector(SELECTORS.adminTheme);
         if (!theme) return;
-        var li = document.createElement("li"), a = document.createElement("a"), i = document.createElement("i");
-        a.setAttribute("href", PUBLISHED);
-        i.className = "fa fa-palette fa-fw";
-        a.appendChild(i);
-        a.appendChild(document.createTextNode(" TweakUI Themes"));
-        li.appendChild(a);
+        var li = ui.sideLink(document, "TweakUI Themes", PUBLISHED, "fa fa-palette fa-fw"), a = li.firstChild;
         var item = theme.parentNode, list = item.parentNode;
         list.insertBefore(li, item.nextSibling);
         if (window.location.pathname === PUBLISHED) {
@@ -92,28 +83,26 @@
             if (!/\bactive\b/.test(admin.className)) admin.className += " active";
             // metisMenu has started: show the list open, as it would for the active item
             var $ = window.jQuery;
-            if ($ && $(document.getElementById("side-menu")).data("metisMenu")) {
+            if ($ && $(document.querySelector(SELECTORS.sideMenu)).data("metisMenu")) {
                 list.className += " collapse in";
                 list.setAttribute("aria-expanded", "true");
             }
         }
     }
 
-    function menus() {
+    var menus = ui.guard(NAME, function () {
         moveMenuItem();
         storageMenu();
         publishedMenu();
-    }
+    });
 
     if (document.readyState === "loading") {
-        // The side menu ends with About; it is done before WebODM's metisMenu starts (later in the page)
-        if (window.MutationObserver) {
-            var observer = new MutationObserver(function () {
-                if (document.getElementById("about-menu")) { observer.disconnect(); menus(); }
-            });
-            observer.observe(document.documentElement, {childList: true, subtree: true});
-            document.addEventListener("DOMContentLoaded", function () { observer.disconnect(); });
-        }
-        document.addEventListener("DOMContentLoaded", menus);
+        // The side menu ends with About; it is done before WebODM's metisMenu starts (later in the page). A page
+        // without it (signed out) stops waiting once parsed
+        var waiting = ui.whenElement(document, window, SELECTORS.about, menus);
+        document.addEventListener("DOMContentLoaded", function () {
+            if (waiting) waiting.disconnect();
+            menus();
+        });
     } else menus();
 })();
