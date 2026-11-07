@@ -41,6 +41,20 @@ test("the command leaves out false booleans, quotes values for the shell and tak
         .toBe(DOCKER + " --cog --name 'my task'\\''s' --boundary /datasets/code/boundary.geojson --mesh-size 200000 --pc-ept --gltf");
 });
 
+test("on Windows the command is ODX's run.bat with the task's options, the boundary file there", () => {
+    expect(details.command(task.options, true))
+        .toBe("run.bat --project-path C:\\datasets project --auto-boundary --dsm --feature-quality ultra --pc-ept --cog --gltf");
+    expect(details.command([{name: "name", value: 'my "task"'}, {name: "boundary", value: {}}, {name: "cog", value: true}], true))
+        .toBe('run.bat --project-path C:\\datasets project --name "my \\"task\\"" ' +
+            "--boundary C:\\datasets\\project\\boundary.geojson --cog --pc-ept --gltf");
+});
+
+test("the panel shows the run.bat command when settings.js says WebODM runs on Windows", () => {
+    const root = panel(task);
+    details.enhance(document, {TweakUI: {windows: true}, navigator: window.navigator, setTimeout}, root, task, presets[2]);
+    expect(root.querySelector(".tweakui-odx-command code").textContent).toBe(details.command(task.options, true));
+});
+
 test("the panel gets Preset, Options as bubbles and ODX command rows after WebODM's Options row, which is hidden", () => {
     const root = panel(task);
     expect(details.enhance(document, window, root, task, presets[2])).toBe(true);

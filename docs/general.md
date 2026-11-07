@@ -69,6 +69,10 @@ WebODM's own Options line stays.
   options and the three the processing node adds by itself (`--pc-ept --cog --gltf`), as the node runs it.
   Replace `/my/project` with your folder, which holds the photos in `images/`; a task's boundary is read from
   `boundary.geojson` there.
+  When WebODM runs on Windows (its native build), the command is ODX's own instead:
+  `run.bat --project-path C:\datasets project` followed by the same options, run in ODX's folder (`apps\ODX` in
+  WebODM's install folder, e.g. `C:\WebODM\resources\app\apps\ODX`). Replace `C:\datasets` with the folder that
+  holds your dataset and `project` with the dataset's folder in it, which holds the photos in `images\`.
 
 ## Task Details > Expand Task Controls
 

@@ -24,8 +24,12 @@
     var NODE_OPTIONS = ["pc-ept", "cog", "gltf"];
     var DOCKER = ["docker", "run", "-ti", "--rm", "-v /my/project:/datasets/code", "webodm/odx",
         "--project-path /datasets"];
+    // On WebODM's native Windows build (settings.js sets window.TweakUI.windows), ODX's own run.bat, in ODX's folder:
+    // the projects' folder, then the dataset's folder in it
+    var WINDOWS = ["run.bat", "--project-path C:\\datasets", "project"];
     // The command line takes a GeoJSON file where WebODM keeps the boundary itself
     var BOUNDARY_FILE = "/datasets/code/boundary.geojson";
+    var WINDOWS_BOUNDARY_FILE = "C:\\datasets\\project\\boundary.geojson";
     // WebODM's status codes (StatusCodes.js): running, and failed, completed, canceled (a task has ended); a task
     // with no status or queued hasn't started
     var RUNNING = 20, ENDED = [30, 40, 50];
@@ -113,22 +117,29 @@
         return /^[A-Za-z0-9_.,:/=+@%-]+$/.test(s) ? s : "'" + s.replace(/'/g, "'\\''") + "'";
     }
 
-    // The ODX command the node runs for these options, in the docker form of WebODM's docs: the task's options
-    // (false booleans left out, booleans as a bare flag), then the node's own; as its words, each flag with its value
-    function commandParts(options) {
-        var parts = DOCKER.slice(), names = {};
+    // A value for Windows' command line: in double quotes unless plain (a quote in it escaped as ODX's Python reads it)
+    function cmdQuote(value) {
+        var s = String(value);
+        return /^[A-Za-z0-9_.,:\\/=+@-]+$/.test(s) ? s : '"' + s.replace(/"/g, '\\"') + '"';
+    }
+
+    // The ODX command the node runs for these options, in the docker form of WebODM's docs (or, windows, ODX's
+    // run.bat): the task's options (false booleans left out, booleans as a bare flag), then the node's own; as its
+    // words, each flag with its value
+    function commandParts(options, windows) {
+        var parts = (windows ? WINDOWS : DOCKER).slice(), names = {}, quote = windows ? cmdQuote : shellQuote;
         options.forEach(function (o) {
             names[o.name] = true;
             if (o.value === false) return;
-            if (o.name === "boundary") parts.push("--boundary " + BOUNDARY_FILE);
-            else parts.push("--" + o.name + (o.value === true ? "" : " " + shellQuote(o.value)));
+            if (o.name === "boundary") parts.push("--boundary " + (windows ? WINDOWS_BOUNDARY_FILE : BOUNDARY_FILE));
+            else parts.push("--" + o.name + (o.value === true ? "" : " " + quote(o.value)));
         });
         NODE_OPTIONS.forEach(function (n) { if (!names[n]) parts.push("--" + n); });
         return parts;
     }
 
-    function command(options) {
-        return commandParts(options).join(" ");
+    function command(options, windows) {
+        return commandParts(options, windows).join(" ");
     }
 
     function el(doc, tag, className, text) {
@@ -222,11 +233,11 @@
             bubbles.appendChild(b);
         });
 
-        var text = command(options);
+        var windows = !!(win.TweakUI && win.TweakUI.windows), text = command(options, windows);
         var box = el(doc, "span", "tweakui-odx-command");
         // Each flag with its value in a span that wraps as one, so a line doesn't break inside a flag
         var code = el(doc, "code", "theme-border");
-        commandParts(options).forEach(function (part, i) {
+        commandParts(options, windows).forEach(function (part, i) {
             if (i) code.appendChild(doc.createTextNode(" "));
             code.appendChild(el(doc, "span", null, part));
         });
