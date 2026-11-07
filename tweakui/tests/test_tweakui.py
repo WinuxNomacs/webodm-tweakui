@@ -18,6 +18,7 @@ from app.plugins import disable_plugin, enable_plugin, get_plugin_by_name
 from app.models import Project, Task
 from app.plugins.data_store import UserDataStore
 from app.tests.classes import BootTestCase
+from coreplugins.tweakui import frames
 
 API = "/api/plugins/tweakui/settings"
 
@@ -888,6 +889,17 @@ class TestSourceFrames(TweakUITestCase):
         self.assertAlmostEqual(found[1]["spot"][0], 0.5 - 0.8 * 0.5, places=3)
         res = self.post({"type": "Point", "coordinates": [self.X, self.Y], "crs": "task"})
         self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_the_tasks_files_are_read_as_utf_8_whatever_the_system_s_encoding(self):
+        # ODM writes them in UTF-8; Windows' default encoding is cp1252, which the patch makes open()'s default
+        path = self.task.assets_path("cameras.json")
+        with open(path, "w", encoding="utf-8") as f:
+            json.dump({"Caméra 4000 3000 brown 0.8": {"width": 4000}}, f, ensure_ascii=False)
+
+        def windows_open(file, mode="r", **kwargs):
+            return open(file, mode, **dict({"encoding": "cp1252"}, **kwargs))
+        with mock.patch("coreplugins.tweakui.frames.open", windows_open, create=True):
+            self.assertEqual(frames.load_json(path), {"Caméra 4000 3000 brown 0.8": {"width": 4000}})
 
     def test_anything_but_a_spot_and_tasks_without_cameras_are_refused(self):
         ring = [self.lnglat(x, y) for x, y in ((self.X, self.Y), (self.X + 9, self.Y), (self.X, self.Y + 9), (self.X, self.Y))]
