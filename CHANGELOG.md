@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Source Frames: the full-frame viewer takes the keyboard focus when it opens and gives it back to Open full
+  frame when it closes.
 - General > Task Details > Expand Task Controls: the page address lists only the tasks you expanded fully, not
   every task shown as buttons only, so a project with hundreds of tasks no longer makes an address too long to reload.
 - 3D Map > Zoom Override: a trackpad's two-finger scroll zooms as far as it scrolls, not a wheel notch per scroll
