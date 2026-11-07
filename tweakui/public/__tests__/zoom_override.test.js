@@ -144,3 +144,26 @@ test("with Zoom Override on, the 2D map hook lifts the limit and the 3D view get
     wheel(v.canvas, 120);
     expect(v.view.position.z).toBeCloseTo(90);
 });
+
+test("a burst of wheel events with the pointer still picks once, and zooms as far as picking each time would", () => {
+    const v = view3d([0, 0, 0]);
+    const pick = jest.spyOn(v.win.Potree.Utils, "getMousePointCloudIntersection");
+    let now = 1000;
+    const clock = jest.spyOn(Date, "now").mockImplementation(() => now);
+    try {
+        zo.attach3d(v.win, v.viewer);
+        for (let i = 0; i < 10; i++) { wheel(v.canvas, 12); now += 16; }
+        expect(pick).toHaveBeenCalledTimes(1);
+        expect(v.view.position.z).toBeCloseTo(90);
+        // A pause, or the pointer moved: picked again
+        now += 300;
+        wheel(v.canvas, 12);
+        expect(pick).toHaveBeenCalledTimes(2);
+        const e = new Event("mousewheel", {bubbles: true, cancelable: true});
+        Object.assign(e, {wheelDelta: 12, clientX: 610, clientY: 300});
+        v.canvas.dispatchEvent(e);
+        expect(pick).toHaveBeenCalledTimes(3);
+    } finally {
+        clock.mockRestore();
+    }
+});

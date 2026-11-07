@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 3D Map > Zoom Override: a scroll with the textured model shown no longer stutters; a burst of wheel events with
+  the pointer still finds the point under it once, not on every event.
 - For developers: `npm run selector-check` checks a WebODM for every element TweakUI's scripts rely on (their
   `SELECTORS`), for a new WebODM version.
 - Source Frames: the full-frame viewer takes the keyboard focus when it opens and gives it back to Open full

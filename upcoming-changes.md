@@ -1551,6 +1551,11 @@ Mac, one branch each.
    The mesh costs about 10 ms (Chromium) to 18 ms (WebKit) per 400k triangles, linear in its size, whenever the
    textured model is shown. Over a frame at the default size in WebKit, and a trackpad sends dozens of wheel events a
    second, each a pick: at a few hundred ms a second, the view stutters. A fix is asked of the user.
+   **Decision (the user, 2026-11-07):** reuse the pick within a burst: while the pointer stays within 3 px, a wheel
+   event less than 250 ms after the last reuses its point (exact: the camera moves along the ray through it).
+   **Built** (`zoom_override.js` `attach3d` `pickAt`; test in `zoom_override.test.js`): 30 trackpad-sized events
+   (wheelDelta 12) over a 0.4M-triangle mesh take 54 ms with the pointer still against 739 ms picking each time
+   (WebKit; Chromium 139 against 1618 ms), and zoom as far.
 
 **Decision (the user, 2026-11-07):** tested on 4.0.0 only, on the Mac (no 3.3.2 stack there); users on 3.3.2 are
 advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this phase.
