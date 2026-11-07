@@ -1033,6 +1033,26 @@ class TestStorage(TweakUITestCase):
         self.assertEqual(self.login("testuser2").get(wrong).status_code, status.HTTP_404_NOT_FOUND)
         self.assertEqual(Client().get("/api/plugins/tweakui/storage").status_code, status.HTTP_403_FORBIDDEN)
 
+    def test_a_task_id_that_is_not_a_uuid_is_not_found(self):
+        res = self.client.get("/api/plugins/tweakui/storage/%s/not-a-uuid" % self.big.id)
+        self.assertEqual(res.status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_an_assets_folder_that_cannot_be_read_counts_as_nothing(self):
+        self.write(os.path.join(self.done.task_path(), "a.jpg"), 1000)
+        self.write(self.done.assets_path("odm_dem", "dsm.tif"), 200)
+        scandir = os.scandir
+
+        def refuse_assets(path):
+            if str(path).endswith("assets"):
+                raise PermissionError(path)
+            return scandir(path)
+
+        with mock.patch("coreplugins.tweakui.storage.os.scandir", side_effect=refuse_assets):
+            res = self.client.get("/api/plugins/tweakui/storage/%s/%s" % (self.big.id, self.done.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json()["kinds"]["photos"], 1000)
+        self.assertEqual(res.json()["kinds"]["elevation"], 0)
+
     def test_the_setting_is_off_by_default_in_its_own_section_and_the_page_says_where_to_turn_it_on(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         self.assertIn('href="#storage"', page)

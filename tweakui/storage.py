@@ -39,25 +39,32 @@ def dir_size(path):
     return total
 
 
+def _entries(path):
+    """A folder's entries, links left out; none when it can't be read"""
+    try:
+        return [e for e in os.scandir(path) if not e.is_symlink()]
+    except OSError:
+        return []
+
+
+def _size(entry):
+    """Bytes of a file, or of the files in a folder; 0 for one that can't be read"""
+    try:
+        return entry.stat().st_size if entry.is_file() else dir_size(entry.path)
+    except OSError:
+        return 0
+
+
 def breakdown(task_dir):
     """A task folder's bytes by kind (KINDS, each present): the photos (the files in the folder itself, which
-    WebODM's compact deletes), its assets by type, the rest"""
+    WebODM's compact deletes), its assets by type, the rest. What can't be read counts as nothing."""
     sizes = dict.fromkeys(KINDS, 0)
-    try:
-        entries = list(os.scandir(task_dir))
-    except OSError:
-        return sizes
-    for e in entries:
-        if e.is_symlink():
-            continue
+    for e in _entries(task_dir):
         if e.is_file():
-            sizes["photos"] += e.stat().st_size
+            sizes["photos"] += _size(e)
         elif e.name == "assets":
-            for a in os.scandir(e.path):
-                if a.is_symlink():
-                    continue
-                kind = ASSET_KINDS.get(a.name, "other")
-                sizes[kind] += a.stat().st_size if a.is_file() else dir_size(a.path)
+            for a in _entries(e.path):
+                sizes[ASSET_KINDS.get(a.name, "other")] += _size(a)
         else:
             sizes["other"] += dir_size(e.path)
     return sizes
