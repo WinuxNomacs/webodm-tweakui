@@ -5,7 +5,8 @@
 - A TweakUI item in the side menu, just above About, and a settings page (navigation pane, General), with each user's own settings.
 - General > Task Options > Show Modified Options: the Task Options dialog's group headings show (modified/total).
 - General > Task Options > Expand Configured: a collapsed group of the Task Options dialog still shows its options
-  not at their default, WebODM's own controls, ready to change.
+  not at their default, WebODM's own controls, ready to change; the dialog's Expand/Collapse button cycles Expand
+  All, Collapse All and Collapse All but Configured.
 - General > Task Details > Enhanced Task Details: a task's details on the Dashboard show the preset its options
   match, each option in a bubble, and its ODX command (docker) with a copy button; and when it started and
   finished (worked out from its creation and processing time); while it runs, its current ODM stage ("Current Step

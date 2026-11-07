@@ -6,8 +6,10 @@
 // General > Task Options > Expand Configured: a collapsed group still shows its modified options ("configured"),
 // WebODM's own controls, under its heading. WebODM keeps a collapsed group's options on the page, hidden by an inline
 // display: none; data-tweakui-expand on the group, data-tweakui-configured on its configured options and subgroups,
-// and main.css show only those. "Other Options" is not on the page while closed, so it shows nothing. UMD, so Jest
-// can load it.
+// and main.css show only those. "Other Options" is not on the page while closed, so it shows nothing. The dialog's
+// Expand/Collapse button then cycles Expand All, Collapse All, Collapse All but Configured: WebODM's own two, and
+// data-tweakui-plain on the dialog for a Collapse All that hides the configured options too (skipped when there are
+// none). UMD, so Jest can load it.
 (function (root, factory) {
     var api = factory();
     if (typeof module === "object" && module.exports) module.exports = api;
@@ -22,6 +24,7 @@
     "use strict";
 
     var ATTR = "data-tweakui-count", EXPAND = "data-tweakui-expand", CONFIGURED = "data-tweakui-configured";
+    var PLAIN = "data-tweakui-plain";
     var ALL = {count: true, expand: true};
 
     // The option name a .processing-node-option shows: the first word of its label
@@ -64,7 +67,7 @@
                     flag(sub, CONFIGURED, !!sub.querySelector(".processing-node-option[" + CONFIGURED + "]"));
                 });
                 var content = group.querySelector(".option-group-content");
-                flag(group, EXPAND, modified > 0 && !!content && content.style.display === "none");
+                flag(group, EXPAND, modified > 0 && !!content && content.style.display === "none" && !dialog.hasAttribute(PLAIN));
             }
             if (!features.count) return;
             var text = shown.length ? "(" + modified + "/" + shown.length + ")" : null;
@@ -74,6 +77,38 @@
                 header.setAttribute(ATTR, text);
             }
         });
+    }
+
+    // The dialog's Expand/Collapse button (its icon is the one way to tell it) and whether WebODM has all groups open
+    function toggleButton(dialog) {
+        var icon = dialog.querySelector("button > .fa-angle-double-down, button > .fa-angle-double-up");
+        return icon ? icon.parentNode : null;
+    }
+
+    function allOpen(button) {
+        return !!button.querySelector(".fa-angle-double-up");
+    }
+
+    // Its title names what a click does next
+    function titleButton(dialog) {
+        var button = toggleButton(dialog);
+        if (!button) return;
+        var title = allOpen(button) ? "Collapse All" : dialog.hasAttribute(PLAIN) ? "Collapse All but Configured" : "Expand All";
+        if (button.getAttribute("title") !== title) button.setAttribute("title", title);
+    }
+
+    // A click on it: from all open, WebODM collapses all and, if any option is configured, they're hidden too; from
+    // that, TweakUI alone shows the configured ones again (WebODM never sees the click); from there, WebODM expands all
+    function cycle(dialog, e) {
+        var button = toggleButton(dialog);
+        if (!button || button.disabled || !button.contains(e.target)) return;
+        if (allOpen(button)) {
+            if (dialog.querySelector(".processing-node-option[" + CONFIGURED + "]")) dialog.setAttribute(PLAIN, "");
+        } else if (dialog.hasAttribute(PLAIN)) {
+            e.stopPropagation();
+            e.preventDefault();
+            dialog.removeAttribute(PLAIN);
+        }
     }
 
     // Counts now and after every change in the dialog: typing, checkboxes, lists, "Reset to default" (a click),
@@ -91,8 +126,12 @@
             win.setTimeout(function () {
                 pending = false;
                 update(dialog, options, features);
+                if (features && features.expand) titleButton(dialog);
             }, 0);
         }
+        function onCycle(e) { cycle(dialog, e); }
+        dialog.removeAttribute(PLAIN);
+        if (features && features.expand) dialog.addEventListener("click", onCycle, true);
         var events = ["input", "change", "click"];
         events.forEach(function (e) { dialog.addEventListener(e, later, true); });
         var observer = win.MutationObserver ? new win.MutationObserver(later) : null;
@@ -100,10 +139,12 @@
         dialog.tweakuiWatch = {
             stop: function () {
                 events.forEach(function (e) { dialog.removeEventListener(e, later, true); });
+                dialog.removeEventListener("click", onCycle, true);
                 if (observer) observer.disconnect();
             }
         };
         update(dialog, options, features);
+        if (features && features.expand) titleButton(dialog);
         return dialog.tweakuiWatch;
     }
 

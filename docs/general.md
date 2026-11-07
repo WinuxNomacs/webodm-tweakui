@@ -23,6 +23,10 @@ so you can change one there, or reset it to its default, and it leaves the list.
 options as usual, and closing it shows only the configured ones again. It works with or without Show Modified
 Options, which counts the same options. Only in the grouped view; "Other Options" shows nothing while it is closed.
 
+The Expand/Collapse button (beside Search and the view switch) then goes through three steps: **Expand All**,
+**Collapse All** (the configured options hidden too) and **Collapse All but Configured**, back where the dialog
+opens. Its tooltip names the next step. When no option is configured it's WebODM's own Expand All and Collapse All.
+
 ## Task Details > Enhanced Task Details
 
 Off by default.

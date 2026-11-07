@@ -12,6 +12,14 @@
 (nothing planned)
 
 **Done**
+- **Expand Configured: a three-step Expand/Collapse button** (asked directly, 2026-11-07) — branch
+  `expand-configured-cycle`.
+  - With Expand Configured on, the Task Options dialog's Expand/Collapse button cycles Expand All (WebODM), Collapse
+    All (WebODM, and `data-tweakui-plain` on the dialog hides the configured options too) and Collapse All but
+    Configured (TweakUI alone: the click is stopped before React sees it); the dialog opens on the last. Its title
+    names the next step. With no configured option, the middle step is skipped (WebODM's own two).
+  - Code: `public/task_options.js` (`toggleButton`, `cycle`, `titleButton`). Tests: `task_options.test.js` (3 tests,
+    a stand-in for WebODM's button handled at the document as React 16 does). Docs `docs/general.md`.
 - **Expand Configured** (asked directly, 2026-11-07) — branch `expand-configured`.
   - General > Task Options > Expand Configured (off by default): in the Task Options dialog, a collapsed group shows
     its options not at ODM's default (the same ones Show Modified Options counts) under its heading, as WebODM's own
