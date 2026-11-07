@@ -263,3 +263,97 @@ test("an import with everything refused changes nothing, so Close doesn't reload
     editor.closeImport(state);
     expect(win.location.reload).not.toHaveBeenCalled();
 });
+
+describe("Administration > TweakUI Themes", () => {
+    const PUBLISHED = {"published:p1": {name: "Shared", colors: THEMES.nord.colors}};
+
+    function adminPage(own) {
+        document.head.innerHTML = "";
+        document.body.innerHTML = `
+          <div id="tweakui-published" data-api="/api/plugins/tweakui/">
+            <input type="hidden" name="csrfmiddlewaretoken" value="tok">
+            <button type="button" data-theme-action="import">Import</button>
+            <div class="tweakui-theme" data-theme-id="published:p1">
+              <button type="button" data-theme-action="json"><i class="fa fa-code"></i></button>
+              <button type="button" data-theme-action="delete">Delete</button></div>
+            <p class="tweakui-published-status"></p>
+            <form class="tweakui-publish">${own ? '<select id="tweakui-publish-theme"><option value="abc">Mine</option></select>' : ""}
+              <button type="submit">Publish</button></form>
+            <div class="tweakui-import" data-import-path="published/import" hidden><form><input type="file" id="tweakui-import-file">
+              <textarea id="tweakui-import-text"></textarea><div class="tweakui-import-report"></div>
+              <button type="submit">Import</button><button type="button" data-import="close">Close</button></form></div>
+          </div>
+          <script id="tweakui-theme-colors" type="application/json">${JSON.stringify(PUBLISHED)}</script>`;
+    }
+
+    function startAdmin(replies, own = true) {
+        adminPage(own);
+        const win = {
+            fetch: jest.fn((url, init) => replies(url, init)), setTimeout: jest.fn(), clearTimeout: jest.fn(),
+            location: {reload: jest.fn()}, confirm: jest.fn(() => true),
+            TweakUI: {settings: {}, copyText: jest.fn(() => Promise.resolve())}, FileReader
+        };
+        return {state: editor.start(document, win), win};
+    }
+
+    test("the page starts without the editor, and Copy JSON copies a published theme", async () => {
+        const {state, win} = startAdmin(() => answer({}));
+        expect(state.editor).toBeNull();
+        el("[data-theme-action=json]").click();
+        await flush();
+        expect(JSON.parse(win.TweakUI.copyText.mock.calls[0][0])).toEqual({name: "Shared", colors: THEMES.nord.colors});
+    });
+
+    test("Import goes into the published themes", async () => {
+        const {state, win} = startAdmin(() => answer({added: ["Night"], replaced: [], refused: []}));
+        el("[data-theme-action=import]").click();
+        expect(el(".tweakui-import").hidden).toBe(false);
+        el("#tweakui-import-text").value = '{"name": "Night"}';
+        await editor.importThemes(state);
+        expect(win.fetch.mock.calls[0][0]).toBe("/api/plugins/tweakui/published/import");
+        expect(report()).toBe("Added 1: NightClose reloads the page to show them.");
+    });
+
+    test("Delete asks first, then deletes the published theme by its id and reloads; a failure is shown", async () => {
+        let ok = true;
+        const {win} = startAdmin(() => ok ? answer({}, true, 204) : answer({detail: "Not found."}, false, 404));
+        win.confirm.mockReturnValueOnce(false);
+        el("[data-theme-action=delete]").click();
+        expect(win.fetch).not.toHaveBeenCalled();
+        el("[data-theme-action=delete]").click();
+        expect(win.confirm.mock.calls[1][0]).toBe("Delete the published theme “Shared”? Users who chose it get WebODM's theme.");
+        const [url, init] = win.fetch.mock.calls[0];
+        expect([url, init.method, init.headers["X-CSRFToken"]]).toEqual(["/api/plugins/tweakui/published/p1", "DELETE", "tok"]);
+        await flush();
+        expect(win.location.reload).toHaveBeenCalledTimes(1);
+        ok = false;
+        el("[data-theme-action=delete]").click();
+        await flush();
+        await flush();
+        expect(el(".tweakui-published-status").textContent).toBe("Not deleted: Not found.");
+        expect(el(".tweakui-published-status").className).toBe("tweakui-published-status text-danger");
+    });
+
+    test("Publish sends the chosen own theme's id and reloads; a refusal is shown", async () => {
+        let ok = true;
+        const {win} = startAdmin(() => ok ? answer({theme: {}, replaced: false}, true, 201)
+            : answer({detail: "At most 50 themes"}, false, 400));
+        el(".tweakui-publish button").click();
+        const [url, init] = win.fetch.mock.calls[0];
+        expect([url, init.method, JSON.parse(init.body)]).toEqual(["/api/plugins/tweakui/published", "POST", {id: "abc"}]);
+        await flush();
+        expect(win.location.reload).toHaveBeenCalledTimes(1);
+        ok = false;
+        el(".tweakui-publish button").click();
+        await flush();
+        await flush();
+        expect(el(".tweakui-published-status").textContent).toBe("Not published: At most 50 themes");
+        expect(win.location.reload).toHaveBeenCalledTimes(1);
+    });
+
+    test("without themes of your own, Publish has nothing to send", () => {
+        const {win} = startAdmin(() => answer({}), false);
+        el(".tweakui-publish button").click();
+        expect(win.fetch).not.toHaveBeenCalled();
+    });
+});

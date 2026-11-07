@@ -33,20 +33,22 @@ DEFAULTS = {
     "storage_view": False,
     # Themes: the paintbrush menu of themes in the header
     "show_theme_menu": True,
-    # Themes: "webodm" (WebODM's own theme), a preset id of themes.PRESETS, or "own:<id>", one of the user's own
-    # themes (custom_themes)
+    # Themes: "webodm" (WebODM's own theme), a preset id of themes.PRESETS, "own:<id>", one of the user's own
+    # themes, or "published:<id>", one an administrator published (custom_themes)
     "theme": "webodm",
 }
 
 
 def allowed(name, value, user=None):
-    """Whether a value of the right type is one the setting takes (a setting with a list of choices); an own theme
-    only while the user has it"""
+    """Whether a value of the right type is one the setting takes (a setting with a list of choices); an own or a
+    published theme only while it is there"""
     if name == "theme":
         from . import custom_themes  # both import this module
         from .themes import DEFAULT, PRESETS
         if value.startswith(custom_themes.OWN):
             return custom_themes.find(user, value[len(custom_themes.OWN):]) is not None
+        if value.startswith(custom_themes.PUBLISHED):
+            return custom_themes.find_published(value[len(custom_themes.PUBLISHED):]) is not None
         return value == DEFAULT or value in PRESETS
     return True
 

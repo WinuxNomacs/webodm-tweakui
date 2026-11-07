@@ -98,9 +98,15 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 </div>
                 <div class="tweakui-theme-groups" role="radiogroup" aria-label="{% trans "Themes" %}">
                     {% comment %}The swatches show each theme's own colours: its background, text, links, buttons and header. Copy
-                    opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit.{% endcomment %}
+                    opens the editor (theme_editor.js) on a copy of any theme; only your own themes have Edit. Published
+                    (only when an administrator has published any) sits between the presets and My themes.{% endcomment %}
                     {% for group in theme_groups %}
-                    {% if group.id == "own" %}
+                    {% if group.id == "published" %}
+                    <div class="tweakui-themes-heading">
+                        <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
+                        <span class="text-muted">{% trans "From your administrator" %}</span>
+                    </div>
+                    {% elif group.id == "own" %}
                     <div class="tweakui-themes-heading">
                         <h5 id="tweakui-themes-{{ group.id }}">{{ group.title }}</h5>
                         <span class="tweakui-themes-buttons">
@@ -130,26 +136,7 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                     </div>
                     {% endfor %}
                 </div>
-                {% comment %}Import (theme_editor.js): a JSON file or text of one theme or a list, into My themes{% endcomment %}
-                <div class="tweakui-group theme-border tweakui-import" hidden>
-                    <h5 class="theme-background-highlight" id="tweakui-import-title">{% trans "Import themes" %}</h5>
-                    <form class="tweakui-editor-form" aria-labelledby="tweakui-import-title" novalidate>
-                        <p class="text-muted">{% trans "A JSON file or text of one theme or a list of them, as Export and Copy JSON give, with all 13 colours:" %} <code>{"name": "…", "colors": {"primary": "#rrggbb", …}}</code>. {% trans "A theme with the name of one of yours replaces it." %}</p>
-                        <div class="form-group">
-                            <label for="tweakui-import-file">{% trans "File" %}</label>
-                            <input type="file" id="tweakui-import-file" accept=".json,application/json">
-                        </div>
-                        <div class="form-group">
-                            <label for="tweakui-import-text">{% trans "JSON" %}</label>
-                            <textarea id="tweakui-import-text" class="form-control tweakui-import-text" rows="6" spellcheck="false"></textarea>
-                        </div>
-                        <div class="tweakui-import-report" role="status" aria-live="polite"></div>
-                        <div class="tweakui-editor-buttons">
-                            <button type="submit" class="btn btn-primary">{% trans "Import" %}</button>
-                            <button type="button" class="btn btn-default" data-import="close">{% trans "Close" %}</button>
-                        </div>
-                    </form>
-                </div>
+                {% include import_panel with target="own" %}
                 {% comment %}The theme editor (theme_editor.js): a name and WebODM's 13 theme colours, in Administration > Theme's
                 order; while it is open the page shows the unsaved colours{% endcomment %}
                 <div class="tweakui-group theme-border tweakui-editor" hidden>

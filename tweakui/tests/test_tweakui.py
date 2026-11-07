@@ -582,12 +582,160 @@ class TestCustomThemes(TweakUITestCase):
         self.assertContains(res, 'data-theme-action="import"')
         self.assertContains(res, 'data-theme-action="json"', count=12)
         self.assertNotContains(res, 'href="/api/plugins/tweakui/themes/export"')
-        self.assertContains(res, 'class="tweakui-group theme-border tweakui-import" hidden')
+        self.assertContains(res, 'class="tweakui-group theme-border tweakui-import" data-import-path="themes/import" hidden')
         theme = self.post(a_theme("Mine")).json()
         res = self.client.get("/plugins/tweakui/")
         self.assertContains(res, 'href="/api/plugins/tweakui/themes/export"')
         self.assertContains(res, 'href="/api/plugins/tweakui/themes/export?id=%s"' % theme["id"])
         self.assertContains(res, 'data-theme-action="json"', count=13)
+
+
+PUBLISHED = "/api/plugins/tweakui/published"
+ADMIN_PAGE = "/plugins/tweakui/admin/themes/"
+
+
+class TestPublishedThemes(TweakUITestCase):
+    def setUp(self):
+        super().setUp()
+        self.admin = self.login("testsuperuser")
+        User.objects.create_user(username="teststaff", password="test1234", is_staff=True)
+
+    def own_theme(self, name, client=None, **colors):
+        return (client or self.admin).post(THEMES, json.dumps(a_theme(name, **colors)),
+                                           content_type="application/json").json()
+
+    def publish(self, theme_id, client=None):
+        return (client or self.admin).post(PUBLISHED, json.dumps({"id": theme_id}), content_type="application/json")
+
+    def import_(self, data, client=None):
+        return (client or self.admin).post(PUBLISHED + "/import", json.dumps(data), content_type="application/json")
+
+    def test_only_superusers_see_the_page_and_change_published_themes(self):
+        theme = self.own_theme("Mine", self.client)
+        for client in (self.client, self.login("teststaff")):
+            self.assertEqual(client.get(ADMIN_PAGE).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(client.get(PUBLISHED).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(self.publish(theme["id"], client).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(self.import_(a_theme(), client).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(client.get(PUBLISHED + "/export").status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(client.delete(PUBLISHED + "/abc").status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Client().get(ADMIN_PAGE).status_code, status.HTTP_302_FOUND)
+        self.assertEqual(self.admin.get(ADMIN_PAGE).status_code, status.HTTP_200_OK)
+        self.assertEqual(self.admin.get(PUBLISHED).json(), [])
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="testsuperuser", password="test1234")
+        self.assertEqual(self.import_(a_theme(), strict).status_code, status.HTTP_403_FORBIDDEN)
+
+    def test_settings_js_tells_only_superusers_to_add_the_administration_link(self):
+        body = self.admin.get("/plugins/tweakui/settings.js").content.decode()
+        self.assertIs(self.script_value(body, "superuser"), True)
+        for client in (self.client, self.login("teststaff"), Client()):
+            body = client.get("/plugins/tweakui/settings.js").content.decode()
+            self.assertIsNone(self.script_value(body, "superuser"))
+
+    def test_publishing_copies_an_own_theme_and_replaces_a_published_one_of_the_same_name(self):
+        mine = self.own_theme("Night")
+        res = self.publish(mine["id"])
+        self.assertEqual(res.status_code, status.HTTP_201_CREATED)
+        published = res.json()["theme"]
+        self.assertNotEqual(published["id"], mine["id"])
+        self.assertEqual((published["name"], published["colors"]), ("Night", mine["colors"]))
+        self.admin.put("%s/%s" % (THEMES, mine["id"]), json.dumps(a_theme("Night", primary="#123456")),
+                       content_type="application/json")
+        self.assertEqual(self.admin.get(PUBLISHED).json()[0]["colors"]["primary"], mine["colors"]["primary"])
+        res = self.publish(mine["id"])
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), {"theme": dict(published, colors=dict(published["colors"], primary="#123456")),
+                                      "replaced": True})
+        self.assertEqual(len(self.admin.get(PUBLISHED).json()), 1)
+        other = self.own_theme("Theirs", self.login("testuser2"))
+        self.assertEqual(self.publish(other["id"]).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.publish(None).status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_every_user_can_list_choose_and_copy_a_published_theme_but_not_change_it(self):
+        published = self.publish(self.own_theme("Shared", primary="#abcdef")["id"]).json()["theme"]
+        theme_id = "published:" + published["id"]
+        listed = self.script_value(self.client.get("/plugins/tweakui/settings.js").content.decode(), "themes")
+        self.assertEqual([t["group"] for t in listed[-1:]], ["published"])
+        self.assertEqual(listed[-1]["id"], theme_id)
+        own = self.own_theme("Mine", self.client)
+        listed = self.script_value(self.client.get("/plugins/tweakui/settings.js").content.decode(), "themes")
+        self.assertEqual([t["group"] for t in listed[-2:]], ["published", "own"])
+        self.assertEqual(self.patch({"theme": theme_id}).status_code, status.HTTP_200_OK)
+        css = self.client.get("/plugins/tweakui/theme.css").content.decode()
+        self.assertIn("/* TweakUI theme: %s */" % theme_id, css)
+        self.assertIn("#abcdef", css)
+        self.assertEqual(self.client.put("%s/%s" % (THEMES, published["id"]), json.dumps(a_theme("X")),
+                                         content_type="application/json").status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.delete("%s/%s" % (THEMES, published["id"])).status_code,
+                         status.HTTP_404_NOT_FOUND)
+        page = self.client.get("/plugins/tweakui/")
+        self.assertContains(page, 'id="tweakui-themes-published"')
+        self.assertContains(page, 'data-theme-id="%s"' % theme_id)
+        self.assertContains(page, 'data-theme-action="edit"', count=1)  # only Mine
+        self.assertEqual(page.context["theme_colors"][theme_id]["colors"]["primary"], "#abcdef")
+        self.assertIn("own:" + own["id"], page.context["theme_colors"])
+        self.assertEqual(self.patch({"theme": "published:abc"}).status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_the_published_group_shows_only_when_there_are_published_themes(self):
+        self.assertNotContains(self.client.get("/plugins/tweakui/"), 'id="tweakui-themes-published"')
+
+    def test_a_deleted_published_theme_falls_back_to_webodm_s_theme(self):
+        published = self.publish(self.own_theme("Gone")["id"]).json()["theme"]
+        self.patch({"theme": "published:" + published["id"]})
+        self.assertEqual(self.admin.delete("%s/%s" % (PUBLISHED, published["id"])).status_code,
+                         status.HTTP_204_NO_CONTENT)
+        self.assertEqual(self.admin.delete("%s/%s" % (PUBLISHED, published["id"])).status_code,
+                         status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.get(API).json()["theme"], "webodm")
+        self.assertEqual(self.client.get("/plugins/tweakui/theme.css").content.decode(),
+                         "/* TweakUI theme: webodm */\n")
+
+    def test_import_and_export_of_published_themes_replace_by_name_and_round_trip(self):
+        self.publish(self.own_theme("Night")["id"])
+        res = self.import_([a_theme("Night", primary="#111111"), a_theme("Day"), a_theme("Bad", primary="red")])
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(res.json(), {"added": ["Day"], "replaced": ["Night"], "refused": [
+            {"index": 3, "name": "Bad", "reason": "Colours that are not #rrggbb: primary"}]})
+        self.assertEqual(self.client.get(THEMES).json(), [])  # not into anyone's own
+        res = self.admin.get(PUBLISHED + "/export")
+        self.assertEqual(res["Content-Disposition"], 'attachment; filename="tweakui-published-themes.json"')
+        exported = json.loads(res.content)
+        self.assertEqual(exported, [a_theme("Night", primary="#111111"), a_theme("Day")])
+        day = self.admin.get(PUBLISHED).json()[1]
+        res = self.admin.get(PUBLISHED + "/export?id=" + day["id"])
+        self.assertEqual(res["Content-Disposition"], 'attachment; filename="tweakui-published-theme-day.json"')
+        self.assertEqual(json.loads(res.content), a_theme("Day"))
+        self.assertEqual(self.admin.get(PUBLISHED + "/export?id=abc").status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.import_(exported).json()["replaced"], ["Night", "Day"])
+        self.assertEqual(self.import_("text").status_code, status.HTTP_400_BAD_REQUEST)
+
+    def test_at_most_50_published_themes(self):
+        from app.plugins.data_store import GlobalDataStore
+        GlobalDataStore("tweakui").set_json("published_themes",
+                                            [dict(a_theme(str(i)), id="%x" % i) for i in range(50)])
+        res = self.publish(self.own_theme("One more")["id"])
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertEqual(res.json()["detail"], "At most 50 themes")
+        self.assertEqual(self.publish(self.own_theme("0", primary="#000000")["id"]).status_code, status.HTTP_200_OK)
+
+    def test_the_page_lists_published_themes_with_their_actions_and_the_superuser_s_own_to_publish(self):
+        res = self.admin.get(ADMIN_PAGE)
+        self.assertContains(res, "None yet")
+        self.assertContains(res, "You have no themes of your own yet")
+        self.assertContains(res, 'data-import-path="published/import"')
+        self.assertNotContains(res, 'href="/api/plugins/tweakui/published/export"')
+        mine = self.own_theme("Night")
+        published = self.publish(mine["id"]).json()["theme"]
+        res = self.admin.get(ADMIN_PAGE)
+        self.assertContains(res, 'data-theme-id="published:%s"' % published["id"])
+        self.assertContains(res, 'href="/api/plugins/tweakui/published/export"')
+        self.assertContains(res, 'href="/api/plugins/tweakui/published/export?id=%s"' % published["id"])
+        self.assertContains(res, 'data-theme-action="delete"', count=1)
+        self.assertContains(res, 'data-theme-action="json"', count=1)
+        self.assertContains(res, '<option value="%s">Night</option>' % mine["id"])
+        self.assertIn("published:" + published["id"], res.context["theme_colors"])
+
 
 class TestSourceFrames(TweakUITestCase):
     """Two cameras 100 m above flat ground (a DSM at 20 m), looking straight down, 30 m apart in x: each photo is
