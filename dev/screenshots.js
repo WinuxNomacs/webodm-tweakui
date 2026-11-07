@@ -12,13 +12,14 @@ const fs = require("fs");
 const OUT = path.join(__dirname, "..", "tweakui", "public", "previews");
 const WIDTH = 1280, HEIGHT = 800, MAX_WIDTH = 1280;
 
-// Every shot: its name (the image's), the settings it turns on (on top of WebODM's theme, the rest as they are),
+// Every shot: its name (the image's), the settings it turns on (on top of WebODM's theme, the rest as they are;
+// a Dashboard shot turns Expand Task Controls off, which expands every task of the project),
 // and what it does to show the feature, returning what to capture: an element's selector, "page" for the
 // viewport, or {pair: [[label, png], ...]} for images side by side (two or three). A pair turns its setting on itself.
 // An optional cleanup(s) runs after the shot, also when it failed.
 const SHOTS = [
     {
-        name: "show-modified-options", settings: {show_modified_options: true},
+        name: "show-modified-options", settings: {show_modified_options: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.click(".expanded-panel .edit-button");
@@ -29,7 +30,7 @@ const SHOTS = [
         },
     },
     {
-        name: "expand-configured", settings: {show_modified_options: true, expand_configured: true},
+        name: "expand-configured", settings: {show_modified_options: true, expand_configured: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.click(".expanded-panel .edit-button");
@@ -40,7 +41,7 @@ const SHOTS = [
         },
     },
     {
-        name: "enhanced-task-details", settings: {enhanced_task_details: true},
+        name: "enhanced-task-details", settings: {enhanced_task_details: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.waitForSelector(".expanded-panel [data-tweakui-row]");
@@ -49,7 +50,7 @@ const SHOTS = [
         },
     },
     {
-        name: "themes", settings: {theme: "catppuccin-mocha"},
+        name: "themes", settings: {theme: "catppuccin-mocha", expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.waitForTimeout(800);
@@ -254,8 +255,9 @@ const SHOTS = [
         name: "storage", settings: {storage_view: true},
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/storage/");
-            await s.page.waitForSelector(".tweakui-storage-project [data-act=open-project]");
-            await s.page.click(".tweakui-storage-project [data-act=open-project]");
+            const project = `.tweakui-storage-project[data-project="${s.task.project}"] [data-act=open-project]`;
+            await s.page.waitForSelector(project);
+            await s.page.click(project);
             await s.page.click(`[data-task="${s.task.id}"] [data-act=open-task]`);
             await s.page.waitForSelector(`[data-task="${s.task.id}"] ~ tr .tweakui-storage-kinds, .tweakui-storage-kinds`);
             await s.page.waitForTimeout(500);
@@ -332,16 +334,11 @@ async function main(names) {
     const s = {
         page, base, task, api,
         settings: values => api("PATCH", "/api/plugins/tweakui/settings", values),
+        // The Dashboard with the task's project open and its panel expanded, by WebODM's own query string (a project
+        // item carries no id to find it by among several)
         async openTask() {
-            await page.goto(base + "/dashboard/");
-            const project = `.project-list-item[data-id="${task.project}"]`;
-            await page.waitForSelector(".project-list-item");
-            const list = (await page.$(project)) ? project + " " : "";
-            if (!(await page.$(list + ".task-list-item"))) await page.click(list + '.project-links a:has-text("Tasks")');
-            const item = page.locator(".task-list-item", {has: page.locator(".name-link", {hasText: task.name})}).first();
-            await item.waitFor({timeout: 15000});
-            if (!(await page.$(".expanded-panel"))) await item.locator(".name-link").click();
-            await page.waitForSelector(".expanded-panel");
+            await page.goto(`${base}/dashboard/?project_task_open=${task.project}&project_task_expanded=${task.id}`);
+            await page.waitForSelector(".expanded-panel", {timeout: 15000});
         },
         async openMap() {
             await page.goto(`${base}/map/project/${task.project}/task/${task.id}/`);
