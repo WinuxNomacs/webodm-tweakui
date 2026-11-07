@@ -2,8 +2,13 @@
 
 ## Phases (current and upcoming)
 
-**Up next**
-- Nothing planned: new requests arrive in `new.md`.
+**Up next** (planned with the user before each is built; see "Before the first release")
+1. **README splash image** — `ignored/tweakui-logo-med.jpg` at the top of the README, checked in.
+2. **Review: breaking points, performance, WebODM UX** — read every part of the plugin as a whole, list the
+   findings here with a fix proposed for each; clear bugs are fixed on their own branches.
+3. **Structure for other developers** — refactor so adding a WebODM UI tweak is as simple as possible, plus a
+   guide to doing it.
+4. **Fixes from the review** that the refactor didn't already cover.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1230,3 +1235,57 @@ the checks use those and create none; (3) on Windows, Enhanced Task Details show
    Windows node and delete it afterwards?
 3. **Enhanced Task Details' ODX command on Windows.** It shows the docker form (`docker run ... webodm/odx`). On
    native Windows, keep it as is, or show the native form (ODX's `run.bat`) when WebODM runs on Windows?
+
+## Before the first release (new.md, 2026-11-07)
+
+**Requests:**
+1. "Review the plugin code for possible breaking points, performance improvements, and reduction of possible
+   negative webodm ux impacts. This plugin will soon be released to the world so it's important to refine any points
+   where the experience could breakdown before they do."
+2. "This plugin's codebase is meant to be extensible to make it as simple as possible for other developers to add
+   their own WebODM UI modifications. Review the code structure and refactor as needed to make the code as
+   accessible as possible for future updates and additions."
+3. "add ignored/tweakui-logo-med.jpg as the splash image at the top of the README. Move the image files to a
+   sensible location and check them in."
+
+**What is there (2026-11-07):**
+- 13 scripts in `tweakui/public/` (about 3,300 lines of ES5, no build step) and `main.css`, all loaded on every
+  WebODM page (`plugin.py` `include_js_files`) whether or not their feature is on; each reads
+  `window.TweakUI.settings` from `settings.js`, a view (one data-store read per page), and `theme.css` is a view too.
+  Five scripts watch the page with a `MutationObserver`.
+- Python: `api.py` (the views), `settings.py`, `themes.py`, `custom_themes.py`, `storage.py`, `frames.py`.
+- Adding a feature today touches up to ten places: the default in `settings.py` `DEFAULTS`, a hand-written control
+  in `templates/settings.html`, the script list in `plugin.py`, the script, `main.css`, its docs page, its shot in
+  `dev/screenshots.js`, Jest and Django tests, `CHANGELOG.md` and the README. CLAUDE.md describes some of this;
+  there is no guide for a developer from outside.
+- The logo: `ignored/tweakui-logo-med.jpg` (1366×580, 227 KB) and `ignored/tweakui-logo.jpg` (3168×1344, 3.1 MB),
+  both untracked (`ignored/` is git-ignored).
+
+**Proposed phases:**
+1. **README splash image.** Move the medium logo into the repo (see decision 1) and put it above the README's
+   title text, with alt text. Not in the plugin zip: `tweakui/` stays the plugin only.
+2. **Review.** Every script, view and template read for:
+   - Breaking points: a WebODM page or a selector that changes in a later WebODM, an error in one feature that
+     stops others (or WebODM's own scripts), missing or odd data (a task with no assets, a deleted project, a
+     huge project, an empty data store), a slow or failing request, two tabs, and anonymous pages (shared maps).
+   - Performance: scripts and views on every page, observers that watch the whole page, polling, large API
+     responses (Storage, Source Frames), and the cost to a page where every feature is off.
+   - WebODM UX: anything TweakUI changes in WebODM while a feature is off, layout shifts while the page loads,
+     keyboard and screen-reader use of what it adds, phone width, and what turning the plugin off leaves behind.
+   The findings go in this section, each with where it is, what happens and a proposed fix. Clear bugs are fixed
+   on their own branches with tests; anything that changes what a user sees, or is a larger change, is asked first.
+3. **Structure for other developers.** Proposed, decided after the review (decision 3):
+   - One place that declares a feature (setting name, default, category, label, description, script, preview)
+     from which the defaults, the settings page's control and the script list come, in place of three hand-kept
+     lists.
+   - A small shared script (`TweakUI.*`) for what features repeat: reading a setting, waiting for an element,
+     adding to the side menu, safe DOM building; each feature's script wrapped so an error in it is logged and
+     stops only that feature.
+   - A docs page "Adding a Tweak" (and CONTRIBUTING.md pointing to it): the files, a worked example, the tests and
+     the checks, and the plugin rules (only WebODM's extension points, theme variables, ES5).
+   - The scripts stay ES5 with no build step, as now: no bundler for contributors to learn.
+4. **Fixes from the review** that the refactor didn't cover, each on its branch, on both Docker stacks and,
+   where it matters there, on Windows.
+
+**Open decisions:** listed in the question to the user; the answers go here.
+
