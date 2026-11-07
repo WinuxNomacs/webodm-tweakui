@@ -24,6 +24,21 @@ edge. Click it again to bring the side menu back. The choice is kept in this bro
 way. On a phone the side menu is already behind the header's menu button, so there's no tab. On WebODM's Windows app
 the tab sits near the top of the window.
 
+## Global Controls > Resize Navigation Pane
+
+Off by default.
+
+![A task's map with the side menu narrowed to its icons](../tweakui/public/previews/resize-navigation-pane.webp)
+
+Point at the divider between the side menu and the page: it lights up and the pointer becomes a resize arrow. Drag it
+to make the side menu wider (up to half the window) or narrower. Labels too long for the width are cut off; drag it
+narrower than about 120 px and it snaps to the icons alone, where each icon's name shows when you point at it.
+Double-click the divider to put back WebODM's usual width. The divider also works from the keyboard: Tab to it, then
+the arrow keys narrow and widen the side menu, Home gives the icons alone and End the usual width.
+
+The width is kept in this browser. With Hide Navigation Pane on too, the tab sits on the divider wherever it is.
+On a phone there's no divider to drag.
+
 ## Task Options > Show Modified Options
 
 Off by default.

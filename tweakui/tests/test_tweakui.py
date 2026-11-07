@@ -30,7 +30,7 @@ def plugin_scripts():
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"units_in_header": False, "hide_nav_pane": False, "show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
+    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_modified_options": False, "expand_configured": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
@@ -266,6 +266,17 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="hide_nav_pane" checked')
         self.assertEqual(self.script_settings(self.client)["hide_nav_pane"], True)
         self.assertIn("nav_pane.js", plugin_scripts())
+
+    def test_resize_navigation_pane_is_off_by_default_after_hide_navigation_pane_and_can_be_turned_on(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        general = page[page.index('<section id="tweakui-general"'):]
+        general = general[:general.index("</section>")]
+        self.assertLess(general.index('data-setting="hide_nav_pane"'), general.index('data-setting="resize_nav_pane">'))
+        self.assertLess(general.index('data-setting="resize_nav_pane"'), general.index("Task Options"))
+        self.assertIn("Resize Navigation Pane", general)
+        self.assertEqual(self.patch({"resize_nav_pane": True}).json(), defaults(resize_nav_pane=True))
+        self.assertEqual(self.script_settings(self.client)["resize_nav_pane"], True)
+        self.assertEqual(plugin_scripts().count("nav_pane.js"), 1)
 
     def test_surprise_me_is_off_by_default_last_under_general_just_for_fun_and_can_be_turned_on(self):
         page = self.client.get("/plugins/tweakui/").content.decode()

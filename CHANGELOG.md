@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Global Controls > Resize Navigation Pane: drag the divider to resize the side menu, down to its icons
+  alone (their names on hover); a double click puts back the usual width; remembered in this browser.
 - General > Global Controls > Hide Navigation Pane: a tab on the side menu's divider hides the side menu, giving
   the page the whole width, and shows it again; remembered in this browser.
 - 3D Map > Zoom Override: a scroll with the textured model shown no longer stutters; a burst of wheel events with

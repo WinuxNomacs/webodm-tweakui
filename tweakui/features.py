@@ -63,6 +63,11 @@ CATEGORIES = [
                       "the side menu and give the page the whole width, and again to show it. Remembered in this "
                       "browser. Not on a phone, where the side menu is already the header's menu button."),
                     preview="hide-navigation-pane", scripts=["nav_pane.js"]),
+            Setting("resize_nav_pane", False, _("Resize Navigation Pane"),
+                    _("Drag the divider between the side menu and the page to make the side menu wider or narrower, down "
+                      "to its icons alone (each one's name shows when you point at it). A double click on the divider "
+                      "puts back the usual width. Remembered in this browser. Not on a phone."),
+                    preview="resize-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
             Setting("show_modified_options", False, _("Show Modified Options"),

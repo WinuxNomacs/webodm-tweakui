@@ -18,7 +18,8 @@ the next page you open. Beside each feature in the settings is a screenshot of i
 Every feature is off until you turn it on, except the theme menu.
 
 - [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): a units menu in the header, linked to the
-  maps' units selector (Units in Header); a tab that hides the side menu (Hide Navigation Pane); in the Task Options dialog, each group's count of options not at their
+  maps' units selector (Units in Header); a tab that hides the side menu (Hide Navigation Pane) and a divider that resizes it, down to its icons (Resize
+  Navigation Pane); in the Task Options dialog, each group's count of options not at their
   default (Show Modified Options) and those options shown under a collapsed group (Expand Configured); on the
   Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
   step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks every
