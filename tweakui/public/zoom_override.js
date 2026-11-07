@@ -29,10 +29,12 @@
         return max + EXTRA_STEPS;
     }
 
-    // Potree's wheel events (mousewheel, and DOMMouseScroll in Firefox): one notch each, in (+1) or out (-1)
+    // Potree's wheel events (mousewheel, 120 a notch; DOMMouseScroll in Firefox, 3 lines a notch): how many notches,
+    // in (+) or out (-), at most one. A trackpad's two-finger scroll sends many small events, each a share of a notch,
+    // so it zooms as far as it scrolls; Potree's own wheel counts each as a whole notch, far too fast on a trackpad
     function notch(e) {
-        var delta = e.wheelDelta !== undefined ? e.wheelDelta : (e.detail !== undefined ? -e.detail : 0);
-        return Math.sign(delta);
+        var n = e.wheelDelta !== undefined ? e.wheelDelta / 120 : (e.detail !== undefined ? -e.detail / 3 : 0);
+        return Math.max(-1, Math.min(1, n));
     }
 
     // Where the camera goes: along the pointer's ray (a unit direction) toward the surface `distance` away on it, `n`

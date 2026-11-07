@@ -138,7 +138,8 @@ CATEGORIES = [
                     preview="source-frames-3d", scripts=["pick3d.js", "source_frames.js"]),
             Setting("zoom_override_3d", False, _("Zoom Override"),
                     _("The mouse wheel zooms toward what is under the pointer (the points or the model) instead of the "
-                      "middle of the view, so you can get close to any surface. Over empty space it zooms as before."),
+                      "middle of the view, so you can get close to any surface, and a trackpad's two-finger scroll "
+                      "zooms at a gentle pace. Over empty space it zooms as before."),
                     preview="zoom-override-3d", scripts=["pick3d.js", "zoom_override.js"]),
         ]),
     ]),
