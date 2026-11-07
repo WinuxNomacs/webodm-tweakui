@@ -1499,7 +1499,8 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    By the user in Safari with the trackpad: a pinch zooms the 2D map smoothly, Layers drags by its title, a
    two-finger click sends a rocket with no menu; two-finger scroll in 3D "feels a bit too fast" (as measured above).
 6. **Install from the zip as a user would** (the `release-check` skill, steps 4–6): Administration > Plugins in
-   Safari, upload the zip built on the Mac, check it loads.
+   Safari, upload the zip built on the Mac, check it loads. **Skipped (2026-11-07), by the user's decision**: the
+   upload and install are WebODM's code, not TweakUI's.
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
    "Done".
 
