@@ -137,6 +137,19 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
     .navbar-top-links .tweakui-units-name { display: none; }
 }
 
+/* Hide Navigation Pane (nav_pane.js): a small tab on the divider between the side menu and the page, fixed below the
+   header (its top set by the script); hidden, the side menu goes and the page takes the whole width, the tab at the
+   left edge, within the page's 15 px padding. Only where the side menu is beside the page (from 768 px, as WebODM's
+   sb-admin-2.css); narrower it is the header's hamburger menu, left as it is. Under Bootstrap's dialogs (1050). */
+html.tweakui .tweakui-nav-tab { display: none; }
+@media (min-width: 768px) {
+    html.tweakui .tweakui-nav-tab { display: block; position: fixed; z-index: 1040; left: calc(var(--tweakui-nav-width, 250px) - 7px); width: 14px; height: 36px; padding: 0; border-width: 1px; border-style: solid; border-radius: 4px; color: inherit; font-size: 9px; line-height: 1; cursor: pointer; opacity: 0.8; }
+    html.tweakui .tweakui-nav-tab:hover, html.tweakui .tweakui-nav-tab:focus-visible { opacity: 1; }
+    html.tweakui.tweakui-nav-hidden .navbar-default.sidebar { display: none; }
+    html.tweakui.tweakui-nav-hidden #page-wrapper { margin-left: 0; }
+    html.tweakui.tweakui-nav-hidden .tweakui-nav-tab { left: 0; border-left-width: 0; border-radius: 0 4px 4px 0; }
+}
+
 /* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
 .option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }

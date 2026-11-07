@@ -153,7 +153,9 @@ test("an error while adding it is logged, not thrown into WebODM's map", () => {
 
 Name tests as sentences that describe the behaviour. The Django tests in `TestFeatures` check the new setting
 without any change on your part: that it is declared once, is off, has a description and a checkbox, and that its
-scripts and preview exist.
+scripts and preview exist. One change is yours: add the setting and its default to `defaults()` at the top of
+`tweakui/tests/test_tweakui.py`, which lists every setting on purpose. The settings API's tests compare a user's
+whole settings with it, so they fail until the new one is there.
 
 ### 4. Try it in WebODM
 

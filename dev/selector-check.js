@@ -21,6 +21,7 @@ const IMAGES = process.env.TW_IMAGES || path.join(__dirname, "..", "ignored", "W
 const WHERE = {
     core: {page: "dashboard", within: {user: "headerLinks"}},
     main: {page: "dashboard", admin: ["adminTheme"]},
+    nav_pane: {page: "dashboard"},
     task_controls: {page: "task", className: ["open"]},
     task_details: {page: "task", within: {rows: "table"}},
     task_options: {page: "taskOptions"},
