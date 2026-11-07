@@ -1464,6 +1464,8 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
 5. **Real Safari, by hand with the user** (what headless can't show), every feature on:
    - Copy buttons: Show ODX Command's copy (Dashboard, a task's details) and Copy JSON (TweakUI > Themes, My Themes).
      Also from another machine's address (http://<the Mac's IP>:8005, not a secure context): the fallback copy.
+     The user has no other device (2026-11-07): Safari on the Mac itself at its LAN address does the same, since
+     only `localhost` counts as secure (headless WebKit there: `isSecureContext` false).
    - Movable Controls (a task's 2D map): drag Layers, Measure and the others by their title, with the trackpad.
    - Source Frames (2D and 3D): click to list the photos, drag the window by its title, the full-frame view.
    - Zoom Override 2D: pinch on the trackpad and the + button past WebODM's limit (zoom 24); two-finger scroll.
@@ -1471,7 +1473,8 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
      every wheel event as a notch, and so does TweakUI, so a trackpad may zoom much faster than a mouse.
    - Surprise Me: a two-finger click (right-click) sends a rocket; Shift + two-finger click gives the browser's menu;
      **Ctrl+click** today gives the browser's menu and no rocket (`surprise_me.js` looks at `button === 2` only).
-     Decision for the user: should Ctrl+click send a rocket too?
+     Decision for the user: should Ctrl+click send a rocket too? **Decided (2026-11-07): yes**, Ctrl+click sends a
+     rocket too (Shift still gives the browser's menu); built on its own branch after step 5, with a Jest test.
    - Theme menu and Units menu in the header; the settings page, previews and the Saved banner; Storage; TweakUI
      Themes; Task Options (Show Modified Options, Expand Configured); Expand Task Controls; Enhanced Task Details.
    - Light theme and a dark one, a narrow window (phone width).
