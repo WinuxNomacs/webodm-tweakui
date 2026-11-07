@@ -39,6 +39,8 @@ test("turned on, a tab on the divider below the header hides the pane, and shows
     start({hide_nav_pane: true});
     const t = tab();
     expect(t.tagName).toBe("BUTTON");
+    // In the header, which holds the pane, so it isn't under the pane
+    expect(t.parentNode.id).toBe("navbar-top");
     expect(t.className).toContain("theme-background-highlight");
     expect(t.style.top).toBe("10px");
     expect(t.title).toBe("Hide Navigation Pane");

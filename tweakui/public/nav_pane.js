@@ -70,17 +70,18 @@
         }
 
         // The tab, once the page has its header: fixed just below it (the header's height is 0 in WebODM's desktop
-        // mode, where the pane starts at the top)
+        // mode, where the pane starts at the top). In the header, which holds the pane: the header is above the page
+        // (z-index 99999), so a tab outside it would be under the pane
         function addTab() {
-            if (tab || !doc.body) return;
+            var header = doc.querySelector(SELECTORS.header), parent = header || doc.body;
+            if (tab || !parent) return;
             tab = ui.el(doc, "button", "tweakui-nav-tab theme-border theme-background-highlight");
             tab.type = "button";
             tab.appendChild(ui.el(doc, "i"));
-            var header = doc.querySelector(SELECTORS.header);
             tab.style.top = ((header ? header.offsetHeight : 0) + TAB_GAP) + "px";
             tab.addEventListener("click", function () { setHidden(!hidden(), true); });
             label();
-            doc.body.appendChild(tab);
+            parent.appendChild(tab);
             html.classList.add(TAB);
         }
 

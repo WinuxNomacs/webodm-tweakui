@@ -62,7 +62,7 @@ CATEGORIES = [
                     _("A small tab on the divider between the side menu and the page, near the top: click it to hide "
                       "the side menu and give the page the whole width, and again to show it. Remembered in this "
                       "browser. Not on a phone, where the side menu is already the header's menu button."),
-                    scripts=["nav_pane.js"]),
+                    preview="hide-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
             Setting("show_modified_options", False, _("Show Modified Options"),

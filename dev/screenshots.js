@@ -71,6 +71,16 @@ const SHOTS = [
         },
     },
     {
+        // A task's map with the side menu hidden: the map takes the whole width, the tab at the left edge
+        name: "hide-navigation-pane", settings: {hide_nav_pane: true},
+        async run(s) {
+            await s.openMap();
+            await s.page.click(".tweakui-nav-tab");
+            await s.page.waitForTimeout(800);
+            return "page";
+        },
+    },
+    {
         // Fireworks over the Dashboard: the first show starts 5-20 s after the page opens; taken once it's going
         name: "surprise-me", settings: {surprise_me: true, units_in_header: false},
         async run(s) {
