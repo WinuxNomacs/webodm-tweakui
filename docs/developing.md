@@ -34,6 +34,10 @@ be restarted for changes to Python code and templates.
   `docker exec -w /webodm tw-webapp python manage.py test --noinput coreplugins.tweakui.tests.test_tweakui`
   (and the same in `tw3-webapp` for 3.3.2).
 - `npm test` (Jest), `npm run lint -- tweakui dev` (ESLint), `.venv/bin/ruff check .` (Ruff).
+- `TW_USER=... TW_PASSWORD=... npm run selector-check` (`dev/selector-check.js`): opens a running WebODM's Dashboard,
+  Task Options dialog, 2D map and 3D view and reports each element in the scripts' `SELECTORS` it doesn't find. Run it
+  against a new WebODM version before saying TweakUI works there. It reads the user's first completed task; with
+  none, it processes WebODM's own test images in a project of its own and deletes it afterwards.
 
 ## Screenshots
 

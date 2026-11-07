@@ -105,7 +105,10 @@ Every script follows the same pattern:
   so an unguarded error would break WebODM's map or task panel. The same goes for observers and for listeners on the
   whole document or window.
 - **`SELECTORS` at the top** lists every WebODM element the script finds on the page (class names, ids). When WebODM
-  releases a new version, this list is what gets checked.
+  releases a new version, this list is what gets checked: `npm run selector-check` (`dev/selector-check.js`, with
+  `TW_USER` and `TW_PASSWORD` of a dev account) opens WebODM's pages and reports each selector it doesn't find. A
+  script with selectors gets a line in that file's `WHERE`, naming the page they are on; a test fails until it has
+  one.
 
 ### 3. Test it
 

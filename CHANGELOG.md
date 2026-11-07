@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- For developers: `npm run selector-check` checks a WebODM for every element TweakUI's scripts rely on (their
+  `SELECTORS`), for a new WebODM version.
 - Source Frames: the full-frame viewer takes the keyboard focus when it opens and gives it back to Open full
   frame when it closes.
 - General > Task Details > Expand Task Controls: the page address lists only the tasks you expanded fully, not
