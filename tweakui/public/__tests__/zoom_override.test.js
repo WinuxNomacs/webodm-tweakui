@@ -24,6 +24,17 @@ test("a wheel notch goes a tenth of the way along the pointer's ray to the surfa
     expect(zo.notch({detail: 3})).toBe(-1);
 });
 
+test("a trackpad's small wheel events are each a share of a notch, so a scroll zooms as far as it goes; never more than a notch an event", () => {
+    expect(zo.notch({wheelDelta: 12})).toBeCloseTo(0.1);
+    expect(zo.notch({wheelDelta: -3})).toBeCloseTo(-0.025);
+    expect(zo.notch({wheelDelta: 360})).toBe(1);
+    expect(zo.notch({detail: -1})).toBeCloseTo(1 / 3);
+    // Ten tenth-notches go as far as one notch
+    let pos = {x: 0, y: 0, z: 100};
+    for (let i = 0; i < 10; i++) pos = zo.zoomAlong(pos, {x: 0, y: 0, z: -1}, pos.z, 0.1);
+    expect(pos.z).toBeCloseTo(90);
+});
+
 // A 3D view: the camera 100 m above the ground looking straight down, the point cloud under the pointer at `hit`
 function view3d(hit) {
     const area = document.createElement("div");

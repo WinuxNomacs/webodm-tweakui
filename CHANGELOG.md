@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- 3D Map > Zoom Override: a trackpad's two-finger scroll zooms as far as it scrolls, not a wheel notch per scroll
+  step (far too fast, as WebODM's own 3D view does).
 - Thanks, in the README and on the documentation site: the projects and people TweakUI builds on.
 - Settings: a green "Saved" banner at the top of the settings for 3 seconds after each change (a red one when
   a change can't be saved), in place of the line at the bottom of the page.
