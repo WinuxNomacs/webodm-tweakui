@@ -5,7 +5,7 @@
 **Up next** (planned with the user before each is built; see "Before the first release")
 1. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
    11 (Source Frames' viewer focus) and 12 (the selector check, built from each script's `SELECTORS`), and the Zoom
-   Override measurement; 10 is left as is.
+   Override measurement; 10 is left as is. Design and decisions: "Fixes from the review".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1509,9 +1509,34 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
    "Done". **Done (2026-11-07):** no bug found on macOS. Two changes from it, merged (see "Done"): Ctrl+click sends a
    rocket (the user's decision above), and Zoom Override 3D weighs each wheel event by its size (asked by the user
-   after the trackpad check; confirmed with the trackpad and a mouse). Still open on the Mac: Pylance's import
-   resolution in VSCode, not yet seen with `tweakui/plugin.py` open. Cleaned up: admin's settings back to the
+   after the trackpad check; confirmed with the trackpad and a mouse). Pylance checked afterwards with
+   `tweakui/plugin.py` open: no problems, `django` and `app.plugins` resolve. Cleaned up: admin's settings back to the
    defaults, the "Live check" theme and the "Live check macOS" project deleted.
 
 Not on the Mac: Windows-only checks (the relay, desktop mode) and the 3.3.2 stack (covered on Linux; start it on the
 Mac only if something found there could differ on 3.3.2).
+
+## Fixes from the review (planned 2026-11-07)
+
+Findings 9, 11 and 12 of "Before the first release" (decided there) and the Zoom Override measurement. Built on the
+Mac, one branch each.
+
+1. **`task-controls-address` (9):** WebODM's task list keeps the expanded tasks in the address
+   (`project_task_expanded`, `HistoryNav` on react-router's `history` v4, which keeps its own copy of the location).
+   A task TweakUI opens as buttons only is taken back out with `history.replaceState` followed by a `popstate`, so
+   the router's copy follows and WebODM's next toggle doesn't write it back. A task the user expands fully (a click
+   WebODM never sees) is added by TweakUI. The address then lists exactly the fully expanded tasks; a reload shows
+   them so, the others as buttons only. The project list doesn't refetch on this parameter (`ProjectList.jsx`
+   `getParametersHash` drops it).
+2. **`source-frames-focus` (11):** the full-frame viewer takes the focus (its Close button) and gives it back to
+   what opened it; if another photo was chosen in the viewer, to that photo's Open Full Frame button.
+3. **`selector-check` (12):** `dev/selector-check.js` reads each script's `SELECTORS` (the UMD modules in Node),
+   makes a task from WebODM's 5 test images (`nodeodm/fixtures/test_images`), opens the Dashboard, the Task Options
+   dialog, the task's 2D map and 3D view, reports each selector missing by script and name, then deletes the task.
+   Login as `npm run screenshots` (`TW_USER`, `TW_PASSWORD`, `TW_BASE`). Run by the `release-check` skill.
+4. **Zoom Override measurement:** time one wheel notch's pick (`pick3d.pick`) in the real 3D view with test meshes of
+   200k, 1M and 2M triangles added to the scene (the Mac's only task is small). Over one frame (16 ms) at a realistic
+   size: a fix is proposed before it is built.
+
+**Decision (the user, 2026-11-07):** tested on 4.0.0 only, on the Mac (no 3.3.2 stack there); users on 3.3.2 are
+advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this phase.
