@@ -13,7 +13,7 @@ hero:
       link: /install
 features:
   - title: General
-    details: A units menu in the header; the Task Options dialog counts and shows each group's changed options; a task's details show its times, preset, options, ODX command and current step, and a minimized task keeps its buttons.
+    details: A units menu in the header; the Task Options dialog counts and shows each group's changed options; a task's details show its times, preset, options, ODX command and current step, and a minimized task keeps its buttons; and fireworks, just for fun.
     link: /general
   - title: Themes
     details: Your own colours for WebODM, from 11 presets or your own themes, with a theme menu in the header.

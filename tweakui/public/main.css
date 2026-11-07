@@ -241,3 +241,19 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-storage .tweakui-storage-table th:nth-child(4) { display: none; }
     .tweakui-storage .tweakui-storage-share { width: 80px; }
 }
+
+/* General > Just for Fun > Surprise Me: fireworks-js's canvas over the whole page, above dialogs and the maps'
+   controls; clicks go through it */
+.tweakui-fireworks {
+    position: fixed;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    z-index: 100000;
+    pointer-events: none;
+}
+.tweakui-fireworks canvas {
+    display: block;
+    pointer-events: none;
+}

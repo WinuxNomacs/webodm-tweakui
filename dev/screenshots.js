@@ -70,6 +70,16 @@ const SHOTS = [
         },
     },
     {
+        // Fireworks over the Dashboard: the first show starts 5-20 s after the page opens; taken once it's going
+        name: "surprise-me", settings: {surprise_me: true, units_in_header: false},
+        async run(s) {
+            await s.page.goto(s.base + "/dashboard/");
+            await s.page.waitForSelector(".tweakui-fireworks canvas", {timeout: 30000});
+            await s.page.waitForTimeout(2500);
+            return "page";
+        },
+    },
+    {
         name: "theme-menu", settings: {show_theme_menu: true},
         async run(s) {
             await s.page.goto(s.base + "/dashboard/");

@@ -116,6 +116,20 @@ test("a changed checkbox does not reload the page", async () => {
     expect(win.location.reload).not.toHaveBeenCalled();
 });
 
+test("a saved change is announced to the page's scripts with all the settings, and a refused one is not", async () => {
+    const root = page(false);
+    const input = root.querySelector("input[data-setting]");
+    const heard = jest.fn();
+    document.addEventListener("tweakuiSettingsChanged", heard);
+    input.checked = true;
+    await settingsPage.save(root, input, () => Promise.resolve({ok: true, json: () => Promise.resolve({surprise_me: true})}), document, window);
+    input.checked = false;
+    await settingsPage.save(root, input, () => Promise.resolve({ok: false, status: 400, json: () => Promise.resolve({})}), document, window);
+    document.removeEventListener("tweakuiSettingsChanged", heard);
+    expect(heard).toHaveBeenCalledTimes(1);
+    expect(heard.mock.calls[0][0].detail).toEqual({surprise_me: true});
+});
+
 test("the settings under Enhanced Task Details are greyed out and disabled while it is off", async () => {
     document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
         <section data-section="general"><input type="checkbox" data-setting="enhanced_task_details">

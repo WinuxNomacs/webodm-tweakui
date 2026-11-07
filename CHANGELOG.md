@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Just for Fun > Surprise Me: fireworks over every page at random moments, until you turn it off
+  ([fireworks-js](https://fireworks.js.org/) 2.10.8, MIT, included).
 - General > Global Controls > Units in Header: a units menu in the header (Metric, Imperial, Imperial (US)),
   WebODM's own unit preference, kept in step with the 2D map's and 3D view's selectors.
 - Themes: the Sample is framed and headed "Sample Form for Viewing Theme Effects"; the New Theme, Import and

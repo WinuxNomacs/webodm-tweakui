@@ -87,3 +87,16 @@ on the name, cycles three steps:
 The square's tooltip names the next step. A fully expanded task stays expanded when you reload the page in the same
 tab. WebODM removes a minimized task's buttons from the page, so buttons only is really WebODM's expanded task with
 its details hidden: the page address lists it among the expanded tasks, and WebODM loads it like an expanded one.
+
+## Just for Fun > Surprise Me
+
+Off by default.
+
+![Fireworks over the Dashboard](../tweakui/public/previews/surprise-me.webp)
+
+Fireworks go off over every WebODM page at random moments until you turn this off. The first show starts 5 to 20
+seconds after a page opens, lasts 5 to 10 seconds, and the next follows 30 to 90 seconds after it ends. They're
+silent, and clicks go through them to the page. None starts while the tab is hidden.
+
+Turning it on starts a show at once, on the settings page; turning it off ends the show going. The fireworks are
+[fireworks-js](https://fireworks.js.org/) (MIT licence), which comes with TweakUI and loads only when a show starts.

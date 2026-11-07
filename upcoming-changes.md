@@ -13,6 +13,14 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Just for Fun: Surprise Me** (asked in chat, 2026-11-07) — branch `surprise-me`.
+  - Settings > General > Just for Fun (a new group, last under General) > Surprise Me (off by default): fireworks
+    over every page at random moments until it is turned off; see "Just for Fun: Surprise Me".
+  - Code: `public/surprise_me.js` (new, on every page), `public/vendor/fireworks-js/` (fireworks-js 2.10.8 UMD build
+    and its MIT LICENSE), `settings.py` (`surprise_me`), `templates/settings.html`, `main.css`
+    (`.tweakui-fireworks`), `settings_page.js` (announces each saved change as `tweakuiSettingsChanged`).
+  - Tests: `public/__tests__/surprise_me.test.js` (new), `settings_page.test.js`, `tests/test_tweakui.py`; shot
+    `surprise-me`; `docs/general.md`, README (General line and credit), docs home, CHANGELOG.
 - **Global Controls: Units in Header** (new.md, 2026-11-07) — branch `global-units`.
   - Settings > General > Global Controls (a new group, first under General) > Units in Header (off by default): a
     units menu in the header, left of the paintbrush (a ruler and the system's name; only the ruler on a phone),
@@ -1048,3 +1056,17 @@ Decided with the user (2026-11-07):
   Thermal layer's Algorithm through its expanded panel was offered and declined).
 - No pull request to WebODM for a Fahrenheit formula for now.
 
+## Just for Fun: Surprise Me (asked in chat, 2026-11-07)
+
+Request: an option at the bottom of General, "Surprise Me", that randomly shows fireworks across the whole site with
+fireworks-js (https://fireworks.js.org/) until the user turns it off.
+
+Built (defaults chosen by Claude, open to change):
+- fireworks-js 2.10.8 (MIT), its UMD build copied into `tweakui/public/vendor/fireworks-js/` with its LICENSE (no
+  CDN, nothing loaded from outside WebODM), loaded by a script tag only when a show starts; ESLint ignores `vendor/`.
+- Timing: the first show 5-20 s after a page opens, each lasting 5-10 s, then 30-90 s between shows; none starts
+  while the tab is hidden; a library that fails to load is retried at the next turn.
+- Silent, mouse launching off; a fixed full-page canvas (`z-index: 100000`, `pointer-events: none`) above dialogs
+  and the maps' controls, so clicks go through. Random hues (the effect itself, not a theme colour).
+- Live on the settings page: turning it on starts a show at once, turning it off removes it at once (the settings
+  page's new `tweakuiSettingsChanged` event); on other pages a change shows on the next page, like every setting.
