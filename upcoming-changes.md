@@ -1299,3 +1299,57 @@ the checks use those and create none; (3) on Windows, Enhanced Task Details show
 4. The refactor goes all the way: a registry that declares each feature once (defaults, settings page control,
    script list), shared `TweakUI.*` helpers with each feature's errors isolated, and an "Adding a Tweak" docs page.
 
+
+**Review findings (2026-11-07):** every script, view and template read; the per-page views timed on the 4.0.0 stack.
+
+*What holds up:* each feature's script is its own `<script>`, so an error while one loads stops only that one; a
+feature that is off returns before touching the page; anonymous and shared pages get the defaults (everything off,
+WebODM's theme); the storage page escapes everything it writes as HTML; theme colours are checked `#rrggbb` before
+they reach CSS; nothing is left behind when the plugin is disabled but its data stores (settings, themes). The two
+views on every page, `settings.js` and `theme.css`, take about 13 ms and 6 queries together (with a preset theme);
+the 13 scripts are revalidated from the browser's cache (Last-Modified).
+
+*Clear bugs, fixed on their own branches with tests (nothing a user sees changes):*
+1. `api.py` `StorageTaskView`: a task id that isn't a UUID raises Django's `ValidationError`, which isn't caught →
+   a 500 in place of a 404. `storage.breakdown` also lets an `OSError` from the assets folder through (a 500).
+2. `frames.py` `rank`/`project`: a shot in `shots.geojson` without `width`, `height`, `translation` or `rotation`
+   raises `KeyError` → a 500 for the whole search; such a shot should be skipped.
+3. `storage.py` `user_report`/`report`: one task query per project and per user (an admin's report on a large
+   instance runs hundreds of queries); one query for all the tasks does the same.
+4. `task_details.js`: with Enhanced Task Details on, every page (maps, 3D view, Administration) fetches
+   `/api/presets/` and watches the whole page with a `MutationObserver`, though only the Dashboard has task panels;
+   it should start on the first task WebODM gives it.
+5. `other_tasks.js` `show`: an error while building a layer from the metadata (no bounds) skips the error handler,
+   so the checkbox stays disabled and the rejection is unhandled.
+
+*For the refactor (structure phase):*
+6. A callback given to a `PluginsAPI` hook runs inside WebODM's own code (its event emitter calls listeners
+   synchronously, e.g. `Map.jsx`'s `triggerDidAddControls`): a throw there would break WebODM's map or task panel,
+   not just the feature. The shared helpers wrap every hook callback, observer and listener a feature registers in
+   a try/catch that logs `TweakUI <feature>:` and goes on.
+7. Loading only the scripts of features that are on: not possible through `include_js_files` (WebODM calls it without
+   the request, so it can't vary per user), and a loader adding scripts later would register hooks after WebODM has
+   fired them (`App.ready`, a map that mounts early). The scripts stay listed; each returns at once when its feature
+   is off. Recommended: keep it so.
+8. Every WebODM selector a feature relies on, named in one place per feature (its script's top), so a WebODM upgrade
+   is checked against a list rather than by reading every script.
+
+*Changes a user would see, or larger ones (asked first):*
+9. **Expand Task Controls on a large project:** every minimized task is opened (hidden), so WebODM adds each one to
+   the address (`project_task_expanded`, about 37 characters a task) and loads each completed task's thumbnail. A
+   project of a few hundred tasks makes an address of several KB, which a proxy may refuse on reload (nginx's default
+   limit for the request line is 8 KB). Proposed: TweakUI takes the tasks it opened itself back out of the address
+   (`history.replaceState`); a reload still shows them as buttons only, since TweakUI opens any minimized task it
+   sees. The address then lists only the tasks you expanded. The thumbnails stay (WebODM's panel).
+10. **Surprise Me and reduced motion:** the fireworks flash and run on their own; with the system's "reduce motion"
+    on (`prefers-reduced-motion`), proposed: no automatic shows, right-click rockets still work.
+11. **Keyboard use of Source Frames:** its window and full-frame viewer don't take the focus when they open or give
+    it back when they close. Proposed: the viewer takes the focus (its Close button) and gives it back to the photo
+    that opened it.
+12. **A selector check for new WebODM versions** (dev only, larger): a Playwright script in `dev/` that opens the
+    Dashboard, the Task Options dialog, a task's map and the 3D view and reports which of the selectors (8) are
+    missing; run by the `release-check` skill and when WebODM releases.
+
+*To measure in the fixes phase:* Zoom Override's 3D wheel raycasts every mesh shown on each notch (three.js, no
+spatial index); on a large textured model that may lag. Measure on the largest model at hand; if it does, pick the
+point cloud first and the meshes only when it misses.
