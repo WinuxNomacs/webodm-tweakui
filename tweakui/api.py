@@ -2,6 +2,7 @@ import json
 import os
 
 from django.conf import settings as django_settings
+from django.core.exceptions import ValidationError
 from django.http import HttpResponse
 from django.utils.text import slugify
 from rest_framework import exceptions, permissions, status
@@ -207,7 +208,7 @@ class StorageTaskView(APIView):
     def get(self, request, project_pk=None, pk=None):
         try:
             task = Task.objects.select_related("project").get(pk=pk, project_id=project_pk)
-        except (Task.DoesNotExist, ValueError, TypeError):
+        except (Task.DoesNotExist, ValidationError, ValueError, TypeError):
             raise exceptions.NotFound() from None
         if not storage.can_see(request.user, task):
             raise exceptions.NotFound()
