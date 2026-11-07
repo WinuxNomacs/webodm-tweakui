@@ -91,7 +91,8 @@ on the name, cycles three steps:
 
 The square's tooltip names the next step. A fully expanded task stays expanded when you reload the page in the same
 tab. WebODM removes a minimized task's buttons from the page, so buttons only is really WebODM's expanded task with
-its details hidden: the page address lists it among the expanded tasks, and WebODM loads it like an expanded one.
+its details hidden, and WebODM loads it like an expanded one (its thumbnail too). The page address lists only the
+tasks you expanded fully, so a project with hundreds of tasks keeps a short address.
 
 ## Just for Fun > Surprise Me
 

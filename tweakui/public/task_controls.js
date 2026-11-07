@@ -5,7 +5,9 @@
 // expanded (WebODM's), fully minimized (WebODM's, data-tweakui-controls="min"): from buttons only TweakUI alone shows
 // the rest (WebODM never sees the click). A task the list shows minimized starts as buttons only (TweakUI clicks its
 // +); the tasks fully expanded are kept for the tab (sessionStorage), so a reload, which reopens every task WebODM
-// lists in the address as expanded, shows them as they were. UMD, so Jest can load it.
+// lists in the address as expanded, shows them as they were. WebODM adds each task it opens to the address
+// (project_task_expanded), TweakUI's too: the address keeps only the fully expanded ones, so a project of hundreds of
+// tasks doesn't make an address too long for a proxy. UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -28,6 +30,8 @@
 
     var MODE = "data-tweakui-controls", SEEN = "data-tweakui-controls-seen", BUTTONS = "buttons", MIN = "min";
     var KEY = "tweakui-task-controls-full";
+    // WebODM's list of the expanded tasks in the address (TaskListItem, HistoryNav)
+    var PARAM = "project_task_expanded";
     var TITLES = {buttons: "Expand", full: "Minimize", min: "Show Task Controls"};
 
     // A task's +/- (WebODM's toggle), on its own row; an edit panel's inner .task-list-item has none
@@ -68,6 +72,57 @@
         } catch (e) { /* the tasks then come back as buttons only */ }
     }
 
+    // The address's query with the expanded tasks changed, written as WebODM writes it: `want` {id: true (listed) or
+    // false (not)}; null when it doesn't change
+    function expandedSearch(search, want) {
+        var out = [], found = false, changed = false;
+        function listed(ids) {
+            var kept = ids.filter(function (id) {
+                if (want[id] === false) changed = true;
+                return want[id] !== false;
+            });
+            Object.keys(want).forEach(function (id) {
+                if (want[id] && kept.indexOf(id) === -1) {
+                    kept.push(id);
+                    changed = true;
+                }
+            });
+            return kept;
+        }
+        search.replace(/^\?/, "").split("&").forEach(function (part) {
+            if (!part) return;
+            var eq = part.indexOf("=");
+            if (eq === -1 || part.slice(0, eq) !== PARAM) {
+                out.push(part);
+                return;
+            }
+            found = true;
+            out.push(PARAM + "=" + listed(part.slice(eq + 1).split(",").filter(Boolean)).join(","));
+        });
+        if (!found) {
+            var ids = listed([]);
+            if (ids.length) out.push(PARAM + "=" + ids.join(","));
+        }
+        return changed ? (out.length ? "?" + out.join("&") : "") : null;
+    }
+
+    // Takes the tasks shown as buttons only out of the address and puts the fully expanded ones in. WebODM's router
+    // keeps its own copy of the location (react-router's history), which a popstate makes it read again, so WebODM's
+    // next toggle doesn't write the old list back
+    function syncAddress(win, want) {
+        var search = expandedSearch(win.location.search, want);
+        if (search === null || !win.history || !win.history.replaceState) return;
+        var state = win.history.state;
+        win.history.replaceState(state, "", win.location.pathname + search + win.location.hash);
+        var pop;
+        if (typeof win.PopStateEvent === "function") pop = new win.PopStateEvent("popstate", {state: state});
+        else {
+            pop = win.document.createEvent("Event");
+            pop.initEvent("popstate", false, false);
+        }
+        win.dispatchEvent(pop);
+    }
+
     function setMode(item, mode) {
         if (mode) {
             if (item.getAttribute(MODE) !== mode) item.setAttribute(MODE, mode);
@@ -80,6 +135,7 @@
     // only, one WebODM opened itself (from the address) is buttons only unless it was fully expanded in this tab; a
     // task WebODM opens or closes by itself (Edit, Restart) is taken as it is. The +/- title names the next step
     function apply(doc, win, click) {
+        var want = {};
         Array.prototype.forEach.call(doc.querySelectorAll(SELECTORS.task), function (item) {
             var icon = toggle(item);
             if (!icon) return;
@@ -103,7 +159,10 @@
             }
             var title = !open ? TITLES.min : mode === BUTTONS ? TITLES.buttons : TITLES.full;
             if (icon.getAttribute("title") !== title) icon.setAttribute("title", title);
+            var id = open && taskId(item);
+            if (id) want[id] = mode !== BUTTONS;
         });
+        syncAddress(win, want);
     }
 
     // A click on a task's +/- or name, before WebODM's: from buttons only, TweakUI shows the rest; from expanded,
@@ -161,5 +220,5 @@
         };
     }
 
-    return {start: start, apply: apply, onToggle: onToggle, taskId: taskId, isOpen: isOpen, KEY: KEY, SELECTORS: SELECTORS};
+    return {start: start, apply: apply, onToggle: onToggle, taskId: taskId, isOpen: isOpen, expandedSearch: expandedSearch, KEY: KEY, SELECTORS: SELECTORS};
 });
