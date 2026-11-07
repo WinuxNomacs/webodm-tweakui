@@ -93,7 +93,7 @@ CATEGORIES = [
         Group(_("Just for Fun"), [
             Setting("surprise_me", False, _("Surprise Me"),
                     _("Fireworks go off over every page every few seconds until you turn this off, and a right-click "
-                      "sends one to the pointer (Shift + right-click for the browser's menu). They're silent and clicks "
+                      "(Ctrl+click on a Mac) sends one to the pointer (Shift + right-click for the browser's menu). They're silent and clicks "
                       "go through them."),
                     preview="surprise-me", scripts=["surprise_me.js"]),
         ]),

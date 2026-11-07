@@ -1,7 +1,7 @@
 // General > Just for Fun > Surprise Me: fireworks go off over every page at random moments, until the setting is
 // turned off. A show lasts a few seconds and the next follows 4 to 8 seconds later; none starts while the tab is
-// hidden. A right-click sends a rocket that bursts where the pointer is, instead of the browser's menu (which text
-// fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
+// hidden. A right-click (also a Mac's Ctrl+click) sends a rocket that bursts where the pointer is, instead of the
+// browser's menu (which text fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
 // when a show starts, on a canvas over the page that clicks go through. The settings page announces each saved
 // change ("tweakuiSettingsChanged"), so turning it on there starts a show at once and turning it off ends it at once.
 // UMD, so Jest can load it.
@@ -162,17 +162,26 @@
         }
 
         // A right button pressed outside a text field, without Shift, and released where it was pressed is a
-        // right-click; its contextmenu event (on press or on release, by system) gets no browser menu
+        // right-click; its contextmenu event (on press or on release, by system) gets no browser menu. On a Mac,
+        // Ctrl+click is a right-click too: a left press with Ctrl that the browser follows with a contextmenu event;
+        // its rocket goes then, as there may be no mouseup. Elsewhere Ctrl+click has no contextmenu, so no rocket.
         function mousedown(e) {
-            press = on && e.button === 2 && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY} : null;
+            var right = e.button === 2 || (e.button === 0 && e.ctrlKey);
+            press = on && right && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY, ctrl: e.button === 0} : null;
         }
 
         function contextmenu(e) {
-            if (on && press && !e.shiftKey) e.preventDefault();
+            if (!on || !press || e.shiftKey) return;
+            e.preventDefault();
+            if (press.ctrl) {
+                var p = press;
+                press = null;
+                rocket(p.x, p.y);
+            }
         }
 
         function mouseup(e) {
-            if (e.button !== 2 || !press) return;
+            if (e.button !== 2 || !press || press.ctrl) return;
             var p = press;
             press = null;
             if (on && Math.abs(e.clientX - p.x) <= SLOP && Math.abs(e.clientY - p.y) <= SLOP) rocket(e.clientX, e.clientY);
