@@ -152,4 +152,70 @@ describe("Expand Configured", () => {
         await tick();
         expect(expanded(root)).toEqual([false]);
     });
+
+    describe("the Expand/Collapse button", () => {
+        // WebODM's button: React handles its click at the document (React 16), opening or closing every group
+        function withButton(groups) {
+            const root = grouped(groups);
+            root.insertAdjacentHTML("afterbegin", '<button type="button" title="Collapse"><i class="fa fa-fw fa-angle-double-down"></i></button>');
+            const button = root.querySelector("button");
+            webodm = () => {
+                const open = !button.firstChild.classList.contains("fa-angle-double-up");
+                button.firstChild.className = "fa fa-fw fa-angle-double-" + (open ? "up" : "down");
+                button.setAttribute("title", open ? "Expand" : "Collapse");
+                root.querySelectorAll(".option-group-content").forEach(c => { c.style.display = open ? "block" : "none"; });
+                clicks++;
+            };
+            return root;
+        }
+        let webodm, clicks;
+        const onDocument = e => { if (e.target.closest("button")) webodm(); };
+        beforeEach(() => { clicks = 0; document.addEventListener("click", onDocument); });
+        afterEach(() => document.removeEventListener("click", onDocument));
+        const press = async root => { root.querySelector("button").dispatchEvent(new MouseEvent("click", {bubbles: true})); await tick(); };
+        const shownGroups = root => Array.from(root.querySelectorAll(".option-group-content")).map(c =>
+            c.style.display !== "none" || c.parentNode.hasAttribute("data-tweakui-expand"));
+
+        test("cycles Expand All, Collapse All, Collapse All but Configured, its title naming the next step", async () => {
+            const root = withButton([{collapsed: true, subgroups: [["feature-quality"]]}, {collapsed: true, subgroups: [["pc-quality"]]}]);
+            taskOptions.watch(document, components({"feature-quality": "ultra"}), window, {expand: true});
+            const title = () => root.querySelector("button").getAttribute("title");
+            expect(shownGroups(root)).toEqual([true, false]); // Collapse All but Configured
+            expect(title()).toBe("Expand All");
+
+            await press(root);
+            expect(shownGroups(root)).toEqual([true, true]); // Expand All, by WebODM
+            expect(title()).toBe("Collapse All");
+
+            await press(root);
+            expect(shownGroups(root)).toEqual([false, false]); // Collapse All, the configured hidden too
+            expect(title()).toBe("Collapse All but Configured");
+
+            await press(root);
+            expect(shownGroups(root)).toEqual([true, false]); // back, without WebODM
+            expect(clicks).toBe(2);
+            expect(title()).toBe("Expand All");
+        });
+
+        test("with no configured options it is WebODM's own Expand All and Collapse All", async () => {
+            const root = withButton([{collapsed: true, subgroups: [["pc-quality"]]}]);
+            taskOptions.watch(document, components({}), window, {expand: true});
+            await press(root);
+            await press(root);
+            expect(root.hasAttribute("data-tweakui-plain")).toBe(false);
+            await press(root);
+            expect(clicks).toBe(3);
+            expect(shownGroups(root)).toEqual([true]);
+        });
+
+        test("without Expand Configured the button is left to WebODM", async () => {
+            const root = withButton([{collapsed: true, subgroups: [["feature-quality"]]}]);
+            taskOptions.watch(document, components({"feature-quality": "ultra"}), window, {count: true});
+            await press(root);
+            await press(root);
+            await press(root);
+            expect(clicks).toBe(3);
+            expect(root.querySelector("button").getAttribute("title")).toBe("Expand");
+        });
+    });
 });
