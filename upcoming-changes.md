@@ -1496,8 +1496,8 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
    - Theme menu: WebODM (light, white page) and Solarized Dark switch the page; put back to the user's "Live check".
    - Saved banner: "Saved" shows after a change. Task Options: headings show counts such as (1/5), 4 configured
      options and groups marked. Storage: "92 MB used", the task's size listed. No `TweakUI` error, no page error.
-   Left for the user (real trackpad only): a pinch on the 2D map, two-finger scroll in 2D and 3D, one panel dragged
-   with the trackpad, a two-finger click.
+   By the user in Safari with the trackpad: a pinch zooms the 2D map smoothly, Layers drags by its title, a
+   two-finger click sends a rocket with no menu; two-finger scroll in 3D "feels a bit too fast" (as measured above).
 6. **Install from the zip as a user would** (the `release-check` skill, steps 4–6): Administration > Plugins in
    Safari, upload the zip built on the Mac, check it loads.
 7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
