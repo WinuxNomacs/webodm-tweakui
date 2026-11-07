@@ -3,16 +3,23 @@
 ## Phases (current and upcoming)
 
 **Up next**
-(nothing planned)
+1. **Windows: check every feature, fix what differs** — every settings category live on Windows; fixes on their
+   own branches (first known one: `frames.py` reads JSON without `encoding="utf-8"`).
 
 **Then**
-(nothing planned)
+2. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
+   skills gain the Windows instance.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Windows: reach and install** (new.md, 2026-11-07) — branch `windows-install`. `dev/windows-relay.js` (new):
+  http://localhost:8007 in WSL relays each connection through WSL interop to WebODM's own `python.exe`, which pipes
+  it to Windows' 127.0.0.1:29800. `dist/tweakui-0.1.0.zip` installed through Administration > Plugins > Load
+  Plugin (.zip); it registers without a restart, and its menu items, pages and 15 files load with no console errors.
+  See "Windows native".
 - **README: Thanks** (new.md, 2026-11-07) — branch `readme-thanks`. README "Thanks" (before License; the
   fireworks-js credit moved into it), `docs/thanks.md` (in the sidebar under Using TweakUI), CHANGELOG. Names and
   links checked against each project's site or GitHub profile; WebODM's README says it is not affiliated with
@@ -1144,3 +1151,64 @@ Decisions were (the user's):
    palettes)?
 5. **People you want named** (testers, the WebODM maintainers by name, Claude/Anthropic as co-author)?
 6. **Docs site too** (recommended), or the README only?
+
+## Windows native (new.md, 2026-11-07)
+
+**Request:** "We need to ensure everything works on Windows native as well. I have it installed and can start it
+when needed. Same admin/admin account is used to access because it's a throwaway instance."
+
+**What is there (checked 2026-11-07):**
+- WebODM 4.0.0 native for Windows, build 172, in `C:\WebODM`: an Electron app with Python 3.14, Postgres 18,
+  Valkey and NodeODX (port 29301). Waitress serves WebODM on **127.0.0.1:29800**, in production mode, without nginx.
+- WSL runs in NAT mode, so it can't reach Windows' 127.0.0.1 (curl from WSL gets nothing, `curl.exe` gets a 302).
+  Node isn't installed on Windows.
+- Uploaded plugins go to `C:\WebODM\resources\app\data\media\plugins` (empty: TweakUI isn't installed). On
+  Windows WebODM runs `npm.cmd`/`webpack-cli.cmd` only for plugins with `build_jsx_components`; TweakUI has none.
+- What differs from the Docker 4.0.0 stack (same Python, Django and Postgres): the OS (paths, the default file
+  encoding is cp1252, symlinks), waitress in place of the dev server, the Electron window, a native ODX in place of
+  docker. The browser code is the same; the risk is in the Python code and in how the plugin is installed and served.
+
+**What it builds on:** the release zip (`dev/package.sh`), the `live-check` and `release-check` skills.
+
+**Proposed phases:**
+1. **Reach and install.** A relay in WSL (see the decision below) makes the Windows WebODM a URL in WSL. Install
+   `dist/tweakui-X.Y.Z.zip` through Administration > Plugins as a user would; check that it registers, its menu
+   item, settings page, `settings.js`, `main.js`, `main.css` and `theme.css` load, with no console errors.
+2. **Check every feature, fix what differs.** Live, headless, admin/admin, data left as found: General (Units in
+   Header, the Task Options dialog, Enhanced Task Details, Expand Task Controls, Surprise Me), Themes (presets, My
+   Themes with import/export, Published, the theme menu), 2D Map and 3D Map (Movable Controls, Compare Orthophotos,
+   Source Frames, Zoom Override), Storage (sizes, compact, delete), at desktop and phone width. Fixes go on their own
+   branches with tests and are checked on both Docker stacks too. Known so far: `frames.py` `load_json()` opens
+   files without `encoding="utf-8"`. A fix in Python code needs WebODM restarted on Windows (Python keeps the old
+   module): I'll ask you to restart it, since I never restart your servers.
+   - Django tests aren't run on Windows: they import `coreplugins.tweakui`, and the uploaded plugin is elsewhere.
+     The Docker 4.0.0 stack already covers the same Python, Django and Postgres, so the Windows runs check only
+     what differs.
+3. **Keep it covered.** README Requirements ("tested on 3.3.2 and 4.0.0, and 4.0.0 native on Windows"), the docs'
+   Developing page, CLAUDE.md, and the `live-check` and `release-check` skills gain the Windows instance and the
+   relay. Your machine's port and path go in memory, not the repo.
+
+**Decisions (the user, 2026-11-07):** (1) the relay through WSL interop; (2) the instance already has tasks, so
+the checks use those and create none; (3) on Windows, Enhanced Task Details shows Windows' own ODX command
+(`run.bat`) in place of the docker one (built in phase 2).
+
+**Found while building phase 1:**
+- The Windows build runs in single-user mode (`SINGLE_USER_MODE = not WO_HEADLESS` in its `local_settings.py`):
+  opening `/` logs any browser in as its admin, with no login page. A fresh browser that opens another page first
+  is sent to the Dashboard, so check scripts open `/` first. (admin/admin is still the account.)
+- Load Plugin (.zip) posts the file at once; WebODM registers TweakUI without a restart (it has no root mount
+  points). TweakUI stays installed there for phase 2. A later zip goes in with WebODM's upgrade (`upgrade=1`),
+  which asks for a restart.
+- The relay costs about 0.13 s per new connection.
+
+**Decisions as asked:**
+1. **How WSL reaches the Windows WebODM.** Proposed: a relay through WSL interop. A small script in WSL listens on
+   localhost:8007 and, for each connection, starts WebODM's own `python.exe` to pipe it to 127.0.0.1:29800. Nothing
+   is installed or changed on Windows, it needs no admin and no firewall rule, and it runs only during a check.
+   Other options: you run a `netsh interface portproxy` rule and a firewall rule as admin (a lasting change), or
+   WSL's mirrored networking (needs `wsl --shutdown`, which stops the Docker stacks).
+2. **Test data on Windows.** Source Frames, Compare Orthophotos, Storage and Enhanced Task Details need finished
+   tasks. If the instance has none, may I create a project named "Live check", process a small dataset in it on the
+   Windows node and delete it afterwards?
+3. **Enhanced Task Details' ODX command on Windows.** It shows the docker form (`docker run ... webodm/odx`). On
+   native Windows, keep it as is, or show the native form (ODX's `run.bat`) when WebODM runs on Windows?
