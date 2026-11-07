@@ -56,3 +56,21 @@ WebODM's own Options line stays.
   options and the three the processing node adds by itself (`--pc-ept --cog --gltf`), as the node runs it.
   Replace `/my/project` with your folder, which holds the photos in `images/`; a task's boundary is read from
   `boundary.geojson` there.
+
+## Task Details > Expand Task Controls
+
+Off by default.
+
+![The Dashboard's tasks minimized, each with its buttons](../tweakui/public/previews/expand-task-controls.webp)
+
+On the Dashboard, a minimized task still shows its buttons: Download, Map, 3D Model, Report, Edit, Restart, Delete and
+those other plugins add (such as Thermal dataset), without its details. The square beside a task's name (or a click on
+the name) goes through three steps:
+
+- **Buttons only**, where every task starts, shown by a caret in the square.
+- **Expanded**: WebODM's whole panel, with the details.
+- **Fully minimized**: just the task's row, as WebODM minimizes it.
+
+Its tooltip names the next step. A task you expand fully stays so when you reload the page in the same tab. WebODM
+can't keep a minimized task's buttons on the page, so a task as buttons only is WebODM's expanded task with its
+details hidden: its address lists it among the expanded tasks, and WebODM loads it as it loads an expanded one.
