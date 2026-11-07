@@ -22,10 +22,11 @@ rm -rf "$work/tweakui/tests" "$work/tweakui/public/__tests__"
 
 mkdir -p dist
 rm -f "$zip"
-# Python's zipfile, so that no zip tool is needed; folders first, sorted, as unzip lists them
-python3 - "$work" "$repo/$zip" <<'PY'
-import os, sys, zipfile
-root, out = sys.argv[1], sys.argv[2]
+# Python's zipfile, so that no zip tool is needed; folders first, sorted, as unzip lists them. Python lists the zip
+# and prints its sha256 too, the same on Linux and macOS (which has no GNU head or sha256sum)
+python3 - "$work" "$repo/$zip" "$zip" <<'PY'
+import hashlib, os, sys, zipfile
+root, out, shown = sys.argv[1], sys.argv[2], sys.argv[3]
 with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
     for folder, dirs, files in sorted(os.walk(os.path.join(root, "tweakui"))):
         dirs.sort()
@@ -33,7 +34,10 @@ with zipfile.ZipFile(out, "w", zipfile.ZIP_DEFLATED) as z:
         for name in sorted(files):
             path = os.path.join(folder, name)
             z.write(path, os.path.relpath(path, root))
+print(shown)
+with zipfile.ZipFile(out) as z:
+    for name in z.namelist():
+        print("  " + name)
+with open(out, "rb") as f:
+    print("sha256: " + hashlib.sha256(f.read()).hexdigest())
 PY
-echo "$zip"
-unzip -l "$zip" | tail -n +4 | head -n -2 | awk '{print "  " $4}'
-echo "sha256: $(sha256sum "$zip" | cut -d' ' -f1)"
