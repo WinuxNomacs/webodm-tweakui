@@ -33,8 +33,9 @@ features:
 
 Each user has their own TweakUI settings: the **TweakUI** item near the bottom of WebODM's side menu, just above
 About, opens them. The settings page has a navigation pane of categories on the left (above the settings on a
-phone); it opens on **General**. A change is saved as soon as it is made and takes effect on the next page you
-open. Beside each feature is a screenshot of it; click it to see it full size.
+phone); it opens on **General**. A change is saved as soon as it is made, which a green **Saved** banner at the
+top of the settings confirms for 3 seconds (a red one says why when a change can't be saved), and takes effect on
+the next page you open. Beside each feature is a screenshot of it; click it to see it full size.
 
 Every feature is off until you turn it on, except the theme menu.
 

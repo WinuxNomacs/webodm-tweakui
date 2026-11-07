@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Settings: a green "Saved" banner at the top of the settings for 3 seconds after each change (a red one when
+  a change can't be saved), in place of the line at the bottom of the page.
 - General > Just for Fun > Surprise Me: fireworks over every page every few seconds, until you turn it off, and a
   rocket to the pointer on a right-click ([fireworks-js](https://fireworks.js.org/) 2.10.8, MIT, included).
 - General > Global Controls > Units in Header: a units menu in the header (Metric, Imperial, Imperial (US)),

@@ -21,6 +21,8 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                 <i class="fa fa-database fa-fw"></i> {% trans "Storage" %}</a></li>
         </ul>
         <div class="tweakui-sections">
+            {% comment %}The "Saved" banner over the top of the category, kept in view while the page scrolls{% endcomment %}
+            <div class="tweakui-banner"><p class="tweakui-status theme-border" role="status" aria-live="polite"></p></div>
             <section id="tweakui-general" data-section="general" role="tabpanel">
                 <h4>{% trans "General" %}</h4>
                 <div class="tweakui-group theme-border">
@@ -325,7 +327,6 @@ Colours come only from WebODM's theme classes; Themes has a sample of controls i
                     </div>
                 </div>
             </section>
-            <p class="tweakui-status" role="status" aria-live="polite"></p>
         </div>
     </div>
 </div>

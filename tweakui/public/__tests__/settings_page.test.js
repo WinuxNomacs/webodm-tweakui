@@ -57,7 +57,7 @@ test("a refused change puts the checkbox back and says why", async () => {
     await settingsPage.save(root, input, fetchFn, document, {});
     expect(input.checked).toBe(false);
     expect(root.querySelector(".tweakui-status").textContent).toBe("Not saved: Unknown setting");
-    expect(root.querySelector(".tweakui-status").classList.contains("text-danger")).toBe(true);
+    expect(root.querySelector(".tweakui-status").classList.contains("theme-background-failed")).toBe(true);
 });
 
 test("a network failure also puts the checkbox back", async () => {
@@ -67,6 +67,73 @@ test("a network failure also puts the checkbox back", async () => {
     await settingsPage.save(root, input, () => Promise.reject(new Error("offline")), document, {});
     expect(input.checked).toBe(true);
     expect(root.querySelector(".tweakui-status").textContent).toBe("Not saved: offline");
+});
+
+const banner = root => root.querySelector(".tweakui-status");
+const shown = root => banner(root).classList.contains("tweakui-shown");
+
+describe("the banner", () => {
+    beforeEach(() => jest.useFakeTimers());
+    afterEach(() => jest.useRealTimers());
+
+    test("a save shows a green check and Saved for 3 seconds, and a second save starts the 3 seconds again", async () => {
+        const root = page(false);
+        const input = root.querySelector("input[data-setting]");
+        const ok = () => Promise.resolve({ok: true, json: () => Promise.resolve({})});
+        input.checked = true;
+        await settingsPage.save(root, input, ok, document, {});
+        expect(shown(root)).toBe(true);
+        expect(banner(root).classList.contains("theme-background-success")).toBe(true);
+        expect(banner(root).querySelector(".fa-check-circle")).not.toBeNull();
+        expect(banner(root).textContent).toBe("Saved");
+        jest.advanceTimersByTime(2000);
+        input.checked = false;
+        await settingsPage.save(root, input, ok, document, {});
+        jest.advanceTimersByTime(2000);
+        expect(shown(root)).toBe(true);
+        jest.advanceTimersByTime(1000);
+        expect(shown(root)).toBe(false);
+    });
+
+    test("a refused change shows a red banner saying why, until the next change", async () => {
+        const root = page(false);
+        const input = root.querySelector("input[data-setting]");
+        input.checked = true;
+        const refused = () => Promise.resolve({ok: false, status: 400, json: () => Promise.resolve({detail: "Unknown setting"})});
+        await settingsPage.save(root, input, refused, document, {});
+        jest.advanceTimersByTime(10000);
+        expect(shown(root)).toBe(true);
+        expect(banner(root).querySelector(".fa-exclamation-circle")).not.toBeNull();
+        input.checked = true;
+        settingsPage.save(root, input, () => new Promise(() => {}), document, {});
+        expect(shown(root)).toBe(false);
+    });
+
+    test("a save that reloads the page shows Saved once the page has reloaded, and only then", async () => {
+        const {root, webodm, nord} = themesPage();
+        const store = {};
+        const sessionStorage = {getItem: k => store[k] || null, setItem: (k, v) => { store[k] = v; }, removeItem: k => { delete store[k]; }};
+        nord.checked = true;
+        const win = {location: {reload: jest.fn(), hash: ""}, sessionStorage, addEventListener() {}, fetch() {}};
+        await settingsPage.save(root, nord, () => Promise.resolve({ok: true, json: () => Promise.resolve({theme: "nord"})}), document, win, webodm);
+        themesPage();
+        settingsPage.start(document, win);
+        const reloaded = document.getElementById("tweakui-settings");
+        expect(shown(reloaded)).toBe(true);
+        expect(banner(reloaded).textContent).toBe("Saved");
+        themesPage();
+        settingsPage.start(document, win);
+        expect(shown(document.getElementById("tweakui-settings"))).toBe(false);
+    });
+
+    test("a browser without session storage still saves and reloads", async () => {
+        const {root, webodm, nord} = themesPage();
+        nord.checked = true;
+        const win = {location: {reload: jest.fn()}};
+        Object.defineProperty(win, "sessionStorage", {get() { throw new Error("blocked"); }});
+        await settingsPage.save(root, nord, () => Promise.resolve({ok: true, json: () => Promise.resolve({})}), document, win, webodm);
+        expect(win.location.reload).toHaveBeenCalled();
+    });
 });
 
 function themesPage() {

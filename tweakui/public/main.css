@@ -12,6 +12,13 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-nav a.active { border-right-color: currentColor; font-weight: bold; }
 .tweakui-settings .tweakui-sections { flex: 1; min-width: 0; }
 .tweakui-settings .tweakui-sections h4 { margin-top: 0; }
+/* The "Saved" banner: over the top of the category (it takes no room), centred, kept in view while the page scrolls
+   (WebODM's header scrolls away); clicks go through it. WebODM's success and failed colours, as its task status. */
+.tweakui-settings .tweakui-banner { position: sticky; top: 8px; height: 0; z-index: 20; }
+.tweakui-settings .tweakui-status { position: absolute; left: 50%; top: 0; transform: translate(-50%, -6px); display: flex; align-items: center; gap: 8px; width: max-content; max-width: 100%; margin: 0; padding: 8px 16px; border-width: 1px; border-style: solid; border-radius: 4px; font-weight: bold; pointer-events: none; opacity: 0; visibility: hidden; transition: opacity 0.2s, transform 0.2s, visibility 0.2s; }
+.tweakui-settings .tweakui-status.tweakui-shown { opacity: 1; visibility: visible; transform: translate(-50%, 0); }
+.tweakui-settings .tweakui-status .fa { font-size: 16px; }
+@media (prefers-reduced-motion: reduce) { .tweakui-settings .tweakui-status { transition: none; } }
 .tweakui-settings .tweakui-group { border-width: 1px; border-style: solid; border-radius: 4px; margin-bottom: 16px; }
 .tweakui-settings .tweakui-group h5 { margin: 0; padding: 8px 12px; font-weight: bold; }
 .tweakui-settings .tweakui-setting { padding: 8px 12px; }
