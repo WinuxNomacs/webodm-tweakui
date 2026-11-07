@@ -6,6 +6,8 @@
 1. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
    11 (Source Frames' viewer focus) and 12 (the selector check, built from each script's `SELECTORS`), and the Zoom
    Override measurement; 10 is left as is.
+2. **macOS check**, on the user's Mac, before the first release: Safari, the trackpad, Ctrl+click and the dev tools
+   there. See "macOS check before the first release".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1400,3 +1402,54 @@ Tested: Jest and Django, every feature live on both stacks, and on Windows after
 **Decisions on the structure (the user, 2026-11-07):**
 - Contributions: pull requests are welcome directly (no issue needed first); discussion happens on the PR.
 - A new tweak is off by default, so an update never changes what a user sees; an exception gives its reason in the PR.
+
+## macOS check before the first release (asked in chat, 2026-11-07)
+
+**Request:** "Are there any tests that should be ran on macos prior to release? If make note of evertyhing that
+needs to be done on macos."
+
+**What differs on a Mac, and what doesn't.** TweakUI runs in the browser; on a Mac, WebODM's server runs in Docker
+(Linux), the same as the 4.0.0 Docker stack here, so the Python, Django and Postgres side is already covered. What
+the Linux and Windows checks don't cover is:
+- **Safari (WebKit).** Every live check so far used Chromium (Playwright here, Chrome or Edge on Windows).
+- **The trackpad**: pinch and two-finger scrolling send different events from a mouse wheel or a touch screen.
+- **Ctrl+click** is macOS's right-click.
+- **The dev tools on macOS**: Bash 3.2, BSD tools, Docker Desktop on Apple Silicon.
+Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`) has a `linux/arm64` build;
+`dev/webodm.sh` has no Bash 4 or GNU-only commands; `dev/package.sh` lists and hashes the zip in Python now (branch
+`package-portable`; it used GNU `head -n -2` and `sha256sum`, which macOS lacks).
+
+**To do on the Mac** (in this order; the prompt the user starts the session with points here):
+1. **Tools** (the user's CLAUDE.md, "Tools in the IDE and environment"; propose, install only after approval):
+   Docker Desktop, Node (version in `.nvmrc`), `uv`, then `npm install`, `npx playwright install chromium webkit`,
+   `uv venv --python 3.9 .venv && uv pip install -r requirements-dev.txt`. The `ignored/` checkouts as CLAUDE.md
+   says ("Dev environment"). The VSCode settings (local `.vscode/settings.json`).
+2. **Checks**: `npm test`, `npm run lint -- tweakui dev`, `.venv/bin/ruff check .`, `npm run docs:build`.
+3. **Dev stack**: `dev/webodm.sh up` (4.0.0, http://localhost:8005; the first start takes several minutes), the Django
+   tests in `tw-webapp` (the `test` skill), `dev/package.sh` (its sha256 must match `shasum -a 256`). A task with an
+   orthophoto, a textured model and `shots.geojson` is needed for the map checks: a small dataset processed there,
+   named "Live check …", deleted afterwards. The admin account there is the user's to create or give.
+4. **Headless WebKit** (Playwright's `webkit`, on the Mac): the live checks of `live-check` with every feature on, as
+   on the other platforms, run in WebKit instead of Chromium: the console must stay free of `TweakUI <feature>:`
+   errors. Put the settings back afterwards.
+5. **Real Safari, by hand with the user** (what headless can't show), every feature on:
+   - Copy buttons: Show ODX Command's copy (Dashboard, a task's details) and Copy JSON (TweakUI > Themes, My Themes).
+     Also from another machine's address (http://<the Mac's IP>:8005, not a secure context): the fallback copy.
+   - Movable Controls (a task's 2D map): drag Layers, Measure and the others by their title, with the trackpad.
+   - Source Frames (2D and 3D): click to list the photos, drag the window by its title, the full-frame view.
+   - Zoom Override 2D: pinch on the trackpad and the + button past WebODM's limit (zoom 24); two-finger scroll.
+   - Zoom Override 3D: two-finger scroll toward a surface. Compare the speed with the setting off: Potree counts
+     every wheel event as a notch, and so does TweakUI, so a trackpad may zoom much faster than a mouse.
+   - Surprise Me: a two-finger click (right-click) sends a rocket; Shift + two-finger click gives the browser's menu;
+     **Ctrl+click** today gives the browser's menu and no rocket (`surprise_me.js` looks at `button === 2` only).
+     Decision for the user: should Ctrl+click send a rocket too?
+   - Theme menu and Units menu in the header; the settings page, previews and the Saved banner; Storage; TweakUI
+     Themes; Task Options (Show Modified Options, Expand Configured); Expand Task Controls; Enhanced Task Details.
+   - Light theme and a dark one, a narrow window (phone width).
+6. **Install from the zip as a user would** (the `release-check` skill, steps 4–6): Administration > Plugins in
+   Safari, upload the zip built on the Mac, check it loads.
+7. Record what was found here; a bug found gets its own branch and goes to the front of "Up next". Then move this to
+   "Done".
+
+Not on the Mac: Windows-only checks (the relay, desktop mode) and the 3.3.2 stack (covered on Linux; start it on the
+Mac only if something found there could differ on 3.3.2).
