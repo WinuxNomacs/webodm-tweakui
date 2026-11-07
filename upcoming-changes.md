@@ -2,16 +2,25 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (planned with the user before each is built; see "Before the first release")
-1. **Fixes from the review** that the refactor didn't already cover: findings 9 (Expand Task Controls' address),
-   11 (Source Frames' viewer focus) and 12 (the selector check, built from each script's `SELECTORS`), and the Zoom
-   Override measurement; 10 is left as is. Design and decisions: "Fixes from the review".
+**Up next**
+- Nothing planned: new requests go in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Fixes from the review** (see "Fixes from the review"; findings in "Before the first release") — tested on 4.0.0
+  only, on the Mac (the user's decision). Four branches, each checked live:
+  - `task-controls-address` (finding 9): `task_controls.js` `expandedSearch`, `syncAddress`; the address lists only
+    the fully expanded tasks. Tests in `task_controls.test.js`.
+  - `source-frames-focus` (11): `source_frames.js` `viewer`, `openFull`; checked with the keyboard on the 2D map.
+    Test in `source_frames.test.js`.
+  - `selector-check` (12): `dev/selector-check.js`, `npm run selector-check`, run by the `release-check` skill;
+    tests in `dev/__tests__/selector-check.test.js`. Every selector found on 4.0.0.
+  - `zoom-measure`: the measurement, and `zoom_override.js` `attach3d` `pickAt` (one pick per scroll burst). Test in
+    `zoom_override.test.js`.
+  Docs (`general.md`, `map-2d.md`, `adding-a-tweak.md`, `developing.md`), CLAUDE.md and CHANGELOG updated.
 - **macOS check** (asked in chat, 2026-11-07; see "macOS check before the first release") — on the user's Mac
   (Apple Silicon, macOS 26.6, Safari 26.6): the dev tools, checks, Docker stack, Django tests and `dev/package.sh`
   work; every feature behaves the same in headless WebKit as in Chromium; the copy buttons and the trackpad checked
@@ -1516,7 +1525,7 @@ Already checked from Linux (2026-11-07): every pinned dev image (`dev/webodm.sh`
 Not on the Mac: Windows-only checks (the relay, desktop mode) and the 3.3.2 stack (covered on Linux; start it on the
 Mac only if something found there could differ on 3.3.2).
 
-## Fixes from the review (planned 2026-11-07)
+## Fixes from the review (planned 2026-11-07) — done
 
 Findings 9, 11 and 12 of "Before the first release" (decided there) and the Zoom Override measurement. Built on the
 Mac, one branch each.
