@@ -3,18 +3,24 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Windows: check every feature, fix what differs** — every settings category live on Windows; fixes on their
-   own branches (first known one: `frames.py` reads JSON without `encoding="utf-8"`).
-
-**Then**
-2. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
-   skills gain the Windows instance.
+1. **Windows: keep it covered** — README Requirements, docs, CLAUDE.md, and the `live-check` and `release-check`
+   skills gain the Windows instance (the relay, single-user and desktop mode, upgrading through `upgrade=1` and a
+   restart).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Windows: check every feature, fix what differs** (new.md, 2026-11-07) — every category checked live on the
+  Windows app through the relay, at desktop and phone width, data left as found (Compact and Delete not run on the
+  user's data). Fixes, each on its branch and checked on both Docker stacks and on Windows:
+  `windows-header-menus` (`theme_menu.js` `place()`/`spot()`, used by `units_menu.js`; `window.TweakUI.desktop`
+  from `DESKTOP_MODE` in `api.py`; side-menu CSS in `main.css`; tests in `theme_menu.test.js`,
+  `units_menu.test.js`, `test_settings_js_says_desktop_only_in_webodm_s_desktop_mode`), `windows-odx-command`
+  (`task_details.js` `WINDOWS`, `cmdQuote`; `window.TweakUI.windows` from `api.WINDOWS`; docs/general.md),
+  `windows-utf8` (`frames.load_json`), `screenshots-projects` (`dev/screenshots.js` `openTask`, Storage shot),
+  `task-bubbles-wrap` (`main.css`). See "Windows native".
 - **Windows: reach and install** (new.md, 2026-11-07) — branch `windows-install`. `dev/windows-relay.js` (new):
   http://localhost:8007 in WSL relays each connection through WSL interop to WebODM's own `python.exe`, which pipes
   it to Windows' 127.0.0.1:29800. `dist/tweakui-0.1.0.zip` installed through Administration > Plugins > Load
