@@ -14,14 +14,16 @@ CORE_SCRIPTS = ["settings.js", "core.js", "main.js"]
 
 
 class Setting:
-    """A setting. A boolean one is a checkbox on the settings page; one without a label has no control there (its
-    category's template draws it). parts: settings shown under this one, greyed out while it is off. scripts: in
+    """A setting. A boolean one is a checkbox on the settings page; a number one (number=(minimum, maximum, step), a
+    whole-number default) a slider moving in steps with a box beside it that takes any whole number in the range, and
+    unit the word after the box; one without a label has no control there (its category's template draws it). parts:
+    settings shown under this one, greyed out while it is off (a part may have parts of its own). scripts: in
     public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
     admin_label and admin_help: a superuser may withhold the setting from users on Administration > TweakUI
     (access.py), where these name and describe it."""
 
     def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=(), admin_label=None,
-                 admin_help=None):
+                 admin_help=None, number=None, unit=None):
         self.name = name
         self.default = default
         self.label = label
@@ -32,6 +34,8 @@ class Setting:
         self.admin_label = admin_label
         self.admin_help = admin_help
         self.admin_control = admin_label is not None
+        self.number = tuple(number) if number else None
+        self.unit = unit
 
 
 class Group:
@@ -69,7 +73,18 @@ CATEGORIES = [
                       "the side menu one step: its icons alone (each one's name shows when you point at it), then "
                       "hidden, giving the page the whole width, then back to its usual width. Remembered in this "
                       "browser. Not on a phone, where the side menu is already the header's menu button."),
-                    preview="hide-navigation-pane", scripts=["nav_pane.js"]),
+                    preview="hide-navigation-pane", scripts=["nav_pane.js"], parts=[
+                        Setting("auto_hide_nav_pane", False, _("Auto-hide Navigation Pane"),
+                                _("The side menu stays hidden until the pointer nears the window's left edge, then "
+                                  "shows over the page (which keeps its size), and hides again once the pointer leaves "
+                                  "it. The tab pins it open, and a second click unpins it."),
+                                preview="auto-hide-navigation-pane", parts=[
+                                    Setting("auto_hide_delay", 500, _("Hide Delay"),
+                                            _("How long the side menu waits after the pointer leaves it before it "
+                                              "hides."),
+                                            number=(200, 3000, 100), unit=_("ms")),
+                                ]),
+                    ]),
             Setting("resize_nav_pane", False, _("Resize Navigation Pane"),
                     _("Drag the divider between the side menu and the page to make the side menu wider or narrower, down "
                       "to its icons alone (each one's name shows when you point at it). A double click on the divider "
@@ -206,9 +221,14 @@ def all_settings():
     for category in CATEGORIES:
         for group in category.groups:
             for setting in group.settings:
-                yield setting
-                yield from setting.parts
+                yield from _with_parts(setting)
         yield from category.settings
+
+
+def _with_parts(setting):
+    yield setting
+    for part in setting.parts:
+        yield from _with_parts(part)
 
 
 def defaults():
@@ -232,7 +252,9 @@ def page(values, withheld=()):
     def control(setting):
         return {"name": setting.name, "label": setting.label, "help": setting.help, "preview": setting.preview,
                 "value": values.get(setting.name, setting.default), "withheld": setting.name in withheld,
-                "parts": [control(p) for p in setting.parts]}
+                "number": ({"min": setting.number[0], "max": setting.number[1], "step": setting.number[2]}
+                           if setting.number else None),
+                "unit": setting.unit, "parts": [control(p) for p in setting.parts]}
 
     return [{"id": c.id, "label": c.label, "icon": c.icon, "template": c.template,
              "groups": [{"title": g.title, "settings": [control(s) for s in g.settings if s.label]} for g in c.groups]}

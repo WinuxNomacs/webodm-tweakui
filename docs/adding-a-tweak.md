@@ -57,6 +57,12 @@ that the setting needs, in load order. A script that several settings share load
 The settings page now has the checkbox. It saves to `/api/plugins/tweakui/settings`, and every page has the value
 as `window.TweakUI.settings.scale_bar`.
 
+`parts` lists settings shown under this one and greyed out while it is off; a part may have parts of its own. A
+setting can also be a whole number: give it a whole-number default and `number=(minimum, maximum, step)`, with
+`unit` for the word after it (Hide Delay: `Setting("auto_hide_delay", 500, ..., number=(200, 3000, 100),
+unit=_("ms"))`). The settings page shows a slider moving in those steps with a box beside it that takes any whole
+number in the range, and the API refuses a value outside it.
+
 A setting that superusers should be able to withhold from users also gets `admin_label` and `admin_help`: its
 checkbox and description on Administration > TweakUI (`access.py`). Withheld, the setting is off for users
 (`settings.load`), greyed on their settings page and refused by the settings API. A page or an API of the feature's

@@ -1,9 +1,11 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
-// false, a radio button (Themes) as its value. A new theme, or the theme menu, the Storage or the Performance view
+// false, a radio button (Themes) as its value, a number setting's box as its whole number (its slider, in steps, sets
+// the box as it moves and saves when let go; a number out of range or not whole is put back, saying why). A new theme, or the theme menu, the Storage or the Performance view
 // turned on or off, reloads the page to show it (the header, the side menu). A save shows a green "Saved" banner at
 // the top of the category for 3 seconds (after the reload too); a refused one, a red banner saying why, until the next change.
-// Settings in a data-depends box are greyed out and disabled while the setting it names is off. A setting with a
+// Settings in a data-depends box are greyed out and disabled while the setting it names is off (or itself disabled,
+// for a box within another). A setting with a
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
 // overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
 (function (root, factory) {
@@ -39,7 +41,7 @@
     function applyDepends(page) {
         each(page.querySelectorAll("[data-depends]"), function (box) {
             var parent = page.querySelector("input[data-setting='" + box.getAttribute("data-depends") + "']");
-            var off = !!parent && !parent.checked;
+            var off = !!parent && (!parent.checked || parent.disabled);
             box.className = box.className.replace(/\s*\btweakui-off\b/, "") + (off ? " tweakui-off" : "");
             each(box.querySelectorAll("input"), function (input) { input.disabled = off; });
         });
@@ -77,10 +79,27 @@
         }
     }
 
+    // A number setting's box: its whole number, or why it isn't one the setting takes
+    function numberOf(input) {
+        var text = String(input.value).trim(), min = Number(input.min), max = Number(input.max);
+        if (!/^-?\d+$/.test(text) || Number(text) < min || Number(text) > max) {
+            return "a whole number from " + min + " to " + max;
+        }
+        return Number(text);
+    }
+
+    // A number setting back to its saved value, its slider too
+    function putBack(page, input) {
+        input.value = input.getAttribute("data-saved");
+        var slider = page.querySelector("input[data-slider-of='" + input.getAttribute("data-setting") + "']");
+        if (slider) slider.value = input.value;
+    }
+
     // PATCHes one setting; a failure puts the control back as it was and says why
     function save(page, input, fetchFn, doc, win, previous) {
         var name = input.getAttribute("data-setting"), radio = input.type === "radio", changes = {};
-        var value = radio ? input.value : input.checked;
+        var number = input.type === "number";
+        var value = radio ? input.value : number ? numberOf(input) : input.checked;
         changes[name] = value;
         setStatus(page, "", false);
         return fetchFn(page.getAttribute("data-api") + "settings", {
@@ -92,6 +111,10 @@
             return res.json().then(null, function () { return {}; }).then(function (body) {
                 if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
                 if (win.TweakUI) win.TweakUI.settings = body;
+                if (number) {
+                    input.setAttribute("data-saved", String(value));
+                    putBack(page, input);
+                }
                 // The page's scripts that follow a change at once (Surprise Me, the navigation pane)
                 if (typeof win.CustomEvent === "function") doc.dispatchEvent(new win.CustomEvent("tweakuiSettingsChanged", {detail: body}));
                 setStatus(page, "Saved", false);
@@ -104,7 +127,8 @@
                 }
             });
         }).then(null, function (e) {
-            if (!radio) input.checked = !value;
+            if (number) putBack(page, input);
+            else if (!radio) input.checked = !value;
             else if (previous) previous.checked = true;
             applyDepends(page);
             setStatus(page, "Not saved: " + e.message, true);
@@ -214,18 +238,38 @@
         each(page.querySelectorAll("input[type=radio][data-setting]:checked"), function (input) {
             checked[input.name] = input;
         });
+        function changed(input) {
+            if (input.type === "number") {
+                var number = numberOf(input);
+                if (typeof number === "string") {
+                    putBack(page, input);
+                    setStatus(page, "Not saved: " + number, true);
+                    return;
+                }
+                if (String(number) === input.getAttribute("data-saved")) return;
+            }
+            var previous = checked[input.name];
+            if (input.type === "radio") checked[input.name] = input;
+            applyDepends(page);
+            save(page, input, win.fetch.bind(win), doc, win, previous).then(function () {
+                if (input.type === "radio" && !input.checked && previous) checked[input.name] = previous;
+            });
+        }
         each(page.querySelectorAll("input[data-setting]"), function (input) {
-            input.addEventListener("change", function () {
-                var previous = checked[input.name];
-                if (input.type === "radio") checked[input.name] = input;
-                applyDepends(page);
-                save(page, input, win.fetch.bind(win), doc, win, previous).then(function () {
-                    if (input.type === "radio" && !input.checked && previous) checked[input.name] = previous;
-                });
+            input.addEventListener("change", function () { changed(input); });
+        });
+        // A number setting's slider sets its box as it moves, and saves it when let go
+        each(page.querySelectorAll("input[data-slider-of]"), function (slider) {
+            var box = page.querySelector("input[data-setting='" + slider.getAttribute("data-slider-of") + "']");
+            if (!box) return;
+            slider.addEventListener("input", function () { box.value = slider.value; });
+            slider.addEventListener("change", function () {
+                box.value = slider.value;
+                changed(box);
             });
         });
     }
 
     return {start: start, showSection: showSection, save: save, applyDepends: applyDepends,
-        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus};
+        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
 });

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- General > Global Controls > Hide Navigation Pane > Auto-hide Navigation Pane (off by default): the side menu stays
+  hidden until the pointer reaches the window's left edge, shows over the page (which keeps its size), and hides
+  again after Hide Delay (200 to 3000 ms, 500 by default) once the pointer leaves it. The tab pins it open. The
+  settings page gains number settings: a slider in steps with a box for any whole number in the range.
 - 2D Map > Controls > Add Search Button (off by default): a button above the map's zoom buttons opens a search box.
   Coordinates (decimal degrees or degrees, minutes and seconds, with or without N/S/E/W) go straight there; an
   address or place is looked up with OpenStreetMap's Nominatim when you press Enter, with up to five results listed.

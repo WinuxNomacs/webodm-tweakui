@@ -30,7 +30,7 @@ def plugin_scripts():
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
+    return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "map_search": False,
@@ -267,6 +267,33 @@ class TestSettingsPage(TweakUITestCase):
         self.assertEqual(self.script_settings(self.client)["hide_nav_pane"], True)
         self.assertIn("nav_pane.js", plugin_scripts())
 
+    def test_auto_hide_navigation_pane_is_an_off_part_of_hide_navigation_pane_with_its_hide_delay_within_it(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        general = page[page.index('<section id="tweakui-general"'):]
+        general = general[:general.index("</section>")]
+        hide_box = general.index('data-depends="hide_nav_pane"')
+        auto = general.index('data-setting="auto_hide_nav_pane">')
+        delay_box = general.index('data-depends="auto_hide_nav_pane"')
+        self.assertLess(hide_box, auto)
+        self.assertLess(auto, delay_box)
+        self.assertLess(delay_box, general.index('data-setting="auto_hide_delay"'))
+        self.assertLess(general.index('data-setting="auto_hide_delay"'), general.index('data-setting="resize_nav_pane"'))
+        self.assertIn("Auto-hide Navigation Pane", general)
+        self.assertIn("Hide Delay", general)
+        self.assertIn('data-slider-of="auto_hide_delay" min="200" max="3000" step="100" value="500"', general)
+        self.assertIn('type="number" id="tweakui-auto_hide_delay"', general)
+        self.assertEqual(self.patch({"auto_hide_nav_pane": True, "auto_hide_delay": 1250}).json(),
+                         defaults(auto_hide_nav_pane=True, auto_hide_delay=1250))
+        self.assertIn('data-saved="1250"', self.client.get("/plugins/tweakui/").content.decode())
+        self.assertEqual(self.script_settings(self.client)["auto_hide_delay"], 1250)
+
+    def test_a_number_setting_refuses_a_number_out_of_its_range_or_not_whole(self):
+        for value in (199, 3001, 500.0, "500", True):
+            res = self.patch({"auto_hide_delay": value})
+            self.assertEqual(res.status_code, 400, value)
+        self.assertIn("auto_hide_delay takes 200 to 3000", self.patch({"auto_hide_delay": 5000}).json()["detail"])
+        self.assertEqual(self.script_settings(self.client)["auto_hide_delay"], 500)
+
     def test_resize_navigation_pane_is_off_by_default_after_hide_navigation_pane_and_can_be_turned_on(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         general = page[page.index('<section id="tweakui-general"'):]
@@ -367,12 +394,18 @@ class TestFeatures(TweakUITestCase):
         on = {s.name for s in features.all_settings() if s.default is True}
         self.assertEqual(on, self.ON_BY_DEFAULT)
 
-    def test_each_setting_with_a_label_has_a_description_and_a_checkbox_on_the_settings_page(self):
+    def test_each_setting_with_a_label_has_a_description_and_a_checkbox_or_a_number_on_the_settings_page(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         for s in features.all_settings():
             if not s.label:
                 continue
-            self.assertIsInstance(s.default, bool, s.name)
+            if s.number:
+                low, high, step = s.number
+                self.assertIs(type(s.default), int, s.name)
+                self.assertTrue(low <= s.default <= high and (s.default - low) % step == 0, s.name)
+                self.assertIn('type="number" id="tweakui-%s"' % s.name, page)
+            else:
+                self.assertIsInstance(s.default, bool, s.name)
             self.assertTrue(s.help, s.name)
             self.assertIn('data-setting="%s"' % s.name, page)
 

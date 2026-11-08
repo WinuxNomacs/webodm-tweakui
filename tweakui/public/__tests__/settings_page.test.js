@@ -354,3 +354,79 @@ test("turning the Storage or the Performance view on or off reloads the page to 
         expect(win.location.reload).toHaveBeenCalled();
     }
 });
+
+describe("a number setting", () => {
+    function numberPage() {
+        document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">
+            <section data-section="general"><input type="checkbox" data-setting="hide_nav_pane" checked>
+            <div class="tweakui-subsettings" data-depends="hide_nav_pane">
+              <input type="checkbox" data-setting="auto_hide_nav_pane">
+              <div class="tweakui-subsettings" data-depends="auto_hide_nav_pane">
+                <input type="range" data-slider-of="auto_hide_delay" min="200" max="3000" step="100" value="500">
+                <input type="number" data-setting="auto_hide_delay" min="200" max="3000" step="1" value="500" data-saved="500">
+              </div></div></section>
+            <p class="tweakui-status"></p></div>`;
+        const fetch = jest.fn((url, init) => Promise.resolve({ok: true, json: () => Promise.resolve(JSON.parse(init.body))}));
+        settingsPage.start(document, {location: {hash: ""}, addEventListener() {}, fetch});
+        return {fetch, slider: document.querySelector("[data-slider-of]"), box: document.querySelector("[data-setting=auto_hide_delay]"),
+            status: () => document.querySelector(".tweakui-status").textContent};
+    }
+
+    test("the slider sets the box as it moves and saves the whole number when let go", async () => {
+        const {fetch, slider, box, status} = numberPage();
+        slider.disabled = false;
+        slider.value = "1200";
+        slider.dispatchEvent(new Event("input"));
+        expect(box.value).toBe("1200");
+        expect(fetch).not.toHaveBeenCalled();
+        slider.dispatchEvent(new Event("change"));
+        await new Promise(r => setTimeout(r, 0));
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({auto_hide_delay: 1200});
+        expect(box.getAttribute("data-saved")).toBe("1200");
+        expect(status()).toBe("Saved");
+    });
+
+    test("the box takes any whole number in the range, and puts back anything else, saying why", async () => {
+        const {fetch, slider, box, status} = numberPage();
+        box.disabled = false;
+        box.value = "750";
+        box.dispatchEvent(new Event("change"));
+        await new Promise(r => setTimeout(r, 0));
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({auto_hide_delay: 750});
+        for (const bad of ["5000", "150", "7.5", ""]) {
+            box.value = bad;
+            box.dispatchEvent(new Event("change"));
+            expect(box.value).toBe("750");
+            expect(status()).toBe("Not saved: a whole number from 200 to 3000");
+        }
+        expect(fetch).toHaveBeenCalledTimes(1);
+        // The slider is given the saved number (a browser shows it on the nearest step; jsdom keeps it as given)
+        expect(["750", "800"]).toContain(slider.value);
+    });
+
+    test("a refused number is put back", async () => {
+        document.body.innerHTML = "";
+        const root = numberPage();
+        const box = root.box;
+        box.value = "900";
+        await settingsPage.save(document.getElementById("tweakui-settings"), box,
+            () => Promise.resolve({ok: false, status: 400, json: () => Promise.resolve({detail: "No"})}), document, {});
+        expect(box.value).toBe("500");
+        expect(root.slider.value).toBe("500");
+    });
+
+    test("a part within a part is greyed while either setting above it is off", () => {
+        const {slider, box} = numberPage();
+        expect(box.disabled).toBe(true);
+        const auto = document.querySelector("[data-setting=auto_hide_nav_pane]");
+        auto.checked = true;
+        settingsPage.applyDepends(document.getElementById("tweakui-settings"));
+        expect(box.disabled).toBe(false);
+        const hide = document.querySelector("[data-setting=hide_nav_pane]");
+        hide.checked = false;
+        settingsPage.applyDepends(document.getElementById("tweakui-settings"));
+        expect(auto.disabled).toBe(true);
+        expect(box.disabled).toBe(true);
+        expect(slider.disabled).toBe(true);
+    });
+});

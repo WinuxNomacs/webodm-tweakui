@@ -31,6 +31,13 @@ a sample of controls in the current theme. A data-preview names the setting's sc
                     <div class="tweakui-subsettings" data-depends="{{ setting.name }}">
                         {% for part in setting.parts %}
                         {% include setting_template with setting=part %}
+                        {% if part.parts %}
+                        <div class="tweakui-subsettings" data-depends="{{ part.name }}">
+                            {% for subpart in part.parts %}
+                            {% include setting_template with setting=subpart %}
+                            {% endfor %}
+                        </div>
+                        {% endif %}
                         {% endfor %}
                     </div>
                     {% endif %}
