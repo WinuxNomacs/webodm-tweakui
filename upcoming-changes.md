@@ -3,18 +3,16 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08)
-1. **Zoom Sensitivity: "(Default: 100%)"** (new.md, 2026-11-08; see "Zoom Sensitivity: the default shown") — the
-   panel on each map and the settings page's number settings say their default.
-2. **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load
+1. **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load
    and refresh") — per-core and total CPU load like top/htop, refreshed every 1-10 s (3 by default), disk every 10 s.
    Decided (see there).
-3. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
+2. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
    "Performance View: Recent Processing and the task's log") — more per task from its stats.json, and what its log
    says that the user should know. Open decisions listed there.
-4. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+3. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-5. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+4. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -23,6 +21,13 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Zoom Sensitivity: the default shown** (new.md, 2026-11-08; see "Zoom Sensitivity: the default shown") — branch
+  `number-defaults`: `features.py` (`with_unit`, each number setting's `default` for the page),
+  `settings_setting.html` (the label's "(Default: …)"), `zoom_override.js` (the panel's label), `main.css`
+  (`.tweakui-default`). Tests: `zoom_override.test.js`, `test_tweakui.py`. Docs `map-2d.md`, `map-3d.md`,
+  `adding-a-tweak.md`, CHANGELOG, screenshots `zoom-sensitivity-2d`, `-3d`. Live: the settings page on 4.0.0 (Hide
+  Delay (Default: 500 ms), both Zoom Sensitivity (Default: 100%)) and both map panels; on 3.3.2 rendered server side
+  and by its Django tests, the browser check waiting on a restart of its server (see the conversation of 2026-11-08).
 - **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — branch
   `zoom-sensitivity`: `zoom_override.js` (`sensitivity`, `wheelNotch`, `leafletSteps`, `wheel2d`: Leaflet's wheel at
   100%, otherwise TweakUI's with `zoomSnap` 0, a notch that share of Leaflet's own steps on the browser; `attach3d`'s
@@ -2075,7 +2080,7 @@ the settings declared in `features.py` and their `parts`, the settings page's on
 100%, above too: Leaflet's rounding up to a whole step can't give 150%. A notch is that share of the steps Leaflet
 itself takes for it on the browser (two on Chrome for Linux and macOS, one on Windows and Firefox).
 
-## Zoom Sensitivity: the default shown (new.md, 2026-11-08)
+## Zoom Sensitivity: the default shown (new.md, 2026-11-08) — done
 
 **Request**: "On the zoom sensitivity slider add the text (Default: 100%). This will help remind the user that 100%
 is WebODM's default."
