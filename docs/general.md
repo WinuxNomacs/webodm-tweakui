@@ -163,5 +163,9 @@ browser's menu. Text fields keep
 their menu, and **Shift + right-click** opens it anywhere. Dragging with the right button (the 3D view's pan) sends
 none.
 
+**Enable Interaction**, under Surprise Me and on by default, is what makes a right-click send a rocket. Turn it off to
+leave the mouse to the browser and the page, its menu and any other right-click use included, while the fireworks
+still go off. Turned off or on in the settings page, it takes effect at once.
+
 Turning it on starts a show at once, on the settings page; turning it off ends the show going. The fireworks are
 [fireworks-js](https://fireworks.js.org/) (MIT licence), which comes with TweakUI and loads only when a show starts.

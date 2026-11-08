@@ -10,6 +10,13 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Just for Fun: Enable Interaction** (the user's request, 2026-11-08) — a part of Surprise Me
+  (`surprise_me_interaction`, on by default so the right-click rocket stays until turned off; listed in the tests'
+  `ON_BY_DEFAULT` with its reason): off, the fireworks go on and a right-click is the browser's. Branch
+  `surprise-me-interaction`: `features.py`, `surprise_me.js` (`interact`, from the settings and the settings page's
+  change event), tests in `__tests__/surprise_me.test.js` and `test_tweakui.py`, `docs/general.md`, CHANGELOG. Live on
+  both stacks: greyed while Surprise Me is off, turned off on the settings page it lets the menu through at once, and
+  on the Dashboard; the shows go on.
 - **Surprise Me: the browser's menu on a Windows right-click** (a bug the user reported, 2026-11-08) — Windows sends
   `contextmenu` after `mouseup` (Linux and Mac on the press), and the release had already ended the right-click, so
   the menu was not blocked; there since right-click rockets were added, unseen because headless Chromium on Linux

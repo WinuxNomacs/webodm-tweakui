@@ -1,7 +1,9 @@
 // General > Just for Fun > Surprise Me: fireworks go off over every page at random moments, until the setting is
 // turned off. A show lasts a few seconds and the next follows 4 to 8 seconds later; none starts while the tab is
 // hidden. A right-click (also a Mac's Ctrl+click) sends a rocket that bursts where the pointer is, instead of the
-// browser's menu (which text fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
+// browser's menu (which text fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none.
+// Its part Enable Interaction (surprise_me_interaction, on by default) turns the right-click's rocket off, leaving the
+// mouse to the browser and the page. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
 // when a show starts, on a canvas over the page that clicks go through. The settings page announces each saved
 // change ("tweakuiSettingsChanged"), so turning it on there starts a show at once and turning it off ends it at once.
 // UMD, so Jest can load it.
@@ -100,7 +102,7 @@
         var later = env.setTimeout || function (f, ms) { return win.setTimeout(f, ms); };
         var cancel = env.clearTimeout || function (t) { win.clearTimeout(t); };
         var now = env.now || function () { return Date.now(); };
-        var on = false, timer = null, show = null, clicks = null, press = null, released = null;
+        var on = false, timer = null, show = null, clicks = null, press = null, released = null, interactive = true;
 
         function schedule(range) {
             if (timer !== null) cancel(timer);
@@ -174,7 +176,7 @@
         function mousedown(e) {
             var right = e.button === 2 || (e.button === 0 && e.ctrlKey);
             released = null;
-            press = on && right && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY, ctrl: e.button === 0} : null;
+            press = on && interactive && right && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY, ctrl: e.button === 0} : null;
         }
 
         function contextmenu(e) {
@@ -209,8 +211,14 @@
             } else if (!enabled && on) stop();
         }
 
+        // Enable Interaction: off, a right-click is the browser's again (a press under way is let go)
+        function interact(enabled) {
+            interactive = enabled;
+            if (!enabled) press = released = null;
+        }
+
         return {
-            set: set, stop: stop, showing: function () { return show !== null; },
+            set: set, stop: stop, interact: interact, showing: function () { return show !== null; },
             mouse: {mousedown: mousedown, contextmenu: contextmenu, mouseup: mouseup}
         };
     }
@@ -219,15 +227,17 @@
         var shows = create(doc, win, env);
         var settings = ui.settingsOf(win), mouse = {};
         var changed = ui.guard(NAME, function (e) {
+            shows.interact(!(e.detail && e.detail.surprise_me_interaction === false));
             shows.set(!!(e.detail && e.detail.surprise_me === true), true);
         });
+        shows.interact(settings.surprise_me_interaction !== false);
         shows.set(settings.surprise_me === true, false);
         Object.keys(shows.mouse).forEach(function (type) { mouse[type] = ui.guard(NAME, shows.mouse[type]); });
         // Captured, so a page that stops a click's propagation (a map) still gets its rocket
         Object.keys(mouse).forEach(function (type) { doc.addEventListener(type, mouse[type], true); });
         doc.addEventListener(EVENT, changed);
         return {
-            set: shows.set, showing: shows.showing,
+            set: shows.set, interact: shows.interact, showing: shows.showing,
             // Ends the shows and stops listening
             stop: function () {
                 shows.stop();
