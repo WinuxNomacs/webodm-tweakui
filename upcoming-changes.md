@@ -1751,7 +1751,7 @@ task, or per task of a ticked project.
 - So both go through WebODM's API from the browser, its permissions and quota applying, as Compact and Delete do.
 
 **Builds on**: the Storage page (`storage_page.js`: the task rows' buttons, the ticked selection, the action bar
-with Compact and Delete, the status line; `storage.html`; `docs/storage.md` or its section; screenshot).
+with Compact and Delete, the status line; `storage.html`; `docs/storage.md`; the `storage` screenshot).
 
 **Proposed design**:
 - **Export** (a task row, beside Compact; `fa-download`, title "Export: download the whole task as a zip"): a
