@@ -2181,11 +2181,12 @@ tasks with images, total time, time per photo, slowest step, average GSD and nod
 4. **Tests**: Django (each known message against sample logs; a missing or huge log; stats.json fields missing),
   Jest (the columns, the notes), both stacks live; docs, screenshot.
 
-**Open decisions**:
-1. Which columns: photos reconstructed of given, area covered, GPS or GCP error, GPU used, separate reconstructions,
-   size on disk, options (preset name).
-2. Failed and canceled tasks in the list too, or completed only?
-3. The notes: the known messages above only, or also every other `[WARNING]` and `[ERROR]` line (deduplicated)?
+**Decided** (2026-11-08):
+1. Columns added: photos reconstructed of given; area covered and separate reconstructions; GPS error (GCP error
+   when GCPs were used) and GPU used. Not size on disk or the preset.
+2. Failed and canceled tasks are listed too, among the last 10, marked, with their error and the log's reason.
+3. Notes: the known messages, each with a plain sentence; every other `[WARNING]` and `[ERROR]` line (deduplicated,
+   `CPLE_AppDefined` left out) in a collapsed "Other Messages" list under them.
 
 ## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
 
