@@ -5,7 +5,7 @@
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
 1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
-   (`release/X.Y.Z`). Open decisions listed there.
+   (`release/1.0.0`, still experimental: decided 2026-11-08).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -2397,6 +2397,6 @@ setting's name, place and description against `features.py`, each behaviour agai
 against what the feature shows now (retaken where stale), the links (`npm run docs:build`). Then the release:
 `release/X.Y.Z` (manifest version, CHANGELOG, README, docs), `dev/package.sh`, the `release-check` skill.
 
-**Open decisions** (to ask when the phase starts):
-1. The first release's version (the manifest says 0.1.0).
-2. Whether it stays `"experimental": true`.
+**Decided** (the user, 2026-11-08):
+1. The first release is **1.0.0** (the manifest said 0.1.0).
+2. It stays `"experimental": true`.
