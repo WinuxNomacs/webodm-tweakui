@@ -1,7 +1,7 @@
 // General > Task Options > Sort Preset Options: the Options preset dropdown of a task's form (the New Task panel's and
-// a task's Edit form, EditTaskForm in WebODM) becomes a dropdown of TweakUI's own, in theme colours: (Custom) when the
-// options were edited, then Default, at the top; then "User Presets", which opens in the list to the user's own
-// presets, A-Z; then the other system presets, A-Z. WebODM's select stays on the page, hidden: choosing an item sets
+// a task's Edit form, EditTaskForm in WebODM) becomes a dropdown of TweakUI's own, in theme colours: (Custom) at the
+// top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own) and
+// "System Presets" (WebODM's, Default among them), each A-Z and open at first when it holds the chosen preset. WebODM's select stays on the page, hidden: choosing an item sets
 // its value and sends it a change event, so WebODM's own code selects the preset, and the button follows the select
 // (its options, value and title change as WebODM re-renders it). UMD, so Jest can load it.
 (function (root, factory) {
@@ -20,27 +20,19 @@
     var DONE = "data-tweakui-presets";
     var CUSTOM = "-1";
 
-    function gettext(win, text) {
-        return typeof win.gettext === "function" ? win.gettext(text) : text;
-    }
-
     function byName(a, b) {
         return a.name.localeCompare(b.name, undefined, {sensitivity: "base"});
     }
 
-    // The select's presets, in the menu's order: {top: [(Custom), Default], user: [...], system: [...]}, each
-    // {value, name}; Default is the system preset WebODM shows as gettext("Default")
-    function order(select, win) {
-        var defaultName = gettext(win, "Default"), out = {top: [], user: [], system: []}, custom = null, def = null;
+    // The select's presets, in the menu's order: {top: [(Custom)], user: [...], system: [...]}, each {value, name}
+    function order(select) {
+        var out = {top: [], user: [], system: []};
         Array.prototype.forEach.call(select.options, function (o) {
             var p = {value: o.value, name: o.textContent};
-            if (o.value === CUSTOM) custom = p;
-            else if (!o.classList.contains("system-preset")) out.user.push(p);
-            else if (!def && (p.name === defaultName || p.name === "Default")) def = p;
-            else out.system.push(p);
+            if (o.value === CUSTOM) out.top.push(p);
+            else if (o.classList.contains("system-preset")) out.system.push(p);
+            else out.user.push(p);
         });
-        if (custom) out.top.push(custom);
-        if (def) out.top.push(def);
         out.user.sort(byName);
         out.system.sort(byName);
         return out;
@@ -74,8 +66,8 @@
         menu.setAttribute("role", "menu");
         wrap.appendChild(button);
         wrap.appendChild(menu);
-        // null: the submenu opens when the chosen preset is the user's; then as the user left it
-        var userOpen = null;
+        // Each submenu, by key: null opens it when it holds the chosen preset; then as the user left it
+        var groupOpen = {user: null, system: null};
 
         function selected() {
             var o = select.options[select.selectedIndex];
@@ -104,31 +96,31 @@
             return li;
         }
 
+        // A submenu's heading, and its presets while open; none without presets
+        function group(key, label, presets) {
+            if (!presets.length) return;
+            var now = selected(), held = presets.some(function (p) { return p.value === now; });
+            var open = groupOpen[key] === null ? held : groupOpen[key];
+            var li = ui.el(doc, "li", "tweakui-presets-group");
+            li.setAttribute("role", "presentation");
+            var head = ui.el(doc, "a", "tweakui-presets-group-head");
+            head.href = "#";
+            head.setAttribute("role", "menuitem");
+            head.setAttribute("data-group", key);
+            head.setAttribute("aria-expanded", open ? "true" : "false");
+            head.appendChild(ui.el(doc, "i", "fa fa-fw " + (open ? "fa-caret-down" : "fa-caret-right")));
+            head.appendChild(doc.createTextNode(" " + label));
+            li.appendChild(head);
+            menu.appendChild(li);
+            if (open) presets.forEach(function (p) { menu.appendChild(item(p, true)); });
+        }
+
         function build() {
-            var list = order(select, win), now = selected();
+            var list = order(select);
             while (menu.firstChild) menu.removeChild(menu.firstChild);
             list.top.forEach(function (p) { menu.appendChild(item(p)); });
-            if (list.user.length) {
-                var mine = list.user.some(function (p) { return p.value === now; });
-                var open = userOpen === null ? mine : userOpen;
-                var li = ui.el(doc, "li", "tweakui-presets-group");
-                li.setAttribute("role", "presentation");
-                var head = ui.el(doc, "a", "tweakui-presets-group-head");
-                head.href = "#";
-                head.setAttribute("role", "menuitem");
-                head.setAttribute("aria-expanded", open ? "true" : "false");
-                head.appendChild(ui.el(doc, "i", "fa fa-fw " + (open ? "fa-caret-down" : "fa-caret-right")));
-                head.appendChild(doc.createTextNode(" User Presets"));
-                li.appendChild(head);
-                menu.appendChild(li);
-                if (open) list.user.forEach(function (p) { menu.appendChild(item(p, true)); });
-            }
-            if (list.system.length && menu.firstChild) {
-                var line = ui.el(doc, "li", "divider");
-                line.setAttribute("role", "separator");
-                menu.appendChild(line);
-            }
-            list.system.forEach(function (p) { menu.appendChild(item(p)); });
+            group("user", "User Presets", list.user);
+            group("system", "System Presets", list.system);
         }
 
         function isOpen() { return wrap.classList.contains("open"); }
@@ -165,9 +157,10 @@
             if (!a) return;
             e.preventDefault();
             if (a.classList.contains("tweakui-presets-group-head")) {
-                userOpen = a.getAttribute("aria-expanded") !== "true";
+                var key = a.getAttribute("data-group");
+                groupOpen[key] = a.getAttribute("aria-expanded") !== "true";
                 build();
-                var head = menu.querySelector(".tweakui-presets-group-head");
+                var head = menu.querySelector('.tweakui-presets-group-head[data-group="' + key + '"]');
                 if (head) head.focus();
                 return;
             }

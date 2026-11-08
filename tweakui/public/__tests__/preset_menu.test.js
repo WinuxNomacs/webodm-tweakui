@@ -49,49 +49,58 @@ test("turned on, a dropdown of TweakUI's own takes the select's place, showing t
     expect(button().title).toBe("Options: auto");
 });
 
-test("(Custom) and Default stay at the top, User Presets comes next, closed, and the other presets follow A-Z", () => {
+test("(Custom) stays at the top; User Presets and System Presets follow, closed when neither holds the choice", () => {
     form({custom: true, value: "-1"});
     start();
     button().click();
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
-    expect(items()).toEqual(["(Custom)", "Default", "User Presets", "---", "3D Model", "Buildings", "Fast Orthophoto", "High Resolution"]);
+    expect(items()).toEqual(["(Custom)", "User Presets", "System Presets"]);
 });
 
 test("User Presets opens in the list to the user's presets, A-Z regardless of case, and closes again", () => {
-    form();
+    form({custom: true, value: "-1"});
     start();
     button().click();
     link("User Presets").click();
-    expect(items().slice(1, 5)).toEqual(["User Presets", "  M4T-RGB", "  m4t-Thermal", "  Multispectral"]);
+    expect(items()).toEqual(["(Custom)", "User Presets", "  M4T-RGB", "  m4t-Thermal", "  Multispectral", "System Presets"]);
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
+    expect(document.activeElement.textContent.trim()).toBe("User Presets");
     link("User Presets").click();
     expect(items()).not.toContain("  M4T-RGB");
 });
 
-test("User Presets starts open when the chosen preset is one of the user's, which is marked", () => {
+test("System Presets holds WebODM's presets, Default among them, A-Z, and opens on its own", () => {
+    form({custom: true, value: "-1"});
+    start();
+    button().click();
+    link("System Presets").click();
+    expect(items()).toEqual(["(Custom)", "User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
+        "  Fast Orthophoto", "  High Resolution"]);
+    expect(document.activeElement.textContent.trim()).toBe("System Presets");
+});
+
+test("the submenu that holds the chosen preset starts open, the preset marked", () => {
     form({value: "11"});
     start();
     expect(button().textContent).toBe("m4t-Thermal");
     button().click();
     expect(items()).toContain("  m4t-Thermal");
+    expect(items()).not.toContain("  Default");
     expect(link("m4t-Thermal").parentNode.className).toBe("tweakui-presets-current");
     expect(link("m4t-Thermal").className).toContain("theme-background-highlight");
+    form();
+    start();
+    button().click();
+    expect(items()).toEqual(["User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
+        "  Fast Orthophoto", "  High Resolution"]);
 });
 
 test("without presets of the user's, there is no User Presets", () => {
     form({user: []});
     start();
     button().click();
-    expect(items()).toEqual(["Default", "---", "3D Model", "Buildings", "Fast Orthophoto", "High Resolution"]);
-});
-
-test("Default is found in WebODM's language", () => {
-    window.gettext = t => (t === "Default" ? "Standard" : t);
-    form();
-    document.querySelector('option[value="1"]').textContent = "Standard";
-    start();
-    button().click();
-    expect(items()[0]).toBe("Standard");
+    expect(items()[0]).toBe("System Presets");
+    expect(items()).not.toContain("User Presets");
 });
 
 test("choosing a preset sets WebODM's select and tells it, as a choice there would, and closes the menu", () => {
@@ -145,7 +154,7 @@ test("a click outside or Escape closes the menu; the arrows open it at the chose
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
     expect(document.activeElement.textContent).toBe("Default");
     document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowDown", bubbles: true}));
-    expect(document.activeElement.textContent.trim()).toBe("User Presets");
+    expect(document.activeElement.textContent.trim()).toBe("Fast Orthophoto");
     document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(false);
     expect(document.activeElement).toBe(button());

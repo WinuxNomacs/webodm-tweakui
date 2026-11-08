@@ -81,8 +81,9 @@ CATEGORIES = [
                       "All and Collapse All but Configured."),
                     preview="expand-configured", scripts=["task_options.js"]),
             Setting("sort_preset_options", False, _("Sort Preset Options"),
-                    _("The Options dropdown of a new or edited task lists its presets A-Z, after (Custom) and Default, "
-                      "with a User Presets submenu at the top that opens to your own saved presets."),
+                    _("The Options dropdown of a new or edited task lists its presets A-Z in two submenus, User "
+                      "Presets (your own saved presets) and System Presets (WebODM's, Default among them), below "
+                      "(Custom)."),
                     preview="sort-preset-options", scripts=["preset_menu.js"]),
         ]),
         Group(_("Task Details"), [
