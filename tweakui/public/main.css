@@ -308,3 +308,17 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     display: block;
     pointer-events: none;
 }
+
+/* Sort Preset Options (preset_menu.js): TweakUI's dropdown in place of WebODM's preset select (hidden, kept on the
+   page), shaped like it: a form-control button with a chevron, and a Bootstrap dropdown menu in theme colours. */
+.edit-task-form select[data-tweakui-presets] { display: none !important; }
+.tweakui-presets { display: inline-block; vertical-align: middle; position: relative; max-width: 100%; }
+.tweakui-presets .tweakui-presets-button { display: flex; align-items: center; gap: 12px; min-width: 200px; max-width: 100%; text-align: left; cursor: pointer; }
+.tweakui-presets .tweakui-presets-label { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tweakui-presets .tweakui-presets-caret { font-size: 0.75em; opacity: 0.7; }
+.tweakui-presets .tweakui-presets-menu { min-width: 100%; max-height: 60vh; overflow-y: auto; }
+.tweakui-presets .tweakui-presets-menu > li > a.tweakui-presets-nested { padding-left: 38px; }
+.tweakui-presets .tweakui-presets-group-head, .tweakui-presets .tweakui-presets-current > a { font-weight: bold; }
+@media (max-width: 767px) {
+    .tweakui-presets { display: block; }
+}

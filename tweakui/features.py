@@ -80,6 +80,10 @@ CATEGORIES = [
                       "default, so you can change them there. The Expand/Collapse button cycles Expand All, Collapse "
                       "All and Collapse All but Configured."),
                     preview="expand-configured", scripts=["task_options.js"]),
+            Setting("sort_preset_options", False, _("Sort Preset Options"),
+                    _("The Options dropdown of a new or edited task lists its presets A-Z, after (Custom) and Default, "
+                      "with a User Presets submenu at the top that opens to your own saved presets."),
+                    preview="sort-preset-options", scripts=["preset_menu.js"]),
         ]),
         Group(_("Task Details"), [
             Setting("enhanced_task_details", False, _("Enhanced Task Details"),

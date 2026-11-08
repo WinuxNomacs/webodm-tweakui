@@ -3,13 +3,21 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Task Options: Sort Preset Options** (the user's request, 2026-11-08; see "Task Options: Sort Preset Options").
+- Nothing planned: new requests go in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Task Options: Sort Preset Options** (the user's request, 2026-11-08; see "Task Options: Sort Preset Options") —
+  branch `sort-preset-options`: `tweakui/public/preset_menu.js`, its section of `main.css`, tests in
+  `__tests__/preset_menu.test.js`, `features.py`, `dev/selector-check.js` (`WHERE`), screenshot
+  `sort-preset-options`, `docs/general.md`, README, CHANGELOG. Live on 4.0.0 (a task's Edit form, the user's presets
+  M4T-RGB and M4T-Thermal; dark and light themes, phone width) and 3.3.2 (the New Task panel with images chosen,
+  never started; a "Live check" preset made and deleted): the order, the submenu, a choice reaching WebODM's state,
+  no writes, no console errors. Found while building: WebODM floats `.dropdown` right in the form, and Bootstrap's
+  `.active` menu item is dark-on-dark in a light theme, so the menu uses neither.
 - **Hide Navigation Pane: three steps** (the user's request, 2026-11-07) — branch `nav-tab-three-states`: the tab
   cycles shown → icons only → hidden → shown at WebODM's 250 px (a dragged width is given up, as "default size"
   asks). Icons only is Resize Navigation Pane's narrowest view (`tweakui-nav-icons`, tooltips), with or without that
@@ -1668,5 +1676,5 @@ A native select cannot hold a submenu.
 - Order: (Custom) when present, then Default, at the top; then User Presets; then the other system presets A-Z.
   The user's presets are A-Z inside the submenu.
 
-**Built**: `tweakui/public/preset_menu.js`, its section of `main.css`, tests in `__tests__/preset_menu.test.js`.
+**Built**: see Done.
 
