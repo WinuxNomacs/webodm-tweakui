@@ -234,6 +234,30 @@ test("on Linux and Mac (the contextmenu on the press), the menu key right after 
     expect(menu.defaultPrevented).toBe(false);
 });
 
+test("Enable Interaction off: the fireworks go on, but a right-click is the browser's, in either order", async () => {
+    window.TweakUI = {settings: {surprise_me: true, surprise_me_interaction: false}};
+    const f = fake();
+    start(f.env);
+    expect(await rightClick(document.body, 300, 200)).toBe(false);
+    expect(await windowsRightClick(document.body, 300, 200)).toBe(false);
+    expect(await ctrlClick(document.body, 10, 10)).toBe(false);
+    expect(boxes()).toBe(0);
+    expect(f.pending()).toHaveLength(1);
+});
+
+test("Enable Interaction turned off or on in the settings page takes effect at once, the shows going on", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    start(f.env);
+    expect(await rightClick(document.body, 300, 200)).toBe(true);
+    const save = settings => document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: settings}));
+    save({surprise_me: true, surprise_me_interaction: false});
+    expect(await rightClick(document.body, 300, 200)).toBe(false);
+    save({surprise_me: true, surprise_me_interaction: true});
+    expect(await rightClick(document.body, 40, 50)).toBe(true);
+    expect(f.made[0].launched).toHaveLength(2);
+});
+
 test("a right-drag (the 3D view's pan), Shift + right-click and a right-click in a text field send no rocket; the last two get the browser's menu", async () => {
     window.TweakUI = {settings: {surprise_me: true}};
     document.body.innerHTML = "<input type='text'>";

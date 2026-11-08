@@ -108,10 +108,14 @@ CATEGORIES = [
         ]),
         Group(_("Just for Fun"), [
             Setting("surprise_me", False, _("Surprise Me"),
-                    _("Fireworks go off over every page every few seconds until you turn this off, and a right-click "
-                      "(Ctrl+click on a Mac) sends one to the pointer (Shift + right-click for the browser's menu). They're silent and clicks "
-                      "go through them."),
-                    preview="surprise-me", scripts=["surprise_me.js"]),
+                    _("Fireworks go off over every page every few seconds until you turn this off, and with Enable "
+                      "Interaction a right-click (Ctrl+click on a Mac) sends one to the pointer (Shift + right-click for "
+                      "the browser's menu). They're silent and clicks go through them."),
+                    preview="surprise-me", scripts=["surprise_me.js"], parts=[
+                        Setting("surprise_me_interaction", True, _("Enable Interaction"),
+                                _("A right-click (Ctrl+click on a Mac) sends a rocket. Turn this off to leave the mouse "
+                                  "to the browser and the page: the fireworks still go off.")),
+                    ]),
         ]),
     ]),
     Category("themes", _("Themes"), "fa fa-palette fa-fw", groups=[

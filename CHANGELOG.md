@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Just for Fun > Surprise Me > Enable Interaction (on by default): turn it off to keep the fireworks
+  without the right-click's rocket, leaving the mouse to the browser and the page.
 - Surprise Me: a right-click on Windows sends only its rocket; the browser's menu no longer opens too (Windows sends
   the menu event after the button's release, which the right-click had already ended).
 - General > Task Options > Replace Preset Options Menu: the Options dropdown of a new or edited task becomes a menu

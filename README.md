@@ -24,7 +24,7 @@ Every feature is off until you turn it on, except the theme menu.
   a collapsed group (Expand Configured); the Options dropdown replaced by a menu with User Presets and System Presets
   submenus, A-Z (Replace Preset Options Menu); on the Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
   step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks every
-  few seconds, or at the pointer on a right-click (Surprise Me).
+  few seconds, and at the pointer on a right-click unless you turn that off (Surprise Me, Enable Interaction).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, seen only by you: WebODM's theme,
   one of 11 presets (Catppuccin, Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes copied from any theme
   with a live preview (imported and exported as JSON) or themes an administrator publishes to every user; a sample of

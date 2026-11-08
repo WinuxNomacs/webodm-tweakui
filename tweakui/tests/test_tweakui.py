@@ -32,7 +32,7 @@ def defaults(**changes):
     """Every setting at its default, but for the given changes"""
     return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_modified_options": False, "expand_configured": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
-                 "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "movable_controls": False, "other_tasks": False,
+                 "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
                  "zoom_override_3d": False, "storage_view": False, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
@@ -283,7 +283,10 @@ class TestSettingsPage(TweakUITestCase):
         general = page[page.index('<section id="tweakui-general"'):]
         general = general[:general.index("</section>")]
         self.assertLess(general.index("Task Details"), general.index("Just for Fun"))
-        self.assertEqual(general.rindex("data-setting="), general.index('data-setting="surprise_me">'))
+        # Last but its part, Enable Interaction (on by default)
+        self.assertLess(general.index('data-setting="surprise_me">'), general.index('data-setting="surprise_me_interaction"'))
+        self.assertEqual(general.rindex("data-setting="), general.index('data-setting="surprise_me_interaction"'))
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="surprise_me_interaction" checked')
         self.assertIn("Surprise Me", general)
         self.assertEqual(self.patch({"surprise_me": True}).json(), defaults(surprise_me=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="surprise_me" checked')
@@ -348,9 +351,10 @@ class TestFeatures(TweakUITestCase):
 
     PUBLIC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
     # On by default, each for its reason: the theme menu came before its setting (turning it off is the choice), and
-    # Enhanced Task Details' parts are shown once Enhanced Task Details itself is turned on
+    # Enhanced Task Details' parts are shown once Enhanced Task Details itself is turned on, and Surprise Me's Enable
+    # Interaction keeps its right-click rockets, which came before the part (turning them off is the choice)
     ON_BY_DEFAULT = frozenset({"show_theme_menu", "task_details_times", "task_details_preset", "task_details_options",
-                               "task_details_command", "task_details_step"})
+                               "task_details_command", "task_details_step", "surprise_me_interaction"})
 
     def test_each_setting_is_declared_once_and_its_default_is_the_settings_default(self):
         names = [s.name for s in features.all_settings()]
