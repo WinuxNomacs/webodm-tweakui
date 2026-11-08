@@ -90,10 +90,14 @@ easier to scan:
 
 Both submenus start open; a click on a submenu's name closes it, and opens it again.
 
+A **filter box** at the top of the menu has the keyboard focus as the menu opens: type part of a preset's name, in
+any case, and only the presets that match stay, their submenus open ("No matching presets" when none does). Enter
+chooses the first match and the down arrow moves into the list. Escape clears the filter, and a second Escape closes
+the menu. The filter starts empty each time the menu opens.
+
 The chosen preset is in bold and highlighted, in your theme's colours (WebODM's own dropdown shows the system presets
 on a light background, which a dark theme makes hard to read). Choosing a preset works as it does in WebODM's dropdown,
-and the Edit button beside it is unchanged. From the keyboard, the arrow keys open the list and move through it, and
-Escape closes it.
+and the Edit button beside it is unchanged. From the keyboard, the arrow keys open the list and move through it.
 
 ## Task Details > Enhanced Task Details
 

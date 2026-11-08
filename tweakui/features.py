@@ -83,7 +83,7 @@ CATEGORIES = [
             Setting("replace_preset_menu", False, _("Replace Preset Options Menu"),
                     _("Replaces the Options dropdown of a new or edited task with a menu that lists its presets A-Z in "
                       "two submenus, User Presets (your own saved presets) and System Presets (WebODM's, Default among "
-                      "them), below (Custom)."),
+                      "them), below (Custom), and a box at the top that filters them as you type."),
                     preview="replace-preset-options-menu", scripts=["preset_menu.js"]),
         ]),
         Group(_("Task Details"), [

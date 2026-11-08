@@ -10,6 +10,12 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Replace Preset Options Menu: a filter box** (the user's request, 2026-11-08) — at the top of the menu, focused on
+  opening: only the presets whose names hold the text (any case) stay, their submenus open and not closable while
+  filtering; "No matching presets"; Enter chooses the first match, the down arrow goes to it, Escape clears then
+  closes; empty each time the menu opens. Branch `preset-menu-filter`: `preset_menu.js` (`filter`, `build`,
+  `focusItem`), `main.css`, tests in `__tests__/preset_menu.test.js`, `features.py`'s description, `docs/general.md`,
+  CHANGELOG, screenshot retaken. Live on both stacks with real typing (4.0.0's Edit form, 3.3.2's New Task panel).
 - **Just for Fun: Enable Interaction** (the user's request, 2026-11-08) — a part of Surprise Me
   (`surprise_me_interaction`, on by default so the right-click rocket stays until turned off; listed in the tests'
   `ON_BY_DEFAULT` with its reason): off, the fireworks go on and a right-click is the browser's. Branch
