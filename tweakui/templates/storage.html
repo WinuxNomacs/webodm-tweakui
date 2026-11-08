@@ -17,6 +17,8 @@
     <input type="file" class="tweakui-storage-file" accept=".zip,application/zip,application/x-zip-compressed" multiple hidden aria-label="{% trans "Zips to import" %}">
     <p class="tweakui-storage-status" role="status" aria-live="polite"></p>
     <div class="tweakui-storage-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Loading..." %}</p></div>
+    {% elif withheld %}
+    <p class="text-muted"><i class="fa fa-lock fa-fw"></i> {% trans "Storage View is turned off by your administrator." %}</p>
     {% else %}
     <p class="text-muted">{% blocktrans %}The Storage view is off. Turn it on in <a href="/plugins/tweakui/#diagnostic">TweakUI &gt; Diagnostic</a>.{% endblocktrans %}</p>
     {% endif %}

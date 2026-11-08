@@ -13,7 +13,7 @@ from app.plugins.views import TaskView
 
 from app.models import Task
 
-from . import custom_themes, frames, performance, settings, storage, themes
+from . import access, custom_themes, frames, performance, settings, storage, themes
 
 
 class SettingsView(APIView):
@@ -116,10 +116,33 @@ class ThemesExportView(APIView):
 
 
 class IsSuperuser(permissions.BasePermission):
-    """Administration > TweakUI Themes: superusers only (not other staff)"""
+    """Administration > TweakUI and TweakUI Themes: superusers only (not other staff)"""
 
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
+
+
+class AccessView(APIView):
+    """GET and PATCH /api/plugins/tweakui/access: which features users may have ({name: bool}, access.py), for
+    superusers"""
+    permission_classes = (IsSuperuser,)
+
+    def get(self, request):
+        return Response(access.available())
+
+    def patch(self, request):
+        try:
+            return Response(access.update(request.data))
+        except access.InvalidAccess as e:
+            return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
+
+
+class Available(permissions.BasePermission):
+    """A logged-in user whom an admin has not withheld the view's feature from (its setting: view.feature)"""
+    message = "Turned off by your administrator."
+
+    def has_permission(self, request, view):
+        return bool(request.user and request.user.is_authenticated and not access.is_withheld(request.user, view.feature))
 
 
 class PublishedView(APIView):
@@ -194,7 +217,8 @@ class FramesView(TaskView):
 class StorageView(APIView):
     """GET /api/plugins/tweakui/storage: the logged-in user's storage and, for an admin, every user's
     (storage.report)"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (Available,)
+    feature = "storage_view"
 
     def get(self, request):
         return Response(storage.report(request.user))
@@ -203,7 +227,8 @@ class StorageView(APIView):
 class PerformanceView(APIView):
     """GET /api/plugins/tweakui/performance: the processing nodes the user may use, the server, the recent tasks
     (an admin's: everyone's) and the verdicts (performance.report)"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (Available,)
+    feature = "performance_view"
 
     def get(self, request):
         return Response(performance.report(request.user))
@@ -212,7 +237,8 @@ class PerformanceView(APIView):
 class StorageTaskView(APIView):
     """GET /api/plugins/tweakui/storage/<project>/<task>: a task's files by kind, for its project's owner and
     admins"""
-    permission_classes = (permissions.IsAuthenticated,)
+    permission_classes = (Available,)
+    feature = "storage_view"
 
     def get(self, request, project_pk=None, pk=None):
         try:
