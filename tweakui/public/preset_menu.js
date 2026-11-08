@@ -1,9 +1,10 @@
-// General > Task Options > Sort Preset Options: the Options preset dropdown of a task's form (the New Task panel's and
-// a task's Edit form, EditTaskForm in WebODM) becomes a dropdown of TweakUI's own, in theme colours: (Custom) at the
-// top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own) and
-// "System Presets" (WebODM's, Default among them), each A-Z and open at first. WebODM's select stays on the page, hidden: choosing an item sets
-// its value and sends it a change event, so WebODM's own code selects the preset, and the button follows the select
-// (its options, value and title change as WebODM re-renders it). UMD, so Jest can load it.
+// General > Task Options > Replace Preset Options Menu: the Options preset dropdown of a task's form (the New Task
+// panel's and a task's Edit form, EditTaskForm in WebODM) becomes a menu of TweakUI's own, in theme colours: (Custom)
+// at the top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own)
+// and "System Presets" (WebODM's, Default among them), each A-Z and open at first. WebODM's select stays on the page,
+// hidden: choosing an item sets its value and sends it a change event, so WebODM's own code selects the preset, and
+// the button follows the select (its options, value and title change as WebODM re-renders it). UMD, so Jest can
+// load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -210,7 +211,7 @@
     }
 
     function start(doc, win) {
-        if (!ui.settingsOf(win).sort_preset_options) return null;
+        if (!ui.settingsOf(win).replace_preset_menu) return null;
         var pending = false;
         function later() {
             if (pending) return;

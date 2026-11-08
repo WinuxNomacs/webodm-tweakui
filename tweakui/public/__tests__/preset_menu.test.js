@@ -16,7 +16,7 @@ function form({custom = false, user = ["Multispectral", "m4t-Thermal", "M4T-RGB"
     return select;
 }
 
-function start(settings = {sort_preset_options: true}) {
+function start(settings = {replace_preset_menu: true}) {
     window.TweakUI = {settings};
     return presetMenu.start(document, window);
 }
@@ -35,7 +35,7 @@ afterEach(() => jest.restoreAllMocks());
 
 test("turned off, WebODM's preset dropdown is left as it is", () => {
     form();
-    start({sort_preset_options: false});
+    start({replace_preset_menu: false});
     expect(button()).toBeNull();
     expect(document.querySelector("select").hasAttribute("data-tweakui-presets")).toBe(false);
 });
