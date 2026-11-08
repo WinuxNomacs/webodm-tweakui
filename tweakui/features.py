@@ -71,15 +71,15 @@ CATEGORIES = [
                     preview="resize-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
-            Setting("show_modified_options", False, _("Show Modified Options"),
-                    _("In the Task Options dialog, each group's heading shows how many of its options are not at their "
-                      "default, e.g. (1/13)."),
-                    preview="show-modified-options", scripts=["task_options.js"]),
-            Setting("expand_configured", False, _("Expand Configured"),
-                    _("In the Task Options dialog, a collapsed group still shows its options that are not at their "
-                      "default, so you can change them there. The Expand/Collapse button cycles Expand All, Collapse "
-                      "All and Collapse All but Configured."),
-                    preview="expand-configured", scripts=["task_options.js"]),
+            Setting("show_configured_option_count", False, _("Show Configured Option Count"),
+                    _("In the Task Options dialog, each group's heading shows how many of its options are configured "
+                      "(not at their default), e.g. (1/13)."),
+                    preview="show-configured-option-count", scripts=["task_options.js"]),
+            Setting("expand_configured_options", False, _("Expand Configured Options"),
+                    _("In the Task Options dialog, a collapsed group still shows its configured options (those not at "
+                      "their default), so you can change them there. The Expand/Collapse button cycles Expand All, "
+                      "Collapse All and Collapse All but Configured."),
+                    preview="expand-configured-options", scripts=["task_options.js"]),
             Setting("replace_preset_menu", False, _("Replace Preset Options Menu"),
                     _("Replaces the Options dropdown of a new or edited task with a menu that lists its presets A-Z in "
                       "two submenus, User Presets (your own saved presets) and System Presets (WebODM's, Default among "

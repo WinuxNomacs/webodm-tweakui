@@ -6,7 +6,7 @@ function page(checked) {
         <input type="hidden" name="csrfmiddlewaretoken" value="tok">
         <ul class="tweakui-nav"><li><a href="#general" data-section="general" class="theme-background-highlight-hover">General</a></li>
           <li><a href="#themes" data-section="themes">Themes</a></li></ul>
-        <section data-section="general"><input type="checkbox" data-setting="show_modified_options"${checked ? " checked" : ""}></section>
+        <section data-section="general"><input type="checkbox" data-setting="show_configured_option_count"${checked ? " checked" : ""}></section>
         <section data-section="themes"></section>
         <p class="tweakui-status"></p>
       </div>`;
@@ -37,15 +37,15 @@ test("changing a setting sends a PATCH of it with the page's CSRF token and says
     const root = page(false);
     const input = root.querySelector("input[data-setting]");
     input.checked = true;
-    const fetchFn = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({show_modified_options: true})}));
+    const fetchFn = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({show_configured_option_count: true})}));
     const win = {TweakUI: {settings: {}}};
     await settingsPage.save(root, input, fetchFn, document, win);
     const [url, init] = fetchFn.mock.calls[0];
     expect(url).toBe("/api/plugins/tweakui/settings");
     expect(init.method).toBe("PATCH");
     expect(init.headers["X-CSRFToken"]).toBe("tok");
-    expect(JSON.parse(init.body)).toEqual({show_modified_options: true});
-    expect(win.TweakUI.settings).toEqual({show_modified_options: true});
+    expect(JSON.parse(init.body)).toEqual({show_configured_option_count: true});
+    expect(win.TweakUI.settings).toEqual({show_configured_option_count: true});
     expect(root.querySelector(".tweakui-status").textContent).toBe("Saved");
 });
 

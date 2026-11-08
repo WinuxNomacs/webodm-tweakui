@@ -3,10 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
-2. **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks").
-3. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
-4. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
+1. **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks").
+2. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
+3. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
    users' access to Storage and Performance").
 
 **Later**
@@ -14,6 +13,19 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Task Options: two settings renamed** (new.md, 2026-11-08) — Show Modified Options is Show Configured Option
+  Count (`show_configured_option_count`), Expand Configured is Expand Configured Options
+  (`expand_configured_options`); previews `show-configured-option-count` and `expand-configured-options`; the texts
+  say configured where they said modified. Branch `rename-configured-options`: `features.py`, `task_options.js`
+  (`isConfigured`), `main.css`, the tests (`test_tweakui.py`, `task_options.test.js`, `settings_page.test.js`),
+  `dev/screenshots.js`, `docs/general.md`, README, CHANGELOG, CLAUDE.md; screenshots retaken. Live on both stacks
+  (the settings page's names, previews and saving; the counts and expanded groups in the dialog: 4.0.0 a task's Edit,
+  3.3.2 the New Task panel, never started); selector check clean. Settings put back, old keys gone from the saved
+  values.
+- **Dev stacks on the GPU** (asked in chat, 2026-11-08) — `dev/webodm.sh` runs the processing node on WebODM's
+  `nodeodx:gpu` image with the GPU reserved when the machine has one Docker can use (`TW_GPU=auto|1|0`,
+  `dev/compose.gpu.yml`); both stacks' nodes recreated, ODX's own check finds the GPU. Not yet proven by a
+  processing run.
 - **Windows app: this session's features** (2026-11-08, the zip with the filter, the app restarted by the user) —
   checked live through the relay on :8007, desktop mode: Hide Navigation Pane's three steps on a map, with and
   without Resize Navigation Pane (250 → icons 50 with tooltips → hidden → 250, each kept over a reload; a drag to

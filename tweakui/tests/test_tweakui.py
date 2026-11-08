@@ -30,7 +30,7 @@ def plugin_scripts():
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_modified_options": False, "expand_configured": False, "replace_preset_menu": False, "enhanced_task_details": False,
+    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
@@ -114,27 +114,27 @@ class TestThePlugin(TweakUITestCase):
 
 
 class TestSettings(TweakUITestCase):
-    def test_a_new_user_gets_the_defaults_with_show_modified_options_off(self):
+    def test_a_new_user_gets_the_defaults_with_show_configured_option_count_off(self):
         res = self.client.get(API)
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         self.assertEqual(res.json(), defaults())
 
     def test_a_change_is_saved_in_the_user_s_own_data_store(self):
-        res = self.patch({"show_modified_options": True})
+        res = self.patch({"show_configured_option_count": True})
         self.assertEqual(res.status_code, status.HTTP_200_OK)
-        self.assertEqual(res.json(), defaults(show_modified_options=True))
+        self.assertEqual(res.json(), defaults(show_configured_option_count=True))
         store = UserDataStore("tweakui", User.objects.get(username="testuser"))
-        self.assertEqual(store.get_json("settings"), defaults(show_modified_options=True))
-        self.assertEqual(self.client.get(API).json(), defaults(show_modified_options=True))
+        self.assertEqual(store.get_json("settings"), defaults(show_configured_option_count=True))
+        self.assertEqual(self.client.get(API).json(), defaults(show_configured_option_count=True))
 
     def test_each_user_has_their_own_settings(self):
-        self.patch({"show_modified_options": True})
+        self.patch({"show_configured_option_count": True})
         other = self.login("testuser2")
         self.assertEqual(other.get(API).json(), defaults())
         self.assertEqual(self.script_settings(other), defaults())
 
     def test_unknown_settings_and_wrong_types_are_refused_and_nothing_is_saved(self):
-        for data in ({"nope": True}, {"show_modified_options": "yes"}, {"show_modified_options": 1}, [True],
+        for data in ({"nope": True}, {"show_configured_option_count": "yes"}, {"show_configured_option_count": 1}, [True],
                      {"theme": "nope"}, {"theme": 1}):
             res = self.patch(data)
             self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, data)
@@ -143,22 +143,22 @@ class TestSettings(TweakUITestCase):
 
     def test_saved_settings_no_longer_known_or_of_the_wrong_type_fall_back_to_the_defaults(self):
         UserDataStore("tweakui", User.objects.get(username="testuser")).set_json(
-            "settings", {"show_modified_options": "x", "removed": 1, "theme": "removed-theme"})
+            "settings", {"show_configured_option_count": "x", "removed": 1, "theme": "removed-theme"})
         self.assertEqual(self.client.get(API).json(), defaults())
 
     def test_logged_out_users_get_neither_the_api_nor_the_page(self):
         anonymous = Client()
         self.assertIn(anonymous.get(API).status_code, (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
-        self.assertIn(self.patch({"show_modified_options": True}, client=anonymous).status_code,
+        self.assertIn(self.patch({"show_configured_option_count": True}, client=anonymous).status_code,
                       (status.HTTP_401_UNAUTHORIZED, status.HTTP_403_FORBIDDEN))
         self.assertEqual(anonymous.get("/plugins/tweakui/").status_code, status.HTTP_302_FOUND)
 
     def test_settings_js_gives_the_user_s_settings_uncached_and_the_defaults_when_logged_out(self):
-        self.patch({"show_modified_options": True})
+        self.patch({"show_configured_option_count": True})
         res = self.client.get("/plugins/tweakui/settings.js")
         self.assertTrue(res["Content-Type"].startswith("application/javascript"))
         self.assertEqual(res["Cache-Control"], "no-store")
-        self.assertEqual(self.script_settings(self.client), defaults(show_modified_options=True))
+        self.assertEqual(self.script_settings(self.client), defaults(show_configured_option_count=True))
         self.assertEqual(self.script_settings(Client()), defaults())
 
     def test_settings_js_says_desktop_only_in_webodm_s_desktop_mode(self):
@@ -176,7 +176,7 @@ class TestSettings(TweakUITestCase):
     def test_a_patch_without_the_csrf_token_is_refused(self):
         client = Client(enforce_csrf_checks=True)
         client.login(username="testuser", password="test1234")
-        self.assertEqual(self.patch({"show_modified_options": True}, client=client).status_code,
+        self.assertEqual(self.patch({"show_configured_option_count": True}, client=client).status_code,
                          status.HTTP_403_FORBIDDEN)
 
 
@@ -187,7 +187,7 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(res, 'href="#general"')
         self.assertContains(res, 'data-section="general"')
         self.assertContains(res, "Task Options")
-        self.assertContains(res, 'data-setting="show_modified_options"')
+        self.assertContains(res, 'data-setting="show_configured_option_count"')
         self.assertContains(res, 'data-api="/api/plugins/tweakui/"')
         self.assertContains(res, "csrfmiddlewaretoken")
         self.assertNotContains(res, "{#")
@@ -196,8 +196,8 @@ class TestSettingsPage(TweakUITestCase):
     def test_enhanced_task_details_and_its_parts_are_under_task_details_with_their_names(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         options, details = page.index(">Task Options</h5>"), page.index(">Task Details</h5>")
-        self.assertLess(options, page.index('data-setting="show_modified_options"'))
-        self.assertLess(page.index('data-setting="show_modified_options"'), details)
+        self.assertLess(options, page.index('data-setting="show_configured_option_count"'))
+        self.assertLess(page.index('data-setting="show_configured_option_count"'), details)
         self.assertLess(details, page.index('data-setting="enhanced_task_details"'))
         for name in ("Task Start and End Time", "Show Configured Task Preset", "Options as Bubbles",
                      "Show ODX Command", "Show Current Processing Stage"):
@@ -206,12 +206,12 @@ class TestSettingsPage(TweakUITestCase):
     def test_expand_configured_is_under_task_options_off_by_default_and_shows_the_saved_value(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         options, details = page.index(">Task Options</h5>"), page.index(">Task Details</h5>")
-        self.assertLess(options, page.index('data-setting="expand_configured"'))
-        self.assertLess(page.index('data-setting="expand_configured"'), details)
-        self.assertIn("Expand Configured", page)
-        self.assertNotIn('data-setting="expand_configured" checked', page)
-        self.patch({"expand_configured": True})
-        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_configured" checked')
+        self.assertLess(options, page.index('data-setting="expand_configured_options"'))
+        self.assertLess(page.index('data-setting="expand_configured_options"'), details)
+        self.assertIn("Expand Configured Options", page)
+        self.assertNotIn('data-setting="expand_configured_options" checked', page)
+        self.patch({"expand_configured_options": True})
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_configured_options" checked')
 
     def test_expand_task_controls_is_under_task_details_off_by_default_and_shows_the_saved_value(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
@@ -224,9 +224,9 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_task_controls" checked')
 
     def test_the_checkbox_shows_the_saved_value(self):
-        self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
-        self.patch({"show_modified_options": True})
-        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_modified_options" checked')
+        self.assertNotContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_configured_option_count" checked')
+        self.patch({"show_configured_option_count": True})
+        self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="show_configured_option_count" checked')
 
     def test_enhanced_task_details_is_off_by_default_and_its_checkbox_shows_the_saved_value(self):
         page = self.client.get("/plugins/tweakui/")
