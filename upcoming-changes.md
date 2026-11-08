@@ -3,7 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+1. **Diagnostic: Performance View, history graphs** (asked in chat, 2026-11-08; see "Performance View: history
+   graphs") — CPU Load, memory and disk activity drawn as graphs over time in place of their bars, so the trend shows
+   while the page is open. Open decisions listed there.
+2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -2267,6 +2270,26 @@ Decided by the user (2026-11-08):
   "Photos Left Out (N)" list, like Other Messages, with a Copy Names button. Each name is a link that opens the photo
   in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
   one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
+
+## Performance View: history graphs (asked in chat, 2026-11-08)
+
+**Request** (with a screenshot of the Server cards): "I requested if the CPU Load, Memory and Disk IO stats could be
+represented in a historical graph over time instead of a percentage bar? This allows the user to watch the trend
+over time as the performance page runs and updates." (Not found in `upcoming-changes.md` or the earlier requests: it
+had not been recorded.)
+
+**Builds on**: the Performance page's live refresh (`performance_page.js`: `tick` every Refresh Every seconds, the
+CPU's and the disks' counters turned into shares between two readings, `cpuShares` and `diskShares`; the server's
+and the nodes' memory with each refresh; the free disk space every 10 s), `barHtml`.
+
+**Proposed**: a small graph (inline SVG, no library, WebODM's theme colours) in place of each bar that changes with
+the refresh: CPU Load, the server's memory, each drive's activity; the current figure stays as text beside it. The
+newest reading at the right, the window scrolling left; hovering (or touching) a graph shows the figure and the time
+under the pointer. The free disk space keeps its bar (it changes slowly). The history is kept in the page while it is
+open (the server stays read only and keeps nothing).
+
+**Open decisions**: how long a window; whether the history only starts when the page opens; which disk figures get
+graphs; whether the nodes' memory gets one too; before the documentation review (as Disk Activity was).
 
 ## Performance View: disk activity (new.md, 2026-11-08) — done
 
