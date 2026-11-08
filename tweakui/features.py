@@ -163,7 +163,7 @@ CATEGORIES = [
                     preview="zoom-override-3d", scripts=["pick3d.js", "zoom_override.js"]),
         ]),
     ]),
-    Category("storage", _("Storage"), "fa fa-database fa-fw", groups=[
+    Category("diagnostic", _("Diagnostic"), "fa fa-chart-pie fa-fw", groups=[
         Group(_("Storage View"), [
             # main.js adds the side-menu item; the page is the plugin's own (storage.html)
             Setting("storage_view", False, _("Show Storage View"),
@@ -172,6 +172,15 @@ CATEGORIES = [
                       "kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and "
                       "projects, back up completed tasks as WebODM's backup zips and import zips into a project."),
                     preview="storage"),
+        ]),
+        Group(_("Performance View"), [
+            # main.js adds the side-menu item; the page is the plugin's own (performance.html)
+            Setting("performance_view", False, _("Show Performance View"),
+                    _("Adds a Performance page under Diagnostic in the side menu (under TweakUI when the Diagnostic "
+                      "plugin is off). It shows each processing node's cores, memory and queue, the server's disk and "
+                      "memory, your recent tasks' processing times, and whether the nodes have enough memory for your "
+                      "tasks, by WebODM's hardware requirements."),
+                    preview="performance"),
         ]),
     ]),
 ]

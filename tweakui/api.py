@@ -13,7 +13,7 @@ from app.plugins.views import TaskView
 
 from app.models import Task
 
-from . import custom_themes, frames, settings, storage, themes
+from . import custom_themes, frames, performance, settings, storage, themes
 
 
 class SettingsView(APIView):
@@ -198,6 +198,15 @@ class StorageView(APIView):
 
     def get(self, request):
         return Response(storage.report(request.user))
+
+
+class PerformanceView(APIView):
+    """GET /api/plugins/tweakui/performance: the processing nodes the user may use, the server, the recent tasks
+    (an admin's: everyone's) and the verdicts (performance.report)"""
+    permission_classes = (permissions.IsAuthenticated,)
+
+    def get(self, request):
+        return Response(performance.report(request.user))
 
 
 class StorageTaskView(APIView):

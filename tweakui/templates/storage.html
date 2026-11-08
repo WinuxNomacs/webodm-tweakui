@@ -18,7 +18,7 @@
     <p class="tweakui-storage-status" role="status" aria-live="polite"></p>
     <div class="tweakui-storage-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Loading..." %}</p></div>
     {% else %}
-    <p class="text-muted">{% blocktrans %}The Storage view is off. Turn it on in <a href="/plugins/tweakui/#storage">TweakUI &gt; Storage</a>.{% endblocktrans %}</p>
+    <p class="text-muted">{% blocktrans %}The Storage view is off. Turn it on in <a href="/plugins/tweakui/#diagnostic">TweakUI &gt; Diagnostic</a>.{% endblocktrans %}</p>
     {% endif %}
 </div>
 {% if on %}<script src="{{ public }}storage_page.js"></script>{% endif %}

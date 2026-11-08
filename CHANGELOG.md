@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Diagnostic > Performance View (off by default): a Performance page under Diagnostic in the side menu, with each
+  processing node's cores, memory, queue and the photos per task its memory suits, the server's disk and memory, the
+  last 10 completed tasks' times (an administrator's: everyone's) with a trend, and verdicts by WebODM's hardware
+  requirements. The settings' Storage category is now Diagnostic, holding Storage View and Performance View.
 - Storage: a completed task's Backup downloads WebODM's own backup zip of the whole task (as Download > Backup
   does), and Backup All downloads one for each completed task ticked or in a ticked project; a project's Import adds
   a task from each zip chosen (backups or assets, as WebODM's Import), with its progress shown.

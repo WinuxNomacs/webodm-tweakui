@@ -1,0 +1,20 @@
+{% extends "app/plugins/templates/base.html" %}
+{% load i18n %}
+{% block content %}
+{% comment %}Diagnostic > Performance: the processing nodes, the server and the recent tasks, with verdicts on whether they
+suit each other (performance_page.js, performance.py through the plugin's API). Colours come only from WebODM's theme
+classes and Bootstrap's.{% endcomment %}
+<div id="tweakui-performance" class="tweakui-performance" data-api="{{ api }}">
+    <h3>{% trans "Performance" %}</h3>
+    {% if on %}
+    <div class="tweakui-performance-bar">
+        <button type="button" class="btn btn-default btn-sm" data-act="refresh"><i class="fa fa-sync-alt"></i> {% trans "Refresh" %}</button>
+        <span class="tweakui-performance-status text-muted" role="status" aria-live="polite"></span>
+    </div>
+    <div class="tweakui-performance-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Asking the processing nodes..." %}</p></div>
+    {% else %}
+    <p class="text-muted">{% blocktrans %}The Performance view is off. Turn it on in <a href="/plugins/tweakui/#diagnostic">TweakUI &gt; Diagnostic</a>.{% endblocktrans %}</p>
+    {% endif %}
+</div>
+{% if on %}<script src="{{ public }}performance_page.js"></script>{% endif %}
+{% endblock %}
