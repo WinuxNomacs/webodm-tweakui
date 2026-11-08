@@ -5,6 +5,9 @@
 **Up next**
 1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
 2. **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks").
+3. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
+4. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
+   users' access to Storage and Performance").
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1780,3 +1783,86 @@ with Compact and Delete, the status line; `storage.html`; `docs/storage.md`; the
 3. **Named Backup and Backup All**, not Export: the file is WebODM's backup. Import keeps WebODM's name.
 
 **Phase**: one branch, `storage-backup-import`, after the renames.
+
+## Diagnostic: Performance View (asked in chat, 2026-11-08)
+
+**Request**: a Performance page under Diagnostic where a user sees at a glance how WebODM's processing node is
+doing, and whether it is sized right or needs more resources. The GPU line is dropped for now (the user, 2026-11-08):
+nothing in WebODM reports a GPU; only a task's log hints at it.
+
+**What WebODM offers** (checked on both stacks; no change to WebODM needed):
+- **Each processing node's own info** (`ProcessingNode.api_client().info()`, NodeODX's `/info`, pyodx in 4.0.0 and
+  3.3.2 alike): `cpu_cores`, `total_memory`, `available_memory`, `task_queue_count`, `max_parallel_tasks`,
+  `max_images`, `engine`, `engine_version`, `version`. WebODM keeps only the queue, max images and engine
+  (`update_node_info`) and drops cores and memory, so the page asks the node itself, server side, with a short
+  timeout. The dev node: 20 cores, 63 GB (53 GB free), 1 task at a time. In Docker the node sees what Docker gives it
+  (on Windows and Mac, Docker's memory setting: one of WebODM's FAQ answers).
+- **WebODM's server**: disk (`shutil.disk_usage`) and memory (the Diagnostic plugin's `get_memory_stats`, Linux and
+  Windows), as WebODM's own Diagnostic page shows them to any logged-in user.
+- **Each completed task**: `images_count`, `processing_time`, `size`; and `odm_report/stats.json`:
+  `processing_statistics.steps_times` (Feature Extraction, Features Matching, Tracks Merging, Reconstruction,
+  Statistics, Total Time) and `odm_processing_statistics.total_time`, `average_gsd`.
+- **Sizing guidance**: WebODM's hardware requirements (docs, installation.md): at least 100 GB free disk and 16 GB
+  memory; memory by number of images: 40 → 4 GB, 250 → 16, 500 → 32, 1500 → 64, 2500 → 128, 3500 → 192, 5000 → 256
+  (conservative, RAM or RAM + swap).
+- Not available: live CPU or GPU load of a node (its info has none); the server's load only on Linux
+  (`os.getloadavg`), with no library to add (`psutil` is not in WebODM's requirements).
+
+**Builds on**: the Storage page (its own page under Diagnostic, the side-menu item from `main.js`, a setting in
+`features.py`, an API in `api.py`, the page script, docs and screenshot alike).
+
+**Proposed design** (a setting "Show Performance View", off by default as every new tweak; its own category or
+Storage's, to decide):
+1. **Processing nodes**, a card each (the nodes the user may use, `get_objects_for_user`): online or not, last seen,
+   engine and version, cores, memory (free of total, a bar), queue and tasks at a time, max images; and "suits about
+   N images" from the memory table.
+2. **Server**: disk and memory, with a warning under WebODM's minimums (100 GB free, 16 GB).
+3. **Recent processing**: the user's last completed tasks (an admin's: everyone's?), with images, total time,
+   seconds per image, the slowest step, the node; a short trend (faster or slower than before).
+4. **Verdicts** at the top, sentences: "Enough memory for your largest task (220 images)", "This node suits about
+   1500 images", "Disk under 100 GB free", "Tasks are waiting: the node runs one at a time".
+- **Refresh**: on opening and with a Refresh button (each node asked with a short timeout, in parallel or one after
+  another; an offline node shown as such, not an error).
+- **Tests**: Django (the API with a node's info mocked: online, offline, a node the user may not use; the verdicts'
+  thresholds; stats.json missing or partial), Jest (the cards, the verdicts, the bars, Refresh), both stacks live,
+  the Windows app (its local node, memory on Windows), phone width; screenshot `performance`, docs page.
+
+**Open decisions** (to ask when the phase is planned):
+1. Its own category on Settings ("Diagnostic", with Storage moving into it?) or a group under Storage.
+2. Recent processing: the user's own tasks only, or every user's for an admin (as Storage does).
+3. How many recent tasks, and whether the trend is worth it.
+
+**Phase**: branch `performance-view`, after Backup and Import.
+
+## Administration: users' access to Storage and Performance (asked in chat, 2026-11-08)
+
+**Request**: an admin-level control with which administrators can turn off Storage View or Performance View for
+users; both stay available to users by default.
+
+**Builds on**: Administration > TweakUI Themes (superusers only: `plugin.py`'s page, `main.js`'s side-menu link,
+`api.py`'s superuser check, the plugin's global data store as `custom_themes` uses it); `settings.allowed` (a value a
+user may not have is refused); `storage.is_admin` (superusers).
+
+**Proposed design**:
+- **A page for superusers**, Administration > TweakUI (or a section of the TweakUI Themes page, renamed), with a
+  group "Available to Users": a checkbox per feature an admin may withhold, "Storage View" and "Performance View",
+  both ticked by default. Saved in the plugin's global data store, read with the defaults when unset (so a new
+  install, and an upgrade, changes nothing).
+- **Declared in `features.py`**: a setting marked admin-controllable (`admin_control=True`), so the admin page's
+  checkboxes come from the same list and a later feature joins with one flag.
+- **When withheld**, for every user but superusers: the setting is greyed on TweakUI's settings page with "Turned
+  off by your administrator", saving it on is refused (`settings.allowed`), its side-menu item is not added, and its
+  page and API answer 403. A user's own choice is kept, so ticking it again on the admin page brings it back as it was.
+  Superusers keep both, always (they need them to manage the server).
+- **Tests**: Django (the admin API: superuser only, CSRF; withheld: the setting refused, the page and API 403, the
+  side-menu flag absent from settings.js; a superuser unaffected; unset = available), Jest (the greyed setting, the
+  admin page), live on both stacks with a second, non-admin "Live check" user (made and deleted), docs
+  (`docs/storage.md` and the admin page), screenshot of the admin page.
+
+**Open decisions** (to ask when the phase is planned):
+1. Its own Administration > TweakUI page, or a section on TweakUI Themes (renamed to TweakUI).
+2. Whether staff who are not superusers count as admins here (TweakUI Themes: superusers only).
+3. A withheld feature: greyed with the reason, or hidden from the settings page entirely.
+
+**Phase**: branch `admin-feature-access`, after Performance View (so both pages exist; it could also come first and
+cover Storage alone, then Performance joins with its flag).
