@@ -2275,11 +2275,13 @@ units still linked; the 2D map with DJI Thermal's Inspector beside TweakUI's map
 Frames, Zoom Override, Add Search Button); the side menu with Hide, Resize and Auto-hide Navigation Pane; no console
 errors from either. A problem is fixed on whichever side it belongs (DJI Thermal's on a branch in its own repo).
 
-**Open decisions** (to ask when the phase starts):
-1. Which DJI Thermal: the built 1.1.0 zip, or its `main` as it is then?
-2. Leave it installed on the dev stacks afterwards, or uninstall it?
-3. Whether the header menus' order should be fixed (e.g. Temperature Unit next to Units), and on which side.
-4. The Windows app too, or the Docker stacks only?
+**Decisions** (the user, 2026-11-08):
+1. DJI Thermal's `main` as it is now (named DJI Thermal Analyzer), zipped with its `dev/package.sh` into a scratch
+   folder, installed on both stacks through Administration > Plugins.
+2. Left installed on both dev stacks afterwards.
+3. The header menus' order is fixed: TweakUI's menus go left of any other plugin's, so Temperature Unit sits next
+   to the user icon on every load.
+4. The Docker stacks only; the Windows app is covered at the release check.
 
 ## Documentation review before the release (new.md, 2026-11-08)
 
