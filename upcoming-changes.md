@@ -4,7 +4,7 @@
 
 **Up next**
 1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
-2. **Storage: export and import tasks** (new.md, 2026-11-08; see "Storage: export and import tasks"). Decisions open.
+2. **Storage: export and import tasks** (new.md, 2026-11-08; see "Storage: export and import tasks").
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1767,9 +1767,10 @@ with Compact and Delete, the status line; `storage.html`; `docs/storage.md`; the
   "Live check" task exported (the zip's size and `backup.json` read, then deleted from disk) and imported into a
   "Live check" project, which is deleted afterwards; on the Windows app too (large files, cp1252 not involved).
 
-**Open decisions**:
-1. Where Import goes: an "Import" button on each project row (zips go into that project), or one Import at the top
-   of the page with a project chooser.
-2. Which tasks offer Export: completed ones only (as WebODM's own Backup; a failed or canceled task's backup would
-   come back as an empty completed task), or every task not busy.
+**Decided with the user** (2026-11-08):
+1. **Import on each project row**: an "Import" button beside the project's Delete; the zips chosen go into that
+   project, one task each.
+2. **Export for completed tasks only**, as WebODM's own Backup: the row's Export and Export All skip the rest
+   (Export All's status line says how many were skipped).
 
+**Phase**: one branch, `storage-export-import`, after the renames.
