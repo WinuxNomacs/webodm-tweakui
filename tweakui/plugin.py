@@ -63,7 +63,9 @@ class Plugin(PluginBase):
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
                 "on": values["performance_view"],
-                "refresh": features.number_control("performance_refresh", values["performance_refresh"]),
+                # Refresh Every and History Length, each a slider and a box at the top of the page
+                "controls": [dict(features.number_control(name, values[name]), id=id, label=features.setting(name).label)
+                             for id, name in (("refresh", "performance_refresh"), ("history", "performance_history"))],
                 "withheld": access.is_withheld(request.user, "performance_view"),
             }, status=403 if access.is_withheld(request.user, "performance_view") else 200)
 

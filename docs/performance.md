@@ -10,8 +10,9 @@ withhold it from users in [Administration > TweakUI](administration).
 The **Diagnostic** item in the side menu gets a **Performance** sub-item, after **System** (WebODM's own Diagnostic
 page) and **Storage** if that is on too. If an administrator has turned the Diagnostic plugin off, the **TweakUI**
 item gets it instead. The page is asked afresh each time it opens, and again with **Refresh**. While it is open, the
-CPU load, the disks' activity and the memory refresh by themselves (see [Refresh Every](#refresh-every)), and the
-free disk space every 10 seconds.
+CPU load, the disks' activity and the memory refresh by themselves (see [Refresh Every](#refresh-every)), each drawn
+as a graph over the last few minutes (see [History Length](#history-length)), and the free disk space every 10
+seconds.
 
 At the top are sentences on what the figures mean: whether a processing node has enough memory for your largest
 task, about how many photos per task each node suits, tasks waiting on a node that processes only so many at a time,
@@ -20,7 +21,8 @@ a node that is not answering, and a server under WebODM's recommended 100 GB of 
 ## Processing Nodes
 
 A card for each processing node you may use (the ones WebODM can choose for your tasks), with what the node says of
-itself: its engine and version, CPU cores, memory (free of total, with a bar), its queue and how many tasks it
+itself: its engine and version, CPU cores, memory (free of total and the share used, with a
+[graph](#graphs)), its queue and how many tasks it
 processes at a time, the most photos it accepts, and about how many photos per task its memory suits. A node that
 doesn't answer within 3 seconds is marked **Not Answering**, with when WebODM last saw it.
 
@@ -35,11 +37,12 @@ each task used one, from its log.
 
 ## Server
 
-The CPU load of the machine WebODM's server runs on, the disk WebODM keeps its tasks on (free of total) and the
-server's memory, as WebODM's own **System** page shows them.
+The CPU load of the machine WebODM's server runs on, the disk WebODM keeps its tasks on (free of total, with a bar)
+and the server's memory (free of total and the share used), as WebODM's own **System** page shows them. CPU Load and
+the memory each have a [graph](#graphs).
 
 **CPU Load** is the share of time the processors were busy since the last refresh, as top and htop show it: the
-total across all cores in one bar (100% is every core busy), with how many cores there are, and, on Linux and in
+total across all cores (100% is every core busy), with how many cores there are, and, on Linux and in
 Docker, the load averages over 1, 5 and 15 minutes (the number of processes running or waiting, to compare with the
 number of cores). Windows keeps no load average, so WebODM's Windows app shows the total without it. The first
 figures show a second after the page opens: a load is the difference between two readings.
@@ -56,8 +59,10 @@ letter such as `C:` in WebODM's Windows app), with where it is mounted. The disk
 marked **Tasks**. Since the last refresh, each shows:
 
 - **Reads** and **Writes**: operations per second, bytes per second, and the average size of one.
-- **Busy**: the share of time the disk was working, with a bar that turns to a warning colour past 80% and to danger
-  past 95%. A disk that is always busy holds the processing up.
+- A graph of the reads (in the theme's link colour) and the writes (in its text colour) per second, scaled to the
+  highest in its window (shown at its top left).
+- **Busy**: the share of time the disk was working, with its graph; the figure turns to a warning colour past 80% and
+  to danger past 95%. A disk that is always busy holds the processing up.
 - **Wait**: the average time an operation took, waiting included.
 
 The system's counters don't tell random from sequential work. The size of one operation hints at it: small ones (a
@@ -68,6 +73,17 @@ The counters are for each whole disk, whatever uses it. In Docker they are the d
 Windows and macOS, Docker's own virtual machine's), so the processing node's and the worker's work on the same disk
 counts too.
 
+### Graphs
+
+Each live figure has a graph of its readings since the page opened, the newest at the right, over the last
+[History Length](#history-length): CPU Load, the server's memory, each node's memory, and each drive's reads and writes
+and Busy. Percentages are drawn from 0 to 100%. Moving the pointer over a graph (or touching it on a phone) shows the
+readings under it and their time. The line breaks where readings stopped, as while the browser tab was hidden.
+
+The page keeps the readings while it is open, up to 30 minutes of them, and **Refresh** keeps them; reloading the page
+starts again. Nothing is kept on the server, so the graphs start empty each time the page opens. A memory figure
+turns to a warning colour past 80% used and to danger past 95%.
+
 ### Refresh Every
 
 A part of Show Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the
@@ -75,6 +91,13 @@ disks' activity, the server's memory and each node's memory, from 1 to 10 second
 Performance page, beside **Refresh** (a slider and a box, as for the other number settings); a change there applies at
 once and is saved when you let go of the slider or leave the box. The free disk space refreshes every 10 seconds. Nothing is
 refreshed while the browser tab is hidden, and a refresh waits for the last to be answered.
+
+### History Length
+
+A part of Show Performance View, 5 minutes unless you change it. How much time the graphs show, from 1 to 30
+minutes, newest at the right. Like Refresh Every, it is on the settings page and at the top of the Performance page,
+where a change redraws the graphs at once (with the readings the page has kept: a longer window shows more once the
+page has been open that long).
 
 ## Recent Processing
 

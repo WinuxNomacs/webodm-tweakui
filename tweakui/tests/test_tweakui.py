@@ -35,7 +35,7 @@ def defaults(**changes):
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False,
-                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "show_theme_menu": True, "theme": "webodm"},
+                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
 
@@ -1743,6 +1743,21 @@ class TestPerformance(TweakUITestCase):
         on = self.client.get("/plugins/tweakui/performance/").content.decode()
         self.assertIn('Refresh Every <span class="tweakui-default text-muted">(Default: 3 s)</span>', on)
         self.assertIn('id="tweakui-performance-refresh" class="form-control input-sm theme-border" min="1" max="10" step="1" value="7"', on)
+
+    def test_history_length_is_a_part_of_show_performance_view_from_1_to_30_minutes_also_on_the_page(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        section = page[page.index('<section id="tweakui-diagnostic"'):]
+        section = section[:section.index("</section>")]
+        self.assertLess(section.index('data-setting="performance_refresh"'), section.index('data-setting="performance_history"'))
+        self.assertIn('History Length <span class="tweakui-default text-muted">(Default: 5 min)</span>', section)
+        self.assertEqual(self.patch({"performance_history": 30}).json()["performance_history"], 30)
+        for value in (0, 31, 1.5):
+            self.assertEqual(self.patch({"performance_history": value}).status_code, 400)
+        self.patch({"performance_view": True})
+        on = self.client.get("/plugins/tweakui/performance/").content.decode()
+        self.assertIn('data-control="history"', on)
+        self.assertIn('id="tweakui-performance-history" class="form-control input-sm theme-border" min="1" max="30" step="1" value="30"', on)
+        self.assertLess(on.index('data-control="refresh"'), on.index('data-control="history"'))
 
     def test_the_page_says_where_to_turn_it_on_and_the_api_needs_a_login(self):
         self.patch({"performance_view": False})

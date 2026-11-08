@@ -229,6 +229,10 @@ CATEGORIES = [
                                 _("How often the Performance page refreshes the CPU load, the disks' activity and "
                                   "the memory while it is open. The free disk space is refreshed every 10 seconds."),
                                 number=(1, 10, 1), unit=_("s")),
+                        Setting("performance_history", 5, _("History Length"),
+                                _("How much time the Performance page's graphs of the CPU load, the memory and the "
+                                  "disks' activity show, from when the page was opened."),
+                                number=(1, 30, 1), unit=_("min")),
                     ]),
         ]),
     ]),

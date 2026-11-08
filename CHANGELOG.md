@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+- Performance View: CPU Load, the server's and each node's memory, and each drive's reads and writes per second and
+  busy share are drawn as graphs over time in place of their bars, filling as the page refreshes. Hovering (or
+  touching) a graph shows the readings under the pointer. History Length (1 to 30 minutes, 5 by default, a part of
+  Show Performance View, also on the Performance page) sets how much time they show. The readings are kept in the page
+  while it is open; the server keeps nothing.
 - Performance View: Disk Activity, a card for each disk WebODM's server uses (the tasks' first, with where it is
   mounted): reads and writes per second, bytes per second and the average size of one (small ones mean scattered,
   random work), how busy the disk was and the average wait, refreshed with CPU Load. From the system's own counters
