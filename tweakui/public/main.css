@@ -357,6 +357,19 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-table td { vertical-align: middle; }
 .tweakui-performance .tweakui-performance-number { text-align: right; white-space: nowrap; }
 .tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step { white-space: nowrap; }
+/* Refresh Every beside Refresh, and the server's card wider for htop's grid of cores (as many columns as fit) */
+.tweakui-performance .tweakui-performance-every { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tweakui-performance .tweakui-performance-every label { margin: 0; }
+.tweakui-performance .tweakui-performance-every .tweakui-number { display: flex; align-items: center; gap: 8px; width: 220px; }
+.tweakui-performance .tweakui-performance-every input[type=range] { flex: 1 1 auto; min-width: 0; margin: 0; }
+.tweakui-performance .tweakui-performance-every input[type=number] { flex: 0 0 64px; width: 64px; }
+.tweakui-performance .tweakui-performance-server { flex-basis: 560px; }
+.tweakui-performance .tweakui-performance-cores { display: grid; grid-template-columns: repeat(auto-fill, minmax(110px, 1fr)); gap: 2px 12px; margin: 2px 0 4px; }
+.tweakui-performance .tweakui-performance-core { display: flex; align-items: center; gap: 4px; font-size: 11px; }
+.tweakui-performance .tweakui-performance-core .tweakui-performance-progress { flex: 1 1 auto; height: 8px; margin: 0; }
+.tweakui-performance .tweakui-performance-core-name { flex: 0 0 18px; text-align: right; }
+.tweakui-performance .tweakui-performance-core-value { flex: 0 0 30px; text-align: right; }
+.tweakui-performance .tweakui-performance-cpu-note { margin: 6px 0 2px; }
 @media (max-width: 767px) {
     .tweakui-performance .tweakui-performance-card { flex-basis: 100%; }
     .tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step,

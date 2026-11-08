@@ -8,6 +8,7 @@ import math
 import os
 import re
 import shutil
+import tempfile
 from unittest import mock
 
 from django.contrib.auth.models import User
@@ -34,7 +35,7 @@ def defaults(**changes):
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False,
-                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "show_theme_menu": True, "theme": "webodm"},
+                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
 
@@ -1426,6 +1427,99 @@ class TestPerformance(TweakUITestCase):
                 f.write(content)
             self.assertEqual(performance.read_stats(self.tasks[0]), ({}, None))
 
+    def live(self, query="", infos=None):
+        """The live figures, each node answering as in report()"""
+        infos = {"big-node": FakeInfo(available_memory=40 * GB)} if infos is None else infos
+
+        def api_client(node, timeout=30):
+            client = mock.Mock()
+            if node.hostname in infos:
+                client.info.return_value = infos[node.hostname]
+            else:
+                client.info.side_effect = OSError("refused")
+            return client
+
+        with mock.patch("nodeodm.models.ProcessingNode.api_client", autospec=True, side_effect=api_client):
+            res = self.client.get("/api/plugins/tweakui/performance/live" + query)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        return res.json()
+
+    def test_the_live_figures_are_the_servers_cpu_counters_and_memory_and_the_nodes_memory(self):
+        sample = {"total": [300, 1000], "cores": [[200, 500], [100, 500]], "load": [1.5, 1.0, 0.5]}
+        with mock.patch("coreplugins.tweakui.performance.cpu_entry", return_value=sample), \
+                mock.patch("coreplugins.tweakui.performance.memory_stats",
+                           return_value={"total": 32 * GB, "free": 8 * GB, "used": 24 * GB}):
+            r = self.live()
+        self.assertEqual(r["cpu"], sample)
+        self.assertEqual(r["memory"], {"total": 32 * GB, "free": 8 * GB, "used": 24 * GB})
+        self.assertEqual(r["nodes"], [{"id": self.node.id, "online": True, "total_memory": 64 * GB, "available_memory": 40 * GB},
+                                      {"id": self.small.id, "online": False, "total_memory": None, "available_memory": None}])
+        self.assertNotIn("disk", r)
+        self.assertEqual(set(self.live("?disk=1")["disk"]), {"total", "used", "free"})
+        self.assertIn("cpu", self.report()["server"])
+
+    def test_linux_cpu_counters_come_from_proc_stat_with_idle_and_iowait_as_not_busy(self):
+        from coreplugins.tweakui import performance
+        with tempfile.NamedTemporaryFile("w", suffix="-proc-stat", delete=False) as f:
+            path = f.name
+            f.write("cpu  100 10 50 800 40 0 0 0 7 0\ncpu0 60 5 25 400 10 0 0 0 0 0\ncpu1 40 5 25 400 30 0 0 0 0 0\n"
+                    "intr 1 2 3\nctxt 99\ncpu9 1 1 1 1 1 1 1 1\n")
+        try:
+            self.assertEqual(performance.proc_stat_times(path), [[160, 1000], [90, 500], [70, 500]])
+        finally:
+            os.remove(path)
+        with mock.patch("coreplugins.tweakui.performance.proc_stat_times", return_value=[[1, 2], [1, 2]]), \
+                mock.patch("coreplugins.tweakui.performance.sys.platform", "linux"), \
+                mock.patch("coreplugins.tweakui.performance.os.getloadavg", return_value=(1.234, 0.5, 0.25)):
+            self.assertEqual(performance.cpu_entry(), {"total": [1, 2], "cores": [[1, 2]], "load": [1.23, 0.5, 0.25]})
+        with mock.patch("coreplugins.tweakui.performance.proc_stat_times", side_effect=OSError("no /proc")):
+            self.assertIsNone(performance.cpu_entry())
+
+    def test_windows_cpu_counters_come_from_get_system_times_and_each_processors_times_with_no_load_average(self):
+        import ctypes
+        from coreplugins.tweakui import performance
+
+        def get_system_times(idle, kernel, user):
+            # FILETIMEs, as 100 ns: idle 600, kernel 800 (idle included), user 400
+            for ref, value in ((idle, 600), (kernel, 800), (user, 400)):
+                ref._obj.low, ref._obj.high = value, 0
+            return 1
+
+        def query(kind, buffer, size, length):
+            cores = buffer._obj
+            for core, (idle, kern, user) in zip(cores, ((200, 300, 100), (400, 500, 300))):
+                core.idle, core.kernel, core.user = idle, kern, user
+            length._obj.value = 2 * ctypes.sizeof(cores[0])
+            return 0
+
+        windll = mock.Mock()
+        windll.kernel32.GetSystemTimes.side_effect = get_system_times
+        windll.ntdll.NtQuerySystemInformation.side_effect = query
+        with mock.patch.object(ctypes, "windll", windll, create=True), \
+                mock.patch("coreplugins.tweakui.performance.os.cpu_count", return_value=4), \
+                mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"), \
+                mock.patch("coreplugins.tweakui.performance.os.getloadavg", side_effect=AttributeError, create=True):
+            self.assertEqual(performance.cpu_entry(), {"total": [600, 1200], "cores": [[200, 400], [400, 800]], "load": None})
+        self.assertEqual(windll.ntdll.NtQuerySystemInformation.call_args[0][0], 8)
+        windll.kernel32.GetSystemTimes.side_effect = lambda *a: 0
+        with mock.patch.object(ctypes, "windll", windll, create=True), \
+                mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"):
+            self.assertIsNone(performance.cpu_entry())
+
+    def test_refresh_every_is_a_part_of_show_performance_view_from_1_to_10_seconds(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        section = page[page.index('<section id="tweakui-diagnostic"'):]
+        section = section[:section.index("</section>")]
+        self.assertLess(section.index('data-setting="performance_view"'), section.index('data-setting="performance_refresh"'))
+        self.assertIn('Refresh Every <span class="tweakui-default text-muted">(Default: 3 s)</span>', section)
+        self.assertIn('data-slider-of="performance_refresh" min="1" max="10" step="1" value="3"', section)
+        self.assertEqual(self.patch({"performance_refresh": 7}).json()["performance_refresh"], 7)
+        for value in (0, 11, 2.5, "3"):
+            self.assertEqual(self.patch({"performance_refresh": value}).status_code, 400)
+        on = self.client.get("/plugins/tweakui/performance/").content.decode()
+        self.assertIn('Refresh Every <span class="tweakui-default text-muted">(Default: 3 s)</span>', on)
+        self.assertIn('id="tweakui-performance-refresh" class="form-control input-sm theme-border" min="1" max="10" step="1" value="7"', on)
+
     def test_the_page_says_where_to_turn_it_on_and_the_api_needs_a_login(self):
         self.patch({"performance_view": False})
         off = self.client.get("/plugins/tweakui/performance/")
@@ -1441,6 +1535,7 @@ class TestPerformance(TweakUITestCase):
         self.assertIn('data-setting="performance_view" checked>', section[:section.index("</section>")])
         self.assertEqual(Client().get("/plugins/tweakui/performance/").status_code, status.HTTP_302_FOUND)
         self.assertEqual(Client().get("/api/plugins/tweakui/performance").status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Client().get("/api/plugins/tweakui/performance/live").status_code, status.HTTP_403_FORBIDDEN)
 
 
 

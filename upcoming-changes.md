@@ -3,16 +3,13 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08)
-1. **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load
-   and refresh") — per-core and total CPU load like top/htop, refreshed every 1-10 s (3 by default), disk every 10 s.
-   Decided (see there).
-2. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
+1. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
    "Performance View: Recent Processing and the task's log") — more per task from its stats.json, and what its log
    says that the user should know. Open decisions listed there.
-3. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-4. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -21,6 +18,20 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load and
+  refresh") — branch `performance-live`: `performance.py` (`proc_stat_times`: Linux's `/proc/stat`, idle and iowait
+  not busy; `windows_times`: `GetSystemTimes` and `NtQuerySystemInformation` through ctypes; `cpu_entry` with
+  `os.getloadavg` where there is one; `disk_entry`; `live`), `api.py` (`PerformanceLiveView`,
+  `/api/plugins/tweakui/performance/live[?disk=1]`), `features.py` (`performance_refresh`, 1-10 s, a part of Show
+  Performance View; `setting`, `number_control` for the page's own control), `plugin.py`, `performance.html` (Refresh
+  Every beside Refresh), `performance_page.js` (`cpuShares` between two readings, `cpuRows`: the total, htop's grid
+  of cores, load averages; the live loop: first a second after the report, then every Refresh Every seconds once the
+  last is answered, the disk every 10 s, none while the tab is hidden; `everyControl`), `core.saveSettings` (now also
+  Zoom Sensitivity's save), `main.css`. CPU bars use `progress-bar-success`, the only bar colour WebODM's theme sets.
+  Tests: `performance_page.test.js` (7 new), `test_tweakui.py` (5 new: `/proc/stat` from a sample, Windows with
+  ctypes mocked, the live API, the setting's range). Docs `performance.md`, `adding-a-tweak.md` (helpers), README,
+  CHANGELOG, screenshot `performance` (`dev/screenshots.js` waits for CPU Load). Live on 4.0.0: CPU Load after 1.5 s,
+  refreshes 3 s apart, the disk at 10 s, 1 s saved from the page, nothing while hidden, phone width without overflow.
 - **Zoom Sensitivity: the default shown** (new.md, 2026-11-08; see "Zoom Sensitivity: the default shown") — branch
   `number-defaults`: `features.py` (`with_unit`, each number setting's `default` for the page),
   `settings_setting.html` (the label's "(Default: …)"), `zoom_override.js` (the panel's label), `main.css`
@@ -2095,7 +2106,7 @@ text of WebODM's theme; the screenshots `zoom-sensitivity-2d` and `-3d` retaken;
 **Decided** (the user, 2026-11-08): the map panels and the settings page, where every number setting shows its default
 the same way (Zoom Sensitivity's two and Hide Delay).
 
-## Performance View: live CPU Load and refresh (new.md, 2026-11-08)
+## Performance View: live CPU Load and refresh (new.md, 2026-11-08) — done
 
 **Requests**: "On the Performance UI, add CPU Load values akin to top/htop along with total cpu usage percentage of
 100% across all cores. Could this even work on native Windows?" and "would it be possible to refresh cpu and memory

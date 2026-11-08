@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import access, custom_themes, features, settings, themes
-from .api import (AccessView, FramesView, PerformanceView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
+from .api import (AccessView, FramesView, PerformanceLiveView, PerformanceView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
                   SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
                   ThemesView, ThemeView, settings_script)
 
@@ -57,11 +57,13 @@ class Plugin(PluginBase):
 
         @login_required
         def performance_page(request):
+            values = settings.load(request.user)
             return render(request, self.template_path("performance.html"), {
                 "title": _("Performance"),
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
-                "on": settings.load(request.user)["performance_view"],
+                "on": values["performance_view"],
+                "refresh": features.number_control("performance_refresh", values["performance_refresh"]),
                 "withheld": access.is_withheld(request.user, "performance_view"),
             }, status=403 if access.is_withheld(request.user, "performance_view") else 200)
 
@@ -119,6 +121,7 @@ class Plugin(PluginBase):
             MountPoint(r"published/(?P<theme_id>[0-9a-f]{1,32})$", PublishedThemeView.as_view()),
             MountPoint("storage$", StorageView.as_view()),
             MountPoint("performance$", PerformanceView.as_view()),
+            MountPoint(r"performance/live$", PerformanceLiveView.as_view()),
             MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
             MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
         ]

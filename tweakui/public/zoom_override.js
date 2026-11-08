@@ -174,18 +174,7 @@
     function save(doc, win, which, value, fetchFn) {
         var changes = {};
         changes[SETTING[which]] = value;
-        return fetchFn("/api/plugins/tweakui/settings", {
-            method: "PATCH",
-            credentials: "same-origin",
-            headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(doc)},
-            body: JSON.stringify(changes)
-        }).then(function (res) {
-            return res.json().then(null, function () { return {}; }).then(function (body) {
-                if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
-                if (win.TweakUI) win.TweakUI.settings = body;
-                return body;
-            });
-        });
+        return ui.saveSettings(doc, win, changes, fetchFn);
     }
 
     // The Zoom Sensitivity button and its panel: a slider in steps of 10 and a box for any whole number from 10 to

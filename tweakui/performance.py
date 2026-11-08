@@ -3,11 +3,14 @@ Diagnostic > Performance: how WebODM's processing nodes and server are doing, an
 them. Each processing node the user may use is asked for its own info (NodeODX's /info: cores, memory, queue, tasks at
 a time), which WebODM doesn't keep; the server's disk and memory are WebODM's Diagnostic page's; the recent completed
 tasks (an admin's: everyone's, as on the Storage page) come with their photos, processing time and OpenSfM's steps
-(odm_report/stats.json). Verdicts, sentences at the top, compare them with WebODM's hardware requirements. Read only.
+(odm_report/stats.json). Verdicts, sentences at the top, compare them with WebODM's hardware requirements. The server's
+CPU load (no node reports its own), memory and the nodes' memory are refreshed through `live`. Read only.
 """
 import json
+import os
 import shutil
 import statistics
+import sys
 from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings as django_settings
@@ -125,16 +128,99 @@ def memory_stats():
     return get_memory_stats() or {}
 
 
-def server_entry():
-    """The disk WebODM keeps its tasks on and the server's memory, in bytes"""
-    disk = None
+def proc_stat_times(path="/proc/stat"):
+    """Linux's CPU time counters from /proc/stat, as [busy, total] (in its ticks): the whole machine's first, then
+    each core's. Idle and waiting for the disk count as not busy, as in top"""
+    times = []
+    with open(path, encoding="ascii") as f:
+        for line in f:
+            if not line.startswith("cpu"):
+                if times:
+                    break
+                continue
+            # user nice system idle iowait irq softirq steal (guest time is already in user)
+            fields = [int(v) for v in line.split()[1:9]]
+            total = sum(fields)
+            idle = sum(fields[3:5])
+            times.append([total - idle, total])
+    return times
+
+
+def windows_times():
+    """Windows' CPU time counters, as [busy, total] (in 100 ns): the whole machine's (GetSystemTimes) first, then
+    each core's (NtQuerySystemInformation's processor performance), read through ctypes as WebODM's Diagnostic page
+    reads Windows' memory. Kernel time includes idle time on both"""
+    import ctypes
+
+    class FILETIME(ctypes.Structure):
+        _fields_ = [("low", ctypes.c_uint32), ("high", ctypes.c_uint32)]
+
+    class PROCESSOR_TIMES(ctypes.Structure):
+        _fields_ = [("idle", ctypes.c_longlong), ("kernel", ctypes.c_longlong), ("user", ctypes.c_longlong),
+                    ("dpc", ctypes.c_longlong), ("interrupt", ctypes.c_longlong), ("interrupts", ctypes.c_ulong)]
+
+    def value(t):
+        return (t.high << 32) | t.low
+
+    idle, kernel, user = FILETIME(), FILETIME(), FILETIME()
+    if not ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)):
+        return []
+    total = value(kernel) + value(user)
+    times = [[total - value(idle), total]]
+    cores = (PROCESSOR_TIMES * (os.cpu_count() or 1))()
+    length = ctypes.c_ulong(0)
+    # 8: SystemProcessorPerformanceInformation; 0: STATUS_SUCCESS
+    if ctypes.windll.ntdll.NtQuerySystemInformation(8, ctypes.byref(cores), ctypes.sizeof(cores),
+                                                    ctypes.byref(length)) == 0:
+        for core in cores[:length.value // ctypes.sizeof(PROCESSOR_TIMES)]:
+            times.append([core.kernel + core.user - core.idle, core.kernel + core.user])
+    return times
+
+
+def cpu_entry():
+    """The server's CPU time counters ({total: [busy, total], cores: [[busy, total], ...], load: [1, 5, 15 minutes]
+    or None where the system keeps none, as on Windows}), or None where they can't be read. A load is the difference
+    between two readings, which the page works out; in Docker these are the machine's (or Docker Desktop's VM's)"""
+    try:
+        times = windows_times() if sys.platform == "win32" else proc_stat_times()
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not times:
+        return None
+    try:
+        load = [round(v, 2) for v in os.getloadavg()]
+    except (OSError, AttributeError):
+        load = None
+    return {"total": times[0], "cores": times[1:], "load": load}
+
+
+def disk_entry():
+    """The disk WebODM keeps its tasks on, in bytes, or None"""
     try:
         total, used, free = shutil.disk_usage(getattr(django_settings, "MEDIA_ROOT", None) or ".")
-        disk = {"total": total, "used": used, "free": free}
     except OSError:
-        pass
+        return None
+    return {"total": total, "used": used, "free": free}
+
+
+def server_entry():
+    """The disk WebODM keeps its tasks on and the server's memory, in bytes, and its CPU time counters"""
     memory = memory_stats()
-    return {"disk": disk, "memory": memory if memory.get("total") else None}
+    return {"disk": disk_entry(), "memory": memory if memory.get("total") else None, "cpu": cpu_entry()}
+
+
+def live(user, disk=False):
+    """What the Performance page refreshes every few seconds: the server's CPU counters and memory, each node's memory
+    (the nodes the user may use, asked as for the report), and the disk when asked"""
+    memory = memory_stats()
+    out = {
+        "cpu": cpu_entry(), "memory": memory if memory.get("total") else None,
+        "nodes": [{k: n[k] for k in ("id", "online", "total_memory", "available_memory")}
+                  for n in node_entries(nodes_for(user))],
+    }
+    if disk:
+        out["disk"] = disk_entry()
+    return out
 
 
 def read_stats(task):

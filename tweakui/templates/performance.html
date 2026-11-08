@@ -10,6 +10,15 @@ classes and Bootstrap's.{% endcomment %}
     <div class="tweakui-performance-bar">
         <button type="button" class="btn btn-default btn-sm" data-act="refresh"><i class="fa fa-sync-alt"></i> {% trans "Refresh" %}</button>
         <span class="tweakui-performance-status text-muted" role="status" aria-live="polite"></span>
+        <div class="tweakui-performance-every">
+            <label for="tweakui-performance-refresh">{% trans "Refresh Every" %} <span class="tweakui-default text-muted">{% blocktrans with value=refresh.default %}(Default: {{ value }}){% endblocktrans %}</span></label>
+            <div class="tweakui-number">
+                <input type="range" class="tweakui-performance-every-slider" min="{{ refresh.min }}" max="{{ refresh.max }}" step="{{ refresh.step }}" value="{{ refresh.value }}" aria-label="{% trans "Refresh Every" %}">
+                <input type="number" id="tweakui-performance-refresh" class="form-control input-sm theme-border" min="{{ refresh.min }}" max="{{ refresh.max }}" step="1" value="{{ refresh.value }}">
+                <span>{{ refresh.unit }}</span>
+            </div>
+            <span class="tweakui-performance-every-status text-danger" aria-live="polite"></span>
+        </div>
     </div>
     <div class="tweakui-performance-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Asking the processing nodes..." %}</p></div>
     {% elif withheld %}

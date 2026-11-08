@@ -216,12 +216,18 @@ CATEGORIES = [
             # main.js adds the side-menu item; the page is the plugin's own (performance.html)
             Setting("performance_view", False, _("Show Performance View"),
                     _("Adds a Performance page under Diagnostic in the side menu (under TweakUI when the Diagnostic "
-                      "plugin is off). It shows each processing node's cores, memory and queue, the server's disk and "
-                      "memory, your recent tasks' processing times, and whether the nodes have enough memory for your "
-                      "tasks, by WebODM's hardware requirements."),
+                      "plugin is off). It shows each processing node's cores, memory and queue, the server's CPU load, "
+                      "disk and memory, your recent tasks' processing times, and whether the nodes have enough memory "
+                      "for your tasks, by WebODM's hardware requirements."),
                     preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
-                                 "server's disk and memory, and their recent tasks' processing times.")),
+                                 "server's CPU load, disk and memory, and their recent tasks' processing times."),
+                    parts=[
+                        Setting("performance_refresh", 3, _("Refresh Every"),
+                                _("How often the Performance page refreshes the CPU load and the memory while it is "
+                                  "open. The disk is refreshed every 10 seconds."),
+                                number=(1, 10, 1), unit=_("s")),
+                    ]),
         ]),
     ]),
 ]
@@ -240,6 +246,18 @@ def _with_parts(setting):
     yield setting
     for part in setting.parts:
         yield from _with_parts(part)
+
+
+def setting(name):
+    """The setting of that name"""
+    return next(s for s in all_settings() if s.name == name)
+
+
+def number_control(name, value):
+    """A number setting's control off the settings page (its slider, box and default), with the user's value"""
+    s = setting(name)
+    return {"value": value, "min": s.number[0], "max": s.number[1], "step": s.number[2], "unit": s.unit,
+            "default": with_unit(s.default, s.unit)}
 
 
 def defaults():

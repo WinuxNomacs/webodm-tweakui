@@ -234,6 +234,16 @@ class PerformanceView(APIView):
         return Response(performance.report(request.user))
 
 
+class PerformanceLiveView(APIView):
+    """GET /api/plugins/tweakui/performance/live[?disk=1]: what the Performance page refreshes every few seconds,
+    the server's CPU counters and memory, the nodes' memory and, when asked, the disk (performance.live)"""
+    permission_classes = (Available,)
+    feature = "performance_view"
+
+    def get(self, request):
+        return Response(performance.live(request.user, disk=request.query_params.get("disk") == "1"))
+
+
 class StorageTaskView(APIView):
     """GET /api/plugins/tweakui/storage/<project>/<task>: a task's files by kind, for its project's owner and
     admins"""
