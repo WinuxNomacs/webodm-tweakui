@@ -16,6 +16,8 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **README: WebODM Community Discord link** (new.md, 2026-11-08) — branch `readme-discord`: a Community section
+  before Thanks.
 - **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View") — branch
   `performance-view`: `performance.py` (each node the user may use asked through pyodx, 3 s, in parallel; the server's
   disk and memory; the last 10 completed tasks with stats.json's steps; the trend; the verdicts from WebODM's memory
