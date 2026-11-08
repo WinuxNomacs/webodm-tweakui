@@ -1614,8 +1614,10 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual(r["nodes"], [{"id": self.node.id, "online": True, "total_memory": 64 * GB, "available_memory": 40 * GB},
                                       {"id": self.small.id, "online": False, "total_memory": None, "available_memory": None}])
         self.assertNotIn("disk", r)
+        self.assertIn("disk_io", r)
         self.assertEqual(set(self.live("?disk=1")["disk"]), {"total", "used", "free"})
         self.assertIn("cpu", self.report()["server"])
+        self.assertIn("disk_io", self.report()["server"])
 
     def test_linux_cpu_counters_are_proc_stats_total_with_idle_and_iowait_as_not_busy_and_the_number_of_cores(self):
         from coreplugins.tweakui import performance
@@ -1656,6 +1658,77 @@ class TestPerformance(TweakUITestCase):
         with mock.patch.object(ctypes, "windll", windll, create=True), \
                 mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"):
             self.assertIsNone(performance.cpu_entry())
+
+    def test_linux_disk_counters_are_each_mounted_disk_named_by_its_mount_points_with_the_tasks_drive_first(self):
+        from coreplugins.tweakui import performance
+        mounts = ("1650 1075 0:147 / / rw,relatime - overlay overlay rw,lowerdir=/x\n"
+                  "1652 1650 0:179 / /proc rw - proc proc rw\n"
+                  "1659 1650 8:48 /home/me/WebODM /webodm rw,relatime - ext4 /dev/sdd rw\n"
+                  "1663 1659 8:64 /data/volumes/venv /webodm/venv rw,relatime master:30 - ext4 /dev/sde rw\n"
+                  "1664 1659 8:64 /data/volumes/media /webodm/app/media rw,relatime master:30 - ext4 /dev/sde rw\n"
+                  "1670 1650 8:48 /etc/hosts /etc/hosts rw - ext4 /dev/sdd rw\n"
+                  "1671 1650 0:52 /@data /my\\040data rw - btrfs /dev/nvme0n1p2 rw\n"
+                  "1672 1650 7:1 / /snap rw - squashfs /dev/loop1 ro\n")
+        stats = ("   8      48 sdd 4727000 1014427 597857972 11271074 2095810 4606654 164001024 22629203 0 4695980 34711366 0 0 0 0\n"
+                 "   8      64 sde 100 5 800 40 200 9 1600 60 0 90 100 0 0 0 0\n"
+                 " 259       2 nvme0n1p2 1 0 2 3 4 0 8 9 0 10 11\n"
+                 "   8      80 sdf 1 0 2 3 4 0 8 9 0 10 11\n")
+        paths = []
+        for text in (mounts, stats):
+            with tempfile.NamedTemporaryFile("w", delete=False) as f:
+                f.write(text)
+                paths.append(f.name)
+        defaults = (performance.mount_devices.__defaults__, performance.diskstats.__defaults__)
+        try:
+            performance.mount_devices.__defaults__, performance.diskstats.__defaults__ = (paths[0],), (paths[1],)
+            with self.settings(MEDIA_ROOT="/webodm/app/media/"), \
+                    mock.patch("coreplugins.tweakui.performance.sys.platform", "linux"), \
+                    mock.patch("coreplugins.tweakui.performance.os.path.realpath", side_effect=lambda p: p.rstrip("/")), \
+                    mock.patch("coreplugins.tweakui.performance.time.monotonic", return_value=12.3456):
+                io = performance.disk_io_entry()
+        finally:
+            performance.mount_devices.__defaults__, performance.diskstats.__defaults__ = defaults
+            for path in paths:
+                os.remove(path)
+        self.assertEqual(io["time"], 12.346)
+        self.assertEqual([(d["name"], d["mounts"], d["tasks"]) for d in io["drives"]], [
+            ("sde", ["/webodm/app/media", "/webodm/venv"], True), ("nvme0n1p2", ["/my data"], False),
+            ("sdd", ["/webodm"], False)])
+        self.assertEqual(io["drives"][0], {"name": "sde", "mounts": ["/webodm/app/media", "/webodm/venv"], "tasks": True,
+                                           "reads": 100, "writes": 200, "read_bytes": 800 * 512, "write_bytes": 1600 * 512,
+                                           "read_ms": 40, "write_ms": 60, "busy_ms": 90})
+        with mock.patch("coreplugins.tweakui.performance.sys.platform", "linux"), \
+                mock.patch("coreplugins.tweakui.performance.diskstats", side_effect=OSError("no /proc")):
+            self.assertIsNone(performance.disk_io_entry())
+
+    def test_windows_disk_counters_are_each_local_drive_letter_with_idle_time_in_place_of_busy_time(self):
+        import ctypes
+        from coreplugins.tweakui import performance
+
+        def device_io_control(handle, code, _in, _in_size, out, out_size, size, _overlapped):
+            self.assertEqual(code, 0x70020)
+            if handle == 5:
+                return 0
+            perf = out._obj
+            perf.BytesRead, perf.BytesWritten, perf.ReadCount, perf.WriteCount = 4096, 8192, 1, 2
+            perf.ReadTime, perf.WriteTime, perf.IdleTime = 30000, 50000, 10 ** 9
+            return 1
+
+        windll = mock.Mock()
+        k = windll.kernel32
+        # A: removable, C: and D: fixed (D: won't say), E: not there
+        k.GetLogicalDrives.return_value = 0b1101
+        k.GetDriveTypeW.side_effect = lambda root: 2 if root == "A:\\" else 3
+        k.CreateFileW.side_effect = lambda path, *a: {"\\\\.\\C:": 4, "\\\\.\\D:": 5}[path]
+        k.DeviceIoControl.side_effect = device_io_control
+        with mock.patch.object(ctypes, "windll", windll, create=True), \
+                mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"), \
+                mock.patch("coreplugins.tweakui.performance.os.path.realpath", return_value="c:\\WebODM\\media"), \
+                mock.patch("coreplugins.tweakui.performance.os.path.splitdrive", return_value=("c:", "\\WebODM\\media")):
+            io = performance.disk_io_entry()
+        self.assertEqual(io["drives"], [{"name": "C:", "mounts": ["C:"], "reads": 1, "writes": 2, "read_bytes": 4096,
+                                         "write_bytes": 8192, "read_ms": 3, "write_ms": 5, "idle_ms": 100000, "tasks": True}])
+        self.assertEqual(k.CloseHandle.call_count, 2)
 
     def test_refresh_every_is_a_part_of_show_performance_view_from_1_to_10_seconds(self):
         page = self.client.get("/plugins/tweakui/").content.decode()

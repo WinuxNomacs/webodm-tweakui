@@ -11,6 +11,7 @@ import os
 import shutil
 import statistics
 import sys
+import time
 from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings as django_settings
@@ -194,18 +195,132 @@ def disk_entry():
     return {"total": total, "used": used, "free": free}
 
 
+# Mount points that are the system's or Docker's (its /etc/hosts and the like are files from the machine's disk)
+SYSTEM_MOUNTS = ("/proc", "/sys", "/dev", "/run", "/etc/")
+SECTOR = 512  # /proc/diskstats counts in 512-byte sectors, whatever the disk's own
+
+
+def mount_devices(path="/proc/self/mountinfo"):
+    """Linux's mounts on a disk, as {(major:minor, source): [mount point, ...]}, leaving out the system's"""
+    out = {}
+    with open(path, encoding="utf-8", errors="replace") as f:
+        for line in f:
+            head, _sep, tail = line.partition(" - ")
+            fields, rest = head.split(), tail.split()
+            if len(fields) < 5 or len(rest) < 2 or not rest[1].startswith("/dev/"):
+                continue
+            point = fields[4].replace("\\040", " ")
+            if point.startswith(SYSTEM_MOUNTS):
+                continue
+            out.setdefault((fields[2], rest[1]), []).append(point)
+    return out
+
+
+def diskstats(path="/proc/diskstats"):
+    """Linux's counters for each block device since boot, as {major:minor: (name, [the counters])}: reads, reads
+    merged, sectors read, ms reading, writes, writes merged, sectors written, ms writing, in progress, ms busy"""
+    out = {}
+    with open(path, encoding="ascii") as f:
+        for line in f:
+            fields = line.split()
+            if len(fields) >= 14:
+                out[fields[0] + ":" + fields[1]] = (fields[2], [int(v) for v in fields[3:13]])
+    return out
+
+
+def linux_drives(media):
+    """Each disk WebODM's server has mounted, with its counters: Linux's /proc/diskstats (in Docker the machine's,
+    so other containers' work is counted too), found by each mount's device, or by its source's name where the device
+    is a filesystem's own (btrfs)"""
+    stats = diskstats()
+    names = {name: key for key, (name, _c) in stats.items()}
+    drives = {}
+    for (device, source), points in mount_devices().items():
+        key = device if device in stats else names.get(os.path.basename(source))
+        if key:
+            drives.setdefault(key, []).extend(points)
+    out = []
+    for key, points in drives.items():
+        name, c = stats[key]
+        out.append({"name": name, "mounts": sorted(set(points)), "reads": c[0], "writes": c[4],
+                    "read_bytes": c[2] * SECTOR, "write_bytes": c[6] * SECTOR, "read_ms": c[3], "write_ms": c[7],
+                    "busy_ms": c[9]})
+    # The tasks' drive: the one with the longest mount point MEDIA_ROOT is under
+    best = max(((len(p), d) for d in out for p in d["mounts"]
+                if media == p or media.startswith(p.rstrip("/") + "/")), key=lambda x: x[0], default=(0, None))[1]
+    for d in out:
+        d["tasks"] = d is best
+    return out
+
+
+def windows_drives(media):
+    """Each local drive letter with its counters (IOCTL_DISK_PERFORMANCE, through ctypes as the CPU's counters); a
+    drive that won't say is left out. Windows counts idle time where Linux counts busy time"""
+    import ctypes
+    from ctypes import wintypes
+
+    class DISK_PERFORMANCE(ctypes.Structure):
+        _fields_ = [("BytesRead", ctypes.c_int64), ("BytesWritten", ctypes.c_int64), ("ReadTime", ctypes.c_int64),
+                    ("WriteTime", ctypes.c_int64), ("IdleTime", ctypes.c_int64), ("ReadCount", wintypes.DWORD),
+                    ("WriteCount", wintypes.DWORD), ("QueueDepth", wintypes.DWORD), ("SplitCount", wintypes.DWORD),
+                    ("QueryTime", ctypes.c_int64), ("StorageDeviceNumber", wintypes.DWORD),
+                    ("StorageManagerName", ctypes.c_wchar * 8)]
+
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateFileW.restype = wintypes.HANDLE
+    IOCTL_DISK_PERFORMANCE, DRIVE_FIXED, OPEN_EXISTING, SHARE = 0x70020, 3, 3, 3
+    invalid = wintypes.HANDLE(-1).value
+    tasks = os.path.splitdrive(media)[0].upper()
+    mask, out = kernel32.GetLogicalDrives(), []
+    for i in range(26):
+        letter = chr(65 + i) + ":"
+        if not mask & (1 << i) or kernel32.GetDriveTypeW(letter + "\\") != DRIVE_FIXED:
+            continue
+        handle = kernel32.CreateFileW("\\\\.\\" + letter, 0, SHARE, None, OPEN_EXISTING, 0, None)
+        if not handle or handle == invalid:
+            continue
+        try:
+            perf, size = DISK_PERFORMANCE(), wintypes.DWORD()
+            if not kernel32.DeviceIoControl(handle, IOCTL_DISK_PERFORMANCE, None, 0, ctypes.byref(perf),
+                                            ctypes.sizeof(perf), ctypes.byref(size), None):
+                continue
+        finally:
+            kernel32.CloseHandle(handle)
+        # Times are in 100 ns
+        out.append({"name": letter, "mounts": [letter], "reads": perf.ReadCount, "writes": perf.WriteCount,
+                    "read_bytes": perf.BytesRead, "write_bytes": perf.BytesWritten, "read_ms": perf.ReadTime // 10000,
+                    "write_ms": perf.WriteTime // 10000, "idle_ms": perf.IdleTime // 10000, "tasks": letter == tasks})
+    return out
+
+
+def disk_io_entry():
+    """The disks WebODM's server uses and their counters since the system started ({time: seconds, drives: [...]}),
+    the tasks' drive first, or None where they can't be read. Rates are the difference between two readings, which
+    the page works out; the counters can't tell random from sequential work, the average size per operation hints"""
+    media = os.path.realpath(getattr(django_settings, "MEDIA_ROOT", None) or ".")
+    try:
+        drives = windows_drives(media) if sys.platform == "win32" else linux_drives(media)
+    except (OSError, ValueError, AttributeError):
+        return None
+    if not drives:
+        return None
+    drives.sort(key=lambda d: (not d["tasks"], d["name"]))
+    return {"time": round(time.monotonic(), 3), "drives": drives}
+
+
 def server_entry():
-    """The disk WebODM keeps its tasks on and the server's memory, in bytes, and its CPU time counters"""
+    """The disk WebODM keeps its tasks on and the server's memory, in bytes, and its CPU and disk counters"""
     memory = memory_stats()
-    return {"disk": disk_entry(), "memory": memory if memory.get("total") else None, "cpu": cpu_entry()}
+    return {"disk": disk_entry(), "memory": memory if memory.get("total") else None, "cpu": cpu_entry(),
+            "disk_io": disk_io_entry()}
 
 
 def live(user, disk=False):
-    """What the Performance page refreshes every few seconds: the server's CPU counters and memory, each node's memory
+    """What the Performance page refreshes every few seconds: the server's CPU and disk counters and memory, each node's memory
     (the nodes the user may use, asked as for the report), and the disk when asked"""
     memory = memory_stats()
     out = {
-        "cpu": cpu_entry(), "memory": memory if memory.get("total") else None,
+        "cpu": cpu_entry(), "memory": memory if memory.get("total") else None, "disk_io": disk_io_entry(),
         "nodes": [{k: n[k] for k in ("id", "online", "total_memory", "available_memory")}
                   for n in node_entries(nodes_for(user))],
     }
