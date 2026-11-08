@@ -36,7 +36,10 @@ test("turned off, there is no tab and the navigation pane stays", () => {
     expect(hidden()).toBe(false);
 });
 
-test("turned on, a tab on the divider below the header hides the pane, and shows it again", () => {
+const icons = () => html.classList.contains("tweakui-nav-icons");
+const width = () => html.style.getPropertyValue("--tweakui-nav-width");
+
+test("turned on, a tab on the divider below the header cycles the pane: icons only, hidden, WebODM's width", () => {
     start({hide_nav_pane: true});
     const t = tab();
     expect(t.tagName).toBe("BUTTON");
@@ -44,7 +47,13 @@ test("turned on, a tab on the divider below the header hides the pane, and shows
     expect(t.parentNode.id).toBe("navbar-top");
     expect(t.className).toContain("theme-background-highlight");
     expect(t.style.top).toBe("10px");
+    expect(t.title).toBe("Show Icons Only");
+    t.click();
+    expect(icons()).toBe(true);
+    expect(width()).toBe("50px");
+    expect(hidden()).toBe(false);
     expect(t.title).toBe("Hide Navigation Pane");
+    expect(t.firstChild.className).toBe("fa fa-chevron-left");
     t.click();
     expect(hidden()).toBe(true);
     expect(t.title).toBe("Show Navigation Pane");
@@ -52,21 +61,79 @@ test("turned on, a tab on the divider below the header hides the pane, and shows
     expect(t.firstChild.className).toBe("fa fa-chevron-right");
     t.click();
     expect(hidden()).toBe(false);
-    expect(t.title).toBe("Hide Navigation Pane");
+    expect(icons()).toBe(false);
+    expect(width()).toBe("");
+    expect(t.title).toBe("Show Icons Only");
+    expect(t.getAttribute("aria-expanded")).toBe("true");
 });
 
-test("hiding or showing the pane tells the maps the page changed width", () => {
+test("icons only from the tab is the narrow view, without Resize Navigation Pane: each link's name as its tooltip", () => {
+    start({hide_nav_pane: true, resize_nav_pane: false});
+    tab().click();
+    expect(html.classList.contains("tweakui-nav-sized")).toBe(true);
+    expect(document.querySelector(".tweakui-nav-handle")).toBeNull();
+    const link = document.querySelector("#side-menu a");
+    link.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+    expect(link.title).toBe("Dashboard");
+    tab().click();
+    tab().click();
+    expect(link.hasAttribute("title")).toBe(false);
+});
+
+test("each step of the cycle tells the maps the page changed width, once", () => {
     start({hide_nav_pane: true});
     const resize = jest.fn();
     window.addEventListener("resize", resize);
     tab().click();
     tab().click();
+    tab().click();
     window.removeEventListener("resize", resize);
-    expect(resize).toHaveBeenCalledTimes(2);
+    expect(resize).toHaveBeenCalledTimes(3);
+});
+
+test("icons only is remembered in this browser, and given up when the setting is turned off", () => {
+    start({hide_nav_pane: true});
+    tab().click();
+    expect(localStorage.getItem(navPane.WIDTH_KEY)).toBe("50");
+    html.className = "";
+    html.removeAttribute("style");
+    page();
+    const ui = start({hide_nav_pane: true});
+    expect(icons()).toBe(true);
+    expect(tab().title).toBe("Hide Navigation Pane");
+    document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: false}}));
+    expect(icons()).toBe(false);
+    expect(width()).toBe("");
+    expect(ui.resize.width()).toBe(250);
+});
+
+test("a pane dragged wider comes back from hidden at WebODM's width", () => {
+    localStorage.setItem(navPane.WIDTH_KEY, "320");
+    start({hide_nav_pane: true, resize_nav_pane: true});
+    expect(width()).toBe("320px");
+    expect(tab().title).toBe("Show Icons Only");
+    tab().click();
+    tab().click();
+    tab().click();
+    expect(width()).toBe("");
+    expect(localStorage.getItem(navPane.WIDTH_KEY)).toBeNull();
+});
+
+test("a pane dragged to its icons tells the tab, which then hides it", () => {
+    start({hide_nav_pane: true, resize_nav_pane: true});
+    const h = document.querySelector(".tweakui-nav-handle");
+    const pointer = (type, x) => h.dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true, button: 0, clientX: x}));
+    pointer("pointerdown", 250);
+    pointer("pointermove", 60);
+    pointer("pointerup", 60);
+    expect(tab().title).toBe("Hide Navigation Pane");
+    tab().click();
+    expect(hidden()).toBe(true);
 });
 
 test("a hidden pane is remembered in this browser: the next page starts hidden, before it is drawn", () => {
     start({hide_nav_pane: true});
+    tab().click();
     tab().click();
     expect(localStorage.getItem(navPane.HIDDEN_KEY)).toBe("1");
     html.className = "";
@@ -88,6 +155,7 @@ test("turned on or off on the settings page, the tab comes or goes at once and t
     document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: true}}));
     expect(tab()).not.toBeNull();
     tab().click();
+    tab().click();
     document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: false}}));
     expect(tab()).toBeNull();
     expect(hidden()).toBe(false);
@@ -105,13 +173,12 @@ test("a browser that blocks storage still hides and shows the pane, without reme
     jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("blocked"); });
     start({hide_nav_pane: true});
     tab().click();
+    tab().click();
     expect(hidden()).toBe(true);
 });
 
 describe("Resize Navigation Pane", () => {
     const handle = () => document.querySelector(".tweakui-nav-handle");
-    const width = () => html.style.getPropertyValue("--tweakui-nav-width");
-    const icons = () => html.classList.contains("tweakui-nav-icons");
     // jsdom has no PointerEvent: a MouseEvent of that type carries button and clientX
     const pointer = (type, x) => handle().dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true, button: 0, clientX: x}));
 

@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- General > Global Controls > Hide Navigation Pane: the tab cycles through three steps: the side menu's icons only
+  (their names on hover, as Resize Navigation Pane's narrowest), hidden, and back at the usual width.
 - Source Frames: the button reads "Open Full Frame", in Title Case like the rest of the interface.
 - General > Global Controls > Resize Navigation Pane: drag the divider to resize the side menu, down to its icons
   alone (their names on hover); a double click puts back the usual width; remembered in this browser.
