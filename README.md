@@ -35,7 +35,8 @@ Every feature is off until you turn it on, except the theme menu.
 - [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel
   that zooms toward what is under the pointer (Zoom Override).
 - [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): how much of your quota each project and task
-  uses, each task's files by kind, and compacting or deleting them; administrators see every user's.
+  uses, each task's files by kind, compacting or deleting them, and backing up and importing tasks as WebODM's own
+  backup zips; administrators see every user's.
 
 ## Requirements
 

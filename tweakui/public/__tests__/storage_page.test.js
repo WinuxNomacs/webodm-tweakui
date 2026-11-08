@@ -24,8 +24,9 @@ function page() {
       <div id="tweakui-storage" data-api="/api/plugins/tweakui/">
         <input type="hidden" name="csrfmiddlewaretoken" value="tok">
         <div class="tweakui-storage-actions"><span class="tweakui-storage-selected"></span>
-          <button data-act="compact-selected" disabled></button><button data-act="delete-selected" disabled></button></div>
+          <button data-act="backup-selected" disabled></button><button data-act="compact-selected" disabled></button><button data-act="delete-selected" disabled></button></div>
         <div class="tweakui-storage-confirm" hidden></div>
+        <input type="file" class="tweakui-storage-file" multiple hidden>
         <p class="tweakui-storage-status"></p>
         <div class="tweakui-storage-body"></div>
       </div>`;
@@ -232,4 +233,128 @@ test("a report that fails to load says so", async () => {
     const view = storagePage.start(document, window, () => json({}, false, 500));
     await view.loaded;
     expect(root.querySelector(".tweakui-storage-body").textContent).toBe("Could not load the storage report.");
+});
+
+describe("Backup and Import", () => {
+    afterEach(() => jest.restoreAllMocks());
+
+    // The links clicked for downloads, by URL, instead of jsdom's navigation
+    const downloads = () => {
+        const urls = [];
+        jest.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function () {
+            urls.push([this.getAttribute("href"), this.hasAttribute("download")]);
+        });
+        return urls;
+    };
+
+    test("a completed task has a Backup link to WebODM's backup, a browser download; other tasks have none", async () => {
+        const {root} = await started(report());
+        click(row(root, '[data-project="10"] [data-act=open-project]'));
+        click(row(root, '[data-project="11"] [data-act=open-project]'));
+        const backup = id => row(root, `[data-task="${id}"] a[download]`);
+        expect(backup("t1").getAttribute("href")).toBe("/api/projects/10/tasks/t1/backup");
+        expect(backup("t1").textContent.trim()).toBe("Backup");
+        expect(backup("t3").getAttribute("href")).toBe("/api/projects/11/tasks/t3/backup");
+        expect(backup("t2")).toBeNull();
+        expect(backup("t4")).toBeNull();
+    });
+
+    test("Backup All downloads each completed task ticked, or of a ticked project, one after another, and says how many it skipped", async () => {
+        const urls = downloads();
+        jest.spyOn(window, "setTimeout").mockImplementation(fn => { fn(); return 0; });
+        const {root, fetchFn} = await started(report());
+        const all = root.querySelector("[data-act=backup-selected]");
+        expect(all.disabled).toBe(true);
+        click(row(root, '[data-project="11"] [data-act=open-project]'));
+        tick(row(root, '[data-project="10"] [data-act=tick-project]'));
+        tick(row(root, '[data-task="t3"] input'));
+        expect(all.disabled).toBe(false);
+        click(all);
+        for (let i = 0; i < 5; i++) await flush();
+        expect(urls).toEqual([["/api/projects/10/tasks/t1/backup", true], ["/api/projects/11/tasks/t3/backup", true]]);
+        expect(root.querySelector(".tweakui-storage-status").textContent)
+            .toBe("2 backups started; the browser saves them as WebODM sends them (1 skipped: not completed).");
+        expect(fetchFn.calls.some(c => c[0] !== "GET")).toBe(false);
+        expect(document.querySelectorAll("a[hidden]").length).toBe(0);
+    });
+
+    test("each project has an Import button that opens the file chooser for zips", async () => {
+        const {root} = await started(report());
+        const input = root.querySelector(".tweakui-storage-file");
+        const opened = jest.spyOn(input, "click").mockImplementation(() => {});
+        const button = row(root, '[data-project="10"] [data-act=import-project]');
+        expect(button.textContent.trim()).toBe("Import");
+        click(button);
+        expect(opened).toHaveBeenCalledTimes(1);
+    });
+
+    // A fetch answering the report, and WebODM's import as it answers a chunk ({uploaded: true}) and the last one (the task)
+    function importServer(fail) {
+        const sent = [];
+        const fn = jest.fn((url, opts = {}) => {
+            if (url === "/api/plugins/tweakui/storage") return json(report());
+            const b = opts.body;
+            sent.push({url, name: b.get("name"), index: b.get("dzchunkindex"), count: b.get("dztotalchunkcount"),
+                offset: b.get("dzchunkbyteoffset"), id: b.get("dzuuid"), size: b.get("file").size, file: b.get("file").name,
+                csrf: opts.headers["X-CSRFToken"]});
+            if (fail) return fail(sent.length);
+            return json(Number(b.get("dzchunkindex")) + 1 < Number(b.get("dztotalchunkcount")) ? {uploaded: true} : {id: "new"});
+        });
+        fn.sent = sent;
+        return fn;
+    }
+
+    const zip = (name, size) => new File([new Uint8Array(size)], name, {type: "application/zip"});
+
+    test("Import uploads each zip into the project in WebODM's chunks, named after the file, then reloads the list", async () => {
+        const root = page(), fetchFn = importServer();
+        const view = storagePage.start(document, window, fetchFn);
+        await view.loaded;
+        const size = storagePage.CHUNK_SIZE * 2 + 10;
+        await view.importFiles("10", [zip("Survey-backup.zip", size), zip("assets.zip", 5)]);
+        expect(fetchFn.sent.map(s => [s.url, s.name, s.index, s.count, s.offset, s.size, s.file])).toEqual([
+            ["/api/projects/10/tasks/import", "Survey-backup", "0", "3", "0", storagePage.CHUNK_SIZE, "Survey-backup.zip"],
+            ["/api/projects/10/tasks/import", "Survey-backup", "1", "3", String(storagePage.CHUNK_SIZE), storagePage.CHUNK_SIZE, "Survey-backup.zip"],
+            ["/api/projects/10/tasks/import", "Survey-backup", "2", "3", String(storagePage.CHUNK_SIZE * 2), 10, "Survey-backup.zip"],
+            ["/api/projects/10/tasks/import", "assets", "0", "1", "0", 5, "assets.zip"]]);
+        expect(new Set(fetchFn.sent.slice(0, 3).map(s => s.id)).size).toBe(1);
+        expect(fetchFn.sent[3].id).not.toBe(fetchFn.sent[0].id);
+        expect(fetchFn.sent.every(s => s.csrf === "tok")).toBe(true);
+        expect(root.querySelector(".tweakui-storage-status").textContent).toBe("Uploaded 2 zips; WebODM is importing them.");
+        expect(fetchFn.mock.calls.filter(c => c[0] === "/api/plugins/tweakui/storage").length).toBe(2);
+    });
+
+    test("Import shows its progress, file by file", async () => {
+        const root = page(), seen = [];
+        const fetchFn = importServer(() => {
+            seen.push(root.querySelector(".tweakui-storage-status").textContent);
+            return json({uploaded: true});
+        });
+        const view = storagePage.start(document, window, fetchFn);
+        await view.loaded;
+        await view.importFiles("10", [zip("a.zip", storagePage.CHUNK_SIZE + 1), zip("b.zip", 1)]);
+        expect(seen).toEqual(["Importing 1 of 2: a.zip, 0%", "Importing 1 of 2: a.zip, 50%", "Importing 2 of 2: b.zip, 0%"]);
+    });
+
+    test("a chunk that gets no answer is sent again; a refused zip says why and the next one still goes", async () => {
+        const root = page();
+        const fetchFn = importServer(n => n === 1 ? Promise.reject(new Error("offline"))
+            : n === 2 ? json({detail: ["Cannot create task, you need to upload 1 file"]}, false, 400) : json({id: "new"}));
+        const view = storagePage.start(document, window, fetchFn);
+        await view.loaded;
+        await view.importFiles("10", [zip("bad.zip", 3), zip("good.zip", 3)]);
+        expect(fetchFn.sent.map(s => s.file)).toEqual(["bad.zip", "bad.zip", "good.zip"]);
+        const status = root.querySelector(".tweakui-storage-status");
+        expect(status.textContent).toBe("Not imported: bad.zip: Cannot create task, you need to upload 1 file");
+        expect(status.classList.contains("text-danger")).toBe(true);
+    });
+
+    test("a task WebODM is importing is marked so", async () => {
+        const r = report();
+        r.me.projects[1].tasks.push(task("t6", "Arriving", 0, "importing", {status: 20}));
+        const {root} = await started(r);
+        click(row(root, '[data-project="11"] [data-act=open-project]'));
+        expect(row(root, '[data-task="t6"]').textContent).toMatch(/Importing/);
+        expect(row(root, '[data-task="t6"] a[download]')).toBeNull();
+    });
 });

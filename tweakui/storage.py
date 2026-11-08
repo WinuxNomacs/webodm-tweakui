@@ -71,11 +71,13 @@ def breakdown(task_dir):
 
 
 def task_mark(task):
-    """What the page marks a task with: removing or compacting (WebODM is doing it), failed, canceled, compactable
-    (completed, its photos still there), or none"""
+    """What the page marks a task with: removing, compacting or importing (WebODM is doing it), failed, canceled,
+    compactable (completed, its photos still there), or none"""
     from app import pending_actions
     if task.pending_action == pending_actions.REMOVE:
         return "removing"
+    if task.pending_action == pending_actions.IMPORT:
+        return "importing"
     if task.pending_action == pending_actions.COMPACT:
         return "compacting"
     if task.status == status_codes.FAILED:

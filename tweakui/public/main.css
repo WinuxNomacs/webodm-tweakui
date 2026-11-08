@@ -266,6 +266,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-storage .tweakui-storage-actions { position: sticky; top: 0; z-index: 5; display: flex; flex-wrap: wrap; align-items: center; gap: 8px; padding: 8px 12px; margin-bottom: 12px; border-width: 1px; border-style: solid; border-radius: 4px; }
 .tweakui-storage .tweakui-storage-selected { flex: 1; min-width: 160px; }
 .tweakui-storage .tweakui-storage-confirm { padding: 8px 12px; margin-bottom: 12px; border-width: 2px; border-style: solid; border-radius: 4px; }
+.tweakui-storage .tweakui-storage-file { display: none; }
 .tweakui-storage .tweakui-storage-confirm ul { max-height: 240px; overflow-y: auto; margin-bottom: 8px; }
 .tweakui-storage .tweakui-storage-user { margin-bottom: 24px; }
 .tweakui-storage .tweakui-storage-quota { margin-bottom: 8px; max-width: 480px; }

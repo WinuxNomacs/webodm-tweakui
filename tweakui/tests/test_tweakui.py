@@ -1063,11 +1063,13 @@ class TestStorage(TweakUITestCase):
                                              compacted=True, size=10.0)
         self.removing = Task.objects.create(project=self.small, name="Going", status=status_codes.CANCELED,
                                             pending_action=pending_actions.REMOVE, size=5.0)
+        self.importing = Task.objects.create(project=self.small, name="Arriving", status=status_codes.RUNNING,
+                                             pending_action=pending_actions.IMPORT, size=0.0)
         self.other = Project.objects.create(owner=User.objects.get(username="testuser2"), name="Theirs")
         self.theirs = Task.objects.create(project=self.other, name="Theirs", status=status_codes.COMPLETED, size=50.0)
 
     def tearDown(self):
-        for task in (self.done, self.failed, self.compacted, self.removing, self.theirs):
+        for task in (self.done, self.failed, self.compacted, self.removing, self.importing, self.theirs):
             path = task.task_path()
             if os.path.isdir(path) and str(task.id) in path:
                 shutil.rmtree(path)
@@ -1095,7 +1097,7 @@ class TestStorage(TweakUITestCase):
                          [("Done", 300 * self.MB, "compactable"), ("Failed", 20 * self.MB, "failed")])
         small = r["me"]["projects"][1]["tasks"]
         self.assertEqual([(t["name"], t["mark"], t["compacted"]) for t in small],
-                         [("Compacted", None, True), ("Going", "removing", False)])
+                         [("Compacted", None, True), ("Going", "removing", False), ("Arriving", "importing", False)])
         self.assertEqual(r["me"]["used"], 335 * self.MB)
         self.assertIsNone(r["me"]["quota"])
         self.assertNotIn("Theirs", json.dumps(r))

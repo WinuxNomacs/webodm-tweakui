@@ -2,17 +2,19 @@
 {% load i18n %}
 {% block content %}
 {% comment %}Diagnostic > Storage: the user's projects and tasks with what they take, cleaned up through WebODM's API
-(storage_page.js). Colours come only from WebODM's theme classes.{% endcomment %}
+(storage_page.js), backed up and imported as WebODM does. Colours come only from WebODM's theme classes.{% endcomment %}
 <div id="tweakui-storage" class="tweakui-storage" data-api="{{ api }}">
     {% csrf_token %}
     <h3>{% trans "Storage" %}</h3>
     {% if on %}
     <div class="tweakui-storage-actions theme-border theme-background-highlight">
-        <span class="tweakui-storage-selected">{% trans "Tick tasks or projects to clean up several at once." %}</span>
+        <span class="tweakui-storage-selected">{% trans "Tick tasks or projects to back up or clean up several at once." %}</span>
+        <button type="button" class="btn btn-default btn-sm" data-act="backup-selected" disabled title="{% trans "Backup All: download each completed task as a zip" %}"><i class="fa fa-file-download"></i> {% trans "Backup All" %}</button>
         <button type="button" class="btn btn-default btn-sm" data-act="compact-selected" disabled><i class="fa fa-compress"></i> {% trans "Compact" %}</button>
         <button type="button" class="btn btn-danger btn-sm" data-act="delete-selected" disabled><i class="fa fa-trash"></i> {% trans "Delete" %}</button>
     </div>
     <div class="tweakui-storage-confirm theme-border" role="alertdialog" aria-modal="false" hidden></div>
+    <input type="file" class="tweakui-storage-file" accept=".zip,application/zip,application/x-zip-compressed" multiple hidden aria-label="{% trans "Zips to import" %}">
     <p class="tweakui-storage-status" role="status" aria-live="polite"></p>
     <div class="tweakui-storage-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Loading..." %}</p></div>
     {% else %}
