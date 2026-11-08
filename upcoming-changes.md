@@ -2,12 +2,12 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (order proposed, to confirm)
+**Up next** (order confirmed by the user, 2026-11-08)
 1. **Zoom Sensitivity: "(Default: 100%)"** (new.md, 2026-11-08; see "Zoom Sensitivity: the default shown") — the
-   panel on each map says what WebODM's own is. Open decision listed there.
+   panel on each map and the settings page's number settings say their default.
 2. **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load
    and refresh") — per-core and total CPU load like top/htop, refreshed every 1-10 s (3 by default), disk every 10 s.
-   Open decisions listed there.
+   Decided (see there).
 3. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
    "Performance View: Recent Processing and the task's log") — more per task from its stats.json, and what its log
    says that the user should know. Open decisions listed there.
@@ -2087,8 +2087,8 @@ on the 2D map's bottom-left button and the 3D view's button before Share) and th
 **Proposed phase**: the panel's label reads "Zoom Sensitivity (Default: 100%)", the "(Default: 100%)" in the muted
 text of WebODM's theme; the screenshots `zoom-sensitivity-2d` and `-3d` retaken; Jest.
 
-**Open decision**: the map panels only, or also the settings page, where every number setting would show its default
-the same way (Zoom Sensitivity's two and Hide Delay)?
+**Decided** (the user, 2026-11-08): the map panels and the settings page, where every number setting shows its default
+the same way (Zoom Sensitivity's two and Hide Delay).
 
 ## Performance View: live CPU Load and refresh (new.md, 2026-11-08)
 
@@ -2128,10 +2128,9 @@ and box).
    Jest (shares from two readings, the bars, the timer and its pause, the disk's 10 s), live on both stacks and on the
    Windows app; docs `performance.md`, screenshot `performance` retaken.
 
-**Open decisions**:
-1. What CPU Load shows: per-core bars, total and load averages (as above), or the total and load averages only?
-2. Does the server's memory need a per-process view (WebODM's and the node's processes, as top lists them), or the
-   machine's used and free, as now?
+**Decided** (the user, 2026-11-08):
+1. CPU Load shows the total, a bar per core and the load averages (as above).
+2. Memory stays the machine's used and free (no process list), refreshed with the CPU.
 
 ## Performance View: Recent Processing and the task's log (new.md, 2026-11-08)
 
