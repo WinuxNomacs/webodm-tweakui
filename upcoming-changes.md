@@ -1852,10 +1852,11 @@ Storage's, to decide):
   thresholds; stats.json missing or partial), Jest (the cards, the verdicts, the bars, Refresh), both stacks live,
   the Windows app (its local node, memory on Windows), phone width; screenshot `performance`, docs page.
 
-**Open decisions** (to ask when the phase is planned):
-1. Its own category on Settings ("Diagnostic", with Storage moving into it?) or a group under Storage.
-2. Recent processing: the user's own tasks only, or every user's for an admin (as Storage does).
-3. How many recent tasks, and whether the trend is worth it.
+**Decided** (the user, 2026-11-08):
+1. The Settings page's "Storage" category becomes "Diagnostic", with two groups, Storage View and Performance View
+   (as the side menu has both pages under Diagnostic). The docs keep a page each (`storage.md`, `performance.md`).
+2. Recent Processing: an admin (superuser) sees every user's tasks, as on the Storage page; others their own.
+3. The last 10 completed tasks, with a trend line (the recent tasks' seconds per image against the earlier ones').
 
 **Phase**: branch `performance-view`, after Backup and Import.
 
