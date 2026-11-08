@@ -10,6 +10,12 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Hide Navigation Pane: three steps** (the user's request, 2026-11-07) — branch `nav-tab-three-states`: the tab
+  cycles shown → icons only → hidden → shown at WebODM's 250 px (a dragged width is given up, as "default size"
+  asks). Icons only is Resize Navigation Pane's narrowest view (`tweakui-nav-icons`, tooltips), with or without that
+  setting; it is remembered as the width (`tweakui-nav-width` = 50), which the tab alone may restore. Code in
+  `nav_pane.js` (`create`'s `cycle`; `createResize`'s `choose`, `restore`, `allowIcons`), tests in
+  `__tests__/nav_pane.test.js`, `features.py`'s description, `docs/general.md`, README, CHANGELOG.
 - **Open Full Frame in Title Case** (the user's decision on the Mac review's open point, 2026-11-07) — branch
   `open-full-frame-title-case`: `source_frames.js` (the button and the photo's tooltip), `docs/map-2d.md`, CHANGELOG,
   screenshots `source-frames-2d` and `source-frames-3d` retaken.

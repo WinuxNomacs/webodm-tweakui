@@ -59,8 +59,9 @@ CATEGORIES = [
                       "WebODM's Windows app, which has no header."),
                     preview="units-in-header", scripts=["units_menu.js"]),
             Setting("hide_nav_pane", False, _("Hide Navigation Pane"),
-                    _("A small tab on the divider between the side menu and the page, near the top: click it to hide "
-                      "the side menu and give the page the whole width, and again to show it. Remembered in this "
+                    _("A small tab on the divider between the side menu and the page, near the top. Each click takes "
+                      "the side menu one step: its icons alone (each one's name shows when you point at it), then "
+                      "hidden, giving the page the whole width, then back to its usual width. Remembered in this "
                       "browser. Not on a phone, where the side menu is already the header's menu button."),
                     preview="hide-navigation-pane", scripts=["nav_pane.js"]),
             Setting("resize_nav_pane", False, _("Resize Navigation Pane"),

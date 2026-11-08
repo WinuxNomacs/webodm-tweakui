@@ -1,7 +1,8 @@
 // General > Global Controls > Hide Navigation Pane: a small tab on the divider between the side menu (WebODM's
 // navigation pane) and the page, near the top. A click hides the pane, the page takes the whole width and only the
-// tab stays, at the left edge; a click again shows it. Remembered in this browser (localStorage), so the next page
-// opens the same way. Only where WebODM shows the pane beside the page (768 px wide and more, main.css); narrower,
+// tab stays, at the left edge. The tab cycles: the pane at WebODM's width -> its icons alone (the same view as Resize
+// Navigation Pane's narrowest) -> hidden -> WebODM's width again. Remembered in this browser (localStorage), so the
+// next page opens the same way. Only where WebODM shows the pane beside the page (768 px wide and more, main.css); narrower,
 // the pane is the header's hamburger menu, left as it is. The settings page announces each saved change
 // ("tweakuiSettingsChanged"), so turning it on or off there shows or removes the tab at once.
 // General > Global Controls > Resize Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
@@ -65,24 +66,38 @@
         return Math.min(Math.round(width), Math.max(DEFAULT_WIDTH, Math.floor(windowWidth / 2)));
     }
 
-    function create(doc, win) {
+    function create(doc, win, sizer) {
         var html = doc.documentElement, tab = null;
+        sizer = sizer || createResize(doc, win);
 
         function hidden() { return html.classList.contains(HIDDEN); }
 
+        // What a click does next: shown at full width -> its icons alone -> hidden -> shown at WebODM's width
         function label() {
-            var text = hidden() ? "Show Navigation Pane" : "Hide Navigation Pane";
+            if (!tab) return;
+            var icons = html.classList.contains(ICONS);
+            var text = hidden() ? "Show Navigation Pane" : icons ? "Hide Navigation Pane" : "Show Icons Only";
             tab.setAttribute("title", text);
             tab.setAttribute("aria-label", text);
             tab.setAttribute("aria-expanded", hidden() ? "false" : "true");
             tab.firstChild.className = "fa " + (hidden() ? "fa-chevron-right" : "fa-chevron-left");
+        }
+        sizer.onChange(label);
+
+        function cycle() {
+            if (hidden()) {
+                // Quietly: showing the pane tells the maps
+                if (sizer.width() !== DEFAULT_WIDTH) sizer.choose(DEFAULT_WIDTH, true);
+                setHidden(false, true);
+            } else if (html.classList.contains(ICONS)) setHidden(true, true);
+            else sizer.choose(MIN_WIDTH);
         }
 
         function setHidden(on, remember) {
             if (on === hidden()) return;
             html.classList.toggle(HIDDEN, on);
             if (remember) write(win, HIDDEN_KEY, on ? "1" : null);
-            if (tab) label();
+            label();
             resized(win);
         }
 
@@ -96,7 +111,7 @@
             tab.type = "button";
             tab.appendChild(ui.el(doc, "i"));
             tab.style.top = ((header ? header.offsetHeight : 0) + TAB_GAP) + "px";
-            tab.addEventListener("click", function () { setHidden(!hidden(), true); });
+            tab.addEventListener("click", cycle);
             label();
             parent.appendChild(tab);
             html.classList.add(TAB);
@@ -108,8 +123,10 @@
             html.classList.remove(TAB);
         }
 
-        // Turned on: hidden as last time, and the tab once the page is parsed; turned off: the pane shown, no tab
+        // Turned on: hidden or icons only as last time, and the tab once the page is parsed; turned off: the pane
+        // shown, no tab (and WebODM's width, unless Resize Navigation Pane keeps another)
         function set(enabled) {
+            sizer.allowIcons(enabled);
             if (enabled) {
                 // At once, before the page is drawn, so a hidden pane doesn't flash
                 if (read(win, HIDDEN_KEY) === "1") setHidden(true, false);
@@ -125,9 +142,10 @@
     }
 
     // Resize Navigation Pane: the handle on the divider, and the pane's width
+    // Also the pane's width for the tab's icons only, with or without the handle
     function createResize(doc, win) {
         var html = doc.documentElement, handle = null, width = DEFAULT_WIDTH, listeners = {};
-        var frame = null;
+        var frame = null, custom = false, iconsOk = false, changed = function () {}, titling = false;
 
         function icons() { return html.classList.contains(ICONS); }
 
@@ -144,6 +162,11 @@
                 html.style.setProperty("--tweakui-nav-width", w + "px");
             }
             if (wasIcons && !icons()) untitle();
+            if (icons() && !titling) {
+                titling = true;
+                doc.addEventListener("mouseover", ui.guard(NAME, title));
+            }
+            if (wasIcons !== icons()) changed();
             if (handle) {
                 handle.setAttribute("aria-valuenow", String(w));
                 handle.setAttribute("aria-valuemax", String(Math.max(DEFAULT_WIDTH, Math.floor(win.innerWidth / 2))));
@@ -151,6 +174,24 @@
         }
 
         function remember() { write(win, WIDTH_KEY, width === DEFAULT_WIDTH ? null : String(width)); }
+
+        // A width chosen at once (the tab, the keyboard, a double click): remembered, and the maps told unless quiet
+        function choose(w, quiet) {
+            apply(w);
+            remember();
+            if (!quiet) resized(win);
+        }
+
+        // The width remembered, as far as the settings allow: any with the handle, the icons alone with the tab
+        function restore() {
+            var saved = parseInt(read(win, WIDTH_KEY), 10), w = DEFAULT_WIDTH;
+            if (custom && !isNaN(saved)) w = clampWidth(saved, win.innerWidth);
+            else if (iconsOk && saved === MIN_WIDTH) w = MIN_WIDTH;
+            if (w !== width) {
+                apply(w);
+                resized(win);
+            }
+        }
 
         // The maps follow at most once a frame while dragging
         function resizedSoon() {
@@ -217,11 +258,7 @@
                 remember();
                 resized(win);
             };
-            listeners.reset = function () {
-                apply(DEFAULT_WIDTH);
-                remember();
-                resized(win);
-            };
+            listeners.reset = function () { choose(DEFAULT_WIDTH); };
             // From the keyboard: the arrows widen and narrow it, Home gives the icons, End WebODM's width
             listeners.key = function (e) {
                 var w = null;
@@ -231,18 +268,14 @@
                 else if (e.key === "End") w = DEFAULT_WIDTH;
                 if (w === null) return;
                 e.preventDefault();
-                apply(clampWidth(w, win.innerWidth));
-                remember();
-                resized(win);
+                choose(clampWidth(w, win.innerWidth));
             };
-            listeners.over = ui.guard(NAME, title);
             handle.addEventListener("pointerdown", ui.guard(NAME, listeners.down));
             handle.addEventListener("pointermove", ui.guard(NAME, listeners.move));
             handle.addEventListener("pointerup", ui.guard(NAME, listeners.up));
             handle.addEventListener("pointercancel", ui.guard(NAME, listeners.up));
             handle.addEventListener("dblclick", ui.guard(NAME, listeners.reset));
             handle.addEventListener("keydown", ui.guard(NAME, listeners.key));
-            doc.addEventListener("mouseover", listeners.over);
             doc.body.appendChild(handle);
             apply(width);
         }
@@ -250,35 +283,32 @@
         function removeHandle() {
             if (!handle) return;
             if (handle.parentNode) handle.parentNode.removeChild(handle);
-            doc.removeEventListener("mouseover", listeners.over);
             handle = null;
             html.classList.remove(DRAGGING);
         }
 
         // Turned on: the width as last time, at once (before the page is drawn), and the handle once the page is
-        // parsed; turned off: WebODM's width, no handle (the width is kept for when it is turned on again)
+        // parsed; turned off: no handle, and WebODM's width unless the tab keeps the icons alone (the width is kept
+        // for when it is turned on again)
         function set(enabled) {
-            if (enabled) {
-                var saved = parseInt(read(win, WIDTH_KEY), 10), w = isNaN(saved) ? DEFAULT_WIDTH : clampWidth(saved, win.innerWidth);
-                if (w !== width) {
-                    apply(w);
-                    resized(win);
-                }
-                ui.ready(doc, addHandle);
-            } else {
-                removeHandle();
-                if (width !== DEFAULT_WIDTH) {
-                    apply(DEFAULT_WIDTH);
-                    resized(win);
-                }
-            }
+            custom = enabled;
+            restore();
+            if (enabled) ui.ready(doc, addHandle);
+            else removeHandle();
         }
 
-        return {set: set, apply: apply, width: function () { return width; }, handle: function () { return handle; }};
+        // Hide Navigation Pane on or off: its tab may keep the icons alone
+        function allowIcons(enabled) {
+            iconsOk = enabled;
+            restore();
+        }
+
+        return {set: set, apply: apply, choose: choose, allowIcons: allowIcons, width: function () { return width; },
+            handle: function () { return handle; }, onChange: function (fn) { changed = fn; }};
     }
 
     function start(doc, win) {
-        var pane = create(doc, win), resize = createResize(doc, win), settings = ui.settingsOf(win);
+        var resize = createResize(doc, win), pane = create(doc, win, resize), settings = ui.settingsOf(win);
         pane.set(settings.hide_nav_pane === true);
         resize.set(settings.resize_nav_pane === true);
         doc.addEventListener(EVENT, ui.guard(NAME, function (e) {
