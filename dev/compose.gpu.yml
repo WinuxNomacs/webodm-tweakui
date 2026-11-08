@@ -1,0 +1,12 @@
+# Added by dev/webodm.sh when the machine has an NVIDIA GPU that Docker can use (TW_GPU): the processing node runs
+# WebODM's GPU image (TW_NODE_IMAGE, pinned in dev/webodm.sh) with the GPU reserved for it, as WebODM's own
+# `webodm.sh --gpu` does (its docker-compose.nodeodx.gpu.nvidia.yml).
+services:
+  node-odx-1:
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]

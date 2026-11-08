@@ -1,9 +1,11 @@
 #!/usr/bin/env bash
 # A WebODM checkout in dev mode, with this repo's plugin mounted (see dev/compose.yml).
-#   [TW_WEBODM=3.3.2] dev/webodm.sh up | down | logs [service] | ps | <any docker compose command>
+#   [TW_WEBODM=3.3.2] [TW_GPU=auto|1|0] dev/webodm.sh up | down | logs [service] | ps | <any docker compose command>
 # WebODM 4.0.0 (the default): ignored/WebODM, port 8005, livereload 35734, containers tw-webapp, tw-worker, ...,
 # project and volumes webodm-tweakui. WebODM 3.3.2 (TW_WEBODM=3.3.2): ignored/WebODM-3.3.2 (a worktree of it), port
 # 8006, livereload 35735, containers tw3-webapp, tw3-worker, ..., project and volumes webodm-tweakui-332.
+# The processing node uses the GPU when there is one (TW_GPU=auto, the default: an NVIDIA GPU that nvidia-smi lists
+# and Docker's nvidia runtime); TW_GPU=0 runs it on the CPU, TW_GPU=1 asks for the GPU regardless.
 set -euo pipefail
 repo="$(cd "$(dirname "$0")/.." && pwd)"
 
@@ -25,6 +27,15 @@ case "${TW_WEBODM:=4.0.0}" in
         export TW_NODE_IMAGE=webodm/nodeodx@sha256:d75a3957076af0efbbbd03a6c6d753b29802b9f1715235b42c5d7154ba68fa55 ;;
     *) echo "TW_WEBODM: 4.0.0 or 3.3.2" >&2; exit 1 ;;
 esac
+# WebODM's GPU node (webodm/nodeodx:gpu). There is one GPU tag, the latest build, used by both versions (the node is
+# separate from WebODM: 3.3.2 already talks to a NodeODX 2.4.0 node, as 4.0.0 does).
+gpu_node_image=webodm/nodeodx@sha256:77e913d50929885678b59cf7c0d82aa04289887a025d0516737e5c0f701bedf3
+case "${TW_GPU:=auto}" in
+    auto) if nvidia-smi -L >/dev/null 2>&1 && docker info --format '{{json .Runtimes}}' 2>/dev/null | grep -q nvidia
+          then TW_GPU=1; else TW_GPU=0; fi ;;
+    0|1) ;;
+    *) echo "TW_GPU: auto, 1 or 0" >&2; exit 1 ;;
+esac
 if [ ! -d "$webodm" ]; then
     echo "No WebODM checkout at $webodm (CLAUDE.md, Dev environment, says how to make it)" >&2; exit 1
 fi
@@ -37,6 +48,10 @@ export TW_PLUGIN_DIR="${TW_PLUGIN_DIR:-$repo/tweakui}"
 
 compose=(docker compose -p "$project" --project-directory "$webodm"
          -f "$webodm/docker-compose.yml" -f "$webodm/docker-compose.dev.yml" -f "$repo/dev/compose.yml")
+if [ "$TW_GPU" = 1 ]; then
+    export TW_NODE_IMAGE="$gpu_node_image"
+    compose+=(-f "$repo/dev/compose.gpu.yml")
+fi
 
 case "${1:-}" in
     # New anonymous volumes: the dev compose keeps the image's venv in one, which a new image must not reuse
