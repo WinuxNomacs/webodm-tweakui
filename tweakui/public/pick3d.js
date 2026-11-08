@@ -13,8 +13,8 @@
     "use strict";
 
     // The WebODM elements it relies on, to check against a new WebODM: the 3D view (ModelView, which also sets
-    // window.viewer, Potree's viewer) and its row of action buttons
-    var SELECTORS = {modelView: "[data-modelview]", actionButtons: ".model-action-buttons"};
+    // window.viewer, Potree's viewer), its row of action buttons and their Share button (the 2D map's too)
+    var SELECTORS = {modelView: "[data-modelview]", actionButtons: ".model-action-buttons", share: ".shareButton"};
 
     // TweakUI's marks in the 3D scene (Source Frames' place) are a group of this name
     var MARKS = "tweakui-source-frames";
@@ -65,5 +65,16 @@
         else check();
     }
 
-    return {pick: pick, skipped: skipped, whenViewer: whenViewer, MARKS: MARKS, SELECTORS: SELECTORS};
+    // Puts a TweakUI button (in its own div, as WebODM wraps each plugin's) in a row of action buttons, the 2D map's or
+    // the 3D view's, before WebODM's Share button
+    function beforeShare(row, node) {
+        var share = null;
+        for (var i = 0; i < row.children.length; i++) {
+            var child = row.children[i];
+            if (child.querySelector(SELECTORS.share) || child.matches(SELECTORS.share)) { share = child; break; }
+        }
+        row.insertBefore(node, share || row.lastElementChild);
+    }
+
+    return {pick: pick, skipped: skipped, whenViewer: whenViewer, beforeShare: beforeShare, MARKS: MARKS, SELECTORS: SELECTORS};
 });

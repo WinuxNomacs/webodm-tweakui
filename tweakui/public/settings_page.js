@@ -81,11 +81,7 @@
 
     // A number setting's box: its whole number, or why it isn't one the setting takes
     function numberOf(input) {
-        var text = String(input.value).trim(), min = Number(input.min), max = Number(input.max);
-        if (!/^-?\d+$/.test(text) || Number(text) < min || Number(text) > max) {
-            return "a whole number from " + min + " to " + max;
-        }
-        return Number(text);
+        return ui.wholeNumber(input.value, Number(input.min), Number(input.max));
     }
 
     // A number setting back to its saved value, its slider too
