@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Performance View: the Server card shows CPU Load, as top and htop do: the total across all cores, a bar per core
+  and the load averages (no load average on Windows, which keeps none). The CPU load and the server's and nodes'
+  memory refresh every 3 seconds, set by Refresh Every (1 to 10 seconds, a part of Show Performance View, also on the
+  Performance page), and the disk every 10 seconds, paused while the browser tab is hidden.
 - The settings page's number settings show their default after their name ("Zoom Sensitivity (Default:
   100%)", "Hide Delay (Default: 500 ms)"), and so does the Zoom Sensitivity panel on each map.
 - 2D Map and 3D Map > Controls > Zoom Override > Zoom Sensitivity (100% by default): how far a mouse wheel notch

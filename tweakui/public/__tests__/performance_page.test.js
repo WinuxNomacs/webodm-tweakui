@@ -27,24 +27,42 @@ function report(extra) {
     }, extra);
 }
 
-function page() {
+function page(every = 3) {
     document.body.innerHTML = `
       <div id="tweakui-performance" data-api="/api/plugins/tweakui/">
-        <div class="tweakui-performance-bar"><button data-act="refresh"></button><span class="tweakui-performance-status"></span></div>
+        <div class="tweakui-performance-bar"><button data-act="refresh"></button><span class="tweakui-performance-status"></span>
+          <div class="tweakui-performance-every">
+            <input type="range" class="tweakui-performance-every-slider" min="1" max="10" step="1" value="${every}">
+            <input type="number" id="tweakui-performance-refresh" min="1" max="10" step="1" value="${every}">
+            <span class="tweakui-performance-every-status"></span>
+          </div>
+        </div>
         <div class="tweakui-performance-body"></div>
       </div>`;
     return document.getElementById("tweakui-performance");
 }
 
+// CPU counters as the API gives them: [busy, total] for the machine, then each core
+function cpu(total, cores, load = [1.5, 1.25, 1]) {
+    return {total, cores, load};
+}
+
 const json = (data, ok = true, status = 200) => Promise.resolve({ok, status, json: () => Promise.resolve(data)});
 
-async function started(answers) {
-    const root = page();
+const views = [];
+afterEach(() => {
+    views.splice(0).forEach(v => v && v.stop());
+    jest.useRealTimers();
+});
+
+async function started(answers, every) {
+    const root = page(every);
     const fetchFn = jest.fn(() => {
         const next = answers.length > 1 ? answers.shift() : answers[0];
         return next instanceof Error ? Promise.reject(next) : next;
     });
     const view = performancePage.start(document, window, fetchFn);
+    views.push(view);
     await view.loaded;
     return {root, fetchFn, view};
 }
@@ -174,5 +192,120 @@ describe("the Performance page", () => {
         expect(performancePage.formatDuration(null)).toBe("");
         expect(performancePage.formatNumber(1500)).toBe("1,500");
         expect(performancePage.formatNumber(1234567)).toBe("1,234,567");
+    });
+
+    test("the CPU's busy shares come from the difference between two readings, none from one", () => {
+        const a = cpu([100, 1000], [[50, 500], [50, 500]]), b = cpu([400, 2000], [[350, 1000], [50, 1000]]);
+        expect(performancePage.cpuShares(a, b)).toEqual({total: 0.3, cores: [0.6, 0]});
+        expect(performancePage.cpuShares(null, b)).toBeNull();
+        expect(performancePage.cpuShares(a, cpu([100, 1000], [[50, 500], [50, 500], [0, 10]]))).toEqual({total: null, cores: [null, null, null]});
+    });
+
+    test("CPU Load shows the total, a bar per core and the load averages, and says it is measuring before two readings", () => {
+        const div = document.createElement("table");
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0], [0, 0]]), null);
+        expect(words(div)).toBe("CPU Load Measuring... Load Average 1.50, 1.25, 1.00 (1, 5 and 15 minutes)");
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0], [0, 0]]), {total: 0.375, cores: [0.75, 0]});
+        expect(div.querySelector("[data-cpu-total]").textContent).toBe("38%");
+        expect(texts(div, ".tweakui-performance-core")).toEqual(["1 75%", "2 0%"]);
+        expect(div.querySelector(".tweakui-performance-core .progress-bar").style.width).toBe("75%");
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0]]), {total: 1, cores: [1]});
+        expect(Array.from(div.querySelectorAll(".progress-bar")).map(b => b.className)).toEqual(["progress-bar progress-bar-success", "progress-bar progress-bar-success"]);
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0]], null), {total: 0.5, cores: [0.5]});
+        expect(words(div)).not.toContain("Load Average");
+        expect(words(div)).toContain("of 1 core");
+        expect(performancePage.cpuRows(null, null)).toBe("");
+    });
+
+    test("the live figures are asked a second after the report, then every Refresh Every seconds, with the disk every 10", async () => {
+        jest.useFakeTimers();
+        const first = report({server: Object.assign(report().server, {cpu: cpu([0, 0], [[0, 0], [0, 0]])})});
+        const live = (busy, extra) => json(Object.assign({cpu: cpu([busy, busy * 2 + 1000], [[busy, busy * 2 + 500], [0, busy + 500]]),
+            memory: {total: 64 * GB, free: 32 * GB, used: 32 * GB}, nodes: [{id: 1, online: true, total_memory: 64 * GB, available_memory: 16 * GB}]}, extra));
+        const {root, fetchFn} = await started([json(first), live(500), live(1000), live(1500), live(2000, {disk: {total: 1000 * GB, used: 500 * GB, free: 500 * GB}}), live(2500)]);
+        expect(root.querySelector("[data-server]").textContent).toContain("Measuring...");
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(fetchFn.mock.calls[1][0]).toBe("/api/plugins/tweakui/performance/live");
+        expect(root.querySelector("[data-cpu-total]").textContent).toBe("25%");
+        expect(texts(root, "[data-server] .tweakui-performance-core")).toEqual(["1 33%", "2 0%"]);
+        expect(words(root.querySelector("[data-node='1'] [data-memory]"))).toBe("16 GB free of 64 GB");
+        expect(words(root.querySelector("[data-server]"))).toContain("Memory 32 GB free of 64 GB");
+        await jest.advanceTimersByTimeAsync(2999);
+        expect(fetchFn).toHaveBeenCalledTimes(2);
+        await jest.advanceTimersByTimeAsync(1);
+        expect(fetchFn).toHaveBeenCalledTimes(3);
+        await jest.advanceTimersByTimeAsync(6000);
+        // At 1, 4, 7 and 10 seconds: the disk with the one 10 seconds after the report's
+        expect(fetchFn.mock.calls.map(c => c[0]).slice(1)).toEqual(["/api/plugins/tweakui/performance/live",
+            "/api/plugins/tweakui/performance/live", "/api/plugins/tweakui/performance/live",
+            "/api/plugins/tweakui/performance/live?disk=1"]);
+        expect(words(root.querySelector("[data-server]"))).toContain("Disk 500 GB free of 1000 GB");
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(fetchFn.mock.calls[5][0]).toBe("/api/plugins/tweakui/performance/live");
+    });
+
+    test("no refresh is asked while the last is unanswered, and a failed one keeps the figures", async () => {
+        jest.useFakeTimers();
+        let answer;
+        const pending = new Promise(r => { answer = r; });
+        const {root, fetchFn} = await started([json(report()), pending, new Error("down"), json({cpu: null, nodes: []})]);
+        await jest.advanceTimersByTimeAsync(20000);
+        expect(fetchFn).toHaveBeenCalledTimes(2);
+        answer({ok: true, status: 200, json: () => Promise.resolve({cpu: null, memory: null, nodes: []})});
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(fetchFn).toHaveBeenCalledTimes(3);
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(fetchFn).toHaveBeenCalledTimes(4);
+        expect(words(root.querySelector("[data-server]"))).toContain("Memory 2 GB free of 64 GB");
+    });
+
+    test("the refresh pauses while the browser tab is hidden and resumes at once when it shows again", async () => {
+        jest.useFakeTimers();
+        const {fetchFn} = await started([json(report()), json({cpu: null, nodes: []})]);
+        Object.defineProperty(document, "hidden", {value: true, configurable: true});
+        document.dispatchEvent(new Event("visibilitychange"));
+        await jest.advanceTimersByTimeAsync(30000);
+        expect(fetchFn).toHaveBeenCalledTimes(1);
+        Object.defineProperty(document, "hidden", {value: false, configurable: true});
+        document.dispatchEvent(new Event("visibilitychange"));
+        await jest.advanceTimersByTimeAsync(0);
+        expect(fetchFn).toHaveBeenCalledTimes(2);
+        delete document.hidden;
+    });
+
+    test("Refresh Every starts from the page's value, applies a change at once and saves it to the user's settings", async () => {
+        jest.useFakeTimers();
+        const saved = Object.assign({}, {performance_refresh: 7});
+        const {root, fetchFn, view} = await started([json(report()), json({cpu: null, nodes: []}), json(saved), json({cpu: null, nodes: []})], 5);
+        expect(view.state.seconds).toBe(5);
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(fetchFn).toHaveBeenCalledTimes(2);
+        const slider = root.querySelector(".tweakui-performance-every-slider"), box = root.querySelector("#tweakui-performance-refresh");
+        slider.value = "7";
+        slider.dispatchEvent(new Event("input"));
+        expect(box.value).toBe("7");
+        expect(view.state.seconds).toBe(7);
+        slider.dispatchEvent(new Event("change"));
+        await jest.advanceTimersByTimeAsync(0);
+        const [url, options] = fetchFn.mock.calls[2];
+        expect(url).toBe("/api/plugins/tweakui/settings");
+        expect(options.method).toBe("PATCH");
+        expect(JSON.parse(options.body)).toEqual({performance_refresh: 7});
+        expect(window.TweakUI.settings.performance_refresh).toBe(7);
+        await jest.advanceTimersByTimeAsync(6999);
+        expect(fetchFn).toHaveBeenCalledTimes(3);
+        await jest.advanceTimersByTimeAsync(1);
+        expect(fetchFn).toHaveBeenCalledTimes(4);
+    });
+
+    test("a Refresh Every box out of range puts back the saved value and says why", async () => {
+        const {root, fetchFn, view} = await started([json(report())]);
+        const box = root.querySelector("#tweakui-performance-refresh");
+        box.value = "12";
+        box.dispatchEvent(new Event("change"));
+        expect(box.value).toBe("3");
+        expect(view.state.seconds).toBe(3);
+        expect(root.querySelector(".tweakui-performance-every-status").textContent).toBe("Not saved: a whole number from 1 to 10");
+        expect(fetchFn).toHaveBeenCalledTimes(1);
     });
 });

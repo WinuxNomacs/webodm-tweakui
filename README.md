@@ -40,8 +40,8 @@ Every feature is off until you turn it on, except the theme menu.
   uses, each task's files by kind, compacting or deleting them, and backing up and importing tasks as WebODM's own
   backup zips; administrators see every user's.
 - [**Performance**](https://winuxnomacs.github.io/webodm-tweakui/performance): each processing node's cores, memory
-  and queue, the server's disk and memory, recent tasks' processing times and a trend, and whether the nodes' memory
-  suits your tasks by WebODM's hardware requirements.
+  and queue, the server's CPU load (live, as in top), disk and memory, recent tasks' processing times and a trend,
+  and whether the nodes' memory suits your tasks by WebODM's hardware requirements.
 - [**Administration**](https://winuxnomacs.github.io/webodm-tweakui/administration): superusers can withhold Storage
   and Performance from users (both are available by default).
 

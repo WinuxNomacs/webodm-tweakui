@@ -183,6 +183,24 @@
         return m ? decodeURIComponent(m[1]) : "";
     }
 
+    // Saves some of the user's settings ({name: value}); a promise of the saved settings, which also become
+    // window.TweakUI.settings, refused with the reason (the API's detail)
+    function saveSettings(doc, win, changes, fetchFn) {
+        fetchFn = fetchFn || function (url, options) { return win.fetch(url, options); };
+        return fetchFn("/api/plugins/tweakui/settings", {
+            method: "PATCH",
+            credentials: "same-origin",
+            headers: {"Content-Type": "application/json", "X-CSRFToken": csrfToken(doc)},
+            body: JSON.stringify(changes)
+        }).then(function (res) {
+            return res.json().then(null, function () { return {}; }).then(function (body) {
+                if (!res.ok) throw new Error(body.detail || ("Error " + res.status));
+                if (win.TweakUI) win.TweakUI.settings = body;
+                return body;
+            });
+        });
+    }
+
     // Copies text to the clipboard; a promise
     function copyText(text, doc, win) {
         if (win.navigator && win.navigator.clipboard && win.navigator.clipboard.writeText) {
@@ -204,7 +222,7 @@
     var core = {
         report: report, guard: guard, settingsOf: settingsOf, ready: ready, feature: feature, el: el,
         whenElement: whenElement, sideItem: sideItem, sideLink: sideLink, placeMenu: placeMenu, csrfToken: csrfToken,
-        copyText: copyText, wholeNumber: wholeNumber, SELECTORS: SELECTORS
+        copyText: copyText, wholeNumber: wholeNumber, saveSettings: saveSettings, SELECTORS: SELECTORS
     };
 
     // Puts the helpers on window.TweakUI, beside what settings.js put there
