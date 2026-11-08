@@ -210,7 +210,10 @@
         var id = "tweakui-zoom-sensitivity-" + which;
         var label = el(doc, "label", "tweakui-zoom-sensitivity-label");
         label.htmlFor = id;
-        label.textContent = "Zoom Sensitivity";
+        label.textContent = "Zoom Sensitivity ";
+        var byDefault = el(doc, "span", "tweakui-default text-muted");
+        byDefault.textContent = "(Default: " + NORMAL + "%)";
+        label.appendChild(byDefault);
         var row = el(doc, "div", "tweakui-number");
         var slider = el(doc, "input", "tweakui-zoom-sensitivity-slider");
         slider.type = "range";

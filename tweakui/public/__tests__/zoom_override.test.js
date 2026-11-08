@@ -292,6 +292,8 @@ describe("Zoom Sensitivity", () => {
     test("the button opens the panel with the saved value; Escape, a click outside and the button close it", () => {
         const p = makePanel(settingsApi(), 70);
         expect(p.button.title).toBe("Zoom Sensitivity");
+        expect(p.container.querySelector("label").textContent).toBe("Zoom Sensitivity (Default: 100%)");
+        expect(p.container.querySelector("label .tweakui-default").className).toContain("text-muted");
         expect(p.input.value).toBe("70");
         expect(p.slider.value).toBe("70");
         expect([p.slider.min, p.slider.max, p.slider.step]).toEqual(["10", "200", "10"]);
