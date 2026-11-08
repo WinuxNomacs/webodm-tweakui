@@ -3,7 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+1. **Diagnostic: Performance View, disk activity** (new.md, 2026-11-08; see "Performance View: disk activity") —
+   reads and writes per second for each drive WebODM's server uses, from the system's own counters. Decided by the
+   user: the drives WebODM uses, average size per operation in place of random/sequential, refreshed with CPU Load.
+2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -2255,6 +2258,44 @@ Decided by the user (2026-11-08):
   "Photos Left Out (N)" list, like Other Messages, with a Copy Names button. Each name is a link that opens the photo
   in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
   one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
+
+## Performance View: disk activity (new.md, 2026-11-08)
+
+**Request**: "Performance UI, is it possible to add disk iops stats (e.g. read/write ops per second, random
+read/writes ops per second, etc...) for the logical drives/mounts on the WebODM server?"
+
+**Builds on**: Performance View's Server card (`performance.py`'s `disk_entry`, free of total for MEDIA_ROOT; the
+live API `/api/plugins/tweakui/performance/live`, CPU counters read raw and turned into a load by the page from two
+readings, `cpuShares`; the disk refreshed every 10 s, the CPU every Refresh Every seconds).
+
+**What the system offers** (checked in `tw-webapp`):
+- Linux: `/proc/diskstats` gives each block device's counters since boot: reads and writes completed, merged,
+  sectors, ms spent, ms busy (`io_ticks`). In Docker it is the machine's (here Docker Desktop's VM's), so it also
+  counts the processing node's and the worker's work. `/proc/self/mountinfo` gives each mount's device (major:minor):
+  here `/webodm/app/media` (the tasks) is on `sde`, `/webodm` on `sdd`. No new module needed.
+- Windows (the native app): each logical drive's counters (`\LogicalDisk(C:)\Disk Reads/sec` and the others)
+  through `pdh.dll` with ctypes, read raw as the CPU's GetSystemTimes is.
+- Per second figures come from two readings, as CPU Load does: reads/s, writes/s, read and write MB/s, % busy,
+  average wait (ms) and average size per operation.
+- **Random against sequential can't be counted**: the counters don't tell them apart. What comes close is the
+  average size per operation (small means scattered) and the merged share (Linux merges neighbouring requests).
+  A real random IOPS figure needs a benchmark (writing and reading a test file), which would load the disk while
+  tasks process.
+
+**Proposed**: a Disk Activity part of the Server card (or a card of its own), a row per drive with reads/s and
+writes/s, MB/s each way, % busy and average wait, refreshed with CPU Load; each drive named by its mount points (the
+tasks' drive first, marked Tasks) on Linux, by its letter on Windows. Branch `disk-io`: `performance.py`
+(`diskstats`, `mount_devices`, `windows_disk_counters`, in `live`), `performance_page.js` (rates from two readings,
+the rows), `main.css`; tests in `test_tweakui.py` (a sample `/proc/diskstats` and `mountinfo`, Windows mocked) and
+`performance_page.test.js`; docs `performance.md`, README, CHANGELOG, screenshot `performance`.
+
+**Decided by the user** (2026-11-08):
+1. The drives WebODM's server uses: each disk it has mounted, a row per disk named by its mount points, the tasks'
+   drive first and marked Tasks; on Windows each local drive letter.
+2. No benchmark: reads/s, writes/s, MB/s each way, % busy, average wait and the average size per operation (small
+   means scattered) stand in for random against sequential. Counters only, no load on the disk.
+3. Refreshed with CPU Load (Refresh Every seconds).
+4. Built before the documentation review.
 
 ## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08) — done
 
