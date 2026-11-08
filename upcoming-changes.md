@@ -5,7 +5,8 @@
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
 1. **Diagnostic: Performance View, history graphs** (asked in chat, 2026-11-08; see "Performance View: history
    graphs") — CPU Load, memory and disk activity drawn as graphs over time in place of their bars, so the trend shows
-   while the page is open. Open decisions listed there.
+   while the page is open. Decided: History Length (1-30 min, 5 by default), from the page's opening, the drives'
+   ops/s and Busy, the nodes' memory too.
 2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
@@ -2288,8 +2289,21 @@ newest reading at the right, the window scrolling left; hovering (or touching) a
 under the pointer. The free disk space keeps its bar (it changes slowly). The history is kept in the page while it is
 open (the server stays read only and keeps nothing).
 
-**Open decisions**: how long a window; whether the history only starts when the page opens; which disk figures get
-graphs; whether the nodes' memory gets one too; before the documentation review (as Disk Activity was).
+**Decided by the user** (2026-11-08):
+1. The window is a new per-user setting, **History Length**, 1 to 30 minutes, 5 by default, a part of Show
+   Performance View, also on the Performance page beside Refresh Every (the same slider and box).
+2. The history starts when the page opens and is kept while it is open (Refresh keeps it, a reload starts again);
+   the server keeps nothing.
+3. Each drive: one graph with reads/s and writes/s as two lines, and one for Busy; MB/s, size per operation and wait
+   stay as text.
+4. The nodes' memory gets a graph too.
+5. Built before the documentation review (as Disk Activity was; not asked again).
+
+**Design**: inline SVG, the accent line in `theme-color-button-primary` (currentColor) with a light fill under it,
+writes in the text colour (`theme-stroke-primary`); percent graphs from 0 to 100%, the ops graph scaled to its
+highest reading in the window (shown at its top left); a gap in the line where readings stopped (the tab hidden). The
+page keeps up to 30 minutes of readings, so a longer History Length shows what it has at once. The figure beside a
+graph takes the warning colours its bar had. The free disk space keeps its bar.
 
 ## Performance View: disk activity (new.md, 2026-11-08) — done
 
