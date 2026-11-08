@@ -38,9 +38,9 @@ The CPU load of the machine WebODM's server runs on, the disk WebODM keeps its t
 server's memory, as WebODM's own **System** page shows them.
 
 **CPU Load** is the share of time the processors were busy since the last refresh, as top and htop show it: the
-total across all cores (100% is every core busy), then a small bar for each core, and, on Linux and in Docker, the
-load averages over 1, 5 and 15 minutes (the number of processes running or waiting, to compare with the number of
-cores). Windows keeps no load average, so WebODM's Windows app shows the total and the cores without it. The first
+total across all cores in one bar (100% is every core busy), with how many cores there are, and, on Linux and in
+Docker, the load averages over 1, 5 and 15 minutes (the number of processes running or waiting, to compare with the
+number of cores). Windows keeps no load average, so WebODM's Windows app shows the total without it. The first
 figures show a second after the page opens: a load is the difference between two readings.
 
 No processing node reports its own CPU load (a node's info has its cores and memory only), so this is the server's

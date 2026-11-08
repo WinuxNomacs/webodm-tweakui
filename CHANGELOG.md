@@ -7,8 +7,8 @@
   error (GPS or GCP) and whether the GPU was used. A Notes button opens what the log says the user should know (out of
   memory, photos left out, low overlap, no GPS, GCPs not used, the GPU failing...) in plain sentences with their lines,
   and the log's other warnings and errors. Area and error follow WebODM's unit system.
-- Performance View: the Server card shows CPU Load, as top and htop do: the total across all cores, a bar per core
-  and the load averages (no load average on Windows, which keeps none). The CPU load and the server's and nodes'
+- Performance View: the Server card shows CPU Load, as top and htop do: the total across all cores in one bar (with
+  how many cores) and the load averages (no load average on Windows, which keeps none). The CPU load and the server's and nodes'
   memory refresh every 3 seconds, set by Refresh Every (1 to 10 seconds, a part of Show Performance View, also on the
   Performance page), and the disk every 10 seconds, paused while the browser tab is hidden.
 - The settings page's number settings show their default after their name ("Zoom Sensitivity (Default:

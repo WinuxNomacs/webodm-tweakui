@@ -103,17 +103,12 @@
         return Math.round(share * 100) + "%";
     }
 
-    // The CPU's busy shares between two readings of its counters ({total: [busy, total], cores: [...]}, the API's):
-    // {total, cores}, each from 0 to 1, or null where the counters didn't move; null without two readings
+    // The CPU's busy share between two readings of its counters ({total: [busy, total]}, the API's): {total}, from 0
+    // to 1, or null where the counters didn't move; null without two readings
     function cpuShares(prev, next) {
         if (!prev || !next) return null;
-        function share(a, b) {
-            var all = a && b ? b[1] - a[1] : 0;
-            return all > 0 ? Math.min(Math.max((b[0] - a[0]) / all, 0), 1) : null;
-        }
-        return {total: share(prev.total, next.total), cores: (next.cores || []).map(function (c, i) {
-            return prev.cores && prev.cores[i] ? share(prev.cores[i], c) : null;
-        })};
+        var a = prev.total, b = next.total, all = a && b ? b[1] - a[1] : 0;
+        return {total: all > 0 ? Math.min(Math.max((b[0] - a[0]) / all, 0), 1) : null};
     }
 
     function rowHtml(label, value, extra) {
@@ -168,22 +163,13 @@
         return html + '<div class="tweakui-performance-cards">' + nodes.map(nodeHtml).join("") + "</div>";
     }
 
-    // A core in htop's grid: its number, a bar and its share
-    function coreHtml(share, i) {
-        var known = share !== null && share !== undefined;
-        return '<div class="tweakui-performance-core" title="Core ' + (i + 1) + ": " + (known ? percent(share) : "?") + ' busy">' +
-            '<span class="tweakui-performance-core-name text-muted">' + (i + 1) + "</span>" + barHtml(known ? share : 0, 1, true) +
-            '<span class="tweakui-performance-core-value">' + (known ? percent(share) : "") + "</span></div>";
-    }
-
-    // CPU Load (the total, a bar per core) once two readings give it, and the load averages where the system keeps them
+    // CPU Load (the total of all cores) once two readings give it, and the load averages where the system keeps them
     function cpuRows(cpu, load) {
         if (!cpu) return "";
-        var cores = cpu.cores ? cpu.cores.length : 0, rows;
+        var cores = cpu.cores || 0, rows;
         if (load && load.total !== null) {
             rows = rowHtml("CPU Load", '<span data-cpu-total>' + percent(load.total) + "</span>" +
                 (cores ? ' <span class="text-muted">of ' + cores + (cores === 1 ? " core" : " cores") + "</span>" : ""), barHtml(load.total, 1, true));
-            if (load.cores.length) rows += '<tr><td colspan="2"><div class="tweakui-performance-cores">' + load.cores.map(coreHtml).join("") + "</div></td></tr>";
         } else {
             rows = rowHtml("CPU Load", '<span class="text-muted">Measuring...</span>');
         }

@@ -132,35 +132,26 @@ def memory_stats():
 
 
 def proc_stat_times(path="/proc/stat"):
-    """Linux's CPU time counters from /proc/stat, as [busy, total] (in its ticks): the whole machine's first, then
-    each core's. Idle and waiting for the disk count as not busy, as in top"""
-    times = []
+    """Linux's CPU time counters for the whole machine from /proc/stat's first line, as [busy, total] (in its ticks),
+    or [] without one. Idle and waiting for the disk count as not busy, as in top"""
     with open(path, encoding="ascii") as f:
-        for line in f:
-            if not line.startswith("cpu"):
-                if times:
-                    break
-                continue
-            # user nice system idle iowait irq softirq steal (guest time is already in user)
-            fields = [int(v) for v in line.split()[1:9]]
-            total = sum(fields)
-            idle = sum(fields[3:5])
-            times.append([total - idle, total])
-    return times
+        line = f.readline()
+    if not line.startswith("cpu "):
+        return []
+    # user nice system idle iowait irq softirq steal (guest time is already in user)
+    fields = [int(v) for v in line.split()[1:9]]
+    total = sum(fields)
+    return [total - sum(fields[3:5]), total]
 
 
 def windows_times():
-    """Windows' CPU time counters, as [busy, total] (in 100 ns): the whole machine's (GetSystemTimes) first, then
-    each core's (NtQuerySystemInformation's processor performance), read through ctypes as WebODM's Diagnostic page
-    reads Windows' memory. Kernel time includes idle time on both"""
+    """Windows' CPU time counters for the whole machine (GetSystemTimes), as [busy, total] (in 100 ns), or [] where
+    they can't be read; through ctypes, as WebODM's Diagnostic page reads Windows' memory. Kernel time includes idle
+    time"""
     import ctypes
 
     class FILETIME(ctypes.Structure):
         _fields_ = [("low", ctypes.c_uint32), ("high", ctypes.c_uint32)]
-
-    class PROCESSOR_TIMES(ctypes.Structure):
-        _fields_ = [("idle", ctypes.c_longlong), ("kernel", ctypes.c_longlong), ("user", ctypes.c_longlong),
-                    ("dpc", ctypes.c_longlong), ("interrupt", ctypes.c_longlong), ("interrupts", ctypes.c_ulong)]
 
     def value(t):
         return (t.high << 32) | t.low
@@ -169,21 +160,14 @@ def windows_times():
     if not ctypes.windll.kernel32.GetSystemTimes(ctypes.byref(idle), ctypes.byref(kernel), ctypes.byref(user)):
         return []
     total = value(kernel) + value(user)
-    times = [[total - value(idle), total]]
-    cores = (PROCESSOR_TIMES * (os.cpu_count() or 1))()
-    length = ctypes.c_ulong(0)
-    # 8: SystemProcessorPerformanceInformation; 0: STATUS_SUCCESS
-    if ctypes.windll.ntdll.NtQuerySystemInformation(8, ctypes.byref(cores), ctypes.sizeof(cores),
-                                                    ctypes.byref(length)) == 0:
-        for core in cores[:length.value // ctypes.sizeof(PROCESSOR_TIMES)]:
-            times.append([core.kernel + core.user - core.idle, core.kernel + core.user])
-    return times
+    return [total - value(idle), total]
 
 
 def cpu_entry():
-    """The server's CPU time counters ({total: [busy, total], cores: [[busy, total], ...], load: [1, 5, 15 minutes]
-    or None where the system keeps none, as on Windows}), or None where they can't be read. A load is the difference
-    between two readings, which the page works out; in Docker these are the machine's (or Docker Desktop's VM's)"""
+    """The server's CPU time counters ({total: [busy, total], cores: how many, load: [1, 5, 15 minutes] or None where
+    the system keeps none, as on Windows}), or None where they can't be read. A load is the difference between two
+    readings, which the page works out; in Docker these are the machine's (or Docker Desktop's VM's). Only the total:
+    a bar per core would be too many on a large server"""
     try:
         times = windows_times() if sys.platform == "win32" else proc_stat_times()
     except (OSError, ValueError, AttributeError):
@@ -194,7 +178,7 @@ def cpu_entry():
         load = [round(v, 2) for v in os.getloadavg()]
     except (OSError, AttributeError):
         load = None
-    return {"total": times[0], "cores": times[1:], "load": load}
+    return {"total": times, "cores": os.cpu_count(), "load": load}
 
 
 def disk_entry():
