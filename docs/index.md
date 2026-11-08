@@ -13,23 +13,26 @@ hero:
       link: /install
 features:
   - title: General
-    details: A units menu in the header; the Task Options dialog counts and shows each group's changed options; a task's details show its times, preset, options, ODX command and current step, and a minimized task keeps its buttons; and fireworks, just for fun.
+    details: A units menu in the header; a side menu you can narrow, hide, auto-hide or resize; the Task Options dialog counts and shows each group's changed options, and a preset menu sorted A-Z with a filter; a task's details show its times, preset, options, ODX command and current step, and a minimized task keeps its buttons; and fireworks, just for fun.
     link: /general
   - title: Themes
-    details: Your own colours for WebODM, from 11 presets or your own themes, with a theme menu in the header.
+    details: Your own colours for WebODM, from 11 presets, your own themes (imported and exported as JSON) or themes an administrator publishes, with a theme menu in the header.
     link: /themes
   - title: 2D Map
-    details: Movable panels, other tasks' orthophotos over the task's own, the photos that show a spot, and 3 more zoom steps.
+    details: Movable panels, other tasks' orthophotos over the task's own, the photos that show a spot, 3 more zoom steps with the wheel's sensitivity, and a search box for an address or coordinates.
     link: /map-2d
   - title: 3D Map
-    details: The photos that show a spot on the model, and a wheel that zooms toward what is under the pointer.
+    details: The photos that show a spot on the model, and a wheel that zooms toward what is under the pointer, as far a notch as you choose.
     link: /map-3d
   - title: Storage
-    details: How much of your quota each project and task uses, and cleaning them up.
+    details: How much of your quota each project and task uses, cleaning them up, and backing up and importing tasks.
     link: /storage
   - title: Performance
-    details: Your processing nodes' cores, memory and queue, the server's disk, recent tasks' times, and whether the memory suits your tasks.
+    details: Your processing nodes' cores, memory and queue; the server's CPU load, memory and disk activity, drawn as graphs over time; recent tasks' times, photos left out and what their logs warn of; and whether the memory suits your tasks.
     link: /performance
+  - title: Administration
+    details: Superusers choose whether users may have Storage and Performance.
+    link: /administration
 ---
 
 ## How it works

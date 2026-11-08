@@ -156,5 +156,5 @@ With 4 or more completed tasks to compare, a line says whether the newer half to
 older half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it
 as a hint, not a measurement.
 
-TweakUI only reads: it asks each node for its info, reads the server's CPU counters and each task's report and log,
+TweakUI only reads: it asks each node for its info, reads the server's CPU and disk counters and each task's report and log,
 and changes nothing.
