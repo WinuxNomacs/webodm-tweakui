@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Administration > TweakUI (superusers only, linked after Administration > Theme): Available to Users, where a
+  superuser can withhold Storage View or Performance View from every user but superusers. A withheld setting is
+  greyed with "Turned off by your administrator", and its page and API refuse them; each user's own choice is kept
+  for when it is given back. Both stay available by default.
 - Diagnostic > Performance View (off by default): a Performance page under Diagnostic in the side menu, with each
   processing node's cores, memory, queue and the photos per task its memory suits, the server's disk and memory, the
   last 10 completed tasks' times (an administrator's: everyone's) with a trend, and verdicts by WebODM's hardware

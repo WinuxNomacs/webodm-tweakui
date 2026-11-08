@@ -1419,6 +1419,7 @@ class TestAccess(TweakUITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         body = res.content.decode()
         self.assertIn("Available to Users", body)
+        self.assertRegex(body, r'data-access="storage_view" checked>\s*Storage View\s*</label>')
         self.assertRegex(body, r'data-access="storage_view" checked')
         self.assertRegex(body, r'data-access="performance_view" checked')
         strict = Client(enforce_csrf_checks=True)

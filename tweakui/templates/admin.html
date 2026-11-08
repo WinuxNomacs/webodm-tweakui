@@ -2,7 +2,7 @@
 {% load i18n %}
 {% block content %}
 {% comment %}Administration > TweakUI, for superusers: which features users may have (access.py, features.py's
-admin_help). Each change is saved as it is made (admin_page.js). Colours come only from WebODM's theme classes.{% endcomment %}
+admin_label). Each change is saved as it is made (admin_page.js). Colours come only from WebODM's theme classes.{% endcomment %}
 <div id="tweakui-admin" class="tweakui-settings tweakui-admin" data-api="{{ api }}">
     {% csrf_token %}
     <h3>{% trans "TweakUI" %}</h3>

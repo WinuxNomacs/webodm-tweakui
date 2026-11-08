@@ -1,5 +1,5 @@
 """
-Administration > TweakUI: which features users may have. A setting declared with admin_control (features.py) is
+Administration > TweakUI: which features users may have. A setting declared with an admin_label (features.py) is
 available to users unless a superuser withholds it; superusers always keep it. Kept in the plugin's global data
 store as {name: false} for those withheld, so a new install and an upgrade change nothing.
 """
@@ -60,4 +60,4 @@ def update(changes):
 def page():
     """Administration > TweakUI's checkboxes: each controlled setting's label, description and whether users have it"""
     values = available()
-    return [{"name": s.name, "label": s.label, "help": s.admin_help, "value": values[s.name]} for s in controlled()]
+    return [{"name": s.name, "label": s.admin_label, "help": s.admin_help, "value": values[s.name]} for s in controlled()]

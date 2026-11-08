@@ -2,7 +2,8 @@
 
 ## Storage View > Show Storage View
 
-Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Performance View.
+Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Performance View. A superuser can
+withhold it from users in [Administration > TweakUI](administration).
 
 ![The Storage page with a project opened to its tasks](../tweakui/public/previews/storage.webp)
 

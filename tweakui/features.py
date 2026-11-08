@@ -17,10 +17,11 @@ class Setting:
     """A setting. A boolean one is a checkbox on the settings page; one without a label has no control there (its
     category's template draws it). parts: settings shown under this one, greyed out while it is off. scripts: in
     public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
-    admin_help: a superuser may withhold the setting from users on Administration > TweakUI (access.py), where this
-    describes it."""
+    admin_label and admin_help: a superuser may withhold the setting from users on Administration > TweakUI
+    (access.py), where these name and describe it."""
 
-    def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=(), admin_help=None):
+    def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=(), admin_label=None,
+                 admin_help=None):
         self.name = name
         self.default = default
         self.label = label
@@ -28,8 +29,9 @@ class Setting:
         self.preview = preview
         self.scripts = list(scripts)
         self.parts = list(parts)
+        self.admin_label = admin_label
         self.admin_help = admin_help
-        self.admin_control = admin_help is not None
+        self.admin_control = admin_label is not None
 
 
 class Group:
@@ -175,7 +177,7 @@ CATEGORIES = [
                       "is off). It shows how much of your quota each project and task uses and each task's files by "
                       "kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and "
                       "projects, back up completed tasks as WebODM's backup zips and import zips into a project."),
-                    preview="storage",
+                    preview="storage", admin_label=_("Storage View"),
                     admin_help=_("Users may turn on the Storage page: their projects' and tasks' sizes, compact, delete, "
                                  "back up and import tasks.")),
         ]),
@@ -186,7 +188,7 @@ CATEGORIES = [
                       "plugin is off). It shows each processing node's cores, memory and queue, the server's disk and "
                       "memory, your recent tasks' processing times, and whether the nodes have enough memory for your "
                       "tasks, by WebODM's hardware requirements."),
-                    preview="performance",
+                    preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
                                  "server's disk and memory, and their recent tasks' processing times.")),
         ]),

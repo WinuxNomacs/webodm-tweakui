@@ -197,6 +197,15 @@ const SHOTS = [
         },
     },
     {
+        // Administration > TweakUI as it is (superusers: the account must be one); nothing is changed
+        name: "admin", settings: {},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/admin/");
+            await s.page.waitForSelector(".tweakui-admin");
+            return ".tweakui-admin";
+        },
+    },
+    {
         // Every task of the project minimized, as buttons only
         name: "expand-task-controls", settings: {expand_task_controls: true},
         async run(s) {

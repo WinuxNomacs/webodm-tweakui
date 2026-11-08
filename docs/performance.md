@@ -2,7 +2,8 @@
 
 ## Performance View > Show Performance View
 
-Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Storage View.
+Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Storage View. A superuser can
+withhold it from users in [Administration > TweakUI](administration).
 
 ![The Performance page with a processing node, the server and recent tasks](../tweakui/public/previews/performance.webp)
 
