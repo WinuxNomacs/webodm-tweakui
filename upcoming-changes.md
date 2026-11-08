@@ -10,6 +10,13 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Surprise Me: the browser's menu on a Windows right-click** (a bug the user reported, 2026-11-08) — Windows sends
+  `contextmenu` after `mouseup` (Linux and Mac on the press), and the release had already ended the right-click, so
+  the menu was not blocked; there since right-click rockets were added, unseen because headless Chromium on Linux
+  sends it on the press. Branch `surprise-me-windows-menu`: `surprise_me.js` (`released`, `MENU_AFTER`: a release
+  with no contextmenu yet blocks the one that follows within a second; the menu key later still gets its menu), tests
+  in `__tests__/surprise_me.test.js` (the Windows order, which fails without the fix), live on both stacks with the
+  Windows order sent as events; on Windows itself, checked by the user.
 - **Task Options: Replace Preset Options Menu** (first named Sort Preset Options; the user's request, 2026-11-08; see
   "Task Options: Sort Preset Options") — branch `sort-preset-options`: `tweakui/public/preset_menu.js`, its section
   of `main.css`, tests in `__tests__/preset_menu.test.js`, `features.py`, `dev/selector-check.js` (`WHERE`),

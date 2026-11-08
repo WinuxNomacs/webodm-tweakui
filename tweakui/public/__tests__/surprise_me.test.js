@@ -185,6 +185,55 @@ test("a right-click sends one rocket to the pointer, on a layer of its own, inst
     expect(f.pending()).toEqual([6000]);
 });
 
+// Windows: the press, the release, then the contextmenu event
+async function windowsRightClick(target, x, y, {to = [x, y]} = {}) {
+    target.dispatchEvent(new MouseEvent("mousedown", {bubbles: true, button: 2, clientX: x, clientY: y}));
+    target.dispatchEvent(new MouseEvent("mouseup", {bubbles: true, button: 2, clientX: to[0], clientY: to[1]}));
+    const menu = new MouseEvent("contextmenu", {bubbles: true, cancelable: true, button: 2, clientX: to[0], clientY: to[1]});
+    target.dispatchEvent(menu);
+    await new Promise(r => setTimeout(r, 0));
+    return menu.defaultPrevented;
+}
+
+test("on Windows, where the contextmenu event comes after the release, a right-click is still only a rocket", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    start(f.env);
+    expect(await windowsRightClick(document.body, 300, 200)).toBe(true);
+    expect(await windowsRightClick(document.querySelector("body"), 40, 50, {to: [120, 50]})).toBe(true);
+    expect(f.made[0].launched).toEqual([{count: 1, x: 300, y: 200, active: true}]);
+});
+
+test("after a right-click on Windows, the keyboard's menu key opens the browser's menu: the late event is used once, and only soon after", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    let t = 1000;
+    f.env.now = () => t;
+    start(f.env);
+    await windowsRightClick(document.body, 10, 10);
+    const key = () => {
+        const menu = new MouseEvent("contextmenu", {bubbles: true, cancelable: true});
+        document.body.dispatchEvent(menu);
+        return menu.defaultPrevented;
+    };
+    expect(key()).toBe(false);
+    // A release whose contextmenu never came: one much later is the menu key's
+    document.body.dispatchEvent(new MouseEvent("mousedown", {bubbles: true, button: 2, clientX: 5, clientY: 5}));
+    document.body.dispatchEvent(new MouseEvent("mouseup", {bubbles: true, button: 2, clientX: 5, clientY: 5}));
+    t += 5000;
+    expect(key()).toBe(false);
+});
+
+test("on Linux and Mac (the contextmenu on the press), the menu key right after a right-click still gets its menu", async () => {
+    window.TweakUI = {settings: {surprise_me: true}};
+    const f = fake();
+    start(f.env);
+    await rightClick(document.body, 10, 10);
+    const menu = new MouseEvent("contextmenu", {bubbles: true, cancelable: true});
+    document.body.dispatchEvent(menu);
+    expect(menu.defaultPrevented).toBe(false);
+});
+
 test("a right-drag (the 3D view's pan), Shift + right-click and a right-click in a text field send no rocket; the last two get the browser's menu", async () => {
     window.TweakUI = {settings: {surprise_me: true}};
     document.body.innerHTML = "<input type='text'>";

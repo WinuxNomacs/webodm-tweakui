@@ -23,6 +23,9 @@
     var FIRST = [4, 8], GAP = [4, 8], LENGTH = [5, 10];
     // In pixels: how far the pointer may move between a right button's press and release for a right-click
     var SLOP = 5;
+    // In milliseconds: on Windows the contextmenu event comes after the release; how long after it it still belongs to
+    // the right-click (and gets no browser menu)
+    var MENU_AFTER = 1000;
     // Silent, and the mouse doesn't launch rockets (clicks go to the page)
     var OPTIONS = {
         autoresize: true, sound: {enabled: false}, mouse: {click: false, move: false, max: 1},
@@ -96,7 +99,8 @@
         var random = env.random || Math.random, loader = env.load || load;
         var later = env.setTimeout || function (f, ms) { return win.setTimeout(f, ms); };
         var cancel = env.clearTimeout || function (t) { win.clearTimeout(t); };
-        var on = false, timer = null, show = null, clicks = null, press = null;
+        var now = env.now || function () { return Date.now(); };
+        var on = false, timer = null, show = null, clicks = null, press = null, released = null;
 
         function schedule(range) {
             if (timer !== null) cancel(timer);
@@ -162,17 +166,24 @@
         }
 
         // A right button pressed outside a text field, without Shift, and released where it was pressed is a
-        // right-click; its contextmenu event (on press or on release, by system) gets no browser menu. On a Mac,
+        // right-click; its contextmenu event gets no browser menu. That event comes on the press (Linux, Mac) or
+        // after the release (Windows): a release with no contextmenu yet leaves `released`, so the one that follows
+        // is the right-click's too, and a menu key pressed later still gets its menu. On a Mac,
         // Ctrl+click is a right-click too: a left press with Ctrl that the browser follows with a contextmenu event;
         // its rocket goes then, as there may be no mouseup. Elsewhere Ctrl+click has no contextmenu, so no rocket.
         function mousedown(e) {
             var right = e.button === 2 || (e.button === 0 && e.ctrlKey);
+            released = null;
             press = on && right && !e.shiftKey && !editable(e.target) ? {x: e.clientX, y: e.clientY, ctrl: e.button === 0} : null;
         }
 
         function contextmenu(e) {
-            if (!on || !press || e.shiftKey) return;
+            var late = !press && released !== null && now() - released <= MENU_AFTER;
+            released = null;
+            if (!on || e.shiftKey || !(press || late)) return;
             e.preventDefault();
+            if (!press) return;
+            press.menu = true;
             if (press.ctrl) {
                 var p = press;
                 press = null;
@@ -186,6 +197,7 @@
             if (e.button !== 2 || !press || press.ctrl) return;
             var p = press;
             press = null;
+            if (!p.menu) released = now();
             if (on && Math.abs(e.clientX - p.x) <= SLOP && Math.abs(e.clientY - p.y) <= SLOP) rocket(e.clientX, e.clientY);
         }
 
