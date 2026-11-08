@@ -10,7 +10,8 @@ withhold it from users in [Administration > TweakUI](administration).
 The **Diagnostic** item in the side menu gets a **Performance** sub-item, after **System** (WebODM's own Diagnostic
 page) and **Storage** if that is on too. If an administrator has turned the Diagnostic plugin off, the **TweakUI**
 item gets it instead. The page is asked afresh each time it opens, and again with **Refresh**. While it is open, the
-CPU load and the memory refresh by themselves (see [Refresh Every](#refresh-every)), and the disk every 10 seconds.
+CPU load, the disks' activity and the memory refresh by themselves (see [Refresh Every](#refresh-every)), and the
+free disk space every 10 seconds.
 
 At the top are sentences on what the figures mean: whether a processing node has enough memory for your largest
 task, about how many photos per task each node suits, tasks waiting on a node that processes only so many at a time,
@@ -48,12 +49,31 @@ machine. When the node runs on the same machine, as in WebODM's usual install an
 node's load too; a node on another machine is not measured. In Docker the figures are the computer's (on Windows and
 macOS, Docker's own virtual machine's), the same that the containers share.
 
+### Disk Activity
+
+Beside the server's card, a card for each disk WebODM's server uses, named as the system names it (`sde`, or a drive
+letter such as `C:` in WebODM's Windows app), with where it is mounted. The disk that holds the tasks comes first,
+marked **Tasks**. Since the last refresh, each shows:
+
+- **Reads** and **Writes**: operations per second, bytes per second, and the average size of one.
+- **Busy**: the share of time the disk was working, with a bar that turns to a warning colour past 80% and to danger
+  past 95%. A disk that is always busy holds the processing up.
+- **Wait**: the average time an operation took, waiting included.
+
+The system's counters don't tell random from sequential work. The size of one operation hints at it: small ones (a
+few KB) are scattered, random work, and large ones (hundreds of KB and up) are sequential. Nothing is written to the
+disk to measure it: the figures are the system's own counters, read as they are.
+
+The counters are for each whole disk, whatever uses it. In Docker they are the disks of the machine Docker runs on (on
+Windows and macOS, Docker's own virtual machine's), so the processing node's and the worker's work on the same disk
+counts too.
+
 ### Refresh Every
 
 A part of Show Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the
-server's memory and each node's memory, from 1 to 10 seconds. It is on the settings page and at the top of the
+disks' activity, the server's memory and each node's memory, from 1 to 10 seconds. It is on the settings page and at the top of the
 Performance page, beside **Refresh** (a slider and a box, as for the other number settings); a change there applies at
-once and is saved when you let go of the slider or leave the box. The disk refreshes every 10 seconds. Nothing is
+once and is saved when you let go of the slider or leave the box. The free disk space refreshes every 10 seconds. Nothing is
 refreshed while the browser tab is hidden, and a refresh waits for the last to be answered.
 
 ## Recent Processing
