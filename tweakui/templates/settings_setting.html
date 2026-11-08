@@ -1,10 +1,10 @@
 {% comment %}A setting on the settings page (features.py): a checkbox with its label and description, or for a number
-setting its label, a slider in its steps and a box for any whole number in its range; and its preview's name for
+setting its label with its default, a slider in its steps and a box for any whole number in its range; and its preview's name for
 settings_page.js; one an admin withholds from the user (access.py) greyed, with the reason{% endcomment %}
 {% load i18n %}
 <div class="tweakui-setting{% if setting.number %} tweakui-number-setting{% endif %}{% if setting.withheld %} tweakui-withheld{% endif %}"{% if setting.preview %} data-preview="{{ setting.preview }}"{% endif %}>
     {% if setting.number %}
-    <label for="tweakui-{{ setting.name }}">{{ setting.label }}</label>
+    <label for="tweakui-{{ setting.name }}">{{ setting.label }} <span class="tweakui-default text-muted">{% blocktrans with value=setting.default %}(Default: {{ value }}){% endblocktrans %}</span></label>
     <div class="tweakui-number">
         <input type="range" data-slider-of="{{ setting.name }}" min="{{ setting.number.min }}" max="{{ setting.number.max }}" step="{{ setting.number.step }}" value="{{ setting.value }}" aria-label="{{ setting.label }}"{% if setting.withheld %} disabled{% endif %}>
         <input type="number" id="tweakui-{{ setting.name }}" class="form-control input-sm theme-border" data-setting="{{ setting.name }}" min="{{ setting.number.min }}" max="{{ setting.number.max }}" step="1" value="{{ setting.value }}" data-saved="{{ setting.value }}"{% if setting.withheld %} disabled{% endif %}>

@@ -280,6 +280,7 @@ class TestSettingsPage(TweakUITestCase):
         self.assertLess(general.index('data-setting="auto_hide_delay"'), general.index('data-setting="resize_nav_pane"'))
         self.assertIn("Auto-hide Navigation Pane", general)
         self.assertIn("Hide Delay", general)
+        self.assertIn('Hide Delay <span class="tweakui-default text-muted">(Default: 500 ms)</span>', general)
         self.assertIn('data-slider-of="auto_hide_delay" min="200" max="3000" step="100" value="500"', general)
         self.assertIn('type="number" id="tweakui-auto_hide_delay"', general)
         self.assertEqual(self.patch({"auto_hide_nav_pane": True, "auto_hide_delay": 1250}).json(),
@@ -297,6 +298,7 @@ class TestSettingsPage(TweakUITestCase):
             self.assertLess(override, box)
             self.assertLess(box, section.index('data-setting="zoom_sensitivity_%s"' % which))
             self.assertIn('data-slider-of="zoom_sensitivity_%s" min="10" max="200" step="10" value="100"' % which, section)
+            self.assertIn('Zoom Sensitivity <span class="tweakui-default text-muted">(Default: 100%)</span>', section)
         self.assertEqual(self.patch({"zoom_override_2d": True, "zoom_sensitivity_2d": 35, "zoom_sensitivity_3d": 200}).json(),
                          defaults(zoom_override_2d=True, zoom_sensitivity_2d=35, zoom_sensitivity_3d=200))
         self.assertEqual(self.script_settings(self.client)["zoom_sensitivity_2d"], 35)

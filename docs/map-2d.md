@@ -55,7 +55,8 @@ wheel, the + button and a pinch. Past the orthophoto's own detail, its pixels ar
 
 ### Zoom Sensitivity
 
-A part of Zoom Override, at 100% unless you change it.
+A part of Zoom Override, at 100% unless you change it. Its label says "(Default: 100%)", on the settings page
+and in the panel on the map, as a reminder that 100% is WebODM's own.
 
 ![The Zoom Sensitivity panel open beside its button at the bottom left of the map](../tweakui/public/previews/zoom-sensitivity-2d.webp)
 

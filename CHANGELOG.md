@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- The settings page's number settings show their default after their name ("Zoom Sensitivity (Default:
+  100%)", "Hide Delay (Default: 500 ms)"), and so does the Zoom Sensitivity panel on each map.
 - 2D Map and 3D Map > Controls > Zoom Override > Zoom Sensitivity (100% by default): how far a mouse wheel notch
   zooms, from 10% to 200%, for each map. It is on the settings page and on the map itself: a gauge button (at the
   bottom left of the 2D map, beside Share in the 3D view) opens a slider and a box that the zoom follows at once,

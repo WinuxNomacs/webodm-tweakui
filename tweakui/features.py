@@ -257,14 +257,22 @@ def scripts():
     return names
 
 
+def with_unit(value, unit):
+    """A number with its unit as the settings show it, such as 100% or 500 ms"""
+    if not unit:
+        return str(value)
+    return "%s%s" % (value, unit) if str(unit) == "%" else "%s %s" % (value, unit)
+
+
 def page(values, withheld=()):
-    """The settings page's categories, each setting with the user's value (values: settings.load); a withheld one
-    (access.withheld) is greyed"""
+    """The settings page's categories, each setting with the user's value (values: settings.load) and, for a number
+    setting, its default; a withheld one (access.withheld) is greyed"""
     def control(setting):
         return {"name": setting.name, "label": setting.label, "help": setting.help, "preview": setting.preview,
                 "value": values.get(setting.name, setting.default), "withheld": setting.name in withheld,
                 "number": ({"min": setting.number[0], "max": setting.number[1], "step": setting.number[2]}
                            if setting.number else None),
+                "default": with_unit(setting.default, setting.unit) if setting.number else None,
                 "unit": setting.unit, "parts": [control(p) for p in setting.parts]}
 
     return [{"id": c.id, "label": c.label, "icon": c.icon, "template": c.template,
