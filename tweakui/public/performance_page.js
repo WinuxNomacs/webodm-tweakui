@@ -533,7 +533,8 @@
             win.removeEventListener("scroll", hideThumb, true);
         }
 
-        // Photos Left Out: hovering or focusing a photo's name shows its thumbnail beside it, in one box over the page
+        // Photos Left Out: hovering or focusing a photo's name shows its thumbnail to its right, from its top down (so the
+        // note above stays readable), in one box over the page
         var thumb = null;
         function hideThumb() { if (thumb) thumb.hidden = true; }
         function showThumb(link) {
@@ -550,7 +551,7 @@
             }
             var box = link.getBoundingClientRect(), view = win.innerHeight || 0, wide = win.innerWidth || 0;
             thumb.style.left = Math.round(Math.max(8, Math.min(box.right + 12, wide - PHOTO_HOVER - 24))) + "px";
-            thumb.style.top = Math.round(Math.max(8, Math.min(box.top - PHOTO_HOVER / 2, view - PHOTO_HOVER - 16))) + "px";
+            thumb.style.top = Math.round(Math.max(8, Math.min(box.top - 4, view - PHOTO_HOVER - 16))) + "px";
             thumb.hidden = false;
         }
         function photoLink(e) { return e.target && e.target.closest ? e.target.closest("[data-photo]") : null; }
