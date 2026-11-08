@@ -2,11 +2,19 @@
 
 ## Phases (current and upcoming)
 
-**Up next**
-1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+**Up next** (order proposed, to confirm)
+1. **Zoom Sensitivity: "(Default: 100%)"** (new.md, 2026-11-08; see "Zoom Sensitivity: the default shown") — the
+   panel on each map says what WebODM's own is. Open decision listed there.
+2. **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load
+   and refresh") — per-core and total CPU load like top/htop, refreshed every 1-10 s (3 by default), disk every 10 s.
+   Open decisions listed there.
+3. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
+   "Performance View: Recent Processing and the task's log") — more per task from its stats.json, and what its log
+   says that the user should know. Open decisions listed there.
+4. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+5. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -2066,6 +2074,103 @@ the settings declared in `features.py` and their `parts`, the settings page's on
 2D map TweakUI's own wheel (Leaflet's turned off, `zoomSnap` 0) replaces Leaflet's whenever the sensitivity isn't
 100%, above too: Leaflet's rounding up to a whole step can't give 150%. A notch is that share of the steps Leaflet
 itself takes for it on the browser (two on Chrome for Linux and macOS, one on Windows and Firefox).
+
+## Zoom Sensitivity: the default shown (new.md, 2026-11-08)
+
+**Request**: "On the zoom sensitivity slider add the text (Default: 100%). This will help remind the user that 100%
+is WebODM's default."
+
+**Builds on**: Zoom Sensitivity's panel (`zoom_override.js` `panel`: the label "Zoom Sensitivity" above the slider,
+on the 2D map's bottom-left button and the 3D view's button before Share) and the settings page's number settings
+(`settings_setting.html`, shared with Auto-hide Navigation Pane's Hide Delay).
+
+**Proposed phase**: the panel's label reads "Zoom Sensitivity (Default: 100%)", the "(Default: 100%)" in the muted
+text of WebODM's theme; the screenshots `zoom-sensitivity-2d` and `-3d` retaken; Jest.
+
+**Open decision**: the map panels only, or also the settings page, where every number setting would show its default
+the same way (Zoom Sensitivity's two and Hide Delay)?
+
+## Performance View: live CPU Load and refresh (new.md, 2026-11-08)
+
+**Requests**: "On the Performance UI, add CPU Load values akin to top/htop along with total cpu usage percentage of
+100% across all cores. Could this even work on native Windows?" and "would it be possible to refresh cpu and memory
+information on a user adjustable window of seconds between 1-10, default to 3? Disk information should refresh
+every 10 seconds."
+
+**Builds on**: the Performance page (`performance.py` `report`, `performance_page.js`: nodes' cards, Server, Recent
+Processing, verdicts; refreshed on opening and by its Refresh button) and the number settings (Hide Delay's slider
+and box).
+
+**What can be measured** (checked 2026-11-08):
+- No processing node reports its CPU load: NodeODX's `/info` has cores and memory only. So the load is of the machine
+  WebODM's server runs on, which is the node's own machine when the node is local (the dev stacks, the Windows app,
+  WebODM's default install). A node on another machine shows no load, and says so.
+- `psutil` is in neither WebODM's requirements nor its Windows app, so it is read without it:
+  - **Linux** (and Docker, where a container's `/proc/stat` and `/proc/loadavg` are the machine's, or Docker
+    Desktop's VM on Windows and Mac): each core's and the total's busy share from `/proc/stat`, and the load
+    averages over 1, 5 and 15 minutes (`os.getloadavg`), as top and htop show them.
+  - **Native Windows: yes**, through `ctypes` as WebODM's own Diagnostic plugin reads Windows' memory:
+    `GetSystemTimes` for the total and `NtQuerySystemInformation` (processor performance) for each core. Windows
+    keeps no load average, so that line is left out there.
+- A load is the difference between two readings: the API returns each core's running counters and the page works out
+  the share between one refresh and the next, so the server keeps nothing and never waits.
+
+**Proposed phase**:
+1. **CPU Load** in the Server card: the total as a bar and percentage (0-100% across all cores), a small bar per core
+   (htop's grid, wrapping at phone width), and the load averages with the core count beside them on Linux.
+2. **Refresh**: a light API (`/api/plugins/tweakui/performance/live`) with CPU counters and the server's memory every
+   "Refresh Every" seconds, 1-10, 3 by default; disk every 10 s; the nodes' memory with the CPU (each node asked with
+   its short timeout, a refresh skipped while the last is unanswered); paused while the browser tab is hidden. The
+   full report (nodes' cards, Recent Processing, verdicts) stays on opening and Refresh.
+3. **Refresh Every** is a per-user number setting, a part of Show Performance View (Settings > Diagnostic), with the
+   same slider and box on the Performance page itself, saved as Zoom Sensitivity's are.
+4. **Tests**: Django (the counters from a sample `/proc/stat`; Windows' path with `ctypes` mocked; the setting's range),
+   Jest (shares from two readings, the bars, the timer and its pause, the disk's 10 s), live on both stacks and on the
+   Windows app; docs `performance.md`, screenshot `performance` retaken.
+
+**Open decisions**:
+1. What CPU Load shows: per-core bars, total and load averages (as above), or the total and load averages only?
+2. Does the server's memory need a per-process view (WebODM's and the node's processes, as top lists them), or the
+   machine's used and free, as now?
+
+## Performance View: Recent Processing and the task's log (new.md, 2026-11-08)
+
+**Request**: "On the Performance UI, under Recent Processing, what other task performance information would be
+useful in this table? Could we also check the task's log for useful errors or messages the User should be made aware
+of?"
+
+**Builds on**: Recent Processing (`performance.py` `recent_tasks`, `task_entry`, `read_stats`: the last 10 completed
+tasks with images, total time, time per photo, slowest step, average GSD and node).
+
+**What a task already has** (a 220-photo task on the 4.0.0 stack, 2026-11-08):
+- `odm_report/stats.json`: photos reconstructed of those given (`reconstruction_statistics`: 208 of 220),
+  `components` (separate reconstructions: 1), area covered (`processing_statistics.area`: 384.7 m²), start and end
+  times, reprojection error, GPS error (`gps_errors.average_error`), GCPs used (`has_gcp`, `gcp_errors`), points in
+  the point cloud.
+- The task: options it ran with, its size on disk, the engine's version (`odm_report` or the node).
+- `data/console_output.txt` (in 3.3.2 and 4.0.0 alike): 45 `[WARNING]` lines in that task's log, most of them noise
+  (`CPLE_AppDefined ... RowsPerStrip not defined`, one per texture), and among them the one that matters: "Multiple
+  reconstructions detected (2), this might be an indicator that some areas did not have sufficient overlap". The log
+  also says whether the GPU was used (`no_gpu: False`, `--cuda-device`), the memory OpenMVS saw (`RAM: 58.86GB`), and
+  on a failure the error and often why (out of memory, killed, not enough photos).
+
+**Proposed phase**:
+1. **More columns** (to choose, below), wrapping into the row's detail at phone width.
+2. **Notes from the log**: each listed task's log read server side (only its end and the lines that match, so a large
+  log stays cheap) against a short list of known messages, each with a plain sentence: low overlap (multiple
+  reconstructions), photos left out (reconstructed fewer than given), GPU not used or not found, out of memory or
+  killed, photos resized, images without GPS; WebODM's noise (`CPLE_AppDefined`) ignored. Shown as a badge on the row
+  ("2 notes") that opens them, each with its line from the log.
+3. **Failed and canceled tasks** listed too (now only completed ones), with their error and the log's reason, so a
+  failure isn't missed.
+4. **Tests**: Django (each known message against sample logs; a missing or huge log; stats.json fields missing),
+  Jest (the columns, the notes), both stacks live; docs, screenshot.
+
+**Open decisions**:
+1. Which columns: photos reconstructed of given, area covered, GPS or GCP error, GPU used, separate reconstructions,
+   size on disk, options (preset name).
+2. Failed and canceled tasks in the list too, or completed only?
+3. The notes: the known messages above only, or also every other `[WARNING]` and `[ERROR]` line (deduplicated)?
 
 ## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
 
