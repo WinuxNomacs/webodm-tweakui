@@ -2,11 +2,15 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (order confirmed by the user, 2026-11-08)
-1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+**Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
+1. **Performance View: CPU Load without the per-core bars** (new.md, 2026-11-08; see "Performance View: CPU Load
+   without the per-core bars") — the total only; no open decisions.
+2. **Performance View: the photos left out, by name** (new.md, 2026-11-08; see "Performance View: the photos left
+   out, by name") — decided.
+3. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+4. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -2202,6 +2206,33 @@ tasks with images, total time, time per photo, slowest step, average GSD and nod
 2. Failed and canceled tasks are listed too, among the last 10, marked, with their error and the log's reason.
 3. Notes: the known messages, each with a plain sentence; every other `[WARNING]` and `[ERROR]` line (deduplicated,
    `CPLE_AppDefined` left out) in a collapsed "Other Messages" list under them.
+
+## Performance View: CPU Load without the per-core bars (new.md, 2026-11-08)
+
+Request: "Remove the per core cpu load meters. The CPU Load percentage of the total number of cores is sufficient. On a
+server with 128 cores this would breakdown quickly."
+
+Builds on "Performance View: live CPU Load and refresh". Diagnostic > Performance > Server: CPU Load keeps its total bar
+("of N cores") and the load averages; htop's grid of a bar per core goes. The live API stops sending each core's
+counters (`proc_stat_times` and `windows_times` read only the total), so a 128-core server's answer stays small.
+Tests, `performance.md`, CHANGELOG and the `performance` screenshot follow. No open decisions.
+
+## Performance View: the photos left out, by name (new.md, 2026-11-08)
+
+Request: "Regarding Recent Processing, when photos are left out, is it possible to list which ones so the user can
+manually reference them?"
+
+Builds on "Performance View: Recent Processing and the task's log". WebODM keeps a task's photos in its folder
+(`Task.scan_images`, the same in 3.3.2 and 4.0.0) and the report's `odm_report/shots.geojson` lists the placed ones
+(`properties.filename`), so the photos left out are the folder's images (by extension: not the GCP or geo file) that
+the shots don't name. The log gives a reason for some ("No features found in image NAME", "GPS position not available
+for NAME"). Only for a completed task with a shots.geojson; a huge list is capped (the rest counted).
+
+Decided by the user (2026-11-08):
+- Diagnostic > Performance > Recent Processing > a task's Notes: under the "photos were left out" note, a collapsed
+  "Photos Left Out (N)" list, like Other Messages, with a Copy Names button. Each name is a link that opens the photo
+  in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
+  one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
 
 ## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
 
