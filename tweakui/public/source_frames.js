@@ -14,7 +14,8 @@
     "use strict";
 
     // The WebODM elements it relies on, to check against a new WebODM: the 2D map's row of action buttons and the
-    // Share button in it (the 3D view's come through pick3d.js), and the 3D view's task
+    // Share button in it, which pick3d.js's beforeShare puts the button before (the 3D view's come through pick3d.js),
+    // and the 3D view's task
     var SELECTORS = {mapButtons: ".actionButtons", share: ".shareButton", modelView: "[data-modelview]"};
     var NAME = "source_frames";
 
@@ -633,12 +634,7 @@
         b.appendChild(icon(doc, "fa-crosshairs"));
         b.addEventListener("click", onClick);
         wrap.appendChild(b);
-        var share = null;
-        for (var i = 0; i < row.children.length; i++) {
-            var child = row.children[i];
-            if (child.querySelector(SELECTORS.share) || child.matches(SELECTORS.share)) { share = child; break; }
-        }
-        row.insertBefore(wrap, share || row.lastElementChild);
+        pick3d.beforeShare(row, wrap);
         return b;
     }
 

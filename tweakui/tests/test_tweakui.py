@@ -33,8 +33,8 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "map_search": False,
-                 "zoom_override_3d": False, "storage_view": False, "performance_view": False, "show_theme_menu": True, "theme": "webodm"},
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False,
+                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
 
@@ -286,6 +286,23 @@ class TestSettingsPage(TweakUITestCase):
                          defaults(auto_hide_nav_pane=True, auto_hide_delay=1250))
         self.assertIn('data-saved="1250"', self.client.get("/plugins/tweakui/").content.decode())
         self.assertEqual(self.script_settings(self.client)["auto_hide_delay"], 1250)
+
+    def test_zoom_sensitivity_is_a_part_of_each_zoom_override_from_10_to_200_percent(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        for category, which in (("map2d", "2d"), ("map3d", "3d")):
+            section = page[page.index('<section id="tweakui-%s"' % category):]
+            section = section[:section.index("</section>")]
+            override = section.index('data-setting="zoom_override_%s">' % which)
+            box = section.index('data-depends="zoom_override_%s"' % which)
+            self.assertLess(override, box)
+            self.assertLess(box, section.index('data-setting="zoom_sensitivity_%s"' % which))
+            self.assertIn('data-slider-of="zoom_sensitivity_%s" min="10" max="200" step="10" value="100"' % which, section)
+        self.assertEqual(self.patch({"zoom_override_2d": True, "zoom_sensitivity_2d": 35, "zoom_sensitivity_3d": 200}).json(),
+                         defaults(zoom_override_2d=True, zoom_sensitivity_2d=35, zoom_sensitivity_3d=200))
+        self.assertEqual(self.script_settings(self.client)["zoom_sensitivity_2d"], 35)
+        for value in (9, 201, 50.0):
+            self.assertEqual(self.patch({"zoom_sensitivity_3d": value}).status_code, 400)
+        self.assertIn("zoom_sensitivity_2d takes 10 to 200", self.patch({"zoom_sensitivity_2d": 300}).json()["detail"])
 
     def test_a_number_setting_refuses_a_number_out_of_its_range_or_not_whole(self):
         for value in (199, 3001, 500.0, "500", True):

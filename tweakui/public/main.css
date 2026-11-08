@@ -243,6 +243,22 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .leaflet-control.tweakui-map-search .tweakui-map-search-results a:hover { text-decoration: underline; }
 .tweakui-map-search .tweakui-map-search-results li.active a { font-weight: bold; }
 
+/* 2D Map and 3D Map > Zoom Override > Zoom Sensitivity: the button on the map (a Leaflet control at the bottom left;
+   in the 3D view an action button) and its panel, beside it on the 2D map and above it in the 3D view */
+.tweakui-zoom-sensitivity { position: relative; }
+.tweakui-zoom-sensitivity-3d { display: inline-block; }
+.leaflet-control.tweakui-zoom-sensitivity a.tweakui-zoom-sensitivity-button { display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.tweakui-zoom-sensitivity .tweakui-zoom-sensitivity-button[aria-expanded=true] { opacity: .8; }
+.tweakui-zoom-sensitivity .tweakui-zoom-sensitivity-box { display: none; position: absolute; z-index: 1000; width: 260px; max-width: calc(100vw - 60px); padding: 6px 8px; border: 1px solid; border-radius: 4px; text-align: left; box-shadow: 0 1px 5px rgba(0,0,0,.4); }
+.tweakui-zoom-sensitivity.open .tweakui-zoom-sensitivity-box { display: block; }
+.tweakui-zoom-sensitivity-2d .tweakui-zoom-sensitivity-box { left: 100%; bottom: -2px; margin-left: 8px; }
+.tweakui-zoom-sensitivity-3d .tweakui-zoom-sensitivity-box { right: 0; bottom: 100%; margin-bottom: 6px; }
+.tweakui-zoom-sensitivity .tweakui-zoom-sensitivity-label { display: block; margin: 0 0 4px; font-weight: bold; }
+.tweakui-zoom-sensitivity .tweakui-number { display: flex; align-items: center; gap: 8px; }
+.tweakui-zoom-sensitivity .tweakui-number input[type=range] { flex: 1 1 auto; min-width: 0; margin: 0; }
+.tweakui-zoom-sensitivity .tweakui-number input[type=number] { flex: 0 0 64px; width: 64px; }
+.tweakui-zoom-sensitivity .tweakui-zoom-sensitivity-status:not(:empty) { margin-top: 4px; }
+
 /* 2D Map and 3D Map > Source Frames (source_frames.js): the bar to pick a place, the window of photos, the full-screen
    viewer. The place drawn on a photo (and the map) is yellow with a dark edge, as it must show on any photo, not
    follow the theme */

@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 2D Map and 3D Map > Controls > Zoom Override > Zoom Sensitivity (100% by default): how far a mouse wheel notch
+  zooms, from 10% to 200%, for each map. It is on the settings page and on the map itself: a gauge button (at the
+  bottom left of the 2D map, beside Share in the 3D view) opens a slider and a box that the zoom follows at once,
+  saved when let go. Away from 100% the 2D map can rest between zoom steps.
 - General > Global Controls > Hide Navigation Pane > Auto-hide Navigation Pane (off by default): the side menu stays
   hidden until the pointer reaches the window's left edge, shows over the page (which keeps its size), and hides
   again after Hide Delay (200 to 3000 ms, 500 by default) once the pointer leaves it. The tab pins it open. The

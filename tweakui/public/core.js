@@ -163,6 +163,15 @@
         return true;
     }
 
+    // A number setting's box: its whole number when it is one from min to max, else what it should be (a message)
+    function wholeNumber(text, min, max) {
+        text = String(text).trim();
+        if (!/^-?\d+$/.test(text) || Number(text) < min || Number(text) > max) {
+            return "a whole number from " + min + " to " + max;
+        }
+        return Number(text);
+    }
+
     // Talking to WebODM
 
     // The session's CSRF token, which WebODM's API (and TweakUI's) wants with a POST, PATCH or DELETE: the page's
@@ -195,7 +204,7 @@
     var core = {
         report: report, guard: guard, settingsOf: settingsOf, ready: ready, feature: feature, el: el,
         whenElement: whenElement, sideItem: sideItem, sideLink: sideLink, placeMenu: placeMenu, csrfToken: csrfToken,
-        copyText: copyText, SELECTORS: SELECTORS
+        copyText: copyText, wholeNumber: wholeNumber, SELECTORS: SELECTORS
     };
 
     // Puts the helpers on window.TweakUI, beside what settings.js put there

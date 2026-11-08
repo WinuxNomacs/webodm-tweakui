@@ -3,12 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — one
-   phase, decided 2026-11-08: a wheel sensitivity per map, on the settings page and in a control on the map itself.
-2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -17,6 +15,20 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — branch
+  `zoom-sensitivity`: `zoom_override.js` (`sensitivity`, `wheelNotch`, `leafletSteps`, `wheel2d`: Leaflet's wheel at
+  100%, otherwise TweakUI's with `zoomSnap` 0, a notch that share of Leaflet's own steps on the browser; `attach3d`'s
+  notch scaled; `panel` and `save`: the gauge button, slider and box, applied at once, saved on release or leaving
+  the box), `features.py` (`zoom_sensitivity_2d`, `zoom_sensitivity_3d`: parts of each Zoom Override, 10-200, step
+  10), `main.css`; shared helpers `core.wholeNumber` (also the settings page's) and `pick3d.beforeShare` (also Source
+  Frames'). Tests: `__tests__/zoom_override.test.js` (11 new), `test_tweakui.py`. Docs `map-2d.md`, `map-3d.md`,
+  README, CHANGELOG, screenshots `zoom-sensitivity-2d`, `zoom-sensitivity-3d`. Found while building: on Chrome for
+  Linux and macOS WebODM's own notch is two zoom steps (Leaflet halves the wheel's pixels only on Windows), so the
+  percentage is of Leaflet's steps on the browser, keeping 90% next to 100%.
+  Live on both stacks (3.3.2 with a task processed and its project deleted afterwards): the 2D wheel at 50% and
+  150% (Chrome on Linux: one and three steps a notch), back to 100% Leaflet's; the panel's keyboard slider, box,
+  refusal, Escape; phone width and a dark theme; the 3D button before Share, a notch at 200% 1.9 times as far as at
+  100%, a click outside closing it; settings put back, no console errors. Not checked on the Windows app.
 - **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
   Pane") — branch `auto-hide-nav`: `nav_pane.js` (`create`'s `refresh`: hidden unless pinned, `peek` over the page
   near the left edge or on focus, hidden Hide Delay after the pointer leaves the pane and the tab or at once with
@@ -1991,7 +2003,7 @@ comes back or a menu inside it is open. No touch (a phone width keeps WebODM's h
    numbers: the settings' type check), a slider in steps of 100 from 200 to 3000 with a number box, default 500.
    This brings the number kind of setting (min, max, step) that Zoom Sensitivity reuses.
 
-## 2D Map and 3D Map: Zoom Sensitivity (new.md, 2026-11-08)
+## 2D Map and 3D Map: Zoom Sensitivity (new.md, 2026-11-08) — done
 
 **Request**: "Regarding the Zoom Override features for both the 2D and 3D Maps, would it be possible to add a Zoom
 sensitivity feature where the user can adjust the map zoom sensitivity independently of each other along with
@@ -2050,8 +2062,10 @@ the settings declared in `features.py` and their `parts`, the settings page's on
   live on both stacks (Playwright's wheel on a task's map and 3D view; 3.3.2 needs a task processed and deleted
   afterwards), desktop and phone width, light and dark.
 
-**Still to settle while building** (no question to the user unless it turns out to matter): the control's icon,
-and whether 2D's `zoomSnap` goes fractional only below 100% or always.
+**Settled while building**: the icon is a gauge (`fa-tachometer-alt`, in both versions' Font Awesome 5.11). On the
+2D map TweakUI's own wheel (Leaflet's turned off, `zoomSnap` 0) replaces Leaflet's whenever the sensitivity isn't
+100%, above too: Leaflet's rounding up to a whole step can't give 150%. A notch is that share of the steps Leaflet
+itself takes for it on the browser (two on Chrome for Linux and macOS, one on Windows and Firefox).
 
 ## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
 
@@ -2068,6 +2082,8 @@ none; the side menu in desktop mode), Units in Header and the Theme menu.
   .navbar-top-links` list, left of the user icon, and makes that list itself (after the toggle button) when the page
   has none. TweakUI reuses the list when it exists, so whichever plugin runs first makes it and both menus land in
   one list; the menus' order depends on which script runs first.
+- DJI Thermal is already installed on the 4.0.0 dev stack (its DJI Thermal Analyzer is in the side menu, seen
+  2026-11-08).
 - In desktop mode (the Windows app, no header bar) DJI Thermal finds no `.navbar-header` and adds no menu; TweakUI
   puts its menus in the side menu.
 - DJI Thermal's `release/1.1.0` is merged into its `main`, with `dist/dji-thermal-1.1.0.zip` built (untagged).

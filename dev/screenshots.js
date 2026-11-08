@@ -318,6 +318,26 @@ const SHOTS = [
         },
     },
     {
+        // Zoom Sensitivity's panel open on the 2D map, beside its button at the bottom left
+        name: "zoom-sensitivity-2d", settings: {zoom_override_2d: true, zoom_sensitivity_2d: 50},
+        async run(s) {
+            await s.openMap();
+            await s.page.click(".tweakui-zoom-sensitivity-2d .tweakui-zoom-sensitivity-button");
+            await s.page.waitForTimeout(500);
+            return "page";
+        },
+    },
+    {
+        // Zoom Sensitivity's panel open in the 3D view, above its button in the action buttons
+        name: "zoom-sensitivity-3d", settings: {zoom_override_3d: true, zoom_sensitivity_3d: 150},
+        async run(s) {
+            await s.open3d();
+            await s.page.click(".tweakui-zoom-sensitivity-3d .tweakui-zoom-sensitivity-button");
+            await s.page.waitForTimeout(500);
+            return "page";
+        },
+    },
+    {
         name: "zoom-override-3d", settings: {zoom_override_3d: false},
         async run(s) {
             // The same 15 wheel notches with the pointer on the lawn, from the task's opening view

@@ -53,6 +53,22 @@ Off by default.
 The map zooms in 3 steps further than WebODM lets it (zoom 27 instead of 24, each step twice as close), with the
 wheel, the + button and a pinch. Past the orthophoto's own detail, its pixels are enlarged.
 
+### Zoom Sensitivity
+
+A part of Zoom Override, at 100% unless you change it.
+
+![The Zoom Sensitivity panel open beside its button at the bottom left of the map](../tweakui/public/previews/zoom-sensitivity-2d.webp)
+
+How far a mouse wheel notch zooms the map, from 10% to 200%: at 100% a notch zooms as in WebODM (one zoom step, or
+two in Chrome on Linux and macOS, where WebODM's map counts a notch as more), at 50% half that, at 200% twice. A
+trackpad's two-finger scroll and pinch follow it too, in shares of a notch. Away from 100% the map can rest between
+steps, its tiles slightly scaled; the + and - buttons still zoom a whole step.
+
+It is on the settings page (a slider in steps of 10 with a box for any whole number from 10 to 200), and on the map
+itself: the gauge button at the bottom left, with the zoom buttons, opens the same slider and box. The map follows
+them at once, so you can try a value while zooming, and it is saved when you let go of the slider or leave the box.
+Escape or a click elsewhere closes it.
+
 ## Controls > Add Search Button
 
 Off by default.
