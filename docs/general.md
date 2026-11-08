@@ -12,6 +12,12 @@ one changes the other. Like WebODM's own selector, the choice is kept in this br
 the menu shows only its ruler icon. WebODM's Windows app has no header, so there the menu is **Units** in the side
 menu, just above TweakUI, and opens below it.
 
+TweakUI's header menus (the units menu and the [theme menu](themes)) come first, before any other plugin's, so the
+order is the same on every page: another plugin's menu, such as DJI Thermal Analyzer's °C / °F, sits between them and
+the user icon. That plugin follows WebODM's units, so choosing Imperial here shows °F there, and choosing °C there
+shows Metric here. On a phone with more menus than fit beside WebODM's name, the menus get narrower, and if that
+isn't enough the name is left out (the logo still leads to the Dashboard).
+
 ## Global Controls > Hide Navigation Pane
 
 Off by default.
