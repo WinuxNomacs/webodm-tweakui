@@ -26,6 +26,10 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* Settings that belong to the one above (data-depends), indented; greyed out while it is off */
 .tweakui-settings .tweakui-subsettings { margin-left: 20px; }
 .tweakui-settings .tweakui-subsettings.tweakui-off { opacity: 0.5; }
+/* A setting an admin withholds from the user (access.py): greyed, with the reason at full strength */
+.tweakui-settings .tweakui-withheld label, .tweakui-settings .tweakui-withheld p.text-muted { opacity: 0.5; }
+.tweakui-settings .tweakui-withheld-reason { font-weight: bold; }
+.tweakui-admin .tweakui-admin-intro { padding: 8px 12px 0; margin: 0; }
 /* Settings > Themes: a grid of themes, each a radio button, its swatch (the theme's own colours, from the page's
    data) and its name */
 .tweakui-settings .tweakui-themes { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: 12px; }

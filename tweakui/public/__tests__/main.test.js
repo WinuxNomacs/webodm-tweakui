@@ -152,7 +152,7 @@ describe("the Storage and Performance views in the side menu", () => {
     });
 });
 
-describe("Administration > TweakUI Themes in the side menu", () => {
+describe("Administration > TweakUI and TweakUI Themes in the side menu", () => {
     afterEach(() => { delete window.TweakUI; delete window.jQuery; window.history.replaceState(null, "", "/"); });
 
     const admin = () => sideMenu('<li><a href="#">Administration<span class="fa arrow"></span></a><ul class="nav nav-second-level">' +
@@ -160,16 +160,17 @@ describe("Administration > TweakUI Themes in the side menu", () => {
         '<li><a href="/admin/app/plugin/">Plugins</a></li></ul></li>');
     const adminItems = () => Array.from(document.querySelectorAll(".nav-second-level > li")).map(li => li.textContent.trim());
 
-    test("a superuser gets the link right after Theme", () => {
+    test("a superuser gets both links right after Theme", () => {
         window.TweakUI = {settings: {}, superuser: true};
         admin();
         run();
-        expect(adminItems()).toEqual(["Brand", "Theme", "TweakUI Themes", "Plugins"]);
+        expect(adminItems()).toEqual(["Brand", "Theme", "TweakUI", "TweakUI Themes", "Plugins"]);
         const link = document.querySelector('a[href="/plugins/tweakui/admin/themes/"]');
         expect(link.querySelector("i").className).toBe("fa fa-palette fa-fw");
+        expect(document.querySelector('a[href="/plugins/tweakui/admin/"] i').className).toBe("fa fa-sliders-h fa-fw");
         expect(link.classList.contains("active")).toBe(false);
         run();
-        expect(adminItems().length).toBe(4);
+        expect(adminItems().length).toBe(5);
     });
 
     test("other users, staff included, get no link", () => {
@@ -190,5 +191,15 @@ describe("Administration > TweakUI Themes in the side menu", () => {
         const list = document.querySelector(".nav-second-level");
         expect(list.parentNode.classList.contains("active")).toBe(true);
         expect(list.classList.contains("in")).toBe(true);
+    });
+
+    test("on Administration > TweakUI, its own link is active and not the themes'", () => {
+        window.TweakUI = {settings: {}, superuser: true};
+        window.history.replaceState(null, "", "/plugins/tweakui/admin/");
+        admin();
+        run();
+        expect(document.querySelector('a[href="/plugins/tweakui/admin/"]').classList.contains("active")).toBe(true);
+        expect(document.querySelector('a[href="/plugins/tweakui/admin/themes/"]').classList.contains("active")).toBe(false);
+        expect(document.querySelector(".nav-second-level").parentNode.classList.contains("active")).toBe(true);
     });
 });

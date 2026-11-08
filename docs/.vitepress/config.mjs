@@ -27,6 +27,7 @@ export default defineConfig({
           { text: "3D Map", link: "/map-3d" },
           { text: "Storage", link: "/storage" },
           { text: "Performance", link: "/performance" },
+          { text: "Administration", link: "/administration" },
         ],
       },
       {

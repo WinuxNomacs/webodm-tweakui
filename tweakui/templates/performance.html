@@ -12,6 +12,8 @@ classes and Bootstrap's.{% endcomment %}
         <span class="tweakui-performance-status text-muted" role="status" aria-live="polite"></span>
     </div>
     <div class="tweakui-performance-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Asking the processing nodes..." %}</p></div>
+    {% elif withheld %}
+    <p class="text-muted"><i class="fa fa-lock fa-fw"></i> {% trans "Performance View is turned off by your administrator." %}</p>
     {% else %}
     <p class="text-muted">{% blocktrans %}The Performance view is off. Turn it on in <a href="/plugins/tweakui/#diagnostic">TweakUI &gt; Diagnostic</a>.{% endblocktrans %}</p>
     {% endif %}

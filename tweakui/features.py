@@ -16,9 +16,12 @@ CORE_SCRIPTS = ["settings.js", "core.js", "main.js"]
 class Setting:
     """A setting. A boolean one is a checkbox on the settings page; one without a label has no control there (its
     category's template draws it). parts: settings shown under this one, greyed out while it is off. scripts: in
-    public/, the ones it needs, in the order they load (a script shared by several settings is loaded once)."""
+    public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
+    admin_label and admin_help: a superuser may withhold the setting from users on Administration > TweakUI
+    (access.py), where these name and describe it."""
 
-    def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=()):
+    def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=(), admin_label=None,
+                 admin_help=None):
         self.name = name
         self.default = default
         self.label = label
@@ -26,6 +29,9 @@ class Setting:
         self.preview = preview
         self.scripts = list(scripts)
         self.parts = list(parts)
+        self.admin_label = admin_label
+        self.admin_help = admin_help
+        self.admin_control = admin_label is not None
 
 
 class Group:
@@ -171,7 +177,9 @@ CATEGORIES = [
                       "is off). It shows how much of your quota each project and task uses and each task's files by "
                       "kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and "
                       "projects, back up completed tasks as WebODM's backup zips and import zips into a project."),
-                    preview="storage"),
+                    preview="storage", admin_label=_("Storage View"),
+                    admin_help=_("Users may turn on the Storage page: their projects' and tasks' sizes, compact, delete, "
+                                 "back up and import tasks.")),
         ]),
         Group(_("Performance View"), [
             # main.js adds the side-menu item; the page is the plugin's own (performance.html)
@@ -180,7 +188,9 @@ CATEGORIES = [
                       "plugin is off). It shows each processing node's cores, memory and queue, the server's disk and "
                       "memory, your recent tasks' processing times, and whether the nodes have enough memory for your "
                       "tasks, by WebODM's hardware requirements."),
-                    preview="performance"),
+                    preview="performance", admin_label=_("Performance View"),
+                    admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
+                                 "server's disk and memory, and their recent tasks' processing times.")),
         ]),
     ]),
 ]
@@ -211,11 +221,13 @@ def scripts():
     return names
 
 
-def page(values):
-    """The settings page's categories, each setting with the user's value (values: settings.load)"""
+def page(values, withheld=()):
+    """The settings page's categories, each setting with the user's value (values: settings.load); a withheld one
+    (access.withheld) is greyed"""
     def control(setting):
         return {"name": setting.name, "label": setting.label, "help": setting.help, "preview": setting.preview,
-                "value": values.get(setting.name, setting.default), "parts": [control(p) for p in setting.parts]}
+                "value": values.get(setting.name, setting.default), "withheld": setting.name in withheld,
+                "parts": [control(p) for p in setting.parts]}
 
     return [{"id": c.id, "label": c.label, "icon": c.icon, "template": c.template,
              "groups": [{"title": g.title, "settings": [control(s) for s in g.settings if s.label]} for g in c.groups]}

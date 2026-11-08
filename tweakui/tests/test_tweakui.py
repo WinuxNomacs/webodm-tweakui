@@ -1389,3 +1389,95 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual(Client().get("/plugins/tweakui/performance/").status_code, status.HTTP_302_FOUND)
         self.assertEqual(Client().get("/api/plugins/tweakui/performance").status_code, status.HTTP_403_FORBIDDEN)
 
+
+
+ACCESS = "/api/plugins/tweakui/access"
+ACCESS_PAGE = "/plugins/tweakui/admin/"
+
+
+class TestAccess(TweakUITestCase):
+    """Administration > TweakUI: superusers withhold Storage View and Performance View from users (access.py)"""
+
+    def setUp(self):
+        super().setUp()
+        self.admin = self.login("testsuperuser")
+        User.objects.create_user(username="teststaff", password="test1234", is_staff=True)
+
+    def withhold(self, **changes):
+        res = self.admin.patch(ACCESS, json.dumps(changes), content_type="application/json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.content)
+        return res.json()
+
+    def test_only_superusers_see_the_page_and_change_what_users_may_have(self):
+        for client in (self.client, self.login("teststaff")):
+            self.assertEqual(client.get(ACCESS_PAGE).status_code, status.HTTP_403_FORBIDDEN)
+            self.assertEqual(client.get(ACCESS).status_code, status.HTTP_403_FORBIDDEN)
+            res = client.patch(ACCESS, json.dumps({"storage_view": False}), content_type="application/json")
+            self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(Client().get(ACCESS_PAGE).status_code, status.HTTP_302_FOUND)
+        res = self.admin.get(ACCESS_PAGE)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        body = res.content.decode()
+        self.assertIn("Available to Users", body)
+        self.assertRegex(body, r'data-access="storage_view" checked>\s*Storage View\s*</label>')
+        self.assertRegex(body, r'data-access="storage_view" checked')
+        self.assertRegex(body, r'data-access="performance_view" checked')
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="testsuperuser", password="test1234")
+        res = strict.patch(ACCESS, json.dumps({"storage_view": False}), content_type="application/json")
+        self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(self.admin.get(ACCESS).json(), {"storage_view": True, "performance_view": True})
+
+    def test_both_are_available_until_withheld_and_only_known_features_take_a_bool(self):
+        self.assertEqual(self.withhold(storage_view=False), {"storage_view": False, "performance_view": True})
+        for bad in ({"theme": False}, {"performance_view": "no"}, ["storage_view"]):
+            res = self.admin.patch(ACCESS, json.dumps(bad), content_type="application/json")
+            self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, bad)
+        self.assertEqual(self.withhold(storage_view=True), {"storage_view": True, "performance_view": True})
+        body = self.admin.get(ACCESS_PAGE).content.decode()
+        self.assertRegex(body, r'data-access="storage_view" checked')
+
+    def test_a_withheld_setting_is_off_for_users_and_their_choice_comes_back_when_given_back(self):
+        self.patch({"storage_view": True, "performance_view": True})
+        self.withhold(storage_view=False)
+        self.assertEqual(self.script_settings(self.client)["storage_view"], False)
+        self.assertEqual(self.script_settings(self.client)["performance_view"], True)
+        # Turning it on is refused; saving another setting keeps the user's choice
+        res = self.patch({"storage_view": True})
+        self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST)
+        self.assertIn("Turned off by your administrator", res.json()["detail"])
+        self.assertEqual(self.patch({"surprise_me": True}).json()["storage_view"], False)
+        self.withhold(storage_view=True)
+        self.assertEqual(self.script_settings(self.client)["storage_view"], True)
+
+    def test_a_withheld_setting_is_greyed_with_the_reason_on_the_settings_page(self):
+        self.patch({"performance_view": True})
+        self.withhold(performance_view=False)
+        body = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertRegex(body, r'data-setting="performance_view" disabled>')
+        self.assertIn("Turned off by your administrator.", body)
+        self.assertRegex(body, r'data-setting="storage_view">')
+        body = self.admin.get("/plugins/tweakui/").content.decode()
+        self.assertNotIn("Turned off by your administrator.", body)
+
+    def test_a_withheld_feature_s_page_and_api_answer_403_to_users_and_staff_but_not_superusers(self):
+        project = Project.objects.create(owner=User.objects.get(username="testuser"), name="Mine")
+        task = Task.objects.create(project=project, name="T")
+        task_api = "/api/plugins/tweakui/storage/%s/%s" % (project.id, task.id)
+        self.withhold(storage_view=False, performance_view=False)
+        for client in (self.client, self.login("teststaff")):
+            res = client.get("/plugins/tweakui/storage/")
+            self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertIn("Storage View is turned off by your administrator.", res.content.decode())
+            res = client.get("/plugins/tweakui/performance/")
+            self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
+            self.assertIn("Performance View is turned off by your administrator.", res.content.decode())
+            for url in ("/api/plugins/tweakui/storage", "/api/plugins/tweakui/performance", task_api):
+                self.assertEqual(client.get(url).status_code, status.HTTP_403_FORBIDDEN, url)
+        self.assertEqual(self.admin.get("/plugins/tweakui/storage/").status_code, status.HTTP_200_OK)
+        self.assertEqual(self.admin.get("/api/plugins/tweakui/storage").status_code, status.HTTP_200_OK)
+        with mock.patch("coreplugins.tweakui.performance.report", return_value={}):
+            self.assertEqual(self.admin.get("/api/plugins/tweakui/performance").status_code, status.HTTP_200_OK)
+        self.withhold(storage_view=True)
+        self.assertEqual(self.client.get("/plugins/tweakui/storage/").status_code, status.HTTP_200_OK)
+        self.assertEqual(self.client.get(task_api).status_code, status.HTTP_200_OK)

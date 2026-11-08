@@ -40,6 +40,8 @@ Every feature is off until you turn it on, except the theme menu.
 - [**Performance**](https://winuxnomacs.github.io/webodm-tweakui/performance): each processing node's cores, memory
   and queue, the server's disk and memory, recent tasks' processing times and a trend, and whether the nodes' memory
   suits your tasks by WebODM's hardware requirements.
+- [**Administration**](https://winuxnomacs.github.io/webodm-tweakui/administration): superusers can withhold Storage
+  and Performance from users (both are available by default).
 
 ## Requirements
 

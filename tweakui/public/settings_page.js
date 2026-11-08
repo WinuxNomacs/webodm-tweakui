@@ -1,8 +1,8 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
-// false, a radio button (Themes) as its value. A new theme, or the theme menu or the Storage view turned on or off,
-// reloads the page to show it (the header, the side menu). A save shows a green "Saved" banner at the top of the
-// category for 3 seconds (after the reload too); a refused one, a red banner saying why, until the next change.
+// false, a radio button (Themes) as its value. A new theme, or the theme menu, the Storage or the Performance view
+// turned on or off, reloads the page to show it (the header, the side menu). A save shows a green "Saved" banner at
+// the top of the category for 3 seconds (after the reload too); a refused one, a red banner saying why, until the next change.
 // Settings in a data-depends box are greyed out and disabled while the setting it names is off. A setting with a
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
 // overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
@@ -95,7 +95,7 @@
                 // The page's scripts that follow a change at once (Surprise Me, the navigation pane)
                 if (typeof win.CustomEvent === "function") doc.dispatchEvent(new win.CustomEvent("tweakuiSettingsChanged", {detail: body}));
                 setStatus(page, "Saved", false);
-                if (name === "theme" || name === "show_theme_menu" || name === "storage_view") {
+                if (name === "theme" || name === "show_theme_menu" || name === "storage_view" || name === "performance_view") {
                     var store = storage(win);
                     try {
                         if (store) store.setItem(RELOADED, "1");

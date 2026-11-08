@@ -34,21 +34,34 @@ def store(user):
     return UserDataStore("tweakui", user)
 
 
-def load(user):
-    """The user's settings, with the defaults for those never set (and for anonymous users)"""
+def saved(user):
+    """The user's settings as they chose them, with the defaults for those never set (and for anonymous users)"""
     settings = dict(DEFAULTS)
     if user is not None and user.is_authenticated:
-        saved = store(user).get_json(KEY, {})
-        if isinstance(saved, dict):
-            settings.update({k: v for k, v in saved.items()
+        values = store(user).get_json(KEY, {})
+        if isinstance(values, dict):
+            settings.update({k: v for k, v in values.items()
                              if k in DEFAULTS and type(v) is type(DEFAULTS[k]) and allowed(k, v, user)})
     return settings
 
 
+def load(user):
+    """The user's settings as they apply: those an admin withholds from them are off (access.py), while the user's
+    own choice is kept for when it is given back"""
+    from . import access  # access imports features, as this module does
+    settings = saved(user)
+    for name in access.withheld(user):
+        settings[name] = False
+    return settings
+
+
 def update(user, changes):
-    """Saves the given settings over the user's and returns them all; unknown names and wrong types are refused"""
+    """Saves the given settings over the user's and returns them all as they apply (load); unknown names, wrong types
+    and settings an admin withholds from the user are refused"""
     if not isinstance(changes, dict):
         raise InvalidSettings("Expected an object of settings")
+    from . import access
+    withheld = access.withheld(user)
     errors = []
     for name, value in changes.items():
         if name not in DEFAULTS:
@@ -57,9 +70,11 @@ def update(user, changes):
             errors.append("%s takes a %s" % (name, type(DEFAULTS[name]).__name__))
         elif not allowed(name, value, user):
             errors.append("Unknown %s: %s" % (name, value))
+        elif name in withheld:
+            errors.append("Turned off by your administrator: %s" % name)
     if errors:
         raise InvalidSettings("; ".join(errors))
-    settings = load(user)
+    settings = saved(user)
     settings.update(changes)
     store(user).set_json(KEY, settings)
-    return settings
+    return load(user)

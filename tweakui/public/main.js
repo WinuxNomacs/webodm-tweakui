@@ -6,7 +6,8 @@
 
     var ui = window.TweakUI, NAME = "menus";
     var TWEAKUI = "/plugins/tweakui/", DIAGNOSTIC = "/plugins/diagnostic/", STORAGE = "/plugins/tweakui/storage/",
-        PERFORMANCE = "/plugins/tweakui/performance/", PUBLISHED = "/plugins/tweakui/admin/themes/";
+        PERFORMANCE = "/plugins/tweakui/performance/", PUBLISHED = "/plugins/tweakui/admin/themes/",
+        ADMIN = "/plugins/tweakui/admin/";
     // The WebODM elements it relies on, to check against a new WebODM: the side menu, its About item and
     // Administration's Theme item
     var SELECTORS = {sideMenu: "#side-menu", about: "#about-menu", adminTheme: '#side-menu .nav-second-level a[href^="/admin/app/theme/"]'};
@@ -72,17 +73,19 @@
         }
     }
 
-    // Administration > TweakUI Themes, for superusers (settings.js says so): WebODM has no hook in Administration, so
-    // the link goes right after its Theme item. On the page itself, Administration is open with the link active.
-    function publishedMenu() {
+    // Administration > TweakUI and TweakUI Themes, for superusers (settings.js says so): WebODM has no hook in
+    // Administration, so the links go right after its Theme item. On either page, Administration is open with its
+    // link active.
+    function adminMenu() {
         if (!ui.superuser || document.querySelector(SELECTORS.sideMenu + ' a[href="' + PUBLISHED + '"]')) return;
         var theme = document.querySelector(SELECTORS.adminTheme);
         if (!theme) return;
-        var li = ui.sideLink(document, "TweakUI Themes", PUBLISHED, "fa fa-palette fa-fw"), a = li.firstChild;
-        var item = theme.parentNode, list = item.parentNode;
-        list.insertBefore(li, item.nextSibling);
-        if (window.location.pathname === PUBLISHED) {
-            a.className = "active";
+        var item = theme.parentNode, list = item.parentNode, after = item.nextSibling;
+        [["TweakUI", ADMIN, "fa fa-sliders-h fa-fw"], ["TweakUI Themes", PUBLISHED, "fa fa-palette fa-fw"]].forEach(function (link) {
+            var li = ui.sideLink(document, link[0], link[1], link[2]);
+            list.insertBefore(li, after);
+            if (window.location.pathname !== link[1]) return;
+            li.firstChild.className = "active";
             var admin = list.parentNode;
             if (!/\bactive\b/.test(admin.className)) admin.className += " active";
             // metisMenu has started: show the list open, as it would for the active item
@@ -91,13 +94,13 @@
                 list.className += " collapse in";
                 list.setAttribute("aria-expanded", "true");
             }
-        }
+        });
     }
 
     var menus = ui.guard(NAME, function () {
         moveMenuItem();
         diagnosticMenu();
-        publishedMenu();
+        adminMenu();
     });
 
     if (document.readyState === "loading") {

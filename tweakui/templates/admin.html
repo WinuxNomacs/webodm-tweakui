@@ -1,0 +1,25 @@
+{% extends "app/plugins/templates/base.html" %}
+{% load i18n %}
+{% block content %}
+{% comment %}Administration > TweakUI, for superusers: which features users may have (access.py, features.py's
+admin_label). Each change is saved as it is made (admin_page.js). Colours come only from WebODM's theme classes.{% endcomment %}
+<div id="tweakui-admin" class="tweakui-settings tweakui-admin" data-api="{{ api }}">
+    {% csrf_token %}
+    <h3>{% trans "TweakUI" %}</h3>
+    <div class="tweakui-banner"><p class="tweakui-status theme-border" role="status" aria-live="polite"></p></div>
+    <div class="tweakui-group theme-border">
+        <h5 class="theme-background-highlight">{% trans "Available to Users" %}</h5>
+        <p class="text-muted tweakui-admin-intro">{% blocktrans %}Untick a feature to turn it off for every user but superusers: it is greyed on their TweakUI settings page and its page is closed to them. Each user's own choice is kept, so ticking it again gives it back as it was.{% endblocktrans %}</p>
+        {% for feature in features %}
+        <div class="tweakui-setting">
+            <label>
+                <input type="checkbox" data-access="{{ feature.name }}"{% if feature.value %} checked{% endif %}>
+                {{ feature.label }}
+            </label>
+            <p class="text-muted">{{ feature.help }}</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+<script src="{{ public }}admin_page.js"></script>
+{% endblock %}

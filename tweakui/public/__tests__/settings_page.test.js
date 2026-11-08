@@ -342,3 +342,15 @@ test("the theme sample's tooltip is Bootstrap's, set up on the first hover once 
     button.dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
     expect(tooltip).not.toHaveBeenCalled();
 });
+
+test("turning the Storage or the Performance view on or off reloads the page to show its side-menu item", async () => {
+    for (const name of ["storage_view", "performance_view"]) {
+        document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/"><p class="tweakui-status"></p>
+          <input type="checkbox" data-setting="${name}"></div>`;
+        const root = document.getElementById("tweakui-settings"), box = root.querySelector("input");
+        box.checked = true;
+        const win = {location: {reload: jest.fn()}};
+        await settingsPage.save(root, box, () => Promise.resolve({ok: true, json: () => Promise.resolve({})}), document, win);
+        expect(win.location.reload).toHaveBeenCalled();
+    }
+});

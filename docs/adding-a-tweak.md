@@ -57,6 +57,11 @@ that the setting needs, in load order. A script that several settings share load
 The settings page now has the checkbox. It saves to `/api/plugins/tweakui/settings`, and every page has the value
 as `window.TweakUI.settings.scale_bar`.
 
+A setting that superusers should be able to withhold from users also gets `admin_label` and `admin_help`: its
+checkbox and description on Administration > TweakUI (`access.py`). Withheld, the setting is off for users
+(`settings.load`), greyed on their settings page and refused by the settings API. A page or an API of the feature's
+own checks `access.is_withheld(user, name)`, or uses the API's `Available` permission with `feature = "<name>"`.
+
 ### 2. Write the script
 
 `tweakui/public/scale_bar.js`:

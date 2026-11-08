@@ -3,12 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
-   users' access to Storage and Performance").
+1. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
 
 **Then**
-2. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
-3. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+2. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
    Pane").
 
 **Later**
@@ -16,6 +14,19 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
+  users' access to Storage and Performance") — branch `admin-feature-access`: `access.py` (the global data store's
+  `available_to_users`, `withheld(user)`: none for superusers), `features.py`'s `admin_label`/`admin_help` on Storage
+  View and Performance View, `settings.py` (`saved` as chosen, `load` with withheld settings off, `update` refusing
+  them), `api.py` (`AccessView`, the `Available` permission on the Storage and Performance APIs), `plugin.py`
+  (`admin/` page, 403 on a withheld page), `templates/admin.html`, `public/admin_page.js`, `settings_setting.html`
+  (greyed with the reason), `main.js`'s `adminMenu` (TweakUI and TweakUI Themes after Theme), `main.css`. Also:
+  turning Performance View on or off reloads the settings page, as Storage View does. Tests: `TestAccess`,
+  `__tests__/admin_page.test.js`, `main.test.js`, `settings_page.test.js`. Docs `administration.md` (sidebar,
+  `storage.md`, `performance.md`, `adding-a-tweak.md`), README, CHANGELOG, screenshot `admin`. Live on both stacks
+  with a temporary non-admin user (made and deleted) and the access setting deleted afterwards: withheld, the setting
+  greyed, the side-menu item gone, page and API 403; given back, the user's choice returned; phone width, no console
+  errors. Not checked on the Windows app.
 - **README: WebODM Community Discord link** (new.md, 2026-11-08) — branch `readme-discord`: a Community section
   before Thanks.
 - **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View") — branch
@@ -1897,10 +1908,10 @@ user may not have is refused); `storage.is_admin` (superusers).
   admin page), live on both stacks with a second, non-admin "Live check" user (made and deleted), docs
   (`docs/storage.md` and the admin page), screenshot of the admin page.
 
-**Open decisions** (to ask when the phase is planned):
-1. Its own Administration > TweakUI page, or a section on TweakUI Themes (renamed to TweakUI).
-2. Whether staff who are not superusers count as admins here (TweakUI Themes: superusers only).
-3. A withheld feature: greyed with the reason, or hidden from the settings page entirely.
+**Decided** (2026-11-08):
+1. **Its own page**, Administration > TweakUI, with the group "Available to Users"; TweakUI Themes stays as it is.
+2. **Superusers only** change it and always keep both; staff who are not superusers are users here.
+3. **Greyed with the reason** ("Turned off by your administrator") on the settings page; the user's choice is kept.
 
 **Phase**: branch `admin-feature-access`, after Performance View (so both pages exist; it could also come first and
 cover Storage alone, then Performance joins with its flag).
