@@ -41,6 +41,10 @@ NODE_TIMEOUT, NODE_WORKERS = 3, 8
 # Recent Processing: this many finished tasks, and a trend once there are at least TREND_MIN completed with a time per
 # photo
 RECENT, TREND_MIN, TREND_SAME = 10, 4, 0.1
+# Photos Left Out: the task folder's files of these kinds (not the GCP, geo or alignment file), at most LEFT_MAX listed
+PHOTO_EXTENSIONS = (".jpg", ".jpeg", ".tif", ".tiff", ".png", ".dng", ".raw", ".nef", ".cr2", ".arw")
+NOT_PHOTOS = ("align.tif", "align.tiff")
+LEFT_MAX = 500
 FINISHED = {status_codes.COMPLETED: "completed", status_codes.FAILED: "failed", status_codes.CANCELED: "canceled"}
 
 
@@ -251,15 +255,42 @@ def read_stats(task):
     return out
 
 
-def photos_left_out(stats):
-    """A note when stats.json says photos were left out of the reconstruction, else None"""
+def placed_photos(task):
+    """The photos placed in the reconstruction, by file name (the report's odm_report/shots.geojson), or None without
+    it"""
+    try:
+        with open(task.assets_path("odm_report", "shots.geojson"), encoding="utf-8") as f:
+            data = json.load(f)
+        return {(feature.get("properties") or {}).get("filename") for feature in data["features"]}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError):
+        return None
+
+
+def left_out_photos(task, reasons):
+    """The task's photos (WebODM keeps them in its folder) the report's shots don't name: ([{name, reason}] by name, at
+    most LEFT_MAX, how many more), the reason the log's (no_features, no_gps) or None; None without a shots.geojson"""
+    placed = placed_photos(task)
+    if placed is None:
+        return None
+    left = sorted(name for name in task.scan_images()
+                  if name.lower().endswith(PHOTO_EXTENSIONS) and name.lower() not in NOT_PHOTOS and name not in placed)
+    return [{"name": n, "reason": reasons.get(n)} for n in left[:LEFT_MAX]], max(len(left) - LEFT_MAX, 0)
+
+
+def photos_left_out(stats, task=None, reasons=None):
+    """A note when stats.json says photos were left out of the reconstruction, with them by name (photos, more) when
+    the task's report says which; else None"""
     given, placed = stats["photos_given"], stats["photos_reconstructed"]
     if not given or placed is None or placed >= given:
         return None
-    return {"key": "left_out", "level": "warning", "line": "",
+    note = {"key": "left_out", "level": "warning", "line": "",
             "text": _("%(left)s of %(given)s photos couldn't be placed in the reconstruction and were left out (too "
                       "little overlap, or too few features).") % {"left": "{:,}".format(given - placed),
                                                                   "given": "{:,}".format(given)}}
+    left = left_out_photos(task, reasons or {}) if task is not None else None
+    if left and left[0]:
+        note["photos"], note["more"] = left
+    return note
 
 
 def task_entry(task, user):
@@ -272,7 +303,7 @@ def task_entry(task, user):
     slowest = max(steps.items(), key=lambda s: s[1]) if steps else None
     owner = task.project.owner
     notes = log["notes"]
-    left = photos_left_out(stats)
+    left = photos_left_out(stats, task, log["reasons"]) if status == "completed" else photos_left_out(stats)
     if left:
         notes = [n for n in notes if n["level"] == "danger"] + [left] + [n for n in notes if n["level"] != "danger"]
     components = stats["components"]

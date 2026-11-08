@@ -6,7 +6,8 @@
   columns from each task's report and log: photos placed of those given, area, separate reconstructions, position
   error (GPS or GCP) and whether the GPU was used. A Notes button opens what the log says the user should know (out of
   memory, photos left out, low overlap, no GPS, GCPs not used, the GPU failing...) in plain sentences with their lines,
-  and the log's other warnings and errors. Area and error follow WebODM's unit system.
+  and the log's other warnings and errors. The photos left out are listed by name (from the task's photos and its
+  report's camera positions), each with the log's reason, opening the photo, its thumbnail on hover, and Copy Names. Area and error follow WebODM's unit system.
 - Performance View: the Server card shows CPU Load, as top and htop do: the total across all cores in one bar (with
   how many cores) and the load averages (no load average on Windows, which keeps none). The CPU load and the server's and nodes'
   memory refresh every 3 seconds, set by Refresh Every (1 to 10 seconds, a part of Show Performance View, also on the

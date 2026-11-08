@@ -376,6 +376,11 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-line code, .tweakui-performance .tweakui-performance-other code { white-space: normal; color: inherit; background: none; padding: 0; }
 .tweakui-performance .tweakui-performance-other summary { display: list-item; cursor: pointer; }
 .tweakui-performance .tweakui-performance-other ul { margin: 4px 0 0 1.5em; }
+/* Photos Left Out under its note: Copy Names, then the names; a name's thumbnail shows over the page on hover */
+.tweakui-performance .tweakui-performance-photos { margin-top: 4px; }
+.tweakui-performance .tweakui-performance-photos .btn { margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-thumb { position: fixed; z-index: 1050; padding: 4px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); pointer-events: none; }
+.tweakui-performance .tweakui-performance-thumb img { display: block; max-width: 256px; max-height: 256px; }
 .tweakui-performance .tweakui-performance-detail { display: none; }
 @media (max-width: 767px) {
     .tweakui-performance .tweakui-performance-card { flex-basis: 100%; }

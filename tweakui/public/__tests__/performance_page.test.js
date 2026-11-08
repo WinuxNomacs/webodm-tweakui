@@ -227,6 +227,36 @@ describe("the Performance page", () => {
         expect(words(root.querySelector('tr[data-task="t2"] [data-act=notes]'))).toBe("1 Message");
     });
 
+    test("the photos left out are listed under their note: links that open them, a thumbnail on hover, and Copy Names", async () => {
+        const photos = [{name: "DJI_0007_T.JPG", reason: "no_features"}, {name: "a b&c.tif", reason: "no_gps"}, {name: "DJI_0051_T.JPG", reason: null}];
+        const t = reported("t1", {notes: [{key: "left_out", level: "warning", text: "4 of 220 photos were left out.", line: "", photos, more: 1}]});
+        const {root} = await started([json(report({tasks: [t]}))]);
+        root.querySelector("[data-act=notes]").click();
+        const list = root.querySelector("[data-note=left_out] details.tweakui-performance-photos");
+        expect([list.open, words(list.querySelector("summary"))]).toEqual([false, "Photos Left Out (4)"]);
+        expect(texts(list, "li")).toEqual(["DJI_0007_T.JPG No features", "a b&c.tif No GPS", "DJI_0051_T.JPG", "1 more photo not shown."]);
+        const links = list.querySelectorAll("a");
+        expect([links[1].getAttribute("href"), links[1].target, links[1].rel])
+            .toEqual(["/api/projects/3/tasks/t1/images/thumbnail/a%20b%26c.tif?size=2048", "_blank", "noopener"]);
+        // Hovering a name shows its thumbnail in one box over the page; leaving it hides it
+        links[0].dispatchEvent(new MouseEvent("mouseover", {bubbles: true}));
+        const thumb = root.querySelector(".tweakui-performance-thumb");
+        expect([thumb.hidden, thumb.querySelector("img").getAttribute("src")]).toEqual([false, "/api/projects/3/tasks/t1/images/thumbnail/DJI_0007_T.JPG?size=256"]);
+        links[0].dispatchEvent(new MouseEvent("mouseout", {bubbles: true}));
+        expect(thumb.hidden).toBe(true);
+        links[1].dispatchEvent(new FocusEvent("focusin", {bubbles: true}));
+        expect([thumb.hidden, thumb.querySelector("img").getAttribute("src")]).toEqual([false, "/api/projects/3/tasks/t1/images/thumbnail/a%20b%26c.tif?size=256"]);
+        expect(root.querySelectorAll(".tweakui-performance-thumb")).toHaveLength(1);
+        // Copy Names: a line each
+        const writeText = jest.fn(() => Promise.resolve());
+        Object.defineProperty(window.navigator, "clipboard", {value: {writeText}, configurable: true});
+        list.querySelector("[data-act=copy-names]").click();
+        await flush();
+        expect(writeText).toHaveBeenCalledWith("DJI_0007_T.JPG\na b&c.tif\nDJI_0051_T.JPG");
+        expect(list.querySelector("[data-act=copy-names] i").className).toBe("fa fa-check");
+        delete window.navigator.clipboard;
+    });
+
     test("the trend reads as a sentence: faster, slower or about the same", async () => {
         expect(performancePage.trendText(null)).toBe("");
         expect(performancePage.trendText({recent: 2, earlier: 4, change: -0.5, same: false}))
