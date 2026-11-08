@@ -22,7 +22,7 @@ function start(settings = {replace_preset_menu: true}) {
 }
 
 const button = () => document.querySelector(".tweakui-presets-button");
-const items = () => Array.from(document.querySelectorAll(".tweakui-presets-menu > li")).map(li =>
+const items = () => Array.from(document.querySelectorAll(".tweakui-presets-menu > li:not(.tweakui-presets-filter)")).map(li =>
     li.classList.contains("divider") ? "---" : (li.querySelector(".tweakui-presets-nested") ? "  " : "") + li.textContent.trim());
 const link = text => Array.from(document.querySelectorAll(".tweakui-presets-menu a")).find(a => a.textContent.trim() === text);
 
@@ -95,6 +95,104 @@ test("the chosen preset is marked", () => {
     expect(link("m4t-Thermal").parentNode.className).toBe("tweakui-presets-current");
     expect(link("m4t-Thermal").className).toContain("theme-background-highlight");
     expect(link("Default").parentNode.className).toBe("");
+});
+
+describe("the filter", () => {
+    const filter = () => document.querySelector(".tweakui-presets-filter input");
+    const type = text => {
+        filter().value = text;
+        filter().dispatchEvent(new Event("input", {bubbles: true}));
+    };
+    const key = (k, target = document.activeElement) => target.dispatchEvent(new KeyboardEvent("keydown", {key: k, bubbles: true, cancelable: true}));
+
+    test("opened with a click, the menu's filter box at the top has the focus, empty", () => {
+        form();
+        start();
+        button().click();
+        const first = document.querySelector(".tweakui-presets-menu > li");
+        expect(first.className).toBe("tweakui-presets-filter");
+        expect(filter().placeholder).toBe("Filter Presets");
+        expect(document.activeElement).toBe(filter());
+        expect(filter().value).toBe("");
+    });
+
+    test("typing shows only the presets whose names hold the text, in any case, with their submenus open", () => {
+        form({custom: true, value: "-1"});
+        start();
+        button().click();
+        link("User Presets").click();
+        filter().focus();
+        type("m");
+        expect(items()).toEqual(["(Custom)", "User Presets", "  M4T-RGB", "  m4t-Thermal", "  Multispectral", "System Presets",
+            "  3D Model"]);
+        type("ORTHO");
+        expect(items()).toEqual(["System Presets", "  Fast Orthophoto"]);
+        type("cust");
+        expect(items()).toEqual(["(Custom)"]);
+        // The filter keeps the focus and what was typed as the list changes
+        expect(document.activeElement).toBe(filter());
+        type("");
+        expect(items()).toEqual(["(Custom)", "User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
+            "  Fast Orthophoto", "  High Resolution"]);
+    });
+
+    test("no match says so", () => {
+        form();
+        start();
+        button().click();
+        type("zzz");
+        expect(items()).toEqual(["No matching presets"]);
+    });
+
+    test("while filtering, a submenu's name doesn't close it", () => {
+        form();
+        start();
+        button().click();
+        type("t");
+        link("User Presets").click();
+        expect(items()).toContain("  m4t-Thermal");
+    });
+
+    test("Enter chooses the first match", () => {
+        const select = form();
+        start();
+        button().click();
+        type("build");
+        key("Enter", filter());
+        expect(select.value).toBe("5");
+        expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(false);
+    });
+
+    test("the down arrow goes from the filter to the first match, past its submenu's name; the up arrow back, item by item", () => {
+        form();
+        start();
+        button().click();
+        type("rgb");
+        key("ArrowDown", filter());
+        expect(document.activeElement.textContent).toBe("M4T-RGB");
+        key("ArrowUp");
+        expect(document.activeElement.textContent.trim()).toBe("User Presets");
+        key("ArrowUp");
+        expect(document.activeElement).toBe(filter());
+    });
+
+    test("Escape clears the filter first, then closes the menu; it opens empty again", () => {
+        form();
+        start();
+        button().click();
+        type("rgb");
+        key("Escape", filter());
+        expect(filter().value).toBe("");
+        expect(items()).toContain("  Default");
+        expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
+        key("Escape", filter());
+        expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(false);
+        button().click();
+        type("rgb");
+        button().click();
+        button().click();
+        expect(filter().value).toBe("");
+    });
 });
 
 test("without presets of the user's, there is no User Presets", () => {

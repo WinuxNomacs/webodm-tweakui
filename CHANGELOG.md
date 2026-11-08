@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Replace Preset Options Menu: a filter box at the top of the menu narrows the presets as you type; Enter chooses the
+  first match.
 - General > Just for Fun > Surprise Me > Enable Interaction (on by default): turn it off to keep the fireworks
   without the right-click's rocket, leaving the mouse to the browser and the page.
 - Surprise Me: a right-click on Windows sends only its rocket; the browser's menu no longer opens too (Windows sends

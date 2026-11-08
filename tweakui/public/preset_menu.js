@@ -3,8 +3,9 @@
 // at the top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own)
 // and "System Presets" (WebODM's, Default among them), each A-Z and open at first. WebODM's select stays on the page,
 // hidden: choosing an item sets its value and sends it a change event, so WebODM's own code selects the preset, and
-// the button follows the select (its options, value and title change as WebODM re-renders it). UMD, so Jest can
-// load it.
+// the button follows the select (its options, value and title change as WebODM re-renders it). A filter box at the
+// top, focused as the menu opens, shows only the presets whose names hold what is typed (any case), every submenu with
+// a match open; Enter chooses the first match. UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -65,6 +66,16 @@
         button.appendChild(ui.el(doc, "i", "fa fa-chevron-down tweakui-presets-caret"));
         var menu = ui.el(doc, "ul", "dropdown-menu tweakui-presets-menu");
         menu.setAttribute("role", "menu");
+        // The filter: the menu's first item, kept as the rest is rebuilt (so typing keeps its focus and caret)
+        var filterItem = ui.el(doc, "li", "tweakui-presets-filter");
+        filterItem.setAttribute("role", "presentation");
+        var filter = ui.el(doc, "input", "form-control input-sm");
+        filter.type = "text";
+        filter.setAttribute("placeholder", "Filter Presets");
+        filter.setAttribute("aria-label", "Filter Presets");
+        filter.setAttribute("autocomplete", "off");
+        filterItem.appendChild(filter);
+        menu.appendChild(filterItem);
         wrap.appendChild(button);
         wrap.appendChild(menu);
         // Each submenu, by key: open at first, then as the user left it
@@ -97,16 +108,17 @@
             return li;
         }
 
-        // A submenu's heading, and its presets while open; none without presets
-        function group(key, label, presets) {
+        // A submenu's heading, and its presets while open (always while filtering); none without presets
+        function group(key, label, presets, filtering) {
             if (!presets.length) return;
-            var open = groupOpen[key];
+            var open = filtering || groupOpen[key];
             var li = ui.el(doc, "li", "tweakui-presets-group");
             li.setAttribute("role", "presentation");
             var head = ui.el(doc, "a", "tweakui-presets-group-head");
             head.href = "#";
             head.setAttribute("role", "menuitem");
             head.setAttribute("data-group", key);
+            if (filtering) head.setAttribute("data-filtering", "");
             head.setAttribute("aria-expanded", open ? "true" : "false");
             head.appendChild(ui.el(doc, "i", "fa fa-fw " + (open ? "fa-caret-down" : "fa-caret-right")));
             head.appendChild(doc.createTextNode(" " + label));
@@ -116,29 +128,41 @@
         }
 
         function build() {
-            var list = order(select);
-            while (menu.firstChild) menu.removeChild(menu.firstChild);
-            list.top.forEach(function (p) { menu.appendChild(item(p)); });
-            group("user", "User Presets", list.user);
-            group("system", "System Presets", list.system);
+            var list = order(select), query = filter.value.trim().toLowerCase();
+            var match = function (p) { return !query || p.name.toLowerCase().indexOf(query) !== -1; };
+            while (menu.lastChild !== filterItem) menu.removeChild(menu.lastChild);
+            list.top.filter(match).forEach(function (p) { menu.appendChild(item(p)); });
+            group("user", "User Presets", list.user.filter(match), !!query);
+            group("system", "System Presets", list.system.filter(match), !!query);
+            if (menu.lastChild === filterItem) {
+                var none = ui.el(doc, "li", "disabled tweakui-presets-none");
+                none.setAttribute("role", "presentation");
+                none.appendChild(ui.el(doc, "span", "", "No matching presets"));
+                menu.appendChild(none);
+            }
         }
 
         function isOpen() { return wrap.classList.contains("open"); }
 
         function links() { return Array.prototype.slice.call(menu.querySelectorAll("a")); }
 
-        // The arrows: from the button to the chosen preset (else the first or last item), then item by item
+        // The arrows: from the button to the chosen preset (else the first or last item), from the filter down to the
+        // first match (past the submenus' names), then item by item, the filter box before the first
         function focusItem(step) {
-            var all = links(), i = all.indexOf(doc.activeElement);
-            if (!all.length) return;
-            if (i === -1) (menu.querySelector("li.tweakui-presets-current > a") || all[step > 0 ? 0 : all.length - 1]).focus();
+            var all = [filter].concat(links()), i = all.indexOf(doc.activeElement);
+            var first = menu.querySelector("a[data-value]");
+            if (i === 0 && step > 0 && first) first.focus();
+            else if (i === -1) (menu.querySelector("li.tweakui-presets-current > a") || all[step > 0 ? Math.min(1, all.length - 1) : all.length - 1]).focus();
             else all[(i + step + all.length) % all.length].focus();
         }
 
-        function open() {
+        // focusFilter: opened with a click, ready for typing; the filter starts empty each time
+        function open(focusFilter) {
+            filter.value = "";
             build();
             wrap.classList.add("open");
             button.setAttribute("aria-expanded", "true");
+            if (focusFilter) filter.focus();
         }
 
         function close(refocus) {
@@ -150,13 +174,16 @@
 
         button.addEventListener("click", ui.guard(NAME, function () {
             if (isOpen()) close(false);
-            else open();
+            else open(true);
         }));
+        filter.addEventListener("input", ui.guard(NAME, build));
         menu.addEventListener("click", ui.guard(NAME, function (e) {
             var a = e.target.closest ? e.target.closest("a") : null;
             if (!a) return;
             e.preventDefault();
             if (a.classList.contains("tweakui-presets-group-head")) {
+                // While filtering, every submenu with a match stays open
+                if (a.hasAttribute("data-filtering")) return;
                 var key = a.getAttribute("data-group");
                 groupOpen[key] = a.getAttribute("aria-expanded") !== "true";
                 build();
@@ -172,7 +199,16 @@
         wrap.addEventListener("keydown", ui.guard(NAME, function (e) {
             if (e.key === "Escape" && isOpen()) {
                 e.preventDefault();
-                close(true);
+                // First the filter is cleared, then the menu closed
+                if (filter.value) {
+                    filter.value = "";
+                    build();
+                    filter.focus();
+                } else close(true);
+            } else if (e.key === "Enter" && e.target === filter) {
+                e.preventDefault();
+                var first = menu.querySelector("a[data-value]");
+                if (first) first.click();
             } else if (e.key === "ArrowDown" || e.key === "ArrowUp") {
                 e.preventDefault();
                 if (!isOpen()) open();
@@ -200,7 +236,7 @@
         select.setAttribute(DONE, "");
         select.parentNode.insertBefore(wrap, select.nextSibling);
         sync();
-        return {wrap: wrap, button: button, menu: menu, open: open, close: close, sync: sync};
+        return {wrap: wrap, button: button, menu: menu, filter: filter, open: open, close: close, sync: sync};
     }
 
     // Every preset select on the page that has no dropdown yet

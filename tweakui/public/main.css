@@ -319,6 +319,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-presets .tweakui-presets-menu { min-width: 100%; max-height: 60vh; overflow-y: auto; }
 .tweakui-presets .tweakui-presets-menu > li > a.tweakui-presets-nested { padding-left: 38px; }
 .tweakui-presets .tweakui-presets-group-head, .tweakui-presets .tweakui-presets-current > a { font-weight: bold; }
+.tweakui-presets .tweakui-presets-filter { padding: 2px 8px 6px; }
+.tweakui-presets .tweakui-presets-none > span { display: block; padding: 3px 20px; opacity: 0.6; font-style: italic; }
 @media (max-width: 767px) {
     .tweakui-presets { display: block; }
 }
