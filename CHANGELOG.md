@@ -2,9 +2,9 @@
 
 ## Unreleased
 
-- General > Task Options > Sort Preset Options: the Options dropdown of a new or edited task lists (Custom) first,
-  then two submenus, open at first and closed with a click: User Presets (your saved presets) and System Presets
-  (WebODM's, Default among them), each A-Z, in your theme's colours.
+- General > Task Options > Replace Preset Options Menu: the Options dropdown of a new or edited task becomes a menu
+  with (Custom) first, then two submenus, open at first and closed with a click: User Presets (your saved presets)
+  and System Presets (WebODM's, Default among them), each A-Z, in your theme's colours.
 - General > Global Controls > Hide Navigation Pane: the tab cycles through three steps: the side menu's icons only
   (their names on hover, as Resize Navigation Pane's narrowest), hidden, and back at the usual width.
 - Source Frames: the button reads "Open Full Frame", in Title Case like the rest of the interface.

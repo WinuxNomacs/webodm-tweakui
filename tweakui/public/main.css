@@ -309,8 +309,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     pointer-events: none;
 }
 
-/* Sort Preset Options (preset_menu.js): TweakUI's dropdown in place of WebODM's preset select (hidden, kept on the
-   page), shaped like it: a form-control button with a chevron, and a Bootstrap dropdown menu in theme colours. */
+/* Replace Preset Options Menu (preset_menu.js): TweakUI's menu in place of WebODM's preset select (hidden, kept on
+   the page), shaped like it: a form-control button with a chevron, and a Bootstrap dropdown menu in theme colours. */
 .edit-task-form select[data-tweakui-presets] { display: none !important; }
 .tweakui-presets { display: inline-block; vertical-align: middle; position: relative; max-width: 100%; }
 .tweakui-presets .tweakui-presets-button { display: flex; align-items: center; gap: 12px; min-width: 200px; max-width: 100%; text-align: left; cursor: pointer; }

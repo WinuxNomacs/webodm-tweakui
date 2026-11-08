@@ -30,7 +30,7 @@ def plugin_scripts():
 
 def defaults(**changes):
     """Every setting at its default, but for the given changes"""
-    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_modified_options": False, "expand_configured": False, "sort_preset_options": False, "enhanced_task_details": False,
+    return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_modified_options": False, "expand_configured": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,

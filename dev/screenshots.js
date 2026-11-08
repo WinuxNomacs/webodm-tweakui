@@ -42,7 +42,7 @@ const SHOTS = [
     },
     {
         // A task's Edit form with the Options dropdown open, User Presets and System Presets opened
-        name: "sort-preset-options", settings: {sort_preset_options: true, expand_task_controls: false},
+        name: "replace-preset-options-menu", settings: {replace_preset_menu: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.click(".expanded-panel .edit-button");
