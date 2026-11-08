@@ -3,14 +3,13 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks").
-2. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
-3. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
+1. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
+2. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
    users' access to Storage and Performance").
 
 **Then**
-4. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
-5. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+3. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
+4. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
    Pane").
 
 **Later**
@@ -18,6 +17,15 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks") — branch
+  `storage-backup-import`: `storage_page.js` (`backupable`, a Backup link per completed task, `backupAll`,
+  `importZip` and `importFiles`: WebODM's chunked import), `storage.html` (Backup All, the hidden file input),
+  `main.css`, `storage.py` (the `importing` mark), tests in `__tests__/storage_page.test.js` and `TestStorage`,
+  `features.py`'s description, `docs/storage.md`, README, CHANGELOG, screenshot `storage` retaken. Live on both stacks:
+  TestThermalNoPlugin backed up from 4.0.0's Storage page (430 MB, `data/backup.json` inside), Backup All's download
+  started, then the zip imported through a "Live check" project's Import on 4.0.0 and 3.3.2 (restored with its name,
+  completed), backed up again on 3.3.2, the projects deleted. Found while checking: Bootstrap shows a file input in
+  spite of `hidden`, so main.css hides it. Not checked on the Windows app.
 - **Task Options: two settings renamed** (new.md, 2026-11-08) — Show Modified Options is Show Configured Option
   Count (`show_configured_option_count`), Expand Configured is Expand Configured Options
   (`expand_configured_options`); previews `show-configured-option-count` and `expand-configured-options`; the texts
