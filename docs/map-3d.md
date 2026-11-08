@@ -25,3 +25,17 @@ before.
 A two-finger scroll on a trackpad zooms as far as it scrolls. WebODM's 3D view counts each of a trackpad's many
 small scroll steps as a whole wheel notch, which zooms far too fast; with Zoom Override, a mouse notch still zooms
 as before.
+
+### Zoom Sensitivity
+
+A part of Zoom Override, at 100% unless you change it.
+
+![The Zoom Sensitivity panel open above its button in the 3D view's buttons](../tweakui/public/previews/zoom-sensitivity-3d.webp)
+
+How far a mouse wheel notch zooms toward what is under the pointer, from 10% to 200%: at 100% a notch goes a tenth
+of the way, at 50% half that, at 200% twice. A trackpad's two-finger scroll follows it too. Over empty space the
+wheel is WebODM's, whatever the sensitivity.
+
+It is on the settings page (a slider in steps of 10 with a box for any whole number from 10 to 200), and in the 3D
+view: the gauge button beside Share opens the same slider and box. The view follows them at once, and the value is
+saved when you let go of the slider or leave the box. Escape or a click elsewhere closes it.

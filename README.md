@@ -31,10 +31,11 @@ Every feature is off until you turn it on, except the theme menu.
   WebODM's controls in the current theme, and a theme menu in the header.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
   (Movable Controls), the project's other tasks' orthophotos over the task's own (Compare Orthophotos from Other
-  Tasks), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps (Zoom Override), and a search
-  box for an address or coordinates (Add Search Button).
+  Tasks), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
+  sensitivity, also set from a button on the map (Zoom Override, Zoom Sensitivity), and a search box for an address
+  or coordinates (Add Search Button).
 - [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel
-  that zooms toward what is under the pointer (Zoom Override).
+  that zooms toward what is under the pointer (Zoom Override), as far a notch as you choose (Zoom Sensitivity).
 - [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): how much of your quota each project and task
   uses, each task's files by kind, compacting or deleting them, and backing up and importing tasks as WebODM's own
   backup zips; administrators see every user's.

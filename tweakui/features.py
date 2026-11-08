@@ -168,7 +168,13 @@ CATEGORIES = [
             Setting("zoom_override_2d", False, _("Zoom Override"),
                     _("The map zooms in 3 steps further than WebODM lets it (each step twice as close), with the wheel, "
                       "the + button and a pinch."),
-                    preview="zoom-override-2d", scripts=["pick3d.js", "zoom_override.js"]),
+                    preview="zoom-override-2d", scripts=["pick3d.js", "zoom_override.js"], parts=[
+                Setting("zoom_sensitivity_2d", 100, _("Zoom Sensitivity"),
+                        _("How far a mouse wheel notch zooms the map: 100% as WebODM does (a whole step, or two in some "
+                          "browsers), 50% half that, 200% twice. Away from 100% the map can rest between steps (its tiles "
+                          "slightly scaled). A button on the map changes it too, as you zoom."),
+                        preview="zoom-sensitivity-2d", number=(10, 200, 10), unit="%"),
+            ]),
             Setting("map_search", False, _("Add Search Button"),
                     _("A button above the zoom buttons opens a search box. Type an address or place and press Enter "
                       "(OpenStreetMap's Nominatim looks it up), or coordinates such as 46.84, -91.99 or "
@@ -186,7 +192,12 @@ CATEGORIES = [
                     _("The mouse wheel zooms toward what is under the pointer (the points or the model) instead of the "
                       "middle of the view, so you can get close to any surface, and a trackpad's two-finger scroll "
                       "zooms at a gentle pace. Over empty space it zooms as before."),
-                    preview="zoom-override-3d", scripts=["pick3d.js", "zoom_override.js"]),
+                    preview="zoom-override-3d", scripts=["pick3d.js", "zoom_override.js"], parts=[
+                Setting("zoom_sensitivity_3d", 100, _("Zoom Sensitivity"),
+                        _("How far a mouse wheel notch zooms toward what is under the pointer: 100% is a tenth of the way, "
+                          "50% half that, 200% twice. A button in the 3D view changes it too, as you zoom."),
+                        preview="zoom-sensitivity-3d", number=(10, 200, 10), unit="%"),
+            ]),
         ]),
     ]),
     Category("diagnostic", _("Diagnostic"), "fa fa-chart-pie fa-fw", groups=[
