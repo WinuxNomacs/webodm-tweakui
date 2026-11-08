@@ -3,11 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Diagnostic: Performance View, history graphs** (asked in chat, 2026-11-08; see "Performance View: history
-   graphs") — CPU Load, memory and disk activity drawn as graphs over time in place of their bars, so the trend shows
-   while the page is open. Decided: History Length (1-30 min, 5 by default), from the page's opening, the drives'
-   ops/s and Busy, the nodes' memory too.
-2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -16,6 +12,17 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, history graphs** (asked in chat, 2026-11-08; see "Performance View: history
+  graphs") — branch `perf-history`: `features.py` (`performance_history`, History Length, 1-30 min, 5 by default, a
+  part of Show Performance View), `plugin.py` and `performance.html` (Refresh Every and History Length from one loop,
+  `data-control`), `performance_page.js` (`record`, up to 30 minutes of readings in the page; `graphHtml`, inline SVG,
+  runs broken at gaps, a rate graph scaled by `niceCeil`; `graphTip` and the pointer's hover; `memoryGraphHtml` with
+  the share used; `numberControl` for both controls; the accent read from a hidden link, `--tweakui-performance-accent`),
+  `main.css`, `dev/screenshots.js` (1 s refresh, a minute's window, 30 s of readings). Tests: `performance_page.test.js`
+  (5 new, others moved from bars to graphs), `test_tweakui.py` (1 new: History Length's range and control). Docs
+  `performance.md` (Graphs, History Length), README, CHANGELOG, screenshot `performance`. Live on 4.0.0 (Solarized Dark
+  and WebODM's light theme: Reads in the link colour, Writes in the text colour) and 3.3.2: graphs fill, the hover
+  shows "26% · 1:43:22 PM" and "Reads 0/s · Writes 81/s · ...", no sideways scroll at phone width, no console errors.
 - **Diagnostic: Performance View, disk activity** (new.md, 2026-11-08; see "Performance View: disk activity") —
   branch `disk-io`: `performance.py` (`mount_devices` from `/proc/self/mountinfo` without the system's mounts,
   `diskstats` from `/proc/diskstats`, `linux_drives` matching them by device or source name, the tasks' drive by the
@@ -2272,7 +2279,7 @@ Decided by the user (2026-11-08):
   in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
   one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
 
-## Performance View: history graphs (asked in chat, 2026-11-08)
+## Performance View: history graphs (asked in chat, 2026-11-08) — done
 
 **Request** (with a screenshot of the Server cards): "I requested if the CPU Load, Memory and Disk IO stats could be
 represented in a historical graph over time instead of a percentage bar? This allows the user to watch the trend
