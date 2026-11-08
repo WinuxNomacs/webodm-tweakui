@@ -16,7 +16,7 @@
   sends it on the press. Branch `surprise-me-windows-menu`: `surprise_me.js` (`released`, `MENU_AFTER`: a release
   with no contextmenu yet blocks the one that follows within a second; the menu key later still gets its menu), tests
   in `__tests__/surprise_me.test.js` (the Windows order, which fails without the fix), live on both stacks with the
-  Windows order sent as events; on Windows itself, checked by the user.
+  Windows order sent as events; on Windows itself, still to be checked by the user.
 - **Task Options: Replace Preset Options Menu** (first named Sort Preset Options; the user's request, 2026-11-08; see
   "Task Options: Sort Preset Options") — branch `sort-preset-options`: `tweakui/public/preset_menu.js`, its section
   of `main.css`, tests in `__tests__/preset_menu.test.js`, `features.py`, `dev/selector-check.js` (`WHERE`),
