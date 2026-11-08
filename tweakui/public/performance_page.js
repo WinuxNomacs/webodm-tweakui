@@ -1,6 +1,8 @@
 // Diagnostic > Performance (templates/performance.html): verdicts at the top, then a card per processing node the
-// user may use (what it says of itself: cores, memory, queue), the server's disk and memory, and the recent completed
-// tasks (an admin's: every user's) with their time per photo and a trend (performance.py through the plugin's API).
+// user may use (what it says of itself: cores, memory, queue), the server's disk and memory, and the recent finished
+// tasks (an admin's: every user's) with their time per photo, figures from their report, notes from their log and a
+// trend (performance.py and task_log.py through the plugin's API). Areas and errors are in WebODM's unit system (the
+// maps' choice, Units.js's localStorage "unit_system"), redrawn when it changes.
 // Asked on opening and with Refresh. The server's CPU load and memory and the nodes' memory are asked again every
 // Refresh Every seconds (a setting, also on the page), the disk every 10 seconds, while the browser tab is shown.
 // UMD, so Jest can load it.
@@ -21,6 +23,11 @@
     var FIRST_LIVE = 1000, DISK_EVERY = 10000;
     // Refresh Every's range and default (features.py), when the page doesn't say
     var EVERY_MIN = 1, EVERY_MAX = 10, EVERY_DEFAULT = 3;
+    // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
+    var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
+    var FT = 3.28083989501, FT2_ACRE = 43560;
+    // Recent Processing's columns (a notes row spans them all)
+    var TASK_COLUMNS = 11;
 
     function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -48,6 +55,34 @@
 
     function formatNumber(n) {
         return String(n).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+    }
+
+    // An area (m²) in the unit system: m² or hectares, ft² or acres
+    function formatArea(m2, system) {
+        if (m2 === null || m2 === undefined || isNaN(m2)) return "";
+        if (system && system !== "metric") {
+            var ft2 = m2 * FT * FT;
+            return ft2 >= FT2_ACRE ? (ft2 / FT2_ACRE).toFixed(2) + " ac" : formatNumber(Math.round(ft2)) + " ft\u00b2";
+        }
+        return m2 >= 10000 ? (m2 / 10000).toFixed(2) + " ha" : formatNumber(Math.round(m2)) + " m\u00b2";
+    }
+
+    // A length (m) in the unit system: cm or m, inches or feet
+    function formatLength(m, system) {
+        if (m === null || m === undefined || isNaN(m)) return "";
+        if (system && system !== "metric") {
+            var ft = m * FT;
+            return ft < 1 ? (ft * 12).toFixed(1) + " in" : ft.toFixed(2) + " ft";
+        }
+        return m < 1 ? (m * 100).toFixed(1) + " cm" : m.toFixed(2) + " m";
+    }
+
+    function unitSystem(win) {
+        try {
+            return (win && win.localStorage && win.localStorage.getItem(UNIT_KEY)) || "metric";
+        } catch (e) {
+            return "metric";
+        }
     }
 
     function formatDate(iso) {
@@ -186,37 +221,141 @@
             recent + " against " + earlier + "). Photos and options differ from task to task, so take this as a hint.";
     }
 
-    function taskHtml(t) {
+    function plural(n, one, many) {
+        return formatNumber(n) + " " + (n === 1 ? one : many);
+    }
+
+    // The photos: those placed in the reconstruction of those given (a warning colour when some were left out), or
+    // just the photos when the report doesn't say
+    function photosHtml(t) {
+        var given = t.photos_given || t.images;
+        if (t.photos_reconstructed === null || t.photos_reconstructed === undefined || !given) {
+            return escapeHtml(t.images ? formatNumber(t.images) : "");
+        }
+        var text = escapeHtml(formatNumber(t.photos_reconstructed) + " of " + formatNumber(given));
+        return t.photos_reconstructed < given ? '<span class="text-warning" title="Photos placed in the reconstruction, of those given">' + text + "</span>" : text;
+    }
+
+    function reconstructionsHtml(t) {
+        if (!t.reconstructions) return "";
+        return t.reconstructions > 1 ? '<span class="text-warning">' + escapeHtml(t.reconstructions) + "</span>" : escapeHtml(t.reconstructions);
+    }
+
+    function errorText(t, system) {
+        var e = t.position_error;
+        return e ? formatLength(e.meters, system) + " " + (e.kind === "gcp" ? "GCP" : "GPS") : "";
+    }
+
+    function gpuText(t) {
+        return t.gpu === true ? "Yes" : t.gpu === false ? "No" : "";
+    }
+
+    // The worst of the notes' levels, for the button's icon
+    function worstLevel(notes) {
+        var levels = notes.map(function (n) { return n.level; });
+        return levels.indexOf("danger") >= 0 ? "danger" : levels.indexOf("warning") >= 0 ? "warning" : "info";
+    }
+
+    function notesButtonHtml(t, open) {
+        var notes = t.notes || [], other = t.other || [];
+        if (!notes.length && !other.length) return "";
+        var level = notes.length ? worstLevel(notes) : "info";
+        var icon = level === "info" ? "fa-info-circle" : ICONS[level];
+        var label = notes.length ? plural(notes.length, "Note", "Notes") : plural(other.length + (t.more || 0), "Message", "Messages");
+        return ' <button type="button" class="btn btn-default btn-xs tweakui-performance-notes-button" data-act="notes" aria-expanded="' +
+            open + '" aria-controls="tweakui-performance-notes-' + escapeHtml(t.id) + '"><i class="fa ' + icon + " text-" + level +
+            '"></i> ' + escapeHtml(label) + "</button>";
+    }
+
+    // A task's notes from its log, each with its line, and the log's other messages in a list that opens
+    function notesHtml(t) {
+        var notes = t.notes || [], other = t.other || [];
+        var html = notes.length ? '<ul class="list-unstyled tweakui-performance-notes">' + notes.map(function (n) {
+            var icon = n.level === "info" ? "fa-info-circle" : ICONS[n.level] || ICONS.warning;
+            return '<li data-note="' + escapeHtml(n.key) + '"><i class="fa ' + icon + " fa-fw text-" + escapeHtml(n.level) + '"></i> ' +
+                escapeHtml(n.text) + (n.line ? '<div class="text-muted small tweakui-performance-line"><code>' + escapeHtml(n.line) + "</code></div>" : "") + "</li>";
+        }).join("") + "</ul>" : "";
+        if (other.length) {
+            var count = other.length + (t.more || 0);
+            html += '<details class="tweakui-performance-other"><summary>Other Messages (' + escapeHtml(formatNumber(count)) + ")</summary>" +
+                '<ul class="list-unstyled small">' + other.map(function (m) {
+                    return "<li><code>" + escapeHtml(m.text) + "</code>" + (m.count > 1 ? ' <span class="text-muted">(' + escapeHtml(formatNumber(m.count)) + " times)</span>" : "") + "</li>";
+                }).join("") + (t.more ? '<li class="text-muted">' + escapeHtml(plural(t.more, "more message", "more messages")) + " not shown.</li>" : "") +
+                "</ul></details>";
+        }
+        return html;
+    }
+
+    function statusHtml(t) {
+        if (t.status === "failed") {
+            return '<div class="text-danger small" data-status="failed"><i class="fa ' + ICONS.danger + '"></i> Failed' +
+                (t.error ? ": " + escapeHtml(t.error) : "") + "</div>";
+        }
+        if (t.status === "canceled") return '<div class="text-muted small" data-status="canceled"><i class="fa fa-ban"></i> Canceled</div>';
+        return "";
+    }
+
+    // At phone width the wide columns are hidden; their figures come in a line under the task's name
+    function detailHtml(t, system) {
+        var parts = [];
+        if (t.created_at) parts.push(new Date(t.created_at).toLocaleDateString());
+        if (t.slowest_step) parts.push("Slowest " + t.slowest_step.name + " " + formatDuration(t.slowest_step.seconds));
+        if (t.area !== null && t.area !== undefined) parts.push(formatArea(t.area, system));
+        if (t.reconstructions) parts.push(plural(t.reconstructions, "reconstruction", "reconstructions"));
+        if (t.position_error) parts.push(errorText(t, system) + " error");
+        if (gpuText(t)) parts.push("GPU: " + gpuText(t));
+        if (t.node) parts.push(t.node);
+        return parts.length ? '<div class="text-muted small tweakui-performance-detail">' + escapeHtml(parts.join(" \u00b7 ")) + "</div>" : "";
+    }
+
+    function taskHtml(t, system) {
         var name = t.name || "Task of " + (t.created_at ? t.created_at.slice(0, 10) : "?");
         var where = escapeHtml(t.project.name) + (t.owner ? " of " + escapeHtml(t.owner) : "");
-        return '<tr data-task="' + escapeHtml(t.id) + '"><td><a href="/map/project/' + escapeHtml(t.project.id) + "/task/" + escapeHtml(t.id) + '/">' +
-            escapeHtml(name) + '</a><div class="text-muted small">' + where + "</div></td>" +
-            '<td class="tweakui-performance-date">' + escapeHtml(t.created_at ? new Date(t.created_at).toLocaleDateString() : "") + "</td>" +
-            '<td class="tweakui-performance-number">' + escapeHtml(t.images ? formatNumber(t.images) : "") + "</td>" +
+        var open = t.status === "failed";
+        var notes = notesButtonHtml(t, open);
+        var wide = "tweakui-performance-wide ";
+        return '<tr data-task="' + escapeHtml(t.id) + '"' + (t.status ? ' data-status="' + escapeHtml(t.status) + '"' : "") + '><td><a href="/map/project/' +
+            escapeHtml(t.project.id) + "/task/" + escapeHtml(t.id) + '/">' + escapeHtml(name) + "</a>" + notes +
+            '<div class="text-muted small">' + where + "</div>" + statusHtml(t) + detailHtml(t, system) + "</td>" +
+            '<td class="' + wide + 'tweakui-performance-date">' + escapeHtml(t.created_at ? new Date(t.created_at).toLocaleDateString() : "") + "</td>" +
+            '<td class="tweakui-performance-number">' + photosHtml(t) + "</td>" +
             '<td class="tweakui-performance-number">' + escapeHtml(formatDuration(t.seconds)) + "</td>" +
             '<td class="tweakui-performance-number">' + escapeHtml(t.seconds_per_image ? t.seconds_per_image.toFixed(1) + "s" : "") + "</td>" +
-            '<td class="tweakui-performance-step">' + (t.slowest_step ? escapeHtml(t.slowest_step.name) + ' <span class="text-muted">' +
+            '<td class="' + wide + 'tweakui-performance-step">' + (t.slowest_step ? escapeHtml(t.slowest_step.name) + ' <span class="text-muted">' +
                 escapeHtml(formatDuration(t.slowest_step.seconds)) + "</span>" : "") + "</td>" +
-            '<td class="tweakui-performance-node">' + escapeHtml(t.node || "") + "</td></tr>";
+            '<td class="' + wide + 'tweakui-performance-number">' + escapeHtml(formatArea(t.area, system)) + "</td>" +
+            '<td class="' + wide + 'tweakui-performance-number">' + reconstructionsHtml(t) + "</td>" +
+            '<td class="' + wide + 'tweakui-performance-number">' + escapeHtml(errorText(t, system)) + "</td>" +
+            '<td class="' + wide + 'tweakui-performance-gpu">' + escapeHtml(gpuText(t)) + "</td>" +
+            '<td class="' + wide + 'tweakui-performance-node">' + escapeHtml(t.node || "") + "</td></tr>" +
+            (notes ? '<tr class="tweakui-performance-notes-row" id="tweakui-performance-notes-' + escapeHtml(t.id) + '"' + (open ? "" : " hidden") +
+                '><td colspan="' + TASK_COLUMNS + '">' + notesHtml(t) + "</td></tr>" : "");
     }
 
-    function tasksHtml(report) {
+    function tasksHtml(report, system) {
         var html = "<h4>Recent Processing</h4>";
-        if (!report.tasks.length) return html + '<p class="text-muted">No completed tasks yet.</p>';
+        if (!report.tasks.length) return html + '<p class="text-muted">No finished tasks yet.</p>';
         var trend = trendText(report.trend);
-        return html + '<p class="text-muted">The last ' + report.tasks.length + " completed " + (report.tasks.length === 1 ? "task" : "tasks") +
-            (report.admin ? " on this server" : " of yours") + ", newest first.</p>" +
+        var wide = ' class="tweakui-performance-wide ';
+        return html + '<p class="text-muted">The last ' + report.tasks.length + " finished " + (report.tasks.length === 1 ? "task" : "tasks") +
+            (report.admin ? " on this server" : " of yours") + " (completed, failed or canceled), newest first.</p>" +
             (trend ? '<p class="tweakui-performance-trend">' + escapeHtml(trend) + "</p>" : "") +
             '<div class="tweakui-performance-scroll"><table class="table tweakui-performance-table"><thead><tr><th>Task</th>' +
-            '<th class="tweakui-performance-date">Created</th><th class="tweakui-performance-number">Photos</th>' +
+            "<th" + wide + 'tweakui-performance-date">Created</th>' +
+            '<th class="tweakui-performance-number" title="Photos placed in the reconstruction, of those given">Photos</th>' +
             '<th class="tweakui-performance-number">Time</th><th class="tweakui-performance-number">Per Photo</th>' +
-            '<th class="tweakui-performance-step" title="Of the structure-from-motion steps ODM times in its report (stats.json); the later steps are not timed one by one">Slowest SfM Step</th>' +
-            '<th class="tweakui-performance-node">Node</th></tr></thead><tbody>' + report.tasks.map(taskHtml).join("") + "</tbody></table></div>";
+            "<th" + wide + 'tweakui-performance-step" title="Of the structure-from-motion steps ODM times in its report (stats.json); the later steps are not timed one by one">Slowest SfM Step</th>' +
+            "<th" + wide + 'tweakui-performance-number" title="The area the photos cover, from the task\'s report">Area</th>' +
+            "<th" + wide + 'tweakui-performance-number" title="Separate reconstructions the photos made before they were merged: more than one means some areas did not overlap enough">Reconstructions</th>' +
+            "<th" + wide + 'tweakui-performance-number" title="The reconstruction\'s average distance from the photos\' GPS positions, or from the ground control points when the task had them">Position Error</th>' +
+            "<th" + wide + 'tweakui-performance-gpu" title="Whether the node used a GPU, from the task\'s log">GPU</th>' +
+            "<th" + wide + 'tweakui-performance-node">Node</th></tr></thead><tbody>' +
+            report.tasks.map(function (t) { return taskHtml(t, system); }).join("") + "</tbody></table></div>";
     }
 
-    function render(page, report, load) {
+    function render(page, report, load, system) {
         page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes) +
-            serverHtml(report.server, load) + tasksHtml(report) +
+            serverHtml(report.server, load) + tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
             '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +
             "In Docker, a node has the memory Docker gives it.</p>";
@@ -339,7 +478,7 @@
                 state.report = report;
                 reading(report.server && report.server.cpu);
                 state.diskAt = Date.now();
-                render(page, report, state.load);
+                render(page, report, state.load, unitSystem(win));
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
                 if (!state.looping) {
                     state.looping = true;
@@ -368,11 +507,29 @@
         });
         doc.addEventListener("visibilitychange", onVisibility);
 
+        // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
+        var onUnits = ui.guard(NAME, function () {
+            if (state.report) render(page, state.report, state.load, unitSystem(win));
+        });
+        doc.addEventListener(UNIT_EVENT, onUnits);
+
         function stop() {
             state.stopped = true;
             schedule(0);
             doc.removeEventListener("visibilitychange", onVisibility);
+            doc.removeEventListener(UNIT_EVENT, onUnits);
         }
+
+        // A task's Notes button opens and closes the row of its notes below it
+        page.addEventListener("click", ui.guard(NAME, function (e) {
+            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=notes]") : null;
+            if (!toggle) return;
+            var row = doc.getElementById(toggle.getAttribute("aria-controls"));
+            if (!row) return;
+            var open = toggle.getAttribute("aria-expanded") !== "true";
+            toggle.setAttribute("aria-expanded", String(open));
+            row.hidden = !open;
+        }));
 
         if (button) button.addEventListener("click", ui.guard(NAME, load));
         var loaded = load();
@@ -380,5 +537,6 @@
     }
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
-        trendText: trendText, verdictsHtml: verdictsHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows};
+        trendText: trendText, verdictsHtml: verdictsHtml, formatArea: formatArea, formatLength: formatLength,
+        tasksHtml: tasksHtml, notesHtml: notesHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows};
 });

@@ -3,13 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08)
-1. **Diagnostic: Performance View, more in Recent Processing and the task's log** (new.md, 2026-11-08; see
-   "Performance View: Recent Processing and the task's log") — more per task from its stats.json, and what its log
-   says that the user should know. Open decisions listed there.
-2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -18,6 +15,24 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, Recent Processing and the task's log** (new.md, 2026-11-08; see "Performance View:
+  Recent Processing and the task's log") — branch `recent-processing`: `task_log.py` (new: `scan` checks each log line
+  against ODX's known messages, from its `stages/` and `modules/` code, and lists the other `[WARNING]`/`[ERROR]` lines
+  once each, `CPLE_AppDefined` left out; the GPU from "nvidia-smi detected" / "No nvidia-smi detected" or OpenMVS's
+  `--cuda-device`; `describe` puts it in sentences per request; `read` caches by size and mtime, a log over 32 MB read
+  at its first and last 8 MB), `performance.py` (`read_stats` returns a dict: photos given and placed, area,
+  components, GPS or GCP error; `photos_left_out`; `task_entry` adds status, error, the log's GPU, reconstructions
+  (the log's count before merging, stats.json counts the merged one), notes, other; `recent_tasks` takes failed and
+  canceled too; time per photo for completed only, so the trend is completed tasks'), `features.py` (help),
+  `performance_page.js` (columns Photos "208 of 220", Area, Reconstructions, Position Error, GPU; failed and canceled
+  under the name, a failure's notes open; the Notes button and its row, Other Messages in a `<details>`; areas and
+  lengths in WebODM's `unit_system`, redrawn on `onUnitSystemChanged`; at phone width the wide columns fold into a line
+  under the name), `main.css`. Tests: `performance_page.test.js` (4 new), `test_tweakui.py` (6 new: failed and
+  canceled, stats.json, the notes, the GPU, a huge log and Other Messages capped, the cache). Docs `performance.md`
+  (Recent Processing, Notes from the Log), README, CHANGELOG, screenshots `performance`, `performance-tasks` (new, the
+  notes open). Live on 4.0.0 with the three real tasks: 2 and 3 notes (photos left out, 2 reconstructions, no features
+  in 6 photos), GPU No (the logs say "No nvidia-smi detected"), imperial 4,141 ft² and 0.9 in, phone without overflow.
+  "Photos resized" was dropped from the known messages: ODX no longer resizes (`--resize-to` is deprecated).
 - **Diagnostic: Performance View, live CPU and memory** (new.md, 2026-11-08; see "Performance View: live CPU Load and
   refresh") — branch `performance-live`: `performance.py` (`proc_stat_times`: Linux's `/proc/stat`, idle and iowait
   not busy; `windows_times`: `GetSystemTimes` and `NtQuerySystemInformation` through ctypes; `cpu_entry` with
@@ -2148,7 +2163,7 @@ and box).
 1. CPU Load shows the total, a bar per core and the load averages (as above).
 2. Memory stays the machine's used and free (no process list), refreshed with the CPU.
 
-## Performance View: Recent Processing and the task's log (new.md, 2026-11-08)
+## Performance View: Recent Processing and the task's log (new.md, 2026-11-08) — done
 
 **Request**: "On the Performance UI, under Recent Processing, what other task performance information would be
 useful in this table? Could we also check the task's log for useful errors or messages the User should be made aware

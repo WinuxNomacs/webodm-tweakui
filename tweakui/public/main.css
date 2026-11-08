@@ -370,10 +370,23 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-core-name { flex: 0 0 18px; text-align: right; }
 .tweakui-performance .tweakui-performance-core-value { flex: 0 0 30px; text-align: right; }
 .tweakui-performance .tweakui-performance-cpu-note { margin: 6px 0 2px; }
+/* Recent Processing: a task's Notes button opens the row below it (its notes, each with its line from the log, and the
+   log's other messages); at phone width the wide columns are hidden and their figures come under the task's name */
+.tweakui-performance .tweakui-performance-gpu, .tweakui-performance .tweakui-performance-node { white-space: nowrap; }
+.tweakui-performance .tweakui-performance-notes-button { margin-left: 6px; vertical-align: baseline; }
+.tweakui-performance .tweakui-performance-table > tbody > tr.tweakui-performance-notes-row > td { border-top: 0; padding-top: 0; }
+.tweakui-performance .tweakui-performance-notes { margin: 0 0 6px; }
+.tweakui-performance .tweakui-performance-notes > li { padding: 2px 0; }
+.tweakui-performance .tweakui-performance-line, .tweakui-performance .tweakui-performance-other li { overflow-wrap: anywhere; }
+.tweakui-performance .tweakui-performance-line { margin-left: 1.5em; }
+.tweakui-performance .tweakui-performance-line code, .tweakui-performance .tweakui-performance-other code { white-space: normal; color: inherit; background: none; padding: 0; }
+.tweakui-performance .tweakui-performance-other summary { display: list-item; cursor: pointer; }
+.tweakui-performance .tweakui-performance-other ul { margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-detail { display: none; }
 @media (max-width: 767px) {
     .tweakui-performance .tweakui-performance-card { flex-basis: 100%; }
-    .tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step,
-    .tweakui-performance .tweakui-performance-node { display: none; }
+    .tweakui-performance .tweakui-performance-wide { display: none; }
+    .tweakui-performance .tweakui-performance-detail { display: block; }
 }
 
 /* General > Just for Fun > Surprise Me: fireworks-js's canvas over the whole page, above dialogs and the maps'

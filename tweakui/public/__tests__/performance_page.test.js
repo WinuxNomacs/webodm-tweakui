@@ -130,19 +130,101 @@ describe("the Performance page", () => {
         const {root} = await started([json(report())]);
         const rows = root.querySelectorAll(".tweakui-performance-table tbody tr");
         expect(rows[0].querySelector("a").getAttribute("href")).toBe("/map/project/3/task/t1/");
-        expect(texts(rows[0], "td").slice(2)).toEqual(["220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "node-odx-1"]);
+        expect(texts(rows[0], "td").slice(2)).toEqual(["220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "", "", "", "", "node-odx-1"]);
         // Another user's (an admin's view), with no name, time or stats
-        expect(texts(rows[1], "td")[0]).toBe("Task of 2026-11-06 Flights of pat");
+        expect(words(rows[1].querySelector("td a"))).toBe("Task of 2026-11-06");
+        expect(words(rows[1].querySelector("td a + .text-muted"))).toBe("Flights of pat");
         expect(texts(rows[1], "td").slice(3, 6)).toEqual(["", "", ""]);
-        expect(texts(root, ".tweakui-performance-body > p.text-muted")[0]).toBe("The last 2 completed tasks of yours, newest first.");
+        expect(texts(root, ".tweakui-performance-body > p.text-muted")[0])
+            .toBe("The last 2 finished tasks of yours (completed, failed or canceled), newest first.");
     });
 
     test("an admin's list says it holds the server's tasks, and no tasks says so", async () => {
         let {root} = await started([json(report({admin: true}))]);
-        expect(root.textContent).toContain("The last 2 completed tasks on this server, newest first.");
+        expect(root.textContent).toContain("The last 2 finished tasks on this server (completed, failed or canceled), newest first.");
         ({root} = await started([json(report({tasks: [], nodes: []}))]));
-        expect(root.textContent).toContain("No completed tasks yet.");
+        expect(root.textContent).toContain("No finished tasks yet.");
         expect(root.textContent).toContain("No processing node is available to you.");
+    });
+
+    // A task with what its report and log say: 208 of 220 photos placed, two reconstructions, GPS error, no GPU
+    function reported(id, extra) {
+        return task(id, Object.assign({status: "completed", photos_given: 220, photos_reconstructed: 208, area: 384.7,
+            reconstructions: 2, position_error: {kind: "gps", meters: 0.0236}, gpu: false, notes: [], other: [], more: 0}, extra));
+    }
+    const cells = row => texts(row, "td").slice(2);
+
+    test("recent tasks show the photos placed of those given, area, reconstructions, position error and GPU", async () => {
+        const {root} = await started([json(report({tasks: [reported("t1"), reported("t2", {photos_reconstructed: 220,
+            reconstructions: 1, position_error: {kind: "gcp", meters: 1.234}, gpu: true, area: 25000})]}))]);
+        const rows = root.querySelectorAll(".tweakui-performance-table tbody tr");
+        expect(cells(rows[0])).toEqual(["208 of 220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "385 m\u00b2", "2", "2.4 cm GPS", "No", "node-odx-1"]);
+        expect(cells(rows[1]).slice(0, 1).concat(cells(rows[1]).slice(4, 8))).toEqual(["220 of 220", "2.50 ha", "1", "1.23 m GCP", "Yes"]);
+        // Fewer photos placed than given, and more than one reconstruction, in the warning colour
+        expect(rows[0].querySelectorAll("td .text-warning").length).toBe(2);
+        expect(rows[1].querySelectorAll("td .text-warning").length).toBe(0);
+        // At phone width the wide columns hide; their figures come under the task's name
+        expect(words(rows[0].querySelector(".tweakui-performance-detail")))
+            .toMatch(/Slowest Reconstruction 1m 42s · 385 m² · 2 reconstructions · 2\.4 cm GPS error · GPU: No · node-odx-1$/);
+    });
+
+    test("areas and errors follow WebODM's unit system, and are redrawn when it changes", async () => {
+        expect([performancePage.formatArea(12000, "metric"), performancePage.formatArea(50000, "imperial"),
+            performancePage.formatArea(100, "imperialUS")]).toEqual(["1.20 ha", "12.36 ac", "1,076 ft\u00b2"]);
+        expect([performancePage.formatLength(1.5, "metric"), performancePage.formatLength(0.5, "imperial"),
+            performancePage.formatLength(0.2, "imperial"), performancePage.formatLength(null, "metric")])
+            .toEqual(["1.50 m", "1.64 ft", "7.9 in", ""]);
+        window.localStorage.setItem("unit_system", "imperial");
+        try {
+            const {root} = await started([json(report({tasks: [reported("t1")]}))]);
+            const row = () => root.querySelector(".tweakui-performance-table tbody tr");
+            expect(cells(row()).slice(4, 7)).toEqual(["4,141 ft\u00b2", "2", "0.9 in GPS"]);
+            window.localStorage.setItem("unit_system", "metric");
+            document.dispatchEvent(new Event("onUnitSystemChanged"));
+            expect(cells(row()).slice(4, 7)).toEqual(["385 m\u00b2", "2", "2.4 cm GPS"]);
+        } finally {
+            window.localStorage.removeItem("unit_system");
+        }
+    });
+
+    test("failed and canceled tasks say so, a failure with its error and its notes open", async () => {
+        const failed = reported("t1", {status: "failed", error: "Process exited with code 1", seconds_per_image: null,
+            notes: [{key: "out_of_memory", level: "danger", text: "Processing ran out of memory and stopped.", line: "[ERROR] Whoops! You ran out of memory!"}]});
+        const {root} = await started([json(report({tasks: [failed, reported("t2", {status: "canceled"})]}))]);
+        const failedRow = root.querySelector('tr[data-task="t1"]');
+        expect(words(failedRow.querySelector("[data-status=failed]"))).toBe("Failed: Process exited with code 1");
+        expect(words(root.querySelector('tr[data-task="t2"] [data-status=canceled]'))).toBe("Canceled");
+        const notes = root.querySelector("#tweakui-performance-notes-t1");
+        expect(notes.hidden).toBe(false);
+        expect(failedRow.querySelector("[data-act=notes]").getAttribute("aria-expanded")).toBe("true");
+        expect(failedRow.querySelector("[data-act=notes] .fa").className).toContain("text-danger");
+        expect(words(notes.querySelector("[data-note=out_of_memory]")))
+            .toBe("Processing ran out of memory and stopped. [ERROR] Whoops! You ran out of memory!");
+        // The canceled task has no notes, so no button and no row
+        expect(root.querySelector('tr[data-task="t2"] [data-act=notes]')).toBeNull();
+    });
+
+    test("a task's Notes button opens its notes, with the log's other messages in a list that opens", async () => {
+        const t = reported("t1", {
+            notes: [{key: "reconstructions", level: "warning", text: "The photos made 2 separate reconstructions.", line: "[WARNING] Multiple reconstructions detected (2)"},
+                {key: "left_out", level: "warning", text: "12 of 220 photos were left out.", line: ""}],
+            other: [{text: "[WARNING] Shots are aligned on a single-line", count: 3}, {text: "[ERROR] <b>odd</b>", count: 1}], more: 4});
+        const {root} = await started([json(report({tasks: [t, reported("t2", {other: [{text: "[WARNING] x", count: 1}]})]}))]);
+        const button = root.querySelector('tr[data-task="t1"] [data-act=notes]'), row = root.querySelector("#tweakui-performance-notes-t1");
+        expect(words(button)).toBe("2 Notes");
+        expect(row.hidden).toBe(true);
+        button.click();
+        expect([row.hidden, button.getAttribute("aria-expanded")]).toEqual([false, "true"]);
+        expect(texts(row, ".tweakui-performance-notes > li")).toEqual([
+            "The photos made 2 separate reconstructions. [WARNING] Multiple reconstructions detected (2)", "12 of 220 photos were left out."]);
+        const other = row.querySelector("details.tweakui-performance-other");
+        expect([other.open, words(other.querySelector("summary"))]).toEqual([false, "Other Messages (6)"]);
+        expect(texts(other, "li")).toEqual(["[WARNING] Shots are aligned on a single-line (3 times)", "[ERROR] <b>odd</b>", "4 more messages not shown."]);
+        expect(other.querySelector("b")).toBeNull();
+        button.click();
+        expect(row.hidden).toBe(true);
+        // Only other messages: the button counts them
+        expect(words(root.querySelector('tr[data-task="t2"] [data-act=notes]'))).toBe("1 Message");
     });
 
     test("the trend reads as a sentence: faster, slower or about the same", async () => {
