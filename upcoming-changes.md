@@ -3,7 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests go in `new.md`.
+1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -23,7 +23,7 @@
   sends it on the press. Branch `surprise-me-windows-menu`: `surprise_me.js` (`released`, `MENU_AFTER`: a release
   with no contextmenu yet blocks the one that follows within a second; the menu key later still gets its menu), tests
   in `__tests__/surprise_me.test.js` (the Windows order, which fails without the fix), live on both stacks with the
-  Windows order sent as events; on Windows itself, still to be checked by the user.
+  Windows order sent as events; on Windows itself, checked by the user ("that works", 2026-11-08).
 - **Task Options: Replace Preset Options Menu** (first named Sort Preset Options; the user's request, 2026-11-08; see
   "Task Options: Sort Preset Options") — branch `sort-preset-options`: `tweakui/public/preset_menu.js`, its section
   of `main.css`, tests in `__tests__/preset_menu.test.js`, `features.py`, `dev/selector-check.js` (`WHERE`),
@@ -1699,4 +1699,22 @@ A native select cannot hold a submenu.
   `replace-preset-options-menu` too.
 
 **Built**: see Done.
+
+## Task Options: two settings renamed (new.md, 2026-11-08)
+
+**Request**: rename "Show Modified Options" to "Show Configured Option Count", and "Expand Configured" to "Expand
+Configured Options" (General > Task Options, the settings page).
+
+**Builds on**: `task_options.js` (both features), `features.py`, their screenshots (`show-modified-options`,
+`expand-configured`), `docs/general.md`, README, CHANGELOG, the tests (`test_tweakui.py`, `task_options.test.js`,
+`settings_page.test.js`), `dev/screenshots.js`, CLAUDE.md's mention.
+
+**Decided with the user**: the keys and screenshots follow the names, as TweakUI is unreleased (the dev stacks'
+saved values reset): `show_modified_options` → `show_configured_option_count`, `expand_configured` →
+`expand_configured_options`; previews `show-configured-option-count` and `expand-configured-options`. The texts
+that describe them (descriptions, docs) say "configured" where they said "modified", to match. History entries in
+this file keep the old names.
+
+**Phase**: one branch, `rename-configured-options`; Jest, Django on both stacks, the settings page live on both,
+screenshots retaken, the selector check.
 
