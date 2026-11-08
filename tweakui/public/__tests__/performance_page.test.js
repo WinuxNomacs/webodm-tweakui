@@ -27,13 +27,18 @@ function report(extra) {
     }, extra);
 }
 
-function page(every = 3) {
+function page(every = 3, history = 5) {
     document.body.innerHTML = `
       <div id="tweakui-performance" data-api="/api/plugins/tweakui/">
         <div class="tweakui-performance-bar"><button data-act="refresh"></button><span class="tweakui-performance-status"></span>
-          <div class="tweakui-performance-every">
+          <div class="tweakui-performance-every" data-control="refresh">
             <input type="range" class="tweakui-performance-every-slider" min="1" max="10" step="1" value="${every}">
             <input type="number" id="tweakui-performance-refresh" min="1" max="10" step="1" value="${every}">
+            <span class="tweakui-performance-every-status"></span>
+          </div>
+          <div class="tweakui-performance-every" data-control="history">
+            <input type="range" class="tweakui-performance-every-slider" min="1" max="30" step="1" value="${history}">
+            <input type="number" id="tweakui-performance-history" min="1" max="30" step="1" value="${history}">
             <span class="tweakui-performance-every-status"></span>
           </div>
         </div>
@@ -61,8 +66,8 @@ afterEach(() => {
     jest.useRealTimers();
 });
 
-async function started(answers, every) {
-    const root = page(every);
+async function started(answers, every, history) {
+    const root = page(every, history);
     const fetchFn = jest.fn(() => {
         const next = answers.length > 1 ? answers.shift() : answers[0];
         return next instanceof Error ? Promise.reject(next) : next;
@@ -98,13 +103,13 @@ describe("the Performance page", () => {
         expect(texts(root, ".tweakui-performance-verdicts li")[0]).toBe("spare is not answering.");
     });
 
-    test("an online node's card shows its engine, cores, memory with a bar, queue, max photos and what it suits", async () => {
+    test("an online node's card shows its engine, cores, memory with its share used and a graph, queue, max photos and what it suits", async () => {
         const {root} = await started([json(report())]);
         const card = root.querySelector('[data-node="1"]');
         expect(card.querySelector(".label").textContent).toBe("Online");
-        expect(texts(card, "tr")).toEqual(["Engine ODX 3.8.5 (API 2.4.0)", "CPU Cores 20", "Memory 48 GB free of 64 GB",
+        expect(texts(card, "tr")).toEqual(["Engine ODX 3.8.5 (API 2.4.0)", "CPU Cores 20", "Memory 48 GB free of 64 GB \u00b7 25% used",
             "Queue 0 tasks (1 at a time)", "Max Photos No limit", "Suits About 1,500 photos per task"]);
-        expect(card.querySelector(".progress-bar").style.width).toBe("25%");
+        expect(card.querySelector("[data-memory] .tweakui-performance-graph").getAttribute("data-graph")).toBe("node:1");
     });
 
     test("a node that does not answer is marked and shows when WebODM last saw it", async () => {
@@ -124,12 +129,14 @@ describe("the Performance page", () => {
         expect(div.textContent).toContain("1 task (1 at a time)");
     });
 
-    test("the server's disk and memory get bars coloured as they fill", async () => {
+    test("the server's free disk space gets a bar and its memory a graph, each coloured as they fill", async () => {
         const {root} = await started([json(report())]);
         const server = root.querySelector("[data-server]");
-        expect(texts(server, "tr")).toEqual(["Disk 100 GB free of 1000 GB", "Memory 2 GB free of 64 GB"]);
+        expect(texts(server, "tr")).toEqual(["Disk 100 GB free of 1000 GB", "Memory 2 GB free of 64 GB \u00b7 97% used"]);
         expect(Array.from(server.querySelectorAll(".progress-bar")).map(b => b.className.replace("progress-bar progress-bar-", "")))
-            .toEqual(["warning", "danger"]);
+            .toEqual(["warning"]);
+        expect(server.querySelector("[data-used]").className).toBe("text-danger");
+        expect(server.querySelector(".tweakui-performance-graph").getAttribute("data-graph")).toBe("memory");
     });
 
     test("recent tasks link to their map and show photos, time, time per photo, the slowest step and the node", async () => {
@@ -319,14 +326,15 @@ describe("the Performance page", () => {
         expect(performancePage.cpuShares(a, cpu([100, 1000], 2))).toEqual({total: null});
     });
 
-    test("CPU Load shows the total of all cores in one bar and the load averages, and says it is measuring before two readings", () => {
+    test("CPU Load shows the total of all cores with its graph and the load averages, and says it is measuring before two readings", () => {
         const div = document.createElement("table");
         div.innerHTML = performancePage.cpuRows(cpu([0, 0], 128), null);
         expect(words(div)).toBe("CPU Load Measuring... Load Average 1.50, 1.25, 1.00 (1, 5 and 15 minutes)");
         div.innerHTML = performancePage.cpuRows(cpu([0, 0], 128), {total: 0.375});
         expect(div.querySelector("[data-cpu-total]").textContent).toBe("38%");
         expect(words(div)).toContain("38% of 128 cores");
-        expect(Array.from(div.querySelectorAll(".progress-bar")).map(b => [b.className, b.style.width])).toEqual([["progress-bar progress-bar-success", "38%"]]);
+        expect(div.querySelectorAll(".progress-bar")).toHaveLength(0);
+        expect(div.querySelector(".tweakui-performance-graph").getAttribute("data-graph")).toBe("cpu");
         div.innerHTML = performancePage.cpuRows(cpu([0, 0], 1, null), {total: 0.5});
         expect(words(div)).not.toContain("Load Average");
         expect(words(div)).toContain("of 1 core");
@@ -343,8 +351,9 @@ describe("the Performance page", () => {
         await jest.advanceTimersByTimeAsync(1000);
         expect(fetchFn.mock.calls[1][0]).toBe("/api/plugins/tweakui/performance/live");
         expect(root.querySelector("[data-cpu-total]").textContent).toBe("25%");
-        expect(root.querySelectorAll("[data-server] .progress-bar")).toHaveLength(3);
-        expect(words(root.querySelector("[data-node='1'] [data-memory]"))).toBe("16 GB free of 64 GB");
+        expect(root.querySelectorAll("[data-server] .progress-bar")).toHaveLength(1);
+        expect(Array.from(root.querySelectorAll("[data-server] [data-graph]")).map(g => g.getAttribute("data-graph"))).toEqual(["cpu", "memory"]);
+        expect(words(root.querySelector("[data-node='1'] [data-memory]"))).toBe("16 GB free of 64 GB \u00b7 75% used");
         expect(words(root.querySelector("[data-server]"))).toContain("Memory 32 GB free of 64 GB");
         await jest.advanceTimersByTimeAsync(2999);
         expect(fetchFn).toHaveBeenCalledTimes(2);
@@ -384,8 +393,8 @@ describe("the Performance page", () => {
             read_size: 4096, write_size: 65536, busy: 0.97, wait: 3.25});
         expect(words(div)).toBe("sde \u00b7 Tasks Mounted At /webodm/app/media, /webodm/venv Reads 2.5/s \u00b7 10 KB/s \u00b7 4 KB each " +
             "Writes 1,200/s \u00b7 75 MB/s \u00b7 64 KB each Busy 97% Wait 3.3 ms per operation");
-        expect(div.querySelector(".progress-bar").className).toBe("progress-bar progress-bar-danger");
-        expect(div.querySelector(".progress").title).toBe("97% busy");
+        expect(div.querySelector("[data-busy]").className).toBe("text-danger");
+        expect(Array.from(div.querySelectorAll("[data-graph]")).map(g => g.getAttribute("data-graph"))).toEqual(["drive:sde:ops", "drive:sde:busy"]);
         div.innerHTML = performancePage.driveCardHtml(Object.assign({}, d, {tasks: false}), {reads: 0, writes: 0, read_rate: 0, write_rate: 0,
             read_size: null, write_size: null, busy: null, wait: null});
         expect(words(div)).toBe("sde Mounted At /webodm/app/media, /webodm/venv Reads None Writes None Wait No operations");
@@ -406,6 +415,92 @@ describe("the Performance page", () => {
         expect(root.querySelector("[data-server]")).not.toBeNull();
         await jest.advanceTimersByTimeAsync(3000);
         expect(words(root.querySelector("[data-drive=sde]"))).toContain("Reads 200/s");
+    });
+
+    test("readings are kept for 30 minutes, and a graph draws those in its window with a gap where they stopped", () => {
+        const history = {};
+        for (let t = 0; t <= 31 * 60000; t += 60000) performancePage.record(history, "cpu", t, 0.5);
+        performancePage.record(history, "cpu", 31 * 60000, null);
+        expect(history.cpu[0][0]).toBe(60000);
+        expect(history.cpu).toHaveLength(31);
+        const view = {history: {cpu: [[0, 0], [1000, 0.5], [2000, 1], [60000, 0.25]]}, now: 60000, span: 60000, gap: 15000};
+        const div = document.createElement("div");
+        div.innerHTML = performancePage.graphHtml(view, "cpu", [{key: "cpu"}], "percent");
+        const paths = Array.from(div.querySelectorAll("path:not(.tweakui-performance-graph-area)")).map(p => p.getAttribute("d"));
+        // A percent graph from 0 (the bottom, 39) to 100% (the top, 1); the reading after a minute's gap is a run of its own
+        expect(paths).toEqual(["M0.0 39.0 L5.0 20.0 L10.0 1.0", "M300.0 29.5 h0"]);
+        expect(div.querySelectorAll(".tweakui-performance-graph-area")).toHaveLength(1);
+        expect(div.querySelector(".tweakui-performance-graph-max")).toBeNull();
+        expect(performancePage.niceCeil(0)).toBe(1);
+        expect(performancePage.niceCeil(130)).toBe(200);
+        expect(performancePage.niceCeil(4200)).toBe(5000);
+    });
+
+    test("a rate graph has two lines, the first in the theme's link colour and the second in its text colour, up to its highest reading", () => {
+        const view = {history: {r: [[0, 30], [3000, 130]], w: [[0, 10], [3000, 0]]}, now: 3000, span: 6000, gap: 15000};
+        const div = document.createElement("div");
+        div.innerHTML = performancePage.graphHtml(view, "ops", [{key: "r", label: "Reads"}, {key: "w", label: "Writes"}], "rate");
+        expect(Array.from(div.querySelectorAll("g")).map(g => g.getAttribute("class"))).toEqual(["tweakui-performance-accent", "theme-color-primary"]);
+        expect(div.querySelector(".tweakui-performance-graph-max").textContent).toBe("200/s");
+        expect(div.querySelector("g:last-child path").getAttribute("d")).toBe("M150.0 37.1 L300.0 39.0");
+        expect(performancePage.graphTip(view, ["r", "w"], ["Reads", "Writes"], "rate", 2000))
+            .toBe("Reads 130/s \u00b7 Writes 0/s \u00b7 " + new Date(3000).toLocaleTimeString());
+        expect(performancePage.graphTip(view, ["r"], [""], "rate", 60000)).toBe("");
+    });
+
+    test("the graphs fill as the page refreshes, keep their readings through Refresh, and show the readings under the pointer", async () => {
+        jest.useFakeTimers();
+        jest.setSystemTime(new Date(2026, 10, 8, 12, 0, 0));
+        const live = (busy) => json({cpu: cpu([busy, busy * 2 + 1000], 2), memory: {total: 64 * GB, free: 16 * GB, used: 48 * GB},
+            nodes: [{id: 1, online: true, total_memory: 64 * GB, available_memory: 32 * GB}]});
+        const first = report({server: Object.assign(report().server, {cpu: cpu([0, 0], 2)})});
+        const {root, view} = await started([json(first), live(500), live(1000), json(first), live(1500)]);
+        await jest.advanceTimersByTimeAsync(1000);
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(view.state.history.cpu.map(p => p[1])).toEqual([0.25, 0.5]);
+        expect(view.state.history.memory.map(p => p[1])).toEqual([62 / 64, 0.75, 0.75]);
+        expect(view.state.history["node:1"].map(p => p[1])).toEqual([0.25, 0.5, 0.5]);
+        await view.load();
+        expect(view.state.history.cpu).toHaveLength(2);
+        const graph = root.querySelector('[data-graph="cpu"]');
+        graph.getBoundingClientRect = () => ({left: 0, width: 300, top: 0, height: 42});
+        graph.dispatchEvent(new MouseEvent("pointermove", {bubbles: true, clientX: 300}));
+        const tip = () => root.querySelector('[data-graph="cpu"] .tweakui-performance-graph-tip');
+        expect(tip().textContent).toBe("50% \u00b7 " + new Date(2026, 10, 8, 12, 0, 4).toLocaleTimeString());
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(tip()).not.toBeNull();
+        root.dispatchEvent(new MouseEvent("pointerleave"));
+        expect(tip()).toBeNull();
+    });
+
+    test("the graphs' accent is the theme's link colour, read from the page", async () => {
+        const style = document.createElement("style");
+        style.textContent = "a { color: rgb(1, 2, 3); }";
+        document.head.appendChild(style);
+        try {
+            const {root} = await started([json(report())]);
+            expect(root.style.getPropertyValue("--tweakui-performance-accent")).toBe("rgb(1, 2, 3)");
+            expect(root.querySelector("a[hidden]")).toBeNull();
+        } finally {
+            style.remove();
+        }
+    });
+
+    test("History Length starts from the page's value, redraws the graphs over the new window at once and saves it", async () => {
+        const {root, fetchFn, view} = await started([json(report()), json({performance_history: 20})], 3, 10);
+        expect(view.state.minutes).toBe(10);
+        const slider = root.querySelector('[data-control="history"] .tweakui-performance-every-slider');
+        slider.value = "20";
+        slider.dispatchEvent(new Event("input"));
+        expect(view.state.minutes).toBe(20);
+        expect(root.querySelector("#tweakui-performance-history").value).toBe("20");
+        slider.dispatchEvent(new Event("change"));
+        await Promise.resolve();
+        const [url, options] = fetchFn.mock.calls[1];
+        expect(url).toBe("/api/plugins/tweakui/settings");
+        expect(JSON.parse(options.body)).toEqual({performance_history: 20});
+        // Refresh Every's box is its own
+        expect(root.querySelector("#tweakui-performance-refresh").value).toBe("3");
     });
 
     test("no refresh is asked while the last is unanswered, and a failed one keeps the figures", async () => {

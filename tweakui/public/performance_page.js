@@ -22,8 +22,11 @@
     var NAME = "performance_page";
     // The live figures: the first asked this long after the report (a load needs two readings), the disk this often
     var FIRST_LIVE = 1000, DISK_EVERY = 10000;
-    // Refresh Every's range and default (features.py), when the page doesn't say
-    var EVERY_MIN = 1, EVERY_MAX = 10, EVERY_DEFAULT = 3;
+    // Refresh Every's and History Length's defaults (features.py), when the page doesn't say
+    var EVERY_DEFAULT = 3, HISTORY_DEFAULT = 5;
+    // The graphs: the readings kept (History Length's longest), the drawing's size (stretched to the card's width), and
+    // a line broken where readings stopped for this many refreshes (the tab hidden), or at least this long
+    var HISTORY_KEEP = 30 * 60000, GRAPH_W = 300, GRAPH_H = 40, GAP_REFRESHES = 3, GAP_MIN = 15000;
     // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
     var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
     var FT = 3.28083989501, FT2_ACRE = 43560;
@@ -109,6 +112,93 @@
         return Math.round(share * 100) + "%";
     }
 
+    // The warning colours a bar took, for a share shown as a figure beside its graph
+    function levelClass(share) {
+        return share >= FULL_DANGER ? "text-danger" : share >= FULL_WARNING ? "text-warning" : "";
+    }
+
+    // A reading [time, value] added to its series in history ({key: [[time, value], ...]}), readings older than
+    // HISTORY_KEEP dropped
+    function record(history, key, time, value) {
+        if (value === null || value === undefined || isNaN(value)) return;
+        var list = history[key] || (history[key] = []);
+        list.push([time, value]);
+        while (list.length && list[0][0] < time - HISTORY_KEEP) list.shift();
+    }
+
+    // A scale's top for the highest value: 1, 2 or 5 times a power of ten, at least 1
+    function niceCeil(n) {
+        if (!(n > 1)) return 1;
+        var power = Math.pow(10, Math.floor(Math.log(n) / Math.LN10));
+        var steps = [1, 2, 5, 10];
+        for (var i = 0; i < steps.length; i++) if (steps[i] * power >= n) return steps[i] * power;
+        return 10 * power;
+    }
+
+    // A series' readings in the window as runs, a run broken where readings stopped for longer than gap
+    function runs(list, from, gap) {
+        var out = [], run = null, last = null;
+        list.forEach(function (p) {
+            if (p[0] < from - gap) return;
+            if (!run || p[0] - last > gap) out.push(run = []);
+            run.push(p);
+            last = p[0];
+        });
+        return out;
+    }
+
+    function graphValue(kind, v) {
+        return kind === "rate" ? formatRate(v) : percent(v);
+    }
+
+    // A graph of one or two series over the last view.span ms (view: {history, now, span, gap}; none draws an empty
+    // one): the newest at the right, a percent graph from 0 to 100%, a rate graph up to its highest reading in the window
+    // (at its top left, once it has readings). The first series is in the theme's link colour (the bars' colour, start's
+    // accent) with a light fill under it, the second in its text colour. Hovering it shows the readings under the pointer (start's hover)
+    function graphHtml(view, id, series, kind) {
+        var from = view ? view.now - view.span : 0, span = view ? view.span : 1, gap = view ? view.gap : 0;
+        var lists = series.map(function (s) { return view ? runs(view.history[s.key] || [], from, gap) : []; });
+        var max = 1, top = 0, any = false;
+        lists.forEach(function (rs) { rs.forEach(function (r) { r.forEach(function (p) { if (p[0] >= from) { any = true; top = Math.max(top, p[1]); } }); }); });
+        if (kind === "rate") max = niceCeil(top);
+        function x(t) { return ((t - from) / span * GRAPH_W).toFixed(1); }
+        function y(v) { return (GRAPH_H - 1 - Math.min(Math.max(v / max, 0), 1) * (GRAPH_H - 2)).toFixed(1); }
+        var paths = lists.map(function (rs, i) {
+            var html = rs.map(function (r) {
+                var line = "M" + r.map(function (p) { return x(p[0]) + " " + y(p[1]); }).join(" L") + (r.length === 1 ? " h0" : "");
+                var area = i === 0 && r.length > 1 ? '<path class="tweakui-performance-graph-area" d="' + line + " L" + x(r[r.length - 1][0]) +
+                    " " + GRAPH_H + " L" + x(r[0][0]) + " " + GRAPH_H + ' Z"></path>' : "";
+                return area + '<path d="' + line + '"></path>';
+            }).join("");
+            return '<g class="' + (i === 0 ? "tweakui-performance-accent" : "theme-color-primary") + '">' + html + "</g>";
+        }).join("");
+        return '<div class="tweakui-performance-graph theme-border" data-graph="' + escapeHtml(id) + '" data-kind="' + kind +
+            '" data-series="' + escapeHtml(series.map(function (s) { return s.key; }).join(" ")) + '" data-labels="' +
+            escapeHtml(series.map(function (s) { return s.label || ""; }).join("|")) + '">' +
+            (kind === "rate" && any ? '<span class="tweakui-performance-graph-max text-muted">' + escapeHtml(formatRate(max)) + "</span>" : "") +
+            '<svg viewBox="0 0 ' + GRAPH_W + " " + GRAPH_H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + paths + "</svg></div>";
+    }
+
+    // What a graph's hover says at time t: each series' reading nearest it (within view.gap), then the time; "" without
+    function graphTip(view, keys, labels, kind, t) {
+        var parts = [], at = null;
+        keys.forEach(function (key, i) {
+            var best = null;
+            (view.history[key] || []).forEach(function (p) { if (!best || Math.abs(p[0] - t) < Math.abs(best[0] - t)) best = p; });
+            if (!best || Math.abs(best[0] - t) > view.gap) return;
+            parts.push((labels[i] ? labels[i] + " " : "") + graphValue(kind, best[1]));
+            at = best[0];
+        });
+        return parts.length ? parts.join(" \u00b7 ") + " \u00b7 " + new Date(at).toLocaleTimeString() : "";
+    }
+
+    // Free of total, the share used (in the warning colours past 80% and 95%) and its graph
+    function memoryGraphHtml(free, total, view, key) {
+        var share = total > 0 ? (total - free) / total : 0;
+        return freeOf(free, total) + ' <span class="text-muted">\u00b7</span> <span class="' + levelClass(share) + '" data-used>' +
+            percent(share) + " used</span>" + graphHtml(view, key, [{key: key}], "percent");
+    }
+
     // The CPU's busy share between two readings of its counters ({total: [busy, total]}, the API's): {total}, from 0
     // to 1, or null where the counters didn't move; null without two readings
     function cpuShares(prev, next) {
@@ -167,14 +257,14 @@
         }).join("") + "</ul>";
     }
 
-    function nodeHtml(n) {
+    function nodeHtml(n, view) {
         var rows = "";
         var engine = [n.engine ? String(n.engine).toUpperCase() : "", n.engine_version && n.engine_version !== "?" ? n.engine_version : ""]
             .join(" ").trim();
         if (engine) rows += rowHtml("Engine", escapeHtml(engine) + (n.version && n.version !== "?" ? ' <span class="text-muted">(API ' + escapeHtml(n.version) + ")</span>" : ""));
         if (n.online) {
             if (n.cpu_cores) rows += rowHtml("CPU Cores", escapeHtml(n.cpu_cores));
-            if (n.total_memory) rows += '<tr><th>Memory</th><td data-memory>' + memoryHtml(n.available_memory, n.total_memory) + "</td></tr>";
+            if (n.total_memory) rows += '<tr><th>Memory</th><td data-memory>' + memoryGraphHtml(n.available_memory, n.total_memory, view, "node:" + n.id) + "</td></tr>";
             var parallel = n.max_parallel_tasks || 1;
             rows += rowHtml("Queue", escapeHtml((n.queue || 0) + (n.queue === 1 ? " task" : " tasks")) +
                 ' <span class="text-muted">(' + escapeHtml(parallel) + " at a time)</span>");
@@ -193,21 +283,21 @@
             '</h5><table class="tweakui-performance-facts">' + rows + "</table></div>";
     }
 
-    function nodesHtml(nodes) {
+    function nodesHtml(nodes, view) {
         var html = "<h4>Processing Nodes</h4>";
         if (!nodes.length) return html + '<p class="text-muted">No processing node is available to you.</p>';
-        return html + '<div class="tweakui-performance-cards">' + nodes.map(nodeHtml).join("") + "</div>";
+        return html + '<div class="tweakui-performance-cards">' + nodes.map(function (n) { return nodeHtml(n, view); }).join("") + "</div>";
     }
 
     // CPU Load (the total of all cores) once two readings give it, and the load averages where the system keeps them
-    function cpuRows(cpu, load) {
+    function cpuRows(cpu, load, view) {
         if (!cpu) return "";
         var cores = cpu.cores || 0, rows;
         if (load && load.total !== null) {
             rows = rowHtml("CPU Load", '<span data-cpu-total>' + percent(load.total) + "</span>" +
-                (cores ? ' <span class="text-muted">of ' + cores + (cores === 1 ? " core" : " cores") + "</span>" : ""), barHtml(load.total, 1, true));
+                (cores ? ' <span class="text-muted">of ' + cores + (cores === 1 ? " core" : " cores") + "</span>" : ""), graphHtml(view, "cpu", [{key: "cpu"}], "percent"));
         } else {
-            rows = rowHtml("CPU Load", '<span class="text-muted">Measuring...</span>');
+            rows = rowHtml("CPU Load", '<span class="text-muted">Measuring...</span>', graphHtml(view, "cpu", [{key: "cpu"}], "percent"));
         }
         if (cpu.load) {
             rows += rowHtml("Load Average", escapeHtml(cpu.load.map(function (n) { return Number(n).toFixed(2); }).join(", ")) +
@@ -229,14 +319,19 @@
     }
 
     // A drive's card: where it is mounted, then its activity once two readings give it
-    function driveCardHtml(d, rates) {
+    function driveCardHtml(d, rates, view) {
         var rows = rowHtml("Mounted At", escapeHtml(d.mounts.join(", ")));
         if (!rates) {
             rows += rowHtml("Activity", '<span class="text-muted">Measuring...</span>');
         } else {
-            rows += rowHtml("Reads", ioText(rates.reads, rates.read_rate, rates.read_size));
-            rows += rowHtml("Writes", ioText(rates.writes, rates.write_rate, rates.write_size));
-            if (rates.busy !== null) rows += rowHtml("Busy", "<span data-busy>" + percent(rates.busy) + "</span>", barHtml(rates.busy, 1, false, true));
+            var key = "drive:" + d.name + ":";
+            rows += rowHtml("Reads", '<i class="tweakui-performance-swatch tweakui-performance-accent"></i>' + ioText(rates.reads, rates.read_rate, rates.read_size));
+            rows += rowHtml("Writes", '<i class="tweakui-performance-swatch theme-color-primary"></i>' + ioText(rates.writes, rates.write_rate, rates.write_size));
+            rows += "<tr><th></th><td>" + graphHtml(view, key + "ops", [{key: key + "reads", label: "Reads"}, {key: key + "writes", label: "Writes"}], "rate") + "</td></tr>";
+            if (rates.busy !== null) {
+                rows += rowHtml("Busy", '<span class="' + levelClass(rates.busy) + '" data-busy>' + percent(rates.busy) + "</span>",
+                    graphHtml(view, key + "busy", [{key: key + "busy"}], "percent"));
+            }
             rows += rowHtml("Wait", rates.wait === null ? '<span class="text-muted">No operations</span>'
                 : escapeHtml(rates.wait.toFixed(1)) + ' ms <span class="text-muted">per operation</span>');
         }
@@ -246,10 +341,10 @@
     }
 
     // The server's card: CPU Load (of the machine WebODM runs on), disk and memory; "" when it says nothing
-    function serverCardHtml(server, load) {
-        var rows = cpuRows(server.cpu, load);
+    function serverCardHtml(server, load, view) {
+        var rows = cpuRows(server.cpu, load, view);
         if (server.disk) rows += rowHtml("Disk", memoryHtml(server.disk.free, server.disk.total));
-        if (server.memory) rows += rowHtml("Memory", memoryHtml(server.memory.free, server.memory.total));
+        if (server.memory) rows += rowHtml("Memory", memoryGraphHtml(server.memory.free, server.memory.total, view, "memory"));
         if (!rows) return "";
         return '<div class="tweakui-performance-card tweakui-performance-server theme-border" data-server>' +
             '<h5><i class="fa fa-hdd fa-fw"></i> WebODM</h5><table class="tweakui-performance-facts">' + rows + "</table>" +
@@ -258,15 +353,15 @@
     }
 
     // The server's card, then a card per drive it uses (diskRates: diskShares's, or null while measuring)
-    function serverCardsHtml(server, load, diskRates) {
+    function serverCardsHtml(server, load, diskRates, view) {
         var io = server.disk_io;
-        return serverCardHtml(server, load) + (io ? io.drives.map(function (d) {
-            return driveCardHtml(d, diskRates && diskRates[d.name]);
+        return serverCardHtml(server, load, view) + (io ? io.drives.map(function (d) {
+            return driveCardHtml(d, diskRates && diskRates[d.name], view);
         }).join("") : "");
     }
 
-    function serverHtml(server, load, diskRates) {
-        var cards = serverCardsHtml(server, load, diskRates);
+    function serverHtml(server, load, diskRates, view) {
+        var cards = serverCardsHtml(server, load, diskRates, view);
         if (!cards) return "";
         return '<h4>Server</h4><div class="tweakui-performance-cards" data-server-cards>' + cards + "</div>" +
             (server.disk_io ? '<p class="text-muted small tweakui-performance-disk-note">Disk activity is what the system counts for each ' +
@@ -438,24 +533,25 @@
             report.tasks.map(function (t) { return taskHtml(t, system); }).join("") + "</tbody></table></div>";
     }
 
-    function render(page, report, load, system, diskRates) {
-        page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes) +
-            serverHtml(report.server, load, diskRates) + tasksHtml(report, system) +
+    function render(page, report, load, system, diskRates, view) {
+        page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes, view) +
+            serverHtml(report.server, load, diskRates, view) + tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
             '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +
             "In Docker, a node has the memory Docker gives it.</p>";
     }
 
-    // Refresh Every on the page: a slider and a box, each change applied at once (apply(seconds)) and saved to the
-    // user's settings when the slider is let go or the box left; a box not a whole number in range, or a save refused,
-    // puts back the saved value and says why
-    function everyControl(doc, win, page, apply, fetchFn) {
-        var slider = page.querySelector(".tweakui-performance-every-slider");
-        var input = page.querySelector("#tweakui-performance-refresh");
-        var status = page.querySelector(".tweakui-performance-every-status");
+    // A number setting on the page (Refresh Every, History Length: data-control="refresh" or "history"): a slider and a
+    // box, each change applied at once (apply(value)) and saved to the user's settings (setting) when the slider is let
+    // go or the box left; a box not a whole number in range, or a save refused, puts back the saved value and says why
+    function numberControl(doc, win, page, id, setting, fallback, apply, fetchFn) {
+        var box = page.querySelector('[data-control="' + id + '"]');
+        var slider = box && box.querySelector(".tweakui-performance-every-slider");
+        var input = box && box.querySelector("#tweakui-performance-" + id);
+        var status = box && box.querySelector(".tweakui-performance-every-status");
         if (!slider || !input) return null;
-        var min = Number(input.min) || EVERY_MIN, max = Number(input.max) || EVERY_MAX;
-        var value = ui.wholeNumber(input.value, min, max), saved = typeof value === "number" ? value : EVERY_DEFAULT;
+        var min = Number(input.min) || 1, max = Number(input.max) || fallback;
+        var value = ui.wholeNumber(input.value, min, max), saved = typeof value === "number" ? value : fallback;
         function say(text) { if (status) status.textContent = text || ""; }
         function show(v) { slider.value = v; input.value = v; }
         function putBack(reason) {
@@ -465,7 +561,9 @@
         }
         function commit(v) {
             if (v === saved) return Promise.resolve();
-            return ui.saveSettings(doc, win, {performance_refresh: v}, fetchFn).then(function () {
+            var change = {};
+            change[setting] = v;
+            return ui.saveSettings(doc, win, change, fetchFn).then(function () {
                 saved = v;
                 say("");
             }, function (e) { putBack(e.message); });
@@ -487,7 +585,7 @@
             var v = ui.wholeNumber(input.value, min, max);
             return typeof v === "number" ? commit(v) : putBack(v);
         }));
-        return {seconds: saved, slider: slider, input: input, commit: commit};
+        return {value: saved, slider: slider, input: input, commit: commit};
     }
 
     function start(doc, win, fetchFn) {
@@ -496,7 +594,8 @@
         fetchFn = fetchFn || (win.fetch && win.fetch.bind(win));
         var api = page.getAttribute("data-api"), button = page.querySelector("[data-act=refresh]");
         var status = page.querySelector(".tweakui-performance-status");
-        var state = {report: null, cpu: null, load: null, io: null, diskRates: null, seconds: EVERY_DEFAULT, diskAt: 0, timer: null, busy: false,
+        var state = {report: null, cpu: null, load: null, io: null, diskRates: null, history: {}, hover: null,
+            seconds: EVERY_DEFAULT, minutes: HISTORY_DEFAULT, diskAt: 0, timer: null, busy: false,
             looping: false, stopped: false};
 
         function ask(path) {
@@ -506,12 +605,53 @@
             });
         }
 
-        // A new reading of the CPU and disk counters: the load and the disks' activity since the last one
-        function reading(cpu, io) {
+        // The graphs' window now
+        function view() {
+            return {history: state.history, now: Date.now(), span: state.minutes * 60000,
+                gap: Math.max(GAP_REFRESHES * state.seconds * 1000, GAP_MIN)};
+        }
+
+        // A new reading of the CPU and disk counters: the load and the disks' activity since the last one, kept for the
+        // graphs with the memory's share used (the server's and each node's)
+        function reading(cpu, io, memory, nodes) {
+            var now = Date.now(), h = state.history;
             state.load = cpuShares(state.cpu, cpu);
             state.cpu = cpu || null;
             state.diskRates = diskShares(state.io, io);
             state.io = io || null;
+            if (state.load) record(h, "cpu", now, state.load.total);
+            Object.keys(state.diskRates || {}).forEach(function (name) {
+                var r = state.diskRates[name], key = "drive:" + name + ":";
+                record(h, key + "reads", now, r.reads);
+                record(h, key + "writes", now, r.writes);
+                record(h, key + "busy", now, r.busy);
+            });
+            if (memory && memory.total) record(h, "memory", now, (memory.total - memory.free) / memory.total);
+            (nodes || []).forEach(function (n) {
+                if (n.online && n.total_memory) record(h, "node:" + n.id, now, (n.total_memory - n.available_memory) / n.total_memory);
+            });
+        }
+
+        // The hovered graph's readings under the pointer (state.hover: {id, at: 0 to 1 across}), again after a redraw
+        function showTip() {
+            var old = page.querySelector(".tweakui-performance-graph-tip");
+            if (old) old.parentNode.removeChild(old);
+            var cursor = page.querySelector(".tweakui-performance-graph-cursor");
+            if (cursor) cursor.parentNode.removeChild(cursor);
+            if (!state.hover) return;
+            var graph = page.querySelector('[data-graph="' + state.hover.id.replace(/["\\]/g, "") + '"]');
+            if (!graph) return;
+            var v = view(), at = state.hover.at;
+            var text = graphTip(v, graph.getAttribute("data-series").split(" "), graph.getAttribute("data-labels").split("|"),
+                graph.getAttribute("data-kind"), v.now - v.span + at * v.span);
+            if (!text) return;
+            cursor = ui.el(doc, "div", "tweakui-performance-graph-cursor theme-color-primary");
+            cursor.style.left = (at * 100).toFixed(1) + "%";
+            var tip = ui.el(doc, "div", "tweakui-performance-graph-tip theme-secondary theme-border");
+            tip.textContent = text;
+            tip.style[at < 0.5 ? "left" : "right"] = ((at < 0.5 ? at : 1 - at) * 100).toFixed(1) + "%";
+            graph.appendChild(cursor);
+            graph.appendChild(tip);
         }
 
         // The next live refresh in `delay` ms, none while the tab is hidden or once stopped
@@ -522,15 +662,21 @@
             state.timer = win.setTimeout(ui.guard(NAME, tick), delay);
         }
 
-        function redrawServer() {
-            var cards = page.querySelector("[data-server-cards]");
-            var html = serverCardsHtml(state.report.server, state.load, state.diskRates);
+        // The live figures drawn again: the server's cards and each node's memory
+        function redrawLive() {
+            var v = view(), cards = page.querySelector("[data-server-cards]");
+            var html = serverCardsHtml(state.report.server, state.load, state.diskRates, v);
             if (cards && html) cards.innerHTML = html;
+            state.report.nodes.forEach(function (n) {
+                var cell = page.querySelector('[data-node="' + String(n.id).replace(/["\\]/g, "") + '"] [data-memory]');
+                if (cell && n.online && n.total_memory) cell.innerHTML = memoryGraphHtml(n.available_memory, n.total_memory, v, "node:" + n.id);
+            });
+            showTip();
         }
 
         function applyLive(data) {
             var server = state.report.server;
-            reading(data.cpu, data.disk_io);
+            reading(data.cpu, data.disk_io, data.memory, data.nodes);
             server.cpu = data.cpu || null;
             if ("disk_io" in data) server.disk_io = data.disk_io || null;
             if (data.memory) server.memory = data.memory;
@@ -538,11 +684,15 @@
                 if (data.disk) server.disk = data.disk;
                 state.diskAt = Date.now();
             }
-            redrawServer();
             (data.nodes || []).forEach(function (n) {
-                var cell = page.querySelector('[data-node="' + String(n.id).replace(/["\\]/g, "") + '"] [data-memory]');
-                if (cell && n.online && n.total_memory) cell.innerHTML = memoryHtml(n.available_memory, n.total_memory);
+                state.report.nodes.forEach(function (r) {
+                    if (r.id === n.id && n.online && n.total_memory) {
+                        r.total_memory = n.total_memory;
+                        r.available_memory = n.available_memory;
+                    }
+                });
             });
+            redrawLive();
         }
 
         // The live figures; the next is asked once this one is answered, so a slow server is never asked twice at once
@@ -565,9 +715,11 @@
             if (status) status.textContent = state.report ? "Refreshing..." : "";
             return ask("performance").then(function (report) {
                 state.report = report;
-                reading(report.server && report.server.cpu, report.server && report.server.disk_io);
+                var server = report.server || {};
+                reading(server.cpu, server.disk_io, server.memory, report.nodes);
                 state.diskAt = Date.now();
-                render(page, report, state.load, unitSystem(win), state.diskRates);
+                render(page, report, state.load, unitSystem(win), state.diskRates, view());
+                showTip();
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
                 if (!state.looping) {
                     state.looping = true;
@@ -584,11 +736,17 @@
             });
         }
 
-        var every = everyControl(doc, win, page, function (seconds) {
+        var every = numberControl(doc, win, page, "refresh", "performance_refresh", EVERY_DEFAULT, function (seconds) {
             state.seconds = seconds;
             if (state.timer) schedule(seconds * 1000);
         }, fetchFn);
-        if (every) state.seconds = every.seconds;
+        if (every) state.seconds = every.value;
+        // History Length: the graphs drawn again over the new window at once
+        var length = numberControl(doc, win, page, "history", "performance_history", HISTORY_DEFAULT, function (minutes) {
+            state.minutes = minutes;
+            if (state.report) redrawLive();
+        }, fetchFn);
+        if (length) state.minutes = length.value;
 
         var onVisibility = ui.guard(NAME, function () {
             if (doc.hidden) schedule(0);
@@ -598,7 +756,10 @@
 
         // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
         var onUnits = ui.guard(NAME, function () {
-            if (state.report) render(page, state.report, state.load, unitSystem(win), state.diskRates);
+            if (state.report) {
+                render(page, state.report, state.load, unitSystem(win), state.diskRates, view());
+                showTip();
+            }
         });
         doc.addEventListener(UNIT_EVENT, onUnits);
 
@@ -640,6 +801,29 @@
         });
         win.addEventListener("scroll", hideThumb, true);
 
+        // A graph: moving over it (or touching it) shows the readings under the pointer; leaving it, or touching
+        // elsewhere, hides them
+        function onPointer(e) {
+            var graph = e.target && e.target.closest ? e.target.closest(".tweakui-performance-graph") : null;
+            if (!graph) {
+                if (state.hover) {
+                    state.hover = null;
+                    showTip();
+                }
+                return;
+            }
+            var box = graph.getBoundingClientRect();
+            if (!box.width) return;
+            state.hover = {id: graph.getAttribute("data-graph"), at: Math.min(Math.max((e.clientX - box.left) / box.width, 0), 1)};
+            showTip();
+        }
+        page.addEventListener("pointermove", ui.guard(NAME, onPointer));
+        page.addEventListener("pointerdown", ui.guard(NAME, onPointer));
+        page.addEventListener("pointerleave", ui.guard(NAME, function () {
+            state.hover = null;
+            showTip();
+        }));
+
         // A task's Notes button opens and closes the row of its notes below it; Copy Names copies a list's names
         page.addEventListener("click", ui.guard(NAME, function (e) {
             var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names]") : null;
@@ -660,13 +844,23 @@
             row.hidden = !open;
         }));
 
+        // The graphs' accent: the theme's link colour (theme.css gives it to links and to the bars, but to no class an
+        // SVG can take), read from a link that isn't shown
+        var probe = ui.el(doc, "a");
+        probe.hidden = true;
+        page.appendChild(probe);
+        var accent = win.getComputedStyle ? win.getComputedStyle(probe).color : "";
+        page.removeChild(probe);
+        if (accent) page.style.setProperty("--tweakui-performance-accent", accent);
+
         if (button) button.addEventListener("click", ui.guard(NAME, load));
         var loaded = load();
-        return {state: state, load: load, loaded: loaded, tick: tick, stop: stop, every: every};
+        return {state: state, load: load, loaded: loaded, tick: tick, stop: stop, every: every, length: length};
     }
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, verdictsHtml: verdictsHtml, formatArea: formatArea, formatLength: formatLength,
         tasksHtml: tasksHtml, notesHtml: notesHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
-        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml};
+        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip,
+        record: record, niceCeil: niceCeil};
 });

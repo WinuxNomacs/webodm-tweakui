@@ -378,7 +378,8 @@ const SHOTS = [
         },
     },
     {
-        name: "performance", settings: {performance_view: true},
+        // A refresh every second over a minute's window, so the graphs have half a minute of readings
+        name: "performance", settings: {performance_view: true, performance_refresh: 1, performance_history: 1},
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/performance/");
             await s.page.waitForSelector(".tweakui-performance-cards");
@@ -386,6 +387,7 @@ const SHOTS = [
             await s.page.waitForSelector("[data-cpu-total]", {timeout: 10000});
             await s.page.waitForFunction(() => !Array.from(document.querySelectorAll("[data-drive]"))
                 .some(d => d.textContent.includes("Measuring")), null, {timeout: 10000});
+            await s.page.waitForTimeout(30000);
             await s.page.waitForTimeout(500);
             return "page";
         },
