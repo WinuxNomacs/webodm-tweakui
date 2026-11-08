@@ -35,7 +35,7 @@ def defaults(**changes):
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False,
-                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "show_theme_menu": True, "theme": "webodm"},
+                 "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
 
