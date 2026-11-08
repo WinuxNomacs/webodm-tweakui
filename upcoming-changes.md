@@ -4,12 +4,21 @@
 
 **Up next**
 1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
+2. **Storage: export and import tasks** (new.md, 2026-11-08; see "Storage: export and import tasks"). Decisions open.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Windows app: this session's features** (2026-11-08, the zip with the filter, the app restarted by the user) —
+  checked live through the relay on :8007, desktop mode: Hide Navigation Pane's three steps on a map, with and
+  without Resize Navigation Pane (250 → icons 50 with tooltips → hidden → 250, each kept over a reload; a drag to
+  320 comes back at 250); Replace Preset Options Menu on the Test Thermal Flight task's Edit form (never saved: the
+  order, a system and a user preset reaching WebODM's select, the filter with real typing, Enter, both Escapes,
+  phone width; a "Live check" preset made and deleted); Surprise Me's Enable Interaction (greyed while off; on, the
+  right-click rocket and no menu; off, the browser's menu and the shows go on). Settings put back, no writes, no
+  console errors.
 - **Replace Preset Options Menu: a filter box** (the user's request, 2026-11-08) — at the top of the menu, focused on
   opening: only the presets whose names hold the text (any case) stay, their submenus open and not closable while
   filtering; "No matching presets"; Enter chooses the first match, the down arrow goes to it, Escape clears then
@@ -1723,4 +1732,44 @@ this file keep the old names.
 
 **Phase**: one branch, `rename-configured-options`; Jest, Django on both stacks, the settings page live on both,
 screenshots retaken, the selector check.
+
+## Storage: export and import tasks (new.md, 2026-11-08)
+
+**Request**: under TweakUI's Storage page, let users export and import tasks as zip files of the whole task. An
+Export button next to Compact on each task; an "Export All" that downloads several zips at once, one per ticked
+task, or per task of a ticked project.
+
+**What WebODM offers** (checked in 3.3.2 and 4.0.0, the same in both; no change to WebODM needed):
+- **Export**: `GET /api/projects/<p>/tasks/<t>/backup` streams a zip of the whole task folder (photos, assets,
+  `data/backup.json` with its name, options, times, tags, crop...), named `<task>-backup.zip` by WebODM. It is the
+  "Backup" item of a completed task's Download menu (4.0.0's `AssetDownloadButtons`). Permission: view the task.
+- **Import**: `POST /api/projects/<p>/tasks/import` (the project's Import button uses it), one file, chunked
+  Dropzone-style (`dzuuid`, `dzchunkindex`, `dztotalchunkcount`, `dzchunkbyteoffset`) for big files. WebODM
+  recognises a backup (`data/backup.json` and `assets/`) and restores it: the task comes back with its name,
+  options, times and photos (`Task.handle_import`, `read_backup_file`). Other zips (assets only) import as
+  WebODM's usual imported task. Permission: change the project.
+- So both go through WebODM's API from the browser, its permissions and quota applying, as Compact and Delete do.
+
+**Builds on**: the Storage page (`storage_page.js`: the task rows' buttons, the ticked selection, the action bar
+with Compact and Delete, the status line; `storage.html`; `docs/storage.md` or its section; screenshot).
+
+**Proposed design**:
+- **Export** (a task row, beside Compact; `fa-download`, title "Export: download the whole task as a zip"): a
+  download of WebODM's backup URL, the browser's own download (no memory held by the page, whatever the size).
+- **Export All** (the action bar, beside Compact and Delete): each ticked task, and every task of a ticked project,
+  downloaded one after another (a hidden link per task, a short pause between them). The browser asks once to
+  allow multiple downloads; the status line says how many started. No confirmation (nothing is changed).
+- **Import**: a file chooser taking one or more zips; each is uploaded in chunks with a progress line ("Importing
+  2 of 3: name.zip, 45%"), one task per zip, then the list refreshes. WebODM then restores each (shown with the
+  page's "Importing" mark until done).
+- **Tests**: Jest (the buttons shown per task state, Export All's list from ticks, the downloads' URLs, the chunked
+  upload's requests and progress, errors shown); Django only if the report changes. Live on both stacks: a
+  "Live check" task exported (the zip's size and `backup.json` read, then deleted from disk) and imported into a
+  "Live check" project, which is deleted afterwards; on the Windows app too (large files, cp1252 not involved).
+
+**Open decisions**:
+1. Where Import goes: an "Import" button on each project row (zips go into that project), or one Import at the top
+   of the page with a project chooser.
+2. Which tasks offer Export: completed ones only (as WebODM's own Backup; a failed or canceled task's backup would
+   come back as an empty completed task), or every task not busy.
 
