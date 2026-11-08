@@ -26,6 +26,12 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* Settings that belong to the one above (data-depends), indented; greyed out while it is off */
 .tweakui-settings .tweakui-subsettings { margin-left: 20px; }
 .tweakui-settings .tweakui-subsettings.tweakui-off { opacity: 0.5; }
+.tweakui-settings .tweakui-subsettings.tweakui-off .tweakui-subsettings.tweakui-off { opacity: 1; }
+/* A number setting: its label where a checkbox's label is, then the slider, the box and the unit */
+.tweakui-settings .tweakui-number-setting > label { margin-left: 20px; }
+.tweakui-settings .tweakui-number { display: flex; align-items: center; gap: 10px; margin: 2px 0 4px 20px; max-width: 360px; }
+.tweakui-settings .tweakui-number input[type=range] { flex: 1 1 auto; min-width: 0; }
+.tweakui-settings .tweakui-number input[type=number] { flex: 0 0 80px; width: 80px; }
 /* A setting an admin withholds from the user (access.py): greyed, with the reason at full strength */
 .tweakui-settings .tweakui-withheld label, .tweakui-settings .tweakui-withheld p.text-muted { opacity: 0.5; }
 .tweakui-settings .tweakui-withheld-reason { font-weight: bold; }
@@ -153,6 +159,11 @@ html.tweakui .tweakui-nav-tab { display: none; }
     html.tweakui.tweakui-nav-hidden .navbar-default.sidebar { display: none; }
     html.tweakui.tweakui-nav-hidden #page-wrapper { margin-left: 0; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-tab { left: 0; border-left-width: 0; border-radius: 0 4px 4px 0; }
+    /* Auto-hide Navigation Pane: the hidden pane shown over the page (which keeps its whole width), fixed below the
+       header (--tweakui-nav-top, from the script) to the bottom of the window, scrolling on its own; the tab on its
+       edge */
+    html.tweakui.tweakui-nav-hidden.tweakui-nav-peek .navbar-default.sidebar { display: block; position: fixed; top: var(--tweakui-nav-top, 51px); bottom: 0; margin-top: 0; overflow-y: auto; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35); }
+    html.tweakui.tweakui-nav-hidden.tweakui-nav-peek .tweakui-nav-tab { left: calc(var(--tweakui-nav-width, 250px) - 7px); border-left-width: 1px; border-radius: 4px; }
 }
 
 /* Resize Navigation Pane (nav_pane.js): the side menu and the page beside it take the width the script puts in

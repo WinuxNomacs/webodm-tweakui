@@ -31,6 +31,26 @@ The tab's tooltip names the next step. The choice is kept in this browser, so th
 way. On a phone the side menu is already behind the header's menu button, so there's no tab. On WebODM's Windows app
 the tab sits near the top of the window.
 
+### Auto-hide Navigation Pane
+
+Off by default, and only with Hide Navigation Pane on.
+
+![A task's map with the auto-hidden side menu shown over it](../tweakui/public/previews/auto-hide-navigation-pane.webp)
+
+The side menu stays hidden, and the page has the whole width, until the pointer reaches the window's left edge. The
+side menu then shows over the page, which keeps its size, so a map or the 3D view doesn't redraw. It hides again
+once the pointer has been off it for the Hide Delay, or at once with Esc. Moving back onto it in time keeps it shown.
+Tabbing into the side menu with the keyboard shows it too.
+
+It shows at the width you last dragged it to with Resize Navigation Pane, or WebODM's usual width otherwise.
+
+While auto-hide is on, the tab doesn't cycle through the three steps. Instead it pins the side menu open beside the
+page, as without auto-hide, and a second click unpins it. The pin is kept in this browser. On a phone the side menu
+stays behind the header's menu button.
+
+**Hide Delay** sets how long the side menu waits after the pointer leaves it: from 200 to 3000 milliseconds, 500 by
+default. The slider moves in steps of 100, and the box beside it takes any whole number in that range.
+
 ## Global Controls > Resize Navigation Pane
 
 Off by default.

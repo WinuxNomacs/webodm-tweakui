@@ -10,11 +10,15 @@ KEY = "settings"
 # Every setting with its default (features.py declares them); the type of the default is the only type the setting
 # takes
 DEFAULTS = features.defaults()
+# A number setting's range: {name: (minimum, maximum)}
+RANGES = {s.name: s.number[:2] for s in features.all_settings() if s.number}
 
 
 def allowed(name, value, user=None):
     """Whether a value of the right type is one the setting takes (a setting with a list of choices); an own or a
-    published theme only while it is there"""
+    published theme only while it is there; a number within its range"""
+    if name in RANGES:
+        return RANGES[name][0] <= value <= RANGES[name][1]
     if name == "theme":
         from . import custom_themes  # both import this module
         from .themes import DEFAULT, PRESETS
@@ -68,6 +72,8 @@ def update(user, changes):
             errors.append("Unknown setting: %s" % name)
         elif type(value) is not type(DEFAULTS[name]):
             errors.append("%s takes a %s" % (name, type(DEFAULTS[name]).__name__))
+        elif not allowed(name, value, user) and name in RANGES:
+            errors.append("%s takes %s to %s" % ((name,) + RANGES[name]))
         elif not allowed(name, value, user):
             errors.append("Unknown %s: %s" % (name, value))
         elif name in withheld:

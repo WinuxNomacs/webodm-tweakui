@@ -8,7 +8,13 @@
 // General > Global Controls > Resize Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
 // from its icons' column to half the window, and a double click puts back WebODM's 250 px. Narrower than SNAP, it
 // snaps to the icons alone: labels and submenu arrows hidden, each link's name as its tooltip, submenu items unindented
-// so their icons line up. Remembered in this browser too. UMD, so Jest can load it.
+// so their icons line up. Remembered in this browser too.
+// General > Global Controls > Hide Navigation Pane > Auto-hide Navigation Pane: the pane stays hidden until the
+// pointer nears the window's left edge (or the keyboard's focus goes into it), then shows over the page, which keeps
+// its size (no resize: the maps don't redraw), at its remembered width (Resize Navigation Pane's, else WebODM's); it
+// hides again Hide Delay after the pointer leaves it and the tab (or at once with Escape). The tab then pins the pane
+// open beside the page, as without auto-hide, and a second click unpins it; remembered in this browser. UMD, so Jest
+// can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -22,7 +28,7 @@
     var SELECTORS = {pane: ".navbar-default.sidebar", header: "#navbar-top", menu: "#side-menu",
         links: "#side-menu > li > a, #side-menu .nav-second-level > li > a, #side-menu .nav-third-level > li > a"};
     var NAME = "nav_pane", EVENT = "tweakuiSettingsChanged";
-    var HIDDEN_KEY = "tweakui-nav-hidden", WIDTH_KEY = "tweakui-nav-width";
+    var HIDDEN_KEY = "tweakui-nav-hidden", WIDTH_KEY = "tweakui-nav-width", PINNED_KEY = "tweakui-nav-pinned";
     // On <html>: the pane is hidden; the tab is on the page
     var HIDDEN = "tweakui-nav-hidden", TAB = "tweakui-nav-tabbed";
     // Below the header, this far down the divider
@@ -32,6 +38,10 @@
     // WebODM's width (sb-admin-2.css); the icons' column (a link's 15 px padding each side of an 18.75 px icon); a
     // width under SNAP shows only cut-off labels, so it snaps to the icons; a keyboard step
     var DEFAULT_WIDTH = 250, MIN_WIDTH = 50, SNAP_WIDTH = 120, KEY_STEP = 20;
+    // On <html>: auto-hide is on; the hidden pane shows over the page. The pointer this near the left edge shows it;
+    // WebODM's pane is beside the page from this width (sb-admin-2.css); Hide Delay's default and range (features.py)
+    var AUTO = "tweakui-nav-auto", PEEK = "tweakui-nav-peek", EDGE = 6, WIDE = 768;
+    var DEFAULT_DELAY = 500, MIN_DELAY = 200, MAX_DELAY = 3000;
 
     function read(win, key) {
         try {
@@ -67,25 +77,40 @@
     }
 
     function create(doc, win, sizer) {
-        var html = doc.documentElement, tab = null;
+        var html = doc.documentElement, tab = null, enabled = false, auto = false, delay = DEFAULT_DELAY;
+        var pinned = read(win, PINNED_KEY) === "1", timer = null, watching = false, on = {};
         sizer = sizer || createResize(doc, win);
 
         function hidden() { return html.classList.contains(HIDDEN); }
+        function peeking() { return html.classList.contains(PEEK); }
 
-        // What a click does next: shown at full width -> its icons alone -> hidden -> shown at WebODM's width
+        // What a click does next: shown at full width -> its icons alone -> hidden -> shown at WebODM's width; with
+        // auto-hide, pin or unpin
         function label() {
             if (!tab) return;
-            var icons = html.classList.contains(ICONS);
-            var text = hidden() ? "Show Navigation Pane" : icons ? "Hide Navigation Pane" : "Show Icons Only";
+            var icons = html.classList.contains(ICONS), text, glyph;
+            if (auto) {
+                text = pinned ? "Unpin Navigation Pane" : "Pin Navigation Pane";
+                glyph = "fa-thumbtack";
+                tab.setAttribute("aria-pressed", pinned ? "true" : "false");
+            } else {
+                text = hidden() ? "Show Navigation Pane" : icons ? "Hide Navigation Pane" : "Show Icons Only";
+                glyph = hidden() ? "fa-chevron-right" : "fa-chevron-left";
+                tab.removeAttribute("aria-pressed");
+            }
             tab.setAttribute("title", text);
             tab.setAttribute("aria-label", text);
-            tab.setAttribute("aria-expanded", hidden() ? "false" : "true");
-            tab.firstChild.className = "fa " + (hidden() ? "fa-chevron-right" : "fa-chevron-left");
+            tab.setAttribute("aria-expanded", hidden() && !peeking() ? "false" : "true");
+            tab.firstChild.className = "fa " + glyph;
         }
         sizer.onChange(label);
 
         function cycle() {
-            if (hidden()) {
+            if (auto) {
+                pinned = !pinned;
+                write(win, PINNED_KEY, pinned ? "1" : null);
+                refresh();
+            } else if (hidden()) {
                 // Quietly: showing the pane tells the maps
                 if (sizer.width() !== DEFAULT_WIDTH) sizer.choose(DEFAULT_WIDTH, true);
                 setHidden(false, true);
@@ -99,6 +124,72 @@
             if (remember) write(win, HIDDEN_KEY, on ? "1" : null);
             label();
             resized(win);
+        }
+
+        // Auto-hide: the pane over the page, below the header (0 high in WebODM's desktop mode)
+        function cancelHide() {
+            if (timer !== null) win.clearTimeout(timer);
+            timer = null;
+        }
+
+        function peek() {
+            cancelHide();
+            if (peeking()) return;
+            var header = doc.querySelector(SELECTORS.header);
+            html.style.setProperty("--tweakui-nav-top", (header ? header.offsetHeight : 0) + "px");
+            html.classList.add(PEEK);
+            label();
+        }
+
+        function unpeek() {
+            cancelHide();
+            if (!peeking()) return;
+            html.classList.remove(PEEK);
+            label();
+        }
+
+        function hideSoon() {
+            if (timer === null && peeking()) timer = win.setTimeout(function () { timer = null; unpeek(); }, delay);
+        }
+
+        // Whether a point is on the shown pane or the tab
+        function over(x, y) {
+            var pane = doc.querySelector(SELECTORS.pane);
+            return [pane, tab].some(function (el) {
+                if (!el) return false;
+                var r = el.getBoundingClientRect();
+                return r.width > 0 && x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+            });
+        }
+
+        on.move = ui.guard(NAME, function (e) {
+            if (win.innerWidth < WIDE) return;
+            if (peeking()) {
+                if (over(e.clientX, e.clientY)) cancelHide();
+                else hideSoon();
+                return;
+            }
+            var header = doc.querySelector(SELECTORS.header), top = header ? header.offsetHeight : 0;
+            if (e.clientX <= EDGE && e.clientY >= top) peek();
+        });
+        // The pointer out of the window
+        on.out = ui.guard(NAME, function (e) { if (!e.relatedTarget) hideSoon(); });
+        // The keyboard: Tab into the pane shows it, out of it hides it, Escape at once
+        on.focusin = ui.guard(NAME, function (e) {
+            var pane = doc.querySelector(SELECTORS.pane);
+            if (pane && pane.contains(e.target) && win.innerWidth >= WIDE) peek();
+            else if (peeking() && !(tab && tab.contains(e.target))) hideSoon();
+        });
+        on.key = ui.guard(NAME, function (e) { if (e.key === "Escape" && peeking()) unpeek(); });
+
+        function watch(want) {
+            if (want === watching) return;
+            watching = want;
+            var method = want ? "addEventListener" : "removeEventListener";
+            doc[method]("mousemove", on.move, true);
+            doc[method]("mouseout", on.out, true);
+            doc[method]("focusin", on.focusin, true);
+            doc[method]("keydown", on.key, true);
         }
 
         // The tab, once the page has its header: fixed just below it (the header's height is 0 in WebODM's desktop
@@ -123,22 +214,35 @@
             html.classList.remove(TAB);
         }
 
-        // Turned on: hidden or icons only as last time, and the tab once the page is parsed; turned off: the pane
+        // The pane as the settings and the pin want it. Hide Navigation Pane on: hidden or icons only as last time
+        // (at once, before the page is drawn, so a hidden pane doesn't flash) and the tab once the page is parsed;
+        // with auto-hide, hidden unless pinned (and never icons only: the tab pins instead of cycling). Off: the pane
         // shown, no tab (and WebODM's width, unless Resize Navigation Pane keeps another)
-        function set(enabled) {
-            sizer.allowIcons(enabled);
+        function refresh() {
+            var autoHide = enabled && auto;
+            html.classList.toggle(AUTO, autoHide);
+            sizer.allowIcons(enabled && !auto);
+            unpeek();
+            watch(autoHide && !pinned);
+            if (autoHide) setHidden(!pinned, false);
+            else if (enabled) setHidden(read(win, HIDDEN_KEY) === "1", false);
+            else setHidden(false, false);
             if (enabled) {
-                // At once, before the page is drawn, so a hidden pane doesn't flash
-                if (read(win, HIDDEN_KEY) === "1") setHidden(true, false);
                 // Only on a page with the pane (a signed-out page has none)
-                ui.ready(doc, function () { if (doc.querySelector(SELECTORS.pane)) addTab(); });
-            } else {
-                removeTab();
-                setHidden(false, false);
-            }
+                ui.ready(doc, function () { if (enabled && doc.querySelector(SELECTORS.pane)) addTab(); });
+            } else removeTab();
+            label();
         }
 
-        return {set: set, setHidden: setHidden, hidden: hidden, tab: function () { return tab; }};
+        function set(isEnabled, autoHide, hideDelay) {
+            enabled = isEnabled;
+            if (autoHide !== undefined) auto = autoHide === true;
+            if (hideDelay !== undefined) delay = typeof hideDelay === "number" && hideDelay >= MIN_DELAY && hideDelay <= MAX_DELAY ? hideDelay : DEFAULT_DELAY;
+            refresh();
+        }
+
+        return {set: set, setHidden: setHidden, hidden: hidden, peeking: peeking, peek: peek,
+            pinned: function () { return pinned; }, tab: function () { return tab; }};
     }
 
     // Resize Navigation Pane: the handle on the divider, and the pane's width
@@ -309,16 +413,18 @@
 
     function start(doc, win) {
         var resize = createResize(doc, win), pane = create(doc, win, resize), settings = ui.settingsOf(win);
-        pane.set(settings.hide_nav_pane === true);
+        pane.set(settings.hide_nav_pane === true, settings.auto_hide_nav_pane === true, settings.auto_hide_delay);
         resize.set(settings.resize_nav_pane === true);
         doc.addEventListener(EVENT, ui.guard(NAME, function (e) {
             if (!e.detail) return;
-            if ("hide_nav_pane" in e.detail) pane.set(e.detail.hide_nav_pane === true);
+            if ("hide_nav_pane" in e.detail) {
+                pane.set(e.detail.hide_nav_pane === true, e.detail.auto_hide_nav_pane, e.detail.auto_hide_delay);
+            }
             if ("resize_nav_pane" in e.detail) resize.set(e.detail.resize_nav_pane === true);
         }));
         return {hide: pane, resize: resize};
     }
 
     return {start: start, create: create, createResize: createResize, clampWidth: clampWidth, HIDDEN_KEY: HIDDEN_KEY,
-        WIDTH_KEY: WIDTH_KEY, MIN_WIDTH: MIN_WIDTH, DEFAULT_WIDTH: DEFAULT_WIDTH, SELECTORS: SELECTORS};
+        WIDTH_KEY: WIDTH_KEY, PINNED_KEY: PINNED_KEY, MIN_WIDTH: MIN_WIDTH, DEFAULT_WIDTH: DEFAULT_WIDTH, SELECTORS: SELECTORS};
 });

@@ -297,3 +297,119 @@ describe("Resize Navigation Pane", () => {
         expect(width()).toBe("300px");
     });
 });
+
+describe("Auto-hide Navigation Pane", () => {
+    const peeking = () => html.classList.contains("tweakui-nav-peek");
+    const move = (x, y) => document.dispatchEvent(new MouseEvent("mousemove", {clientX: x, clientY: y, bubbles: true}));
+    const pane = () => document.querySelector(".sidebar");
+    // jsdom lays nothing out: the pane 250 px wide below a 0-high header
+    const lay = () => jest.spyOn(pane(), "getBoundingClientRect").mockReturnValue({left: 0, right: 250, top: 0, bottom: 800, width: 250, height: 800});
+    let resizes = 0;
+    beforeAll(() => { window.addEventListener("resize", () => resizes++); });
+    beforeEach(() => { jest.useFakeTimers(); });
+    afterEach(() => {
+        // The listeners of this test's pane stop
+        document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: false}}));
+        jest.useRealTimers();
+    });
+
+    test("the pane starts hidden, shows over the page near the left edge and hides the chosen delay after the pointer leaves", () => {
+        start({hide_nav_pane: true, auto_hide_nav_pane: true, auto_hide_delay: 800});
+        lay();
+        expect(hidden()).toBe(true);
+        expect(html.classList.contains("tweakui-nav-auto")).toBe(true);
+        resizes = 0;
+        move(40, 300);
+        expect(peeking()).toBe(false);
+        move(3, 300);
+        expect(peeking()).toBe(true);
+        // Over the page: still hidden beside it, so the page keeps its width and the maps aren't told
+        expect(hidden()).toBe(true);
+        expect(resizes).toBe(0);
+        move(200, 300);
+        jest.advanceTimersByTime(2000);
+        expect(peeking()).toBe(true);
+        move(400, 300);
+        jest.advanceTimersByTime(700);
+        expect(peeking()).toBe(true);
+        // Back on it in time: it stays
+        move(100, 300);
+        jest.advanceTimersByTime(1000);
+        expect(peeking()).toBe(true);
+        move(400, 300);
+        jest.advanceTimersByTime(800);
+        expect(peeking()).toBe(false);
+    });
+
+    test("Escape hides it at once, and so does nothing on a narrow window", () => {
+        start({hide_nav_pane: true, auto_hide_nav_pane: true});
+        move(0, 300);
+        expect(peeking()).toBe(true);
+        document.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape"}));
+        expect(peeking()).toBe(false);
+        const wide = window.innerWidth;
+        window.innerWidth = 600;
+        try {
+            move(0, 300);
+            expect(peeking()).toBe(false);
+        } finally {
+            window.innerWidth = wide;
+        }
+    });
+
+    test("the keyboard's focus in the pane shows it", () => {
+        start({hide_nav_pane: true, auto_hide_nav_pane: true});
+        pane().querySelector("a").focus();
+        expect(peeking()).toBe(true);
+    });
+
+    test("the tab pins the pane open beside the page, remembered, and unpins it", () => {
+        start({hide_nav_pane: true, auto_hide_nav_pane: true});
+        const t = tab();
+        expect(t.title).toBe("Pin Navigation Pane");
+        expect(t.firstChild.className).toBe("fa fa-thumbtack");
+        expect(t.getAttribute("aria-pressed")).toBe("false");
+        resizes = 0;
+        t.click();
+        expect(hidden()).toBe(false);
+        expect(resizes).toBe(1);
+        expect(t.title).toBe("Unpin Navigation Pane");
+        expect(localStorage.getItem(navPane.PINNED_KEY)).toBe("1");
+        // Pinned, the edge does nothing
+        move(0, 300);
+        expect(peeking()).toBe(false);
+        t.click();
+        expect(hidden()).toBe(true);
+        expect(localStorage.getItem(navPane.PINNED_KEY)).toBeNull();
+    });
+
+    test("pinned last time, the next page opens with the pane shown", () => {
+        localStorage.setItem(navPane.PINNED_KEY, "1");
+        start({hide_nav_pane: true, auto_hide_nav_pane: true});
+        expect(hidden()).toBe(false);
+    });
+
+    test("the tab no longer gives the icons alone, and the remembered width is Resize Navigation Pane's", () => {
+        localStorage.setItem(navPane.WIDTH_KEY, "50");
+        start({hide_nav_pane: true, auto_hide_nav_pane: true});
+        expect(icons()).toBe(false);
+        localStorage.setItem(navPane.WIDTH_KEY, "320");
+        start({hide_nav_pane: true, auto_hide_nav_pane: true, resize_nav_pane: true});
+        expect(width()).toBe("320px");
+    });
+
+    test("turned on and off from the settings page, it follows at once; without Hide Navigation Pane it does nothing", () => {
+        start({hide_nav_pane: true});
+        expect(hidden()).toBe(false);
+        document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: true, auto_hide_nav_pane: true}}));
+        expect(hidden()).toBe(true);
+        document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: true, auto_hide_nav_pane: false}}));
+        expect(hidden()).toBe(false);
+        expect(tab().title).toBe("Show Icons Only");
+        document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: false, auto_hide_nav_pane: true}}));
+        expect(hidden()).toBe(false);
+        expect(html.classList.contains("tweakui-nav-auto")).toBe(false);
+        move(0, 300);
+        expect(peeking()).toBe(false);
+    });
+});

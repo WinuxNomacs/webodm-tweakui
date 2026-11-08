@@ -3,9 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
-   Pane").
-2. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — one
+1. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — one
    phase, decided 2026-11-08: a wheel sensitivity per map, on the settings page and in a control on the map itself.
 
 **Later**
@@ -13,6 +11,18 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+  Pane") — branch `auto-hide-nav`: `nav_pane.js` (`create`'s `refresh`: hidden unless pinned, `peek` over the page
+  near the left edge or on focus, hidden Hide Delay after the pointer leaves the pane and the tab or at once with
+  Escape; the tab pins, `PINNED_KEY`), `main.css` (the pane fixed over the page below the header, the tab on its edge;
+  the number setting's slider and box), `features.py` (`auto_hide_nav_pane` and its part `auto_hide_delay`; a number
+  kind of setting, `number=(min, max, step)` and `unit`; parts within parts), `settings.py` (`RANGES`, out of range
+  refused), `settings_setting.html`, `settings.html` (a part's parts), `settings_page.js` (`numberOf`, the slider
+  saving on release, nested greying). Tests: `__tests__/nav_pane.test.js` (7 new), `settings_page.test.js` (4 new),
+  `test_tweakui.py`. Docs `general.md`, `adding-a-tweak.md`, README, CHANGELOG, CLAUDE.md, screenshot
+  `auto-hide-navigation-pane`. Live on both stacks (the settings page's greying, slider, box and refusal; on the
+  Dashboard the edge, a 1250 ms delay, the pin over a reload, Escape, phone width, dark theme); settings put back, no
+  console errors but WebODM's livereload. Not checked on the Windows app.
 - **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button") — branch `map-search`:
   `tweakui/public/map_search.js` (`parseCoordinates`, `places`, `build`: the button and box, Nominatim at most once a
   second, results remembered for the visit), the `map_search` setting in `features.py`, a section of `main.css`; tests
@@ -1951,7 +1961,7 @@ buttons (WebODM puts those bottom left, so it sits right above + and −, not to
 degrees and degrees-minutes-seconds (and degrees with decimal minutes), with or without N/S/E/W, not UTM. The marker
 is yellow, as Source Frames' spot (it must show on any imagery); the flight takes 1.5 s however far. — done
 
-## Global Controls: Auto-hide Navigation Pane (new.md, 2026-11-08)
+## Global Controls: Auto-hide Navigation Pane (new.md, 2026-11-08) — done
 
 **Request**: "Under General, Global Controls, Hide Navigation Pane. Add a sub-item named Auto-hide Navigation Pane
 that when enabled automatically hides the navigation pane until the user nears the navigation pane. When the user
@@ -1967,12 +1977,13 @@ without moving the page; leaving it hides it again after a short delay (about ha
 comes back or a menu inside it is open. No touch (a phone width keeps WebODM's hamburger menu). Tests in Jest
 (fake timers); live on both stacks and the Windows app (desktop mode, the pane fixed at the top).
 
-**Open decisions** (to ask when planned):
-1. Shown over the page (the map keeps its size, no redraw) or pushing the page aside as the tab does.
-2. What the tab does while auto-hide is on: pins the pane open (auto-hide paused until clicked again), or nothing
-   (the tab hidden).
-3. With Resize Navigation Pane, whether it shows at the remembered width or at the icons' width.
-4. The delay: a fixed half second, or a choice on the settings page.
+**Decided** (the user, 2026-11-08):
+1. **Over the page**: the pane slides over the page's left edge; the page and the maps keep their size.
+2. **The tab pins the pane open** (auto-hide paused) until clicked again; remembered in this browser.
+3. **With Resize Navigation Pane, the remembered width** (WebODM's 250 px if never dragged).
+4. **The delay is a choice on the settings page**: "Hide Delay", a part of Auto-hide, in milliseconds (whole
+   numbers: the settings' type check), a slider in steps of 100 from 200 to 3000 with a number box, default 500.
+   This brings the number kind of setting (min, max, step) that Zoom Sensitivity reuses.
 
 ## 2D Map and 3D Map: Zoom Sensitivity (new.md, 2026-11-08)
 

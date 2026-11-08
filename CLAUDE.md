@@ -32,7 +32,7 @@ It is committed and public: nothing private, nothing true only on one machine. K
   attaches the zip to the GitHub release and adds `{url, sha256}` to WebODM-Plugins' `directory.json`.
 - **Settings are per user and declared once**, in `tweakui/features.py`: a setting's name, default (a new tweak is
   off), category and group, label, description, preview and scripts. The defaults (`settings.DEFAULTS`), the settings
-  page's checkboxes (`templates/settings.html`, one loop) and the scripts on every page (`plugin.py`) come from it.
+  page's checkboxes and number settings (`templates/settings.html`, one loop) and the scripts on every page (`plugin.py`) come from it.
   Page scripts read `window.TweakUI.settings` (`/plugins/tweakui/settings.js`, a view, loaded first) and use the
   helpers of `public/core.js` (loaded next): a feature starts through `TweakUI.feature`, wraps every callback it
   gives WebODM or the page in `TweakUI.guard`, and lists the WebODM elements it relies on in `SELECTORS` at its top.

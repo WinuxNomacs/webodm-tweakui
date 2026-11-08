@@ -107,6 +107,18 @@ const SHOTS = [
         },
     },
     {
+        // A task's map with the side menu auto-hidden, shown over the map by the pointer at the left edge
+        name: "auto-hide-navigation-pane", settings: {hide_nav_pane: true, auto_hide_nav_pane: true},
+        async run(s) {
+            await s.openMap();
+            await s.page.mouse.move(400, 400);
+            await s.page.mouse.move(2, 400, {steps: 5});
+            await s.page.mouse.move(120, 300, {steps: 5});
+            await s.page.waitForTimeout(800);
+            return "page";
+        },
+    },
+    {
         // A task's map with the side menu dragged down to its icons (a browser's tooltip isn't in a screenshot)
         name: "resize-navigation-pane", settings: {resize_nav_pane: true},
         async run(s) {

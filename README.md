@@ -19,7 +19,7 @@ Every feature is off until you turn it on, except the theme menu.
 
 - [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): a units menu in the header, linked to the
   maps' units selector (Units in Header); a tab that narrows the side menu to its icons, then hides it (Hide
-  Navigation Pane) and a divider that resizes it, down to its icons (Resize Navigation Pane); in the Task Options
+  Navigation Pane), or keeps it hidden until the pointer reaches the window's edge (Auto-hide Navigation Pane), and a divider that resizes it, down to its icons (Resize Navigation Pane); in the Task Options
   dialog, each group's count of configured options, those not at their default (Show Configured Option Count), and
   those options shown under a collapsed group (Expand Configured Options); the Options dropdown replaced by a menu
   with User Presets and System Presets submenus, A-Z (Replace Preset Options Menu); on the Dashboard, a task's start
