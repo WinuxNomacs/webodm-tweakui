@@ -41,8 +41,7 @@ const SHOTS = [
         },
     },
     {
-        // A task's Edit form with the Options dropdown open; User Presets opened when the task's preset isn't one of
-        // the user's
+        // A task's Edit form with the Options dropdown open, User Presets and System Presets opened
         name: "sort-preset-options", settings: {sort_preset_options: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
@@ -52,7 +51,11 @@ const SHOTS = [
             // A window tall enough for the open menu below the row (the next shot sets it back)
             await s.page.setViewportSize({width: WIDTH, height: 1200});
             await s.page.click(".tweakui-presets-button");
-            if (!(await s.page.$(".tweakui-presets-nested"))) await s.page.click(".tweakui-presets-group-head");
+            // Both submenus open
+            for (const key of ["user", "system"]) {
+                const head = `.tweakui-presets-group-head[data-group="${key}"]`;
+                if (await s.page.$(head + '[aria-expanded="false"]')) await s.page.click(head);
+            }
             await s.page.mouse.move(0, 0);
             await s.page.waitForTimeout(300);
             const box = await s.page.evaluate(() => {

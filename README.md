@@ -22,7 +22,7 @@ Every feature is off until you turn it on, except the theme menu.
   Navigation Pane) and a divider that resizes it, down to its icons (Resize Navigation Pane); in the Task Options
   dialog, each group's count of options not at their
   default (Show Modified Options) and those options shown under a collapsed group (Expand Configured); the Options
-  dropdown sorted A-Z, with your saved presets in a User Presets submenu (Sort Preset Options); on the
+  dropdown sorted A-Z into User Presets and System Presets submenus (Sort Preset Options); on the
   Dashboard, a task's start and end times, preset, options as bubbles, ODX command and current
   step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks every
   few seconds, or at the pointer on a right-click (Surprise Me).

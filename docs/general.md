@@ -79,15 +79,16 @@ Collapse All.
 
 Off by default.
 
-![A task's Edit form with the Options dropdown open: (Custom), Default, User Presets opened, then the other presets A to Z](../tweakui/public/previews/sort-preset-options.webp)
+![A task's Edit form with the Options dropdown open: (Custom), then User Presets and System Presets opened, each A to Z](../tweakui/public/previews/sort-preset-options.webp)
 
 The Options dropdown, where a new task or a task you edit picks its preset, lists its presets in an order that's
 easier to scan:
 
-- **(Custom)**, when you have edited the options, then **Default**, at the top.
-- **User Presets**, which opens in the list to the presets you saved, A to Z. It starts open when the chosen preset is
-  one of yours. Without presets of your own, it isn't there.
-- The other presets, A to Z.
+- **(Custom)** at the top, when you have edited the options.
+- **User Presets**: the presets you saved, A to Z. Without presets of your own, it isn't there.
+- **System Presets**: WebODM's presets, Default among them, A to Z.
+
+Each submenu opens and closes in the list with a click on its name, and starts open when it holds the chosen preset.
 
 The chosen preset is in bold and highlighted, in your theme's colours (WebODM's own dropdown shows the system presets
 on a light background, which a dark theme makes hard to read). Choosing a preset works as it does in WebODM's dropdown,
