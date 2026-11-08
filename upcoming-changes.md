@@ -10,6 +10,14 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Task Options: Sort Preset Options** (the user's request, 2026-11-08; see "Task Options: Sort Preset Options") —
+  branch `sort-preset-options`: `tweakui/public/preset_menu.js`, its section of `main.css`, tests in
+  `__tests__/preset_menu.test.js`, `features.py`, `dev/selector-check.js` (`WHERE`), screenshot
+  `sort-preset-options`, `docs/general.md`, README, CHANGELOG. Live on 4.0.0 (a task's Edit form, the user's presets
+  M4T-RGB and M4T-Thermal; dark and light themes, phone width) and 3.3.2 (the New Task panel with images chosen,
+  never started; a "Live check" preset made and deleted): the order, the submenu, a choice reaching WebODM's state,
+  no writes, no console errors. Found while building: WebODM floats `.dropdown` right in the form, and Bootstrap's
+  `.active` menu item is dark-on-dark in a light theme, so the menu uses neither.
 - **Hide Navigation Pane: three steps** (the user's request, 2026-11-07) — branch `nav-tab-three-states`: the tab
   cycles shown → icons only → hidden → shown at WebODM's 250 px (a dragged width is given up, as "default size"
   asks). Icons only is Resize Navigation Pane's narrowest view (`tweakui-nav-icons`, tooltips), with or without that
@@ -1646,3 +1654,27 @@ advised to upgrade to 4.0.0. An exception to CLAUDE.md's "both stacks" for this 
 - The handle works from the keyboard (a `separator`: arrows, Home for the icons, End for WebODM's width).
 - The Adding a Tweak guide said a new setting needed no change to the Django tests; `defaults()` in
   `test_tweakui.py` lists every setting, so it now says so.
+
+## Task Options: Sort Preset Options (the user's request, 2026-11-08)
+
+**Request**: a setting "Sort Preset Options" under General > Task Options that, when on, sorts the Options preset
+dropdown (the New Task panel's and a task's Edit form, EditTaskForm in WebODM) alphabetically, with a "User
+Presets" submenu at the top that expands to show the user's saved presets.
+
+**What WebODM has** (the same in 3.3.2 and 4.0.0): a native `<select class="form-control">` in the Options row
+(`.form-group.form-inline`), React-controlled; its options in `/api/presets/?ordering=-system,-created_at` order,
+(Custom) (id -1) first when the options were edited, system presets marked `option.system-preset` (WebODM's own
+`background-color: #eee` there makes them unreadable in a dark theme), "Default" shown as `gettext("Default")`.
+A native select cannot hold a submenu.
+
+**Decided with the user**:
+- TweakUI's own dropdown in theme colours, over WebODM's select (hidden, kept on the page): choosing an item sets
+  the select's value and sends it a change event, so WebODM's own code selects the preset. That also avoids the dark
+  theme's unreadable system presets.
+- User Presets opens in the list (a click, indented items; works on a phone); it starts open when the chosen preset
+  is one of the user's. No user presets: no submenu.
+- Order: (Custom) when present, then Default, at the top; then User Presets; then the other system presets A-Z.
+  The user's presets are A-Z inside the submenu.
+
+**Built**: see Done.
+

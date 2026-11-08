@@ -25,6 +25,7 @@ const WHERE = {
     task_controls: {page: "task", className: ["open"]},
     task_details: {page: "task", within: {rows: "table"}},
     task_options: {page: "taskOptions"},
+    preset_menu: {page: "taskOptions"},
     movable_controls: {page: "map", within: {titles: "control"}},
     source_frames: {page: "map", pages: {modelView: "model"}},
     pick3d: {page: "model"},

@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- General > Task Options > Sort Preset Options: the Options dropdown of a new or edited task lists (Custom) and
+  Default first, then a User Presets submenu that opens to your saved presets, then the other presets, all A-Z, in
+  your theme's colours.
 - General > Global Controls > Hide Navigation Pane: the tab cycles through three steps: the side menu's icons only
   (their names on hover, as Resize Navigation Pane's narrowest), hidden, and back at the usual width.
 - Source Frames: the button reads "Open Full Frame", in Title Case like the rest of the interface.

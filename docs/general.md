@@ -75,6 +75,25 @@ The Expand/Collapse button (beside Search and the view switch) then cycles three
 opens. Its tooltip names the next step. When no option is configured, the button is WebODM's usual Expand All and
 Collapse All.
 
+## Task Options > Sort Preset Options
+
+Off by default.
+
+![A task's Edit form with the Options dropdown open: (Custom), Default, User Presets opened, then the other presets A to Z](../tweakui/public/previews/sort-preset-options.webp)
+
+The Options dropdown, where a new task or a task you edit picks its preset, lists its presets in an order that's
+easier to scan:
+
+- **(Custom)**, when you have edited the options, then **Default**, at the top.
+- **User Presets**, which opens in the list to the presets you saved, A to Z. It starts open when the chosen preset is
+  one of yours. Without presets of your own, it isn't there.
+- The other presets, A to Z.
+
+The chosen preset is in bold and highlighted, in your theme's colours (WebODM's own dropdown shows the system presets
+on a light background, which a dark theme makes hard to read). Choosing a preset works as it does in WebODM's dropdown,
+and the Edit button beside it is unchanged. From the keyboard, the arrow keys open the list and move through it, and
+Escape closes it.
+
 ## Task Details > Enhanced Task Details
 
 Off by default.
