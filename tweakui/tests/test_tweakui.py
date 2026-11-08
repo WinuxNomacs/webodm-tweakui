@@ -1574,7 +1574,7 @@ class TestPerformance(TweakUITestCase):
         return res.json()
 
     def test_the_live_figures_are_the_servers_cpu_counters_and_memory_and_the_nodes_memory(self):
-        sample = {"total": [300, 1000], "cores": [[200, 500], [100, 500]], "load": [1.5, 1.0, 0.5]}
+        sample = {"total": [300, 1000], "cores": 2, "load": [1.5, 1.0, 0.5]}
         with mock.patch("coreplugins.tweakui.performance.cpu_entry", return_value=sample), \
                 mock.patch("coreplugins.tweakui.performance.memory_stats",
                            return_value={"total": 32 * GB, "free": 8 * GB, "used": 24 * GB}):
@@ -1587,24 +1587,25 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual(set(self.live("?disk=1")["disk"]), {"total", "used", "free"})
         self.assertIn("cpu", self.report()["server"])
 
-    def test_linux_cpu_counters_come_from_proc_stat_with_idle_and_iowait_as_not_busy(self):
+    def test_linux_cpu_counters_are_proc_stats_total_with_idle_and_iowait_as_not_busy_and_the_number_of_cores(self):
         from coreplugins.tweakui import performance
         with tempfile.NamedTemporaryFile("w", suffix="-proc-stat", delete=False) as f:
             path = f.name
             f.write("cpu  100 10 50 800 40 0 0 0 7 0\ncpu0 60 5 25 400 10 0 0 0 0 0\ncpu1 40 5 25 400 30 0 0 0 0 0\n"
                     "intr 1 2 3\nctxt 99\ncpu9 1 1 1 1 1 1 1 1\n")
         try:
-            self.assertEqual(performance.proc_stat_times(path), [[160, 1000], [90, 500], [70, 500]])
+            self.assertEqual(performance.proc_stat_times(path), [160, 1000])
         finally:
             os.remove(path)
-        with mock.patch("coreplugins.tweakui.performance.proc_stat_times", return_value=[[1, 2], [1, 2]]), \
+        with mock.patch("coreplugins.tweakui.performance.proc_stat_times", return_value=[1, 2]), \
                 mock.patch("coreplugins.tweakui.performance.sys.platform", "linux"), \
+                mock.patch("coreplugins.tweakui.performance.os.cpu_count", return_value=128), \
                 mock.patch("coreplugins.tweakui.performance.os.getloadavg", return_value=(1.234, 0.5, 0.25)):
-            self.assertEqual(performance.cpu_entry(), {"total": [1, 2], "cores": [[1, 2]], "load": [1.23, 0.5, 0.25]})
+            self.assertEqual(performance.cpu_entry(), {"total": [1, 2], "cores": 128, "load": [1.23, 0.5, 0.25]})
         with mock.patch("coreplugins.tweakui.performance.proc_stat_times", side_effect=OSError("no /proc")):
             self.assertIsNone(performance.cpu_entry())
 
-    def test_windows_cpu_counters_come_from_get_system_times_and_each_processors_times_with_no_load_average(self):
+    def test_windows_cpu_counters_come_from_get_system_times_with_no_load_average(self):
         import ctypes
         from coreplugins.tweakui import performance
 
@@ -1614,22 +1615,13 @@ class TestPerformance(TweakUITestCase):
                 ref._obj.low, ref._obj.high = value, 0
             return 1
 
-        def query(kind, buffer, size, length):
-            cores = buffer._obj
-            for core, (idle, kern, user) in zip(cores, ((200, 300, 100), (400, 500, 300))):
-                core.idle, core.kernel, core.user = idle, kern, user
-            length._obj.value = 2 * ctypes.sizeof(cores[0])
-            return 0
-
         windll = mock.Mock()
         windll.kernel32.GetSystemTimes.side_effect = get_system_times
-        windll.ntdll.NtQuerySystemInformation.side_effect = query
         with mock.patch.object(ctypes, "windll", windll, create=True), \
                 mock.patch("coreplugins.tweakui.performance.os.cpu_count", return_value=4), \
                 mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"), \
                 mock.patch("coreplugins.tweakui.performance.os.getloadavg", side_effect=AttributeError, create=True):
-            self.assertEqual(performance.cpu_entry(), {"total": [600, 1200], "cores": [[200, 400], [400, 800]], "load": None})
-        self.assertEqual(windll.ntdll.NtQuerySystemInformation.call_args[0][0], 8)
+            self.assertEqual(performance.cpu_entry(), {"total": [600, 1200], "cores": 4, "load": None})
         windll.kernel32.GetSystemTimes.side_effect = lambda *a: 0
         with mock.patch.object(ctypes, "windll", windll, create=True), \
                 mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"):

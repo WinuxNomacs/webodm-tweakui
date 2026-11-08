@@ -42,7 +42,7 @@ function page(every = 3) {
     return document.getElementById("tweakui-performance");
 }
 
-// CPU counters as the API gives them: [busy, total] for the machine, then each core
+// CPU counters as the API gives them: [busy, total] for the machine, and how many cores
 function cpu(total, cores, load = [1.5, 1.25, 1]) {
     return {total, cores, load};
 }
@@ -276,24 +276,22 @@ describe("the Performance page", () => {
         expect(performancePage.formatNumber(1234567)).toBe("1,234,567");
     });
 
-    test("the CPU's busy shares come from the difference between two readings, none from one", () => {
-        const a = cpu([100, 1000], [[50, 500], [50, 500]]), b = cpu([400, 2000], [[350, 1000], [50, 1000]]);
-        expect(performancePage.cpuShares(a, b)).toEqual({total: 0.3, cores: [0.6, 0]});
+    test("the CPU's busy share comes from the difference between two readings, none from one", () => {
+        const a = cpu([100, 1000], 2), b = cpu([400, 2000], 2);
+        expect(performancePage.cpuShares(a, b)).toEqual({total: 0.3});
         expect(performancePage.cpuShares(null, b)).toBeNull();
-        expect(performancePage.cpuShares(a, cpu([100, 1000], [[50, 500], [50, 500], [0, 10]]))).toEqual({total: null, cores: [null, null, null]});
+        expect(performancePage.cpuShares(a, cpu([100, 1000], 2))).toEqual({total: null});
     });
 
-    test("CPU Load shows the total, a bar per core and the load averages, and says it is measuring before two readings", () => {
+    test("CPU Load shows the total of all cores in one bar and the load averages, and says it is measuring before two readings", () => {
         const div = document.createElement("table");
-        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0], [0, 0]]), null);
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], 128), null);
         expect(words(div)).toBe("CPU Load Measuring... Load Average 1.50, 1.25, 1.00 (1, 5 and 15 minutes)");
-        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0], [0, 0]]), {total: 0.375, cores: [0.75, 0]});
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], 128), {total: 0.375});
         expect(div.querySelector("[data-cpu-total]").textContent).toBe("38%");
-        expect(texts(div, ".tweakui-performance-core")).toEqual(["1 75%", "2 0%"]);
-        expect(div.querySelector(".tweakui-performance-core .progress-bar").style.width).toBe("75%");
-        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0]]), {total: 1, cores: [1]});
-        expect(Array.from(div.querySelectorAll(".progress-bar")).map(b => b.className)).toEqual(["progress-bar progress-bar-success", "progress-bar progress-bar-success"]);
-        div.innerHTML = performancePage.cpuRows(cpu([0, 0], [[0, 0]], null), {total: 0.5, cores: [0.5]});
+        expect(words(div)).toContain("38% of 128 cores");
+        expect(Array.from(div.querySelectorAll(".progress-bar")).map(b => [b.className, b.style.width])).toEqual([["progress-bar progress-bar-success", "38%"]]);
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], 1, null), {total: 0.5});
         expect(words(div)).not.toContain("Load Average");
         expect(words(div)).toContain("of 1 core");
         expect(performancePage.cpuRows(null, null)).toBe("");
@@ -301,15 +299,15 @@ describe("the Performance page", () => {
 
     test("the live figures are asked a second after the report, then every Refresh Every seconds, with the disk every 10", async () => {
         jest.useFakeTimers();
-        const first = report({server: Object.assign(report().server, {cpu: cpu([0, 0], [[0, 0], [0, 0]])})});
-        const live = (busy, extra) => json(Object.assign({cpu: cpu([busy, busy * 2 + 1000], [[busy, busy * 2 + 500], [0, busy + 500]]),
+        const first = report({server: Object.assign(report().server, {cpu: cpu([0, 0], 2)})});
+        const live = (busy, extra) => json(Object.assign({cpu: cpu([busy, busy * 2 + 1000], 2),
             memory: {total: 64 * GB, free: 32 * GB, used: 32 * GB}, nodes: [{id: 1, online: true, total_memory: 64 * GB, available_memory: 16 * GB}]}, extra));
         const {root, fetchFn} = await started([json(first), live(500), live(1000), live(1500), live(2000, {disk: {total: 1000 * GB, used: 500 * GB, free: 500 * GB}}), live(2500)]);
         expect(root.querySelector("[data-server]").textContent).toContain("Measuring...");
         await jest.advanceTimersByTimeAsync(1000);
         expect(fetchFn.mock.calls[1][0]).toBe("/api/plugins/tweakui/performance/live");
         expect(root.querySelector("[data-cpu-total]").textContent).toBe("25%");
-        expect(texts(root, "[data-server] .tweakui-performance-core")).toEqual(["1 33%", "2 0%"]);
+        expect(root.querySelectorAll("[data-server] .progress-bar")).toHaveLength(3);
         expect(words(root.querySelector("[data-node='1'] [data-memory]"))).toBe("16 GB free of 64 GB");
         expect(words(root.querySelector("[data-server]"))).toContain("Memory 32 GB free of 64 GB");
         await jest.advanceTimersByTimeAsync(2999);

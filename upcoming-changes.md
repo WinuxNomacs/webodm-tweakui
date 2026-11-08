@@ -3,14 +3,12 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Performance View: CPU Load without the per-core bars** (new.md, 2026-11-08; see "Performance View: CPU Load
-   without the per-core bars") — the total only; no open decisions.
-2. **Performance View: the photos left out, by name** (new.md, 2026-11-08; see "Performance View: the photos left
+1. **Performance View: the photos left out, by name** (new.md, 2026-11-08; see "Performance View: the photos left
    out, by name") — decided.
-3. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-4. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -19,6 +17,12 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, CPU Load without the per-core bars** (new.md, 2026-11-08; see "Performance View: CPU
+  Load without the per-core bars") — branch `cpu-total`: `performance.py` (`proc_stat_times` reads /proc/stat's first
+  line only, `windows_times` GetSystemTimes only, `cpu_entry`'s `cores` is `os.cpu_count()`), `performance_page.js`
+  (`cpuShares` the total, `cpuRows` without htop's grid), `main.css` (the grid's rules and the wider Server card gone).
+  Tests: `performance_page.test.js`, `test_tweakui.py` (Linux and Windows counters). Docs `performance.md`, CHANGELOG,
+  screenshot `performance`. Live on 4.0.0: "8% of 20 cores" in one bar, no core bars.
 - **Diagnostic: Performance View, Recent Processing and the task's log** (new.md, 2026-11-08; see "Performance View:
   Recent Processing and the task's log") — branch `recent-processing`: `task_log.py` (new: `scan` checks each log line
   against ODX's known messages, from its `stages/` and `modules/` code, and lists the other `[WARNING]`/`[ERROR]` lines
@@ -2207,7 +2211,7 @@ tasks with images, total time, time per photo, slowest step, average GSD and nod
 3. Notes: the known messages, each with a plain sentence; every other `[WARNING]` and `[ERROR]` line (deduplicated,
    `CPLE_AppDefined` left out) in a collapsed "Other Messages" list under them.
 
-## Performance View: CPU Load without the per-core bars (new.md, 2026-11-08)
+## Performance View: CPU Load without the per-core bars (new.md, 2026-11-08) — done
 
 Request: "Remove the per core cpu load meters. The CPU Load percentage of the total number of cores is sufficient. On a
 server with 128 cores this would breakdown quickly."
