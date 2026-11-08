@@ -5,8 +5,8 @@
 **Up next**
 1. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
    Pane").
-2. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — two
-   phases: the sliders and their effect on the maps, then the sample maps on the settings page.
+2. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — one
+   phase, decided 2026-11-08: a wheel sensitivity per map, on the settings page and in a control on the map itself.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -2003,29 +2003,35 @@ the settings declared in `features.py` and their `parts`, the settings page's on
   file in both versions. WebODM sends no X-Frame-Options, so the settings page can frame a task's own Map and 3D
   Model pages (same origin), where TweakUI's script runs and can take the unsaved slider values from the page.
 
-**Proposed design**:
-- **Settings**: under 2D Map > Controls and 3D Map > Controls, "Zoom Sensitivity" with two sliders each, Mouse and
-  Trackpad. Whole-number percentages (the settings' type check: an int, never a float, as JSON's 1.0 arrives as 1),
-  from 25% to 300% in steps of 25, 100% = WebODM's own feel. Saved on release of the slider, like the checkboxes.
-- **2D**: the map hook sets `wheelPxPerZoomLevel` per event kind and a `zoomSnap` of 0.25 when the mouse's value is
-  below 100%. **3D**: the wheel's notches are scaled by the slider for its kind, over a surface (Zoom Override) and,
-  if wanted, over nothing too (taking over Potree's wheel there).
-- **Sample maps** (phase 2): beneath each pair of sliders, the user's latest completed task's Map (2D) and 3D Model
-  view in a frame, without WebODM's menus, following the sliders as they move; with no task, a line saying so.
+**Decided** (the user, 2026-11-08):
+1. **A part of each Zoom Override**: greyed on the settings page while that Zoom Override is off, and no effect then.
+2. **10% to 200%**, the slider in locked steps of 10, with a number box beside it that takes any whole number in that
+   range (the slider showing the nearest step). 100% = WebODM's own feel.
+3. **3D: only Zoom Override's zoom over a surface** is scaled; over empty space Potree's wheel stays as it is (maybe
+   an option later).
+4. **One sensitivity per map, for the wheel**: no separate trackpad slider, since a browser can't tell a mouse from
+   a trackpad reliably (to reassess if a dependable way appears). The value applies to every wheel event, so a
+   trackpad's scroll follows it too; touch pinch on phones stays WebODM's.
+5. **No sample views on the settings page.** Instead, a **Zoom Override control on each map** (2D Map and 3D Model
+   view), shown only while that map's Zoom Override is on: clicking it opens the slider and number box, and the
+   zoom follows them at once, so the feel can be tried on the map being viewed.
 
-**Proposed phases**:
-1. **Sliders and their effect** (branch `zoom-sensitivity`): a slider kind of setting in `features.py` and the
-   settings page, the 2D and 3D wheel scaled by kind; Jest (synthetic wheel events of each kind), Django (the
-   setting's range and steps refused outside them), live on both stacks with Playwright's wheel.
-2. **Sample maps** (branch `zoom-sensitivity-samples`): the framed task views on the settings page, the sliders'
-   values passed to them live; live at desktop and phone widths.
+**Design**:
+- **Settings**: `zoom_sensitivity_2d` and `zoom_sensitivity_3d`, ints (default 100), parts of `zoom_override_2d` and
+  `zoom_override_3d` ("Zoom Sensitivity", under each Zoom Override on 2D Map > Controls and 3D Map > Controls).
+  `features.py` gains a number kind of setting (min, max, step), drawn by the settings page's loop as the slider and
+  the box; `settings.update` refuses a value out of range or not a whole number.
+- **On the map**: 2D, a Leaflet control button with a magnifier-and-slider look in the bottom left corner with the
+  zoom buttons (as Add Search Button), opening a small panel; 3D, a button in the 3D view's row of action buttons
+  before Share (as Source Frames, not through `addActionButton`), opening the same panel. The panel's change applies
+  at once and is saved to the user's settings when the slider is let go or the box is left (the settings page
+  shows it next time). Escape or a click outside closes it.
+- **2D effect**: the map hook sets `wheelPxPerZoomLevel` to 60 ÷ (sensitivity ÷ 100) and, below 100%, a fractional
+  `zoomSnap` (so a notch can be less than a whole level; the map then rests between levels, tiles slightly scaled).
+- **3D effect**: `zoomAlong`'s share of the way per notch (`STEP`, 10%) scaled by the sensitivity.
+- **Tests**: Jest (the panel, the box's range, the 2D options, the 3D step, saving), Django (range and type),
+  live on both stacks (Playwright's wheel on a task's map and 3D view; 3.3.2 needs a task processed and deleted
+  afterwards), desktop and phone width, light and dark.
 
-**Open decisions** (to ask when planned):
-1. Sliders as parts of each Zoom Override (greyed while it is off), or settings of their own that work with Zoom
-   Override off too.
-2. The range and step (25%–300% by 25, or e.g. 10%–200% by 10).
-3. 3D: scale Potree's own wheel over empty space too, or only Zoom Override's zoom over a surface.
-4. Phones and tablets: leave touch pinch as WebODM has it, or a third slider (Touch).
-5. The sample: the latest completed task's real views in a frame (needs a task; heavy 3D on a phone), or a simpler
-   stand-in (e.g. a still image that zooms with the same maths, no real map).
-
+**Still to settle while building** (no question to the user unless it turns out to matter): the control's icon,
+and whether 2D's `zoomSnap` goes fractional only below 100% or always.
