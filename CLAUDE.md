@@ -58,7 +58,9 @@ It is committed and public: nothing private, nothing true only on one machine. K
   `tw-broker`, `tw-node-odx-1`, project and volumes `webodm-tweakui`, so it runs beside other WebODMs (ports
   8000–8004 are other plugins' stacks). `TW_WEBODM=3.3.2 dev/webodm.sh ...` runs 3.3.2 alike on
   http://localhost:8006, containers `tw3-*`, project and volumes `webodm-tweakui-332`. Each version's images are
-  pinned by digest in `dev/webodm.sh`.
+  pinned by digest in `dev/webodm.sh`. Both stacks' processing node uses the GPU when the machine has one Docker can
+  use (`TW_GPU=auto`, the default: WebODM's `nodeodx:gpu` image with the GPU reserved, `dev/compose.gpu.yml`);
+  `TW_GPU=0` runs it on the CPU.
 - The first start runs WebODM's dev setup (npm install, webpack, migrations) for several minutes before the server
   answers. The startup log then shows `Registered [coreplugins.tweakui.plugin]`.
 - **WebODM's native Windows app** (4.0.0), when the user runs it: `node dev/windows-relay.js` makes it
