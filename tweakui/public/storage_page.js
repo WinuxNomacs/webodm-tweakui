@@ -2,8 +2,10 @@
 // opening to its tasks and a task to its files by kind (storage.py through the plugin's API); for an admin, a section
 // per other user too. Rows are ticked to clean up several at once, or cleaned up one by one with their own buttons;
 // either way one confirmation names what goes and what it frees, and the work is WebODM's own API's (a task's compact
-// and remove, a project's delete), so its permissions, the processing node's cleanup and the quota apply. UMD, so
-// Jest can load it.
+// and remove, a project's delete), so its permissions, the processing node's cleanup and the quota apply. A completed
+// task is backed up as WebODM's Download > Backup does (its backup URL, the browser's own download), several one after
+// another; a project's Import uploads zips to WebODM's import URL in chunks, as WebODM's Import does, one task each.
+// UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -18,12 +20,17 @@
         ["point_cloud", "Point cloud"], ["textured_model", "Textured model"], ["other", "Other"]];
     var MARKS = {
         removing: ["Deleting", "label-default"], compacting: ["Compacting", "label-default"],
+        importing: ["Importing", "label-default"],
         failed: ["Failed: can be deleted", "label-danger"], canceled: ["Canceled: can be deleted", "label-warning"],
         compactable: ["Can be compacted", "label-info"]
     };
     // WebODM's own words for compacting (TaskListItem.jsx)
     var COMPACT_NOTE = "Compacting will free disk space by permanently deleting the original images used for " +
         "processing. It will no longer be possible to restart the task. Maps and models will remain in place.";
+    // Backup All: the pause between two downloads, so the browser takes each one
+    var BACKUP_PAUSE = 1000;
+    // Import: WebODM's Import sends 8 MB chunks; a chunk that gets no answer is sent again, up to this many times
+    var CHUNK_SIZE = 8000000, CHUNK_TRIES = 3;
 
     function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -60,16 +67,28 @@
 
     function busy(task) { return task.mark === "removing" || task.mark === "compacting"; }
 
+    // WebODM offers a backup of a completed task (its Download menu's Backup)
+    function backupable(task) { return task.status === 40 && !busy(task); }
+
+    function backupUrl(e) { return "/api/projects/" + e.project.id + "/tasks/" + e.task.id + "/backup"; }
+
     // What the ticked rows come to: the projects and the tasks (outside them) a Delete removes, with the bytes it frees;
-    // the tasks a Compact compacts (ticked ones and those of ticked projects that can be)
+    // the tasks a Compact compacts and a Backup All downloads (ticked ones and those of ticked projects that can be), and
+    // how many a Backup All skips
     function plan(state) {
-        var index = state.index, out = {projects: [], tasks: [], compact: [], freed: 0};
+        var index = state.index, out = {projects: [], tasks: [], compact: [], backup: [], skipped: 0, freed: 0};
+        function backup(e) {
+            if (backupable(e.task)) out.backup.push(e); else out.skipped++;
+        }
         Object.keys(state.selected.projects).forEach(function (id) {
             var e = index.projects[id];
             if (!e) return;
             out.projects.push(e);
             out.freed += e.project.size;
-            e.project.tasks.forEach(function (t) { if (t.mark === "compactable") out.compact.push(index.tasks[t.id]); });
+            e.project.tasks.forEach(function (t) {
+                if (t.mark === "compactable") out.compact.push(index.tasks[t.id]);
+                backup(index.tasks[t.id]);
+            });
         });
         Object.keys(state.selected.tasks).forEach(function (id) {
             var e = index.tasks[id];
@@ -77,6 +96,7 @@
             out.tasks.push(e);
             out.freed += e.task.size;
             if (e.task.mark === "compactable") out.compact.push(e);
+            backup(e);
         });
         return out;
     }
@@ -130,6 +150,8 @@
             '<td class="tweakui-storage-date">' + (created && !isNaN(created) ? escapeHtml(created.toLocaleDateString()) : "") + "</td>" +
             '<td class="tweakui-storage-size">' + escapeHtml(formatBytes(task.size)) + "</td>" +
             '<td class="tweakui-storage-buttons">' +
+            (backupable(task) ? '<a class="btn btn-default btn-xs" href="' + escapeHtml(backupUrl({project: project, task: task})) +
+                '" download title="Backup: download the whole task as a zip"><i class="fa fa-file-download"></i><span class="hidden-xs"> Backup</span></a> ' : "") +
             (task.mark === "compactable" ? '<button type="button" class="btn btn-default btn-xs" data-act="compact-task" title="Compact: delete its photos, keep its maps and models"><i class="fa fa-compress"></i> Compact</button> ' : "") +
             (busy(task) ? "" : '<button type="button" class="btn btn-danger btn-xs" data-act="delete-task" title="Delete this task"><i class="fa fa-trash"></i></button>') +
             "</td></tr>";
@@ -145,7 +167,9 @@
             '<i class="fa fa-caret-' + (open ? "down" : "right") + ' fa-fw"></i> <strong>' + escapeHtml(project.name) + "</strong></button></td>" +
             "<td>" + project.tasks.length + (project.tasks.length === 1 ? " task" : " tasks") + "</td><td></td>" +
             '<td class="tweakui-storage-size"><strong>' + escapeHtml(formatBytes(project.size)) + "</strong></td>" +
-            '<td class="tweakui-storage-buttons"><button type="button" class="btn btn-danger btn-xs" data-act="delete-project" title="Delete this project and its tasks"><i class="fa fa-trash"></i></button></td></tr>';
+            '<td class="tweakui-storage-buttons"><button type="button" class="btn btn-default btn-xs" data-act="import-project" ' +
+            'title="Import: add tasks to this project from zips (backups or assets)"' + (state.working ? " disabled" : "") +
+            '><i class="glyphicon glyphicon-import"></i><span class="hidden-xs"> Import</span></button> <button type="button" class="btn btn-danger btn-xs" data-act="delete-project" title="Delete this project and its tasks"><i class="fa fa-trash"></i></button></td></tr>';
         if (open) {
             if (!project.tasks.length) html += '<tr><td></td><td colspan="5" class="text-muted tweakui-storage-indent">No tasks.</td></tr>';
             project.tasks.forEach(function (t) { html += taskHtml(state, project, t); });
@@ -178,13 +202,14 @@
     function renderSelection(page, state) {
         var p = plan(state), n = p.projects.length + p.tasks.length;
         var text = page.querySelector(".tweakui-storage-selected");
-        if (!n) text.textContent = "Tick tasks or projects to clean up several at once.";
+        if (!n) text.textContent = "Tick tasks or projects to back up or clean up several at once.";
         else {
             var parts = [];
             if (p.projects.length) parts.push(p.projects.length + (p.projects.length === 1 ? " project" : " projects"));
             if (p.tasks.length) parts.push(p.tasks.length + (p.tasks.length === 1 ? " task" : " tasks"));
             text.textContent = "Selected: " + parts.join(" and ") + " (" + formatBytes(p.freed) + ")";
         }
+        page.querySelector("[data-act=backup-selected]").disabled = !p.backup.length || state.working;
         page.querySelector("[data-act=compact-selected]").disabled = !p.compact.length || state.working;
         page.querySelector("[data-act=delete-selected]").disabled = !n || state.working;
     }
@@ -279,6 +304,60 @@
         }, Promise.resolve()).then(function () { return failed; });
     }
 
+    // A browser download of a URL, as a link's click: the page holds none of it, whatever its size
+    function download(doc, url) {
+        var a = doc.createElement("a");
+        a.href = url;
+        a.setAttribute("download", "");
+        a.hidden = true;
+        doc.body.appendChild(a);
+        a.click();
+        doc.body.removeChild(a);
+    }
+
+    function randomId(win) {
+        if (win.crypto && typeof win.crypto.randomUUID === "function") return win.crypto.randomUUID();
+        return "tweakui-" + Date.now().toString(36) + "-" + Math.random().toString(36).slice(2);
+    }
+
+    // The error a WebODM answer gives: its detail or error, else its status
+    function failure(res) {
+        return res.json().then(function (d) {
+            var detail = d && (d.detail || d.error);
+            return Array.isArray(detail) ? detail.join(" ") : detail || String(res.status);
+        }, function () { return String(res.status); });
+    }
+
+    // One zip to WebODM's import URL, in chunks as WebODM's Import (Dropzone) sends them, named after the file (a
+    // backup takes back its own name). progress(fraction) after each chunk; resolves to WebODM's new task, or rejects
+    // with the reason
+    function importZip(fetchFn, doc, win, projectId, file, progress) {
+        var total = Math.max(1, Math.ceil(file.size / CHUNK_SIZE)), id = randomId(win);
+        var url = "/api/projects/" + projectId + "/tasks/import", name = file.name.replace(/\.zip$/i, "");
+        function send(index, tries) {
+            var offset = index * CHUNK_SIZE, body = new win.FormData();
+            body.append("name", name);
+            body.append("dzuuid", id);
+            body.append("dzchunkindex", String(index));
+            body.append("dztotalfilesize", String(file.size));
+            body.append("dzchunksize", String(CHUNK_SIZE));
+            body.append("dztotalchunkcount", String(total));
+            body.append("dzchunkbyteoffset", String(offset));
+            body.append("file", file.slice(offset, Math.min(file.size, offset + CHUNK_SIZE)), file.name);
+            return fetchFn(url, {method: "POST", credentials: "same-origin", headers: {"X-CSRFToken": ui.csrfToken(doc)}, body: body})
+                .then(function (res) {
+                    if (!res.ok) return failure(res).then(function (why) { throw new Error(why); });
+                    progress((index + 1) / total);
+                    if (index + 1 < total) return send(index + 1, 1);
+                    return res.json();
+                }, function () {
+                    if (tries < CHUNK_TRIES) return send(index, tries + 1);
+                    throw new Error("no answer");
+                });
+        }
+        return send(0, 1);
+    }
+
     function start(doc, win, fetchFn) {
         var page = doc.getElementById("tweakui-storage");
         if (!page || !page.querySelector(".tweakui-storage-body")) return null;
@@ -286,6 +365,7 @@
         var api = page.getAttribute("data-api");
         var state = {report: null, index: {projects: {}, tasks: {}}, open: {projects: {}, tasks: {}},
             selected: {projects: {}, tasks: {}}, breakdowns: {}, working: false};
+        var fileInput = page.querySelector(".tweakui-storage-file"), importTo = null;
 
         function load() {
             return fetchFn(api + "storage", {credentials: "same-origin"}).then(function (res) {
@@ -345,6 +425,60 @@
             });
         }
 
+        // Backup All: each task's download in turn, a pause between them; nothing changes, so no confirmation
+        function backupAll() {
+            var p = plan(state), list = p.backup;
+            if (!list.length) return Promise.resolve();
+            var skipped = p.skipped ? " (" + p.skipped + " skipped: not completed)" : "";
+            state.working = true;
+            render(page, state);
+            return list.reduce(function (chain, e, i) {
+                return chain.then(function () {
+                    setStatus(page, "Downloading backup " + (i + 1) + " of " + list.length + ": " + (e.task.name || "Task") + skipped);
+                    download(doc, backupUrl(e));
+                    if (i + 1 < list.length) return new Promise(function (resolve) { win.setTimeout(resolve, BACKUP_PAUSE); });
+                });
+            }, Promise.resolve()).then(function () {
+                state.working = false;
+                render(page, state);
+                setStatus(page, list.length + (list.length === 1 ? " backup" : " backups") + " started; the browser saves " +
+                    (list.length === 1 ? "it" : "them") + " as WebODM sends " + (list.length === 1 ? "it" : "them") + skipped + ".");
+            });
+        }
+
+        // Import: the zips chosen, one after another into the project, then the list again (WebODM marks each task
+        // Importing until it has restored it)
+        function importFiles(projectId, files) {
+            files = Array.prototype.slice.call(files || []);
+            if (!files.length) return Promise.resolve();
+            var failed = [], done = 0;
+            state.working = true;
+            render(page, state);
+            return files.reduce(function (chain, file, i) {
+                return chain.then(function () {
+                    var line = "Importing " + (files.length > 1 ? (i + 1) + " of " + files.length + ": " : "") + file.name;
+                    setStatus(page, line + ", 0%");
+                    return importZip(fetchFn, doc, win, projectId, file, function (f) {
+                        setStatus(page, line + ", " + Math.floor(f * 100) + "%");
+                    }).then(function () { done++; }, function (err) { failed.push(file.name + ": " + err.message); });
+                });
+            }, Promise.resolve()).then(function () {
+                state.working = false;
+                if (failed.length) setStatus(page, "Not imported: " + failed.join("; "), true);
+                else setStatus(page, "Uploaded " + done + (done === 1 ? " zip" : " zips") + "; WebODM is importing " +
+                    (done === 1 ? "it" : "them") + ".");
+                return load();
+            });
+        }
+
+        if (fileInput) {
+            fileInput.addEventListener("change", function () {
+                var to = importTo, files = fileInput.files;
+                importTo = null;
+                if (to) importFiles(to, files).then(function () { fileInput.value = ""; });
+            });
+        }
+
         page.addEventListener("click", function (ev) {
             var el = ev.target.closest ? ev.target.closest("[data-act]") : null;
             if (!el) return;
@@ -363,6 +497,12 @@
                 ask({projects: [], tasks: [state.index.tasks[taskId]]});
             } else if (what === "delete-project") {
                 ask({projects: [state.index.projects[projectId]], tasks: []});
+            } else if (what === "import-project") {
+                if (!fileInput || state.working) return;
+                importTo = projectId;
+                fileInput.click();
+            } else if (what === "backup-selected") {
+                backupAll();
             } else if (what === "compact-selected") {
                 ask({compact: plan(state).compact});
             } else if (what === "delete-selected") {
@@ -384,9 +524,10 @@
         });
 
         var loaded = load();
-        return {state: state, loaded: loaded, load: load};
+        return {state: state, loaded: loaded, load: load, backupAll: backupAll, importFiles: importFiles};
     }
 
     return {start: start, formatBytes: formatBytes, statusLabel: statusLabel, plan: plan, indexReport: indexReport,
-        confirmation: confirmation, requests: requests, compactFrees: compactFrees};
+        confirmation: confirmation, requests: requests, compactFrees: compactFrees, importZip: importZip,
+        CHUNK_SIZE: CHUNK_SIZE, BACKUP_PAUSE: BACKUP_PAUSE};
 });

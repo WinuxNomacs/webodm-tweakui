@@ -170,7 +170,7 @@ CATEGORIES = [
                     _("Adds a Storage page under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin "
                       "is off). It shows how much of your quota each project and task uses and each task's files by "
                       "kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and "
-                      "projects."),
+                      "projects, back up completed tasks as WebODM's backup zips and import zips into a project."),
                     preview="storage"),
         ]),
     ]),

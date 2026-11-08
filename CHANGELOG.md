@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Storage: a completed task's Backup downloads WebODM's own backup zip of the whole task (as Download > Backup
+  does), and Backup All downloads one for each completed task ticked or in a ticked project; a project's Import adds
+  a task from each zip chosen (backups or assets, as WebODM's Import), with its progress shown.
 - Replace Preset Options Menu: a filter box at the top of the menu narrows the presets as you type; Enter chooses the
   first match.
 - General > Just for Fun > Surprise Me > Enable Interaction (on by default): turn it off to keep the fireworks
