@@ -3,15 +3,21 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
-   — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
-   (`release/X.Y.Z`). Open decisions listed there.
+1. **Release 1.0.0** (see "Documentation review before the release") — `release/1.0.0`: manifest 1.0.0 (still
+   experimental), the CHANGELOG's heading, the README's and Install page's "Once released" and `tweakui-X.Y.Z.zip`,
+   `dev/package.sh`, the `release-check` skill (both stacks and WebODM's Windows app).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Documentation review before the release** (new.md, 2026-11-08) — branch `docs-review`: every docs page, the
+  README, CONTRIBUTING and Adding a Tweak checked against `features.py`, the scripts' figures and `core.js`. Fixed:
+  the home page's cards (side menu, preset menu, Zoom Sensitivity, search, backup and import, Performance's live
+  graphs and log notes; an Administration card), Performance's closing line (the disk counters), the CHANGELOG
+  rewritten as a first release's notes by category. All 27 screenshots retaken (7 dated from before the maps' new
+  buttons and the header's menu order). Docs build passes.
 - **Diagnostic: Performance View, history graphs** (asked in chat, 2026-11-08; see "Performance View: history
   graphs") — branch `perf-history`: `features.py` (`performance_history`, History Length, 1-30 min, 5 by default, a
   part of Show Performance View), `plugin.py` and `performance.html` (Refresh Every and History Length from one loop,
@@ -2397,6 +2403,6 @@ setting's name, place and description against `features.py`, each behaviour agai
 against what the feature shows now (retaken where stale), the links (`npm run docs:build`). Then the release:
 `release/X.Y.Z` (manifest version, CHANGELOG, README, docs), `dev/package.sh`, the `release-check` skill.
 
-**Open decisions** (to ask when the phase starts):
-1. The first release's version (the manifest says 0.1.0).
-2. Whether it stays `"experimental": true`.
+**Decided** (the user, 2026-11-08):
+1. The first release is **1.0.0** (the manifest said 0.1.0).
+2. It stays `"experimental": true`.
