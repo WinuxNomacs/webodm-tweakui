@@ -19,7 +19,7 @@ const IMAGES = process.env.TW_IMAGES || path.join(__dirname, "..", "ignored", "W
 // pages: a selector on another page than the script's; admin: shown to administrators only. A script with selectors
 // and no entry here fails the check, so a new script's list is not left out
 const WHERE = {
-    core: {page: "dashboard", within: {user: "headerLinks"}},
+    core: {page: "dashboard"},
     main: {page: "dashboard", admin: ["adminTheme"]},
     nav_pane: {page: "dashboard"},
     task_controls: {page: "task", className: ["open"]},

@@ -142,4 +142,44 @@ describe("the header menus' order doesn't depend on which script starts first", 
             });
         }
     }
+
+    // DJI Thermal's Temperature Unit menu goes first in the list, after its own request, so before or after TweakUI's
+    function addOther(name) {
+        const links = document.querySelector(".navbar-top-links");
+        const li = document.createElement("li");
+        li.className = "dropdown";
+        li.textContent = name;
+        links.insertBefore(li, links.firstChild);
+    }
+    const settle = () => new Promise(r => setTimeout(r, 0));
+
+    for (const otherFirst of [true, false]) {
+        test(`TweakUI's menus stay ahead of another plugin's, which ${otherFirst ? "starts before" : "starts after"} them`, async () => {
+            page();
+            const win = {TweakUI: Object.assign({desktop: false}, THEMES), localStorage: window.localStorage,
+                MutationObserver: window.MutationObserver};
+            if (otherFirst) addOther("Temperature");
+            themeMenu.build(document, win);
+            unitsMenu.build(document, win);
+            if (!otherFirst) addOther("Temperature");
+            await settle();
+            expect(order(".navbar-top-links > li")).toEqual(["units", "theme", "Temperature", "user"]);
+        });
+    }
+
+    test("TweakUI stops moving its menus when another plugin keeps putting its own first", async () => {
+        page();
+        const win = {TweakUI: Object.assign({desktop: false}, THEMES), localStorage: window.localStorage,
+            MutationObserver: window.MutationObserver};
+        themeMenu.build(document, win);
+        unitsMenu.build(document, win);
+        const links = document.querySelector(".navbar-top-links");
+        addOther("Stubborn");
+        const stubborn = links.firstChild;
+        new MutationObserver(() => {
+            if (links.firstChild !== stubborn) links.insertBefore(stubborn, links.firstChild);
+        }).observe(links, {childList: true});
+        for (let i = 0; i < 30; i++) await settle();
+        expect(order(".navbar-top-links > li")[0]).toBe("Stubborn");
+    });
 });

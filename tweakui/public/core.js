@@ -10,12 +10,15 @@
 })(typeof window !== "undefined" ? window : this, function () {
     "use strict";
 
-    // The WebODM elements the helpers rely on, to check against a new WebODM: the header's links and user icon, the
-    // side menu, its About item
+    // The WebODM elements the helpers rely on, to check against a new WebODM: the header's links, the side menu, its
+    // About item
     var SELECTORS = {
         header: "#navbar-top > .navbar-header", headerLinks: "#navbar-top .navbar-top-links",
-        user: ":scope > li.dropdown > .dropdown-user", sideMenu: "#side-menu", about: "#about-menu"
+        sideMenu: "#side-menu", about: "#about-menu"
     };
+
+    // The class of TweakUI's menus in the header, and how often keepFirst moves them back to the front on a page
+    var HEADER_MENU = "tweakui-header-menu", MOVES_MAX = 10;
 
     // Errors: logged with the feature's name, then the page goes on
 
@@ -103,8 +106,8 @@
         return li;
     }
 
-    // Where a header menu goes: before the first of WebODM's header links that `before` finds (else before the
-    // user's dropdown, else last), or, in desktop mode (settings.js says so), where WebODM hides its header, in the
+    // Where a header menu goes: before the first of the header's links that `before` finds, else after TweakUI's
+    // other menus, ahead of every other item (another plugin's menus, the user's dropdown), or, in desktop mode (settings.js says so), where WebODM hides its header, in the
     // side menu before `sideBefore`'s item (else just above TweakUI's). In single-user mode WebODM leaves out the
     // header links with the user icon: a list of TweakUI's own goes where WebODM's would. null on a page without the
     // side menu (signed out)
@@ -124,8 +127,28 @@
             links = el(doc, "ul", "nav navbar-top-links navbar-right");
             header.insertBefore(links, header.querySelector(".navbar-brand"));
         }
-        var user = links.querySelector(SELECTORS.user);
-        return {list: links, before: (before && links.querySelector(before)) || (user ? user.parentNode : null), side: false};
+        return {list: links, before: (before && links.querySelector(before)) || firstOther(links), side: false};
+    }
+
+    // The header list's first item that isn't one of TweakUI's menus (null when there is none)
+    function firstOther(list) {
+        return list.querySelector(":scope > :not(." + HEADER_MENU + ")");
+    }
+
+    // Keeps TweakUI's header menus ahead of the items other plugins add later (DJI Thermal puts its Temperature Unit
+    // first in the list), so the order is the same on every load: TweakUI's, then the others', then the user icon.
+    // At most MOVES_MAX moves on a page, should another plugin keep moving its own menus to the front too
+    function keepFirst(win, list) {
+        if (list.tweakuiKeepFirst || !win.MutationObserver) return;
+        list.tweakuiKeepFirst = true;
+        var moves = 0;
+        var observer = new win.MutationObserver(guard("header menus", function () {
+            var other = firstOther(list), ours = list.querySelectorAll(":scope > ." + HEADER_MENU);
+            if (!other || !ours.length || !(other.compareDocumentPosition(ours[ours.length - 1]) & 4)) return;
+            if (++moves > MOVES_MAX) return observer.disconnect();
+            Array.prototype.forEach.call(ours, function (menu) { list.insertBefore(menu, other); });
+        }));
+        observer.observe(list, {childList: true});
     }
 
     // Puts a header menu (li.dropdown > a.dropdown-toggle + ul.dropdown-menu) in its spot (menuSpot); in the side
@@ -158,6 +181,10 @@
                 menu.className = menu.className.replace(/\s*\bactive\b/g, "") + (open ? " active" : "");
                 toggle.setAttribute("aria-expanded", String(open));
             });
+        }
+        else {
+            menu.className += " " + HEADER_MENU;
+            keepFirst(win, at.list);
         }
         at.list.insertBefore(menu, at.before);
         return true;
