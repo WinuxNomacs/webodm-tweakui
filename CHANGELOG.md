@@ -2,6 +2,8 @@
 
 ## Unreleased
 
+- Surprise Me: a right-click on Windows sends only its rocket; the browser's menu no longer opens too (Windows sends
+  the menu event after the button's release, which the right-click had already ended).
 - General > Task Options > Replace Preset Options Menu: the Options dropdown of a new or edited task becomes a menu
   with (Custom) first, then two submenus, open at first and closed with a click: User Presets (your saved presets)
   and System Presets (WebODM's, Default among them), each A-Z, in your theme's colours.
