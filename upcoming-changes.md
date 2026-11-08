@@ -3,10 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Diagnostic: Performance View, disk activity** (new.md, 2026-11-08; see "Performance View: disk activity") —
-   reads and writes per second for each drive WebODM's server uses, from the system's own counters. Decided by the
-   user: the drives WebODM uses, average size per operation in place of random/sequential, refreshed with CPU Load.
-2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -15,6 +12,18 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, disk activity** (new.md, 2026-11-08; see "Performance View: disk activity") —
+  branch `disk-io`: `performance.py` (`mount_devices` from `/proc/self/mountinfo` without the system's mounts,
+  `diskstats` from `/proc/diskstats`, `linux_drives` matching them by device or source name, the tasks' drive by the
+  longest mount point MEDIA_ROOT is under; `windows_drives` through IOCTL_DISK_PERFORMANCE for each fixed drive
+  letter, idle time in place of busy time; `disk_io_entry` in the report's server and in `live`),
+  `performance_page.js` (`diskShares` between two readings, `driveCardHtml`, the cards beside the WebODM card in
+  `[data-server-cards]`, redrawn each refresh, a note under them), `main.css`, `features.py` (descriptions),
+  `dev/screenshots.js` (waits for the drives). Tests: `performance_page.test.js` (3 new), `test_tweakui.py` (2 new:
+  a sample mountinfo and diskstats, Windows with ctypes mocked; the live API). Docs `performance.md` (Disk Activity),
+  README, CHANGELOG, screenshot `performance`. Live on 4.0.0 and 3.3.2: `sde · Tasks` (media, venv) and `sdd`,
+  refreshed every 3 s, no sideways scroll at phone width, no console errors; the Windows code run on the machine's
+  Windows Python (C: as Tasks, D:), not yet in WebODM's Windows app.
 - **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
   TweakUI") — branch `dji-thermal`: DJI Thermal's `main` (DJI Thermal Analyzer) zipped with its `DT_ZIP` and installed
   through Administration > Plugins on both stacks (an upgrade of 1.1.0 on 4.0.0), left installed. `core.js`:
@@ -2259,7 +2268,7 @@ Decided by the user (2026-11-08):
   in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
   one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
 
-## Performance View: disk activity (new.md, 2026-11-08)
+## Performance View: disk activity (new.md, 2026-11-08) — done
 
 **Request**: "Performance UI, is it possible to add disk iops stats (e.g. read/write ops per second, random
 read/writes ops per second, etc...) for the logical drives/mounts on the WebODM server?"
