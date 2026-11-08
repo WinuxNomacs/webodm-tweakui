@@ -1897,10 +1897,10 @@ user may not have is refused); `storage.is_admin` (superusers).
   admin page), live on both stacks with a second, non-admin "Live check" user (made and deleted), docs
   (`docs/storage.md` and the admin page), screenshot of the admin page.
 
-**Open decisions** (to ask when the phase is planned):
-1. Its own Administration > TweakUI page, or a section on TweakUI Themes (renamed to TweakUI).
-2. Whether staff who are not superusers count as admins here (TweakUI Themes: superusers only).
-3. A withheld feature: greyed with the reason, or hidden from the settings page entirely.
+**Decided** (2026-11-08):
+1. **Its own page**, Administration > TweakUI, with the group "Available to Users"; TweakUI Themes stays as it is.
+2. **Superusers only** change it and always keep both; staff who are not superusers are users here.
+3. **Greyed with the reason** ("Turned off by your administrator") on the settings page; the user's choice is kept.
 
 **Phase**: branch `admin-feature-access`, after Performance View (so both pages exist; it could also come first and
 cover Storage alone, then Performance joins with its flag).
