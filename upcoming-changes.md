@@ -5,6 +5,12 @@
 **Up next**
 1. **2D Map and 3D Map: Zoom Sensitivity** (new.md, 2026-11-08; see "2D Map and 3D Map: Zoom Sensitivity") — one
    phase, decided 2026-11-08: a wheel sensitivity per map, on the settings page and in a control on the map itself.
+2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+   TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
+   menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
+3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+   — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
+   (`release/X.Y.Z`). Open decisions listed there.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -2046,3 +2052,50 @@ the settings declared in `features.py` and their `parts`, the settings page's on
 
 **Still to settle while building** (no question to the user unless it turns out to matter): the control's icon,
 and whether 2D's `zoomSnap` goes fractional only below 100% or always.
+
+## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
+
+**Request**: "Install dji-thermal plugin into the dev instance to ensure there are no compatibility issues. One
+potential issue is that it adds a Temperature Unit selecter to the header bar. We'll want to make sure ours have no
+trouble showing up next to it. We also own the code to dji-thermal in ~/gitrepos/web/webodm-dji-thermal, where a new
+release is in the works."
+
+**Builds on**: `core.js`'s header slot (the header's `.navbar-top-links`, made before the brand when the page has
+none; the side menu in desktop mode), Units in Header and the Theme menu.
+
+**What the code shows** (before installing anything):
+- DJI Thermal's `public/units.js` `addMenu` puts its Temperature Unit menu in the same `#navbar-top
+  .navbar-top-links` list, left of the user icon, and makes that list itself (after the toggle button) when the page
+  has none. TweakUI reuses the list when it exists, so whichever plugin runs first makes it and both menus land in
+  one list; the menus' order depends on which script runs first.
+- In desktop mode (the Windows app, no header bar) DJI Thermal finds no `.navbar-header` and adds no menu; TweakUI
+  puts its menus in the side menu.
+- DJI Thermal's `release/1.1.0` is merged into its `main`, with `dist/dji-thermal-1.1.0.zip` built (untagged).
+
+**Proposed phase**: install DJI Thermal's zip on both dev stacks through Administration > Plugins (as a user would),
+then check live: the header with both plugins' menus (each opens, nothing overlaps, the order stable over reloads),
+at desktop and phone width (the collapsed header), light, dark and a TweakUI theme; Units in Header and the maps'
+units still linked; the 2D map with DJI Thermal's Inspector beside TweakUI's map controls (Movable Controls, Source
+Frames, Zoom Override, Add Search Button); the side menu with Hide, Resize and Auto-hide Navigation Pane; no console
+errors from either. A problem is fixed on whichever side it belongs (DJI Thermal's on a branch in its own repo).
+
+**Open decisions** (to ask when the phase starts):
+1. Which DJI Thermal: the built 1.1.0 zip, or its `main` as it is then?
+2. Leave it installed on the dev stacks afterwards, or uninstall it?
+3. Whether the header menus' order should be fixed (e.g. Temperature Unit next to Units), and on which side.
+4. The Windows app too, or the Docker stacks only?
+
+## Documentation review before the release (new.md, 2026-11-08)
+
+**Request**: "Review and update the documentation as necessary so that it's information is accurate prior to
+release."
+
+**Proposed phase**: once the phases before it are merged, read every page of `docs/` (each category page, Adding a
+Tweak, Developing, the home page), the README, CONTRIBUTING, CHANGELOG and CLAUDE.md against the code: each
+setting's name, place and description against `features.py`, each behaviour against its script, the screenshots
+against what the feature shows now (retaken where stale), the links (`npm run docs:build`). Then the release:
+`release/X.Y.Z` (manifest version, CHANGELOG, README, docs), `dev/package.sh`, the `release-check` skill.
+
+**Open decisions** (to ask when the phase starts):
+1. The first release's version (the manifest says 0.1.0).
+2. Whether it stays `"experimental": true`.
