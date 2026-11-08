@@ -122,7 +122,7 @@ async function main() {
                 await page.click('button[title="Edit Task Options"]');
                 await page.waitForSelector(".edit-preset-dialog", {state: "attached", timeout: 15000});
                 await page.waitForTimeout(1000);
-                // Every group open (the Expand/Collapse button: Expand All, then with TweakUI's Expand Configured, more
+                // Every group open (the Expand/Collapse button: Expand All, then with TweakUI's Expand Configured Options, more
                 // steps), so the options and subgroups are on the page
                 for (let i = 0; i < 3 && !(await page.$(".edit-preset-dialog .fa-angle-double-up")); i++) {
                     await page.click(".edit-preset-dialog button:has(.fa-angle-double-down)");

@@ -172,10 +172,10 @@ html.tweakui .tweakui-nav-handle { display: none; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-handle { display: none; }
 }
 
-/* Show Modified Options (task_options.js): the heading's count in place of WebODM's own number */
+/* Show Configured Option Count (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
 .option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }
-/* Expand Configured (task_options.js): a collapsed group shows its configured options, over WebODM's inline display: none */
+/* Expand Configured Options (task_options.js): a collapsed group shows its configured options, over WebODM's inline display: none */
 .option-group[data-tweakui-expand] > .option-group-content { display: block !important; }
 .option-group[data-tweakui-expand] .option-subgroup:not([data-tweakui-configured]),
 .option-group[data-tweakui-expand] .processing-node-option:not([data-tweakui-configured]) { display: none; }

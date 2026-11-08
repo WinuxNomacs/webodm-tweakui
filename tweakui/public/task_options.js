@@ -1,10 +1,10 @@
-// General > Task Options > Show Modified Options: in the Task Options dialog (EditPresetDialog in WebODM), each
-// group heading's "(13)" becomes "(modified/total)", kept up to date as options change. An option is modified when it
-// is not at ODM's default, which is when its component's getValue() is undefined, as "Reset to default" leaves it.
-// The count goes in the heading's data-tweakui-count attribute, which main.css shows in place of WebODM's number:
-// React re-renders its own text but leaves the attribute alone.
-// General > Task Options > Expand Configured: a collapsed group still shows its modified options ("configured"),
-// WebODM's own controls, under its heading. WebODM keeps a collapsed group's options on the page, hidden by an inline
+// General > Task Options > Show Configured Option Count: in the Task Options dialog (EditPresetDialog in WebODM),
+// each group heading's "(13)" becomes "(configured/total)", kept up to date as options change. An option is
+// configured when it is not at ODM's default, which is when its component's getValue() is undefined, as "Reset to
+// default" leaves it. The count goes in the heading's data-tweakui-count attribute, which main.css shows in place of
+// WebODM's number: React re-renders its own text but leaves the attribute alone.
+// General > Task Options > Expand Configured Options: a collapsed group still shows its configured options, WebODM's
+// own controls, under its heading. WebODM keeps a collapsed group's options on the page, hidden by an inline
 // display: none; data-tweakui-expand on the group, data-tweakui-configured on its configured options and subgroups,
 // and main.css show only those. "Other Options" is not on the page while closed, so it shows nothing. The dialog's
 // Expand/Collapse button then cycles Expand All, Collapse All, Collapse All but Configured: WebODM's own two, and
@@ -38,7 +38,7 @@
         return text ? text.trim().split(/\s+/)[0] : null;
     }
 
-    function isModified(component) {
+    function isConfigured(component) {
         try {
             return !!component && typeof component.getValue === "function" && component.getValue() !== undefined;
         } catch (e) {
@@ -52,7 +52,7 @@
         else if (!on && el.hasAttribute(name)) el.removeAttribute(name);
     }
 
-    // Writes "(modified/total)" on every group heading of the dialog whose options are on the page (features.count);
+    // Writes "(configured/total)" on every group heading of the dialog whose options are on the page (features.count);
     // a group whose options are not ("Other Options" while closed) keeps WebODM's own number. With features.expand,
     // marks the configured options, and the collapsed groups that have any, for main.css to show
     function update(dialog, options, features) {
@@ -60,10 +60,10 @@
         Array.prototype.forEach.call(dialog.querySelectorAll(SELECTORS.group), function (group) {
             var header = group.querySelector(SELECTORS.header);
             if (!header) return;
-            var shown = group.querySelectorAll(SELECTORS.option), modified = 0;
+            var shown = group.querySelectorAll(SELECTORS.option), configured = 0;
             Array.prototype.forEach.call(shown, function (el) {
-                var on = isModified(options[optionName(el)]);
-                if (on) modified++;
+                var on = isConfigured(options[optionName(el)]);
+                if (on) configured++;
                 if (features.expand) flag(el, CONFIGURED, on);
             });
             if (features.expand) {
@@ -71,10 +71,10 @@
                     flag(sub, CONFIGURED, !!sub.querySelector(SELECTORS.option + "[" + CONFIGURED + "]"));
                 });
                 var content = group.querySelector(SELECTORS.content);
-                flag(group, EXPAND, modified > 0 && !!content && content.style.display === "none" && !dialog.hasAttribute(PLAIN));
+                flag(group, EXPAND, configured > 0 && !!content && content.style.display === "none" && !dialog.hasAttribute(PLAIN));
             }
             if (!features.count) return;
-            var text = shown.length ? "(" + modified + "/" + shown.length + ")" : null;
+            var text = shown.length ? "(" + configured + "/" + shown.length + ")" : null;
             if (text === null) {
                 if (header.hasAttribute(ATTR)) header.removeAttribute(ATTR);
             } else if (header.getAttribute(ATTR) !== text) {
@@ -158,10 +158,10 @@
         if (!P || !P.Dashboard || !P.Dashboard.presetDialogOptionsReady) return;
         P.Dashboard.presetDialogOptionsReady(ui.guard(NAME, function (args) {
             var settings = ui.settingsOf(win);
-            var features = {count: !!settings.show_modified_options, expand: !!settings.expand_configured};
+            var features = {count: !!settings.show_configured_option_count, expand: !!settings.expand_configured_options};
             if ((features.count || features.expand) && args) watch(doc, args.options, win, features);
         }));
     }
 
-    return {start: start, watch: watch, update: update, optionName: optionName, isModified: isModified, SELECTORS: SELECTORS};
+    return {start: start, watch: watch, update: update, optionName: optionName, isConfigured: isConfigured, SELECTORS: SELECTORS};
 });

@@ -40,10 +40,11 @@
 - Clearer wording throughout the settings, messages and documentation; the settings "Show Theme Menu" and
   "Show Storage View" renamed in Title Case.
 - A TweakUI item in the side menu, just above About, and a settings page (navigation pane, General), with each user's own settings.
-- General > Task Options > Show Modified Options: the Task Options dialog's group headings show (modified/total).
-- General > Task Options > Expand Configured: a collapsed group of the Task Options dialog still shows its options
-  not at their default, WebODM's own controls, ready to change; the dialog's Expand/Collapse button cycles Expand
-  All, Collapse All and Collapse All but Configured.
+- General > Task Options > Show Configured Option Count: the Task Options dialog's group headings show
+  (configured/total).
+- General > Task Options > Expand Configured Options: a collapsed group of the Task Options dialog still shows its
+  configured options (not at their default), WebODM's own controls, ready to change; the dialog's Expand/Collapse
+  button cycles Expand All, Collapse All and Collapse All but Configured.
 - General > Task Details > Expand Task Controls: on the Dashboard, a minimized task still shows its buttons; the
   square beside its name cycles buttons only, expanded and fully minimized.
 - General > Task Details > Enhanced Task Details: a task's details on the Dashboard show the preset its options

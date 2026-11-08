@@ -19,7 +19,7 @@ const WIDTH = 1280, HEIGHT = 800, MAX_WIDTH = 1280;
 // An optional cleanup(s) runs after the shot, also when it failed.
 const SHOTS = [
     {
-        name: "show-modified-options", settings: {show_modified_options: true, expand_task_controls: false},
+        name: "show-configured-option-count", settings: {show_configured_option_count: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.click(".expanded-panel .edit-button");
@@ -30,7 +30,7 @@ const SHOTS = [
         },
     },
     {
-        name: "expand-configured", settings: {show_modified_options: true, expand_configured: true, expand_task_controls: false},
+        name: "expand-configured-options", settings: {show_configured_option_count: true, expand_configured_options: true, expand_task_controls: false},
         async run(s) {
             await s.openTask();
             await s.page.click(".expanded-panel .edit-button");

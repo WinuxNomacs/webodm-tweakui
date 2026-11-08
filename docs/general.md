@@ -46,29 +46,29 @@ the arrow keys narrow and widen the side menu, Home gives the icons alone and En
 The width is kept in this browser. With Hide Navigation Pane on too, the tab sits on the divider wherever it is.
 On a phone there's no divider to drag.
 
-## Task Options > Show Modified Options
+## Task Options > Show Configured Option Count
 
 Off by default.
 
-![The Task Options dialog with each group's count of changed options](../tweakui/public/previews/show-modified-options.webp)
+![The Task Options dialog with each group's count of configured options](../tweakui/public/previews/show-configured-option-count.webp)
 
 In the Task Options dialog (a new task's Options > Edit, or a task's Edit), each group heading shows how many of
-its options are not at ODM's default, out of how many it has: "Input & Preprocessing (1/13)" once ignore-gsd is
+its options are configured (not at ODM's default), out of how many it has: "Input & Preprocessing (1/13)" once ignore-gsd is
 enabled. The count follows your changes, including "Reset to default". Options a preset sets count too (the Default
 preset sets auto-boundary and dsm). It works in the grouped view only, and "Other Options" is counted only while it
 is open.
 
-## Task Options > Expand Configured
+## Task Options > Expand Configured Options
 
 Off by default.
 
-![The Task Options dialog with the configured options under each collapsed group](../tweakui/public/previews/expand-configured.webp)
+![The Task Options dialog with the configured options under each collapsed group](../tweakui/public/previews/expand-configured-options.webp)
 
-In the Task Options dialog, a collapsed group still shows the options in it that are not at ODM's default, under
-its heading: "Structure From Motion" shows feature-quality when it is set to ultra. They're WebODM's own controls,
-so you can change one there; reset it to its default and it leaves the list. Opening a group shows all its options
-as usual, and closing it shows only the configured ones again. It works with or without Show Modified Options, which
-counts the same options. It works in the grouped view only, and "Other Options" shows nothing while it is closed.
+In the Task Options dialog, a collapsed group still shows its configured options (those not at ODM's default),
+under its heading: "Structure From Motion" shows feature-quality when it is set to ultra. They're WebODM's own
+controls, so you can change one there; reset it to its default and it leaves the list. Opening a group shows all its
+options as usual, and closing it shows only the configured ones again. It works with or without Show Configured
+Option Count, which counts the same options. It works in the grouped view only, and "Other Options" shows nothing while it is closed.
 
 The Expand/Collapse button (beside Search and the view switch) then cycles three steps: **Expand All**,
 **Collapse All** (the configured options hidden too) and **Collapse All but Configured**, which is how the dialog
