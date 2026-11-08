@@ -16,6 +16,8 @@ from django.utils.translation import gettext as _
 LOG_WHOLE, LOG_PART = 32 * 1024 ** 2, 8 * 1024 ** 2
 # Other Messages: at most this many, each line at most LINE_MAX characters
 OTHER_MAX, LINE_MAX = 30, 300
+# Photos named by a note (no features, no GPS): at most this many
+NAMES_MAX = 2000
 # Logs read, by path: (size, mtime, result); at most CACHE_MAX
 CACHE_MAX = 64
 _cache = {}
@@ -60,10 +62,10 @@ def _known():
          _("The GPU failed while building the point cloud, so the CPU finished it (is the graphics driver up to "
            "date?).")),
         ("reconstructions", "warning", RECONSTRUCTIONS, None),
-        ("no_features", "warning", re.compile(r"No features found in image "),
+        ("no_features", "warning", re.compile(r"No features found in image (\S+)"),
          _("No features were found in %(count)s photos (blurred, too dark, or of water, snow or sand), so they "
            "were left out.")),
-        ("no_gps", "warning", re.compile(r"GPS position not available for "),
+        ("no_gps", "warning", re.compile(r"GPS position not available for (\S+)"),
          _("%(count)s photos have no GPS position.")),
         ("zero_altitude", "warning", re.compile(r"images have zero altitude"),
          _("More than 5% of the photos have an altitude of zero: they may have no altitude information.")),
@@ -128,7 +130,7 @@ def scan(lines):
             note["count"] += 1
             if key == "reconstructions":
                 reconstructions = max(reconstructions or 0, int(m.group(1)))
-            elif m.groups() and m.group(1) not in note["names"]:
+            elif m.groups() and len(note["names"]) < NAMES_MAX and m.group(1) not in note["names"]:
                 note["names"].append(m.group(1))
             break
         if matched:
@@ -149,7 +151,7 @@ def scan(lines):
 
 def describe(scanned):
     """A scan in sentences for the request's language: {gpu, reconstructions, notes: [{key, level, text, line}], the
-    most pressing first, other, more}"""
+    most pressing first, other, more, reasons: {photo: no_features or no_gps} for the photos the log names}"""
     texts = {key: text for key, _level, _pattern, text in _known()}
     notes = []
     for note in scanned["found"]:
@@ -164,6 +166,11 @@ def describe(scanned):
     notes.sort(key=lambda n: n["level"] != "danger")
     out = {k: v for k, v in scanned.items() if k != "found"}
     out["notes"] = notes
+    out["reasons"] = {}
+    for note in scanned["found"]:
+        if note["key"] in ("no_features", "no_gps"):
+            for name in note["names"]:
+                out["reasons"].setdefault(name, note["key"])
     return out
 
 

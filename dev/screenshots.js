@@ -399,6 +399,9 @@ const SHOTS = [
                 await notes.click();
                 await notes.evaluate(b => b.blur());
             }
+            // Photos Left Out open, the first name hovered for its thumbnail
+            const photos = await s.page.$(".tweakui-performance-notes-row:not([hidden]) .tweakui-performance-photos summary");
+            if (photos) await photos.click();
             const box = await s.page.evaluate(() => {
                 const scroll = document.querySelector(".tweakui-performance-scroll");
                 const head = Array.from(document.querySelectorAll(".tweakui-performance-body h4")).find(h => h.textContent === "Recent Processing");
@@ -406,6 +409,11 @@ const SHOTS = [
                 const top = head.getBoundingClientRect(), bottom = scroll.getBoundingClientRect();
                 return {x: bottom.left, y: top.top, width: bottom.width, height: bottom.bottom - top.top};
             });
+            const photo = await s.page.$(".tweakui-performance-photos[open] [data-photo]");
+            if (photo) {
+                await photo.hover();
+                await s.page.waitForFunction(() => { const i = document.querySelector(".tweakui-performance-thumb img"); return i && i.complete && i.naturalWidth; }, null, {timeout: 15000}).catch(() => {});
+            }
             await s.page.waitForTimeout(300);
             return {clip: {x: Math.max(box.x - 16, 0), y: Math.max(box.y - 8, 0), width: box.width + 32, height: box.height + 12}};
         },

@@ -28,6 +28,10 @@
     var FT = 3.28083989501, FT2_ACRE = 43560;
     // Recent Processing's columns (a notes row spans them all)
     var TASK_COLUMNS = 11;
+    // Photos Left Out: a name opens the photo this large (WebODM's thumbnail: its download is an attachment), and
+    // hovering it shows it this large
+    var PHOTO_OPEN = 2048, PHOTO_HOVER = 256;
+    var REASONS = {no_features: "No features", no_gps: "No GPS"};
 
     function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -254,12 +258,34 @@
     }
 
     // A task's notes from its log, each with its line, and the log's other messages in a list that opens
+    // A task's photo through WebODM's thumbnail, this many pixels on its longest side
+    function photoUrl(t, name, size) {
+        return "/api/projects/" + encodeURIComponent(t.project.id) + "/tasks/" + encodeURIComponent(t.id) + "/images/thumbnail/" +
+            encodeURIComponent(name) + "?size=" + size;
+    }
+
+    // The photos a note names (Photos Left Out), collapsed: each a link opening it, its thumbnail on hover, and the
+    // log's reason; Copy Names puts their names on the clipboard, a line each
+    function photosListHtml(t, n) {
+        var count = n.photos.length + (n.more || 0);
+        return '<details class="tweakui-performance-other tweakui-performance-photos"><summary>Photos Left Out (' + escapeHtml(formatNumber(count)) + ")</summary>" +
+            '<button type="button" class="btn btn-default btn-xs" data-act="copy-names" data-names="' +
+            escapeHtml(n.photos.map(function (p) { return p.name; }).join("\n")) + '"><i class="far fa-clipboard"></i> Copy Names</button>' +
+            '<ul class="list-unstyled small">' + n.photos.map(function (p) {
+                return '<li><a href="' + escapeHtml(photoUrl(t, p.name, PHOTO_OPEN)) + '" target="_blank" rel="noopener" data-photo="' +
+                    escapeHtml(photoUrl(t, p.name, PHOTO_HOVER)) + '">' + escapeHtml(p.name) + "</a>" +
+                    (REASONS[p.reason] ? ' <span class="text-muted">' + REASONS[p.reason] + "</span>" : "") + "</li>";
+            }).join("") + (n.more ? '<li class="text-muted">' + escapeHtml(plural(n.more, "more photo", "more photos")) + " not shown.</li>" : "") +
+            "</ul></details>";
+    }
+
     function notesHtml(t) {
         var notes = t.notes || [], other = t.other || [];
         var html = notes.length ? '<ul class="list-unstyled tweakui-performance-notes">' + notes.map(function (n) {
             var icon = n.level === "info" ? "fa-info-circle" : ICONS[n.level] || ICONS.warning;
             return '<li data-note="' + escapeHtml(n.key) + '"><i class="fa ' + icon + " fa-fw text-" + escapeHtml(n.level) + '"></i> ' +
-                escapeHtml(n.text) + (n.line ? '<div class="text-muted small tweakui-performance-line"><code>' + escapeHtml(n.line) + "</code></div>" : "") + "</li>";
+                escapeHtml(n.text) + (n.line ? '<div class="text-muted small tweakui-performance-line"><code>' + escapeHtml(n.line) + "</code></div>" : "") +
+                (n.photos && n.photos.length ? photosListHtml(t, n) : "") + "</li>";
         }).join("") + "</ul>" : "";
         if (other.length) {
             var count = other.length + (t.more || 0);
@@ -504,10 +530,50 @@
             schedule(0);
             doc.removeEventListener("visibilitychange", onVisibility);
             doc.removeEventListener(UNIT_EVENT, onUnits);
+            win.removeEventListener("scroll", hideThumb, true);
         }
 
-        // A task's Notes button opens and closes the row of its notes below it
+        // Photos Left Out: hovering or focusing a photo's name shows its thumbnail to its right, from its top down (so the
+        // note above stays readable), in one box over the page
+        var thumb = null;
+        function hideThumb() { if (thumb) thumb.hidden = true; }
+        function showThumb(link) {
+            if (!thumb) {
+                thumb = ui.el(doc, "div", "tweakui-performance-thumb theme-border theme-secondary");
+                thumb.setAttribute("aria-hidden", "true");
+                thumb.appendChild(ui.el(doc, "img"));
+                page.appendChild(thumb);
+            }
+            var img = thumb.firstChild, src = link.getAttribute("data-photo");
+            if (img.getAttribute("src") !== src) {
+                img.alt = "";
+                img.setAttribute("src", src);
+            }
+            var box = link.getBoundingClientRect(), view = win.innerHeight || 0, wide = win.innerWidth || 0;
+            thumb.style.left = Math.round(Math.max(8, Math.min(box.right + 12, wide - PHOTO_HOVER - 24))) + "px";
+            thumb.style.top = Math.round(Math.max(8, Math.min(box.top - 4, view - PHOTO_HOVER - 16))) + "px";
+            thumb.hidden = false;
+        }
+        function photoLink(e) { return e.target && e.target.closest ? e.target.closest("[data-photo]") : null; }
+        ["mouseover", "focusin"].forEach(function (type) {
+            page.addEventListener(type, ui.guard(NAME, function (e) { var link = photoLink(e); if (link) showThumb(link); }));
+        });
+        ["mouseout", "focusout"].forEach(function (type) {
+            page.addEventListener(type, ui.guard(NAME, function (e) { if (photoLink(e)) hideThumb(); }));
+        });
+        win.addEventListener("scroll", hideThumb, true);
+
+        // A task's Notes button opens and closes the row of its notes below it; Copy Names copies a list's names
         page.addEventListener("click", ui.guard(NAME, function (e) {
+            var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names]") : null;
+            if (copy) {
+                var icon = copy.querySelector("i");
+                ui.copyText(copy.getAttribute("data-names"), doc, win).then(function () { icon.className = "fa fa-check"; },
+                    function () { icon.className = "fa fa-times"; }).then(function () {
+                    win.setTimeout(function () { icon.className = "far fa-clipboard"; }, 2000);
+                });
+                return;
+            }
             var toggle = e.target && e.target.closest ? e.target.closest("[data-act=notes]") : null;
             if (!toggle) return;
             var row = doc.getElementById(toggle.getAttribute("aria-controls"));

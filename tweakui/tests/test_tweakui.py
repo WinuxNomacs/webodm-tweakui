@@ -1483,6 +1483,36 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual((t1["photos_given"], t1["area"], t1["reconstructions"], t1["position_error"], t1["notes"],
                           t1["other"]), (None, None, None, None, [], []))
 
+    def test_the_photos_left_out_are_named_with_the_logs_reason_from_the_task_folder_and_the_reports_shots(self):
+        from coreplugins.tweakui import performance
+        task = self.tasks[0]
+        self.write_stats(task, initial_shots_count=5, reconstructed_shots_count=2)
+        os.makedirs(task.task_path(), exist_ok=True)
+        for name in ("DJI_0001.JPG", "DJI_0002.JPG", "DJI_0003.jpg", "DJI_0004.JPG", "DJI_0005.tif", "gcp_list.txt",
+                     "geo.txt", "align.tif", "align.laz"):
+            open(task.task_path(name), "w").close()
+        shots = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"filename": n}}
+                                                           for n in ("DJI_0001.JPG", "DJI_0004.JPG")]}
+        with open(task.assets_path("odm_report", "shots.geojson"), "w") as f:
+            json.dump(shots, f)
+        self.write_log(task, ["[WARNING] No features found in image DJI_0002.JPG",
+                              "[WARNING] GPS position not available for DJI_0003.jpg"])
+        note = next(n for n in self.task_of("T0")["notes"] if n["key"] == "left_out")
+        self.assertTrue(note["text"].startswith("3 of 5 photos"))
+        self.assertEqual(note["photos"], [{"name": "DJI_0002.JPG", "reason": "no_features"},
+                                          {"name": "DJI_0003.jpg", "reason": "no_gps"},
+                                          {"name": "DJI_0005.tif", "reason": None}])
+        self.assertEqual(note["more"], 0)
+        with mock.patch("coreplugins.tweakui.performance.LEFT_MAX", 2):
+            note = next(n for n in self.task_of("T0")["notes"] if n["key"] == "left_out")
+        self.assertEqual(([p["name"] for p in note["photos"]], note["more"]), (["DJI_0002.JPG", "DJI_0003.jpg"], 1))
+        # A report without readable shots: the note without names
+        with open(task.assets_path("odm_report", "shots.geojson"), "w") as f:
+            f.write("not json")
+        note = next(n for n in self.task_of("T0")["notes"] if n["key"] == "left_out")
+        self.assertNotIn("photos", note)
+        self.assertIsNone(performance.placed_photos(self.tasks[1]))
+
     def test_the_log_gives_notes_for_known_messages_and_lists_the_others_once_each(self):
         self.write_stats(self.tasks[0], reconstructed_shots_count=220)
         self.write_log(self.tasks[0], [

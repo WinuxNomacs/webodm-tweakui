@@ -98,6 +98,13 @@ from:
   the task hasn't, multispectral bands with photos missing.
 - The GPU failed and the CPU finished the point cloud.
 
+When photos were left out of a completed task, **Photos Left Out** under that note lists them by name: the task's
+photos (WebODM keeps them with the task) that its report's camera positions (`shots.geojson`) don't name, with the
+log's reason beside a name when it gives one (No features, No GPS). Each name opens the photo in a new tab (2048
+pixels on its longest side, through WebODM's thumbnail of it), and hovering or focusing a name shows a small
+thumbnail. **Copy Names** puts the names on the clipboard, one per line, to find them among your files. Up to 500 are
+listed, the rest counted.
+
 Below them, **Other Messages** opens every other warning and error line in the log, once each with how many times it
 came (GDAL's `CPLE_AppDefined` warnings, one per texture, are left out). A huge log is read only at its start and end
 (its first and last 8 MB), and a finished task's log only once.

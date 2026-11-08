@@ -3,12 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Performance View: the photos left out, by name** (new.md, 2026-11-08; see "Performance View: the photos left
-   out, by name") — decided.
-2. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
    TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
    menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-3. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -17,6 +15,17 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View, the photos left out by name** (new.md, 2026-11-08; see "Performance View: the photos
+  left out, by name") — branch `left-out`: `performance.py` (`placed_photos` from `odm_report/shots.geojson`,
+  `left_out_photos`: `Task.scan_images` by photo extension, not `align.tif`, less the placed, up to 500;
+  `photos_left_out` adds `photos` and `more` for a completed task), `task_log.py` (no features and no GPS catch the
+  photo's name, at most 2,000; `describe` gives `reasons`), `performance_page.js` (`photosListHtml`: Photos Left Out
+  (N) under the note, Copy Names through `core.copyText`, each name a link to WebODM's thumbnail at 2048 px in a new
+  tab, since its download is an attachment; one fixed thumbnail box at 256 px on hover or focus, hidden on leaving or
+  scrolling), `main.css`. Tests: `performance_page.test.js` (1 new), `test_tweakui.py` (1 new). Docs `performance.md`,
+  README, CHANGELOG, screenshot `performance-tasks` (the list open, a name hovered; `dev/screenshots.js`). Live on
+  4.0.0: TestThermal's 12 and TestThermalNoPlugin's 16 match the folder less the shots, 6 with "No features"; the
+  2048 px view is inline JPEG; 12 names copied; phone width without overflow.
 - **Diagnostic: Performance View, CPU Load without the per-core bars** (new.md, 2026-11-08; see "Performance View: CPU
   Load without the per-core bars") — branch `cpu-total`: `performance.py` (`proc_stat_times` reads /proc/stat's first
   line only, `windows_times` GetSystemTimes only, `cpu_entry`'s `cores` is `os.cpu_count()`), `performance_page.js`
@@ -2221,7 +2230,7 @@ Builds on "Performance View: live CPU Load and refresh". Diagnostic > Performanc
 counters (`proc_stat_times` and `windows_times` read only the total), so a 128-core server's answer stays small.
 Tests, `performance.md`, CHANGELOG and the `performance` screenshot follow. No open decisions.
 
-## Performance View: the photos left out, by name (new.md, 2026-11-08)
+## Performance View: the photos left out, by name (new.md, 2026-11-08) — done
 
 Request: "Regarding Recent Processing, when photos are left out, is it possible to list which ones so the user can
 manually reference them?"
