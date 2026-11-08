@@ -51,13 +51,13 @@ test("a page without the side menu is left alone", () => {
     expect(() => run()).not.toThrow();
 });
 
-describe("the Storage view in the side menu", () => {
+describe("the Storage and Performance views in the side menu", () => {
     afterEach(() => { delete window.TweakUI; delete window.jQuery; window.history.replaceState(null, "", "/"); });
 
     const subs = item => Array.from(item.querySelectorAll(":scope > ul a")).map(a => [a.textContent.trim(), a.getAttribute("href")]);
 
-    test("turned off, the side menu is WebODM's", () => {
-        window.TweakUI = {settings: {storage_view: false}};
+    test("both turned off, the side menu is WebODM's", () => {
+        window.TweakUI = {settings: {storage_view: false, performance_view: false}};
         sideMenu();
         run();
         expect(document.querySelectorAll("#side-menu ul").length).toBe(0);
@@ -112,6 +112,35 @@ describe("the Storage view in the side menu", () => {
         expect(list.getAttribute("aria-expanded")).toBe("true");
         link.click();
         expect(list.classList.contains("in")).toBe(false);
+    });
+
+    test("with Performance View on too, Diagnostic opens to System, Storage and Performance", () => {
+        window.TweakUI = {settings: {storage_view: true, performance_view: true}};
+        sideMenu();
+        run();
+        const item = document.querySelector("#side-menu ul").parentNode;
+        expect(subs(item)).toEqual([["System", "/plugins/diagnostic/"], ["Storage", "/plugins/tweakui/storage/"],
+            ["Performance", "/plugins/tweakui/performance/"]]);
+    });
+
+    test("with only Performance View on, Diagnostic opens to System and Performance, open on its page", () => {
+        window.TweakUI = {settings: {storage_view: false, performance_view: true}};
+        window.history.replaceState(null, "", "/plugins/tweakui/performance/");
+        sideMenu();
+        run();
+        const item = document.querySelector("#side-menu ul").parentNode;
+        expect(subs(item)).toEqual([["System", "/plugins/diagnostic/"], ["Performance", "/plugins/tweakui/performance/"]]);
+        expect(item.classList.contains("active")).toBe(true);
+        expect(item.querySelector("a.active").textContent.trim()).toBe("Performance");
+    });
+
+    test("without Diagnostic and with only Performance View on, TweakUI's item opens to Settings and Performance", () => {
+        window.TweakUI = {settings: {performance_view: true}};
+        document.body.innerHTML = '<ul id="side-menu"><li><a href="/plugins/tweakui/">TweakUI</a></li>' +
+            '<li id="about-menu"><a href="/about/">About</a></li></ul>';
+        run();
+        expect(subs(document.querySelector(".tweakui-menu"))).toEqual([["Settings", "/plugins/tweakui/"],
+            ["Performance", "/plugins/tweakui/performance/"]]);
     });
 
     test("running twice does not add a second submenu", () => {

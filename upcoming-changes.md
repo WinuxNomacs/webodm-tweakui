@@ -3,13 +3,12 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View").
-2. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
+1. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
    users' access to Storage and Performance").
 
 **Then**
-3. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
-4. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+2. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
+3. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
    Pane").
 
 **Later**
@@ -17,6 +16,17 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Diagnostic: Performance View** (asked in chat, 2026-11-08; see "Diagnostic: Performance View") — branch
+  `performance-view`: `performance.py` (each node the user may use asked through pyodx, 3 s, in parallel; the server's
+  disk and memory; the last 10 completed tasks with stats.json's steps; the trend; the verdicts from WebODM's memory
+  table), `api.py`'s `PerformanceView`, `plugin.py`'s page, `templates/performance.html`, `public/performance_page.js`,
+  `main.js`'s `diagnosticMenu` (Storage and Performance under Diagnostic, or TweakUI), `main.css`; `features.py`: the
+  Storage category is now Diagnostic (`#diagnostic`) with Storage View and Performance View (`performance_view`).
+  Tests: `TestPerformance` (nodes mocked at pyodx's client) and the Storage page's link in `test_tweakui.py`,
+  `__tests__/performance_page.test.js`, `main.test.js`. Docs `performance.md` (with `storage.md`, the sidebar, the
+  home page), README, CHANGELOG, screenshot `performance`. Live on both stacks (4.0.0: one node, 3 tasks; 3.3.2: no
+  completed task), desktop and phone, Refresh; settings put back, no writes, no console errors. Not checked on the
+  Windows app (a new zip and a restart of WebODM there).
 - **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks") — branch
   `storage-backup-import`: `storage_page.js` (`backupable`, a Backup link per completed task, `backupAll`,
   `importZip` and `importFiles`: WebODM's chunked import), `storage.html` (Backup All, the hidden file input),
@@ -1809,7 +1819,7 @@ with Compact and Delete, the status line; `storage.html`; `docs/storage.md`; the
 
 **Phase**: one branch, `storage-backup-import`, after the renames.
 
-## Diagnostic: Performance View (asked in chat, 2026-11-08)
+## Diagnostic: Performance View (asked in chat, 2026-11-08) — done
 
 **Request**: a Performance page under Diagnostic where a user sees at a glance how WebODM's processing node is
 doing, and whether it is sized right or needs more resources. The GPU line is dropped for now (the user, 2026-11-08):
@@ -1858,7 +1868,7 @@ Storage's, to decide):
 2. Recent Processing: an admin (superuser) sees every user's tasks, as on the Storage page; others their own.
 3. The last 10 completed tasks, with a trend line (the recent tasks' seconds per image against the earlier ones').
 
-**Phase**: branch `performance-view`, after Backup and Import.
+**Phase**: branch `performance-view` — done (see "Done").
 
 ## Administration: users' access to Storage and Performance (asked in chat, 2026-11-08)
 

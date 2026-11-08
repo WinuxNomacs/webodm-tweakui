@@ -6,7 +6,7 @@
 
     var ui = window.TweakUI, NAME = "menus";
     var TWEAKUI = "/plugins/tweakui/", DIAGNOSTIC = "/plugins/diagnostic/", STORAGE = "/plugins/tweakui/storage/",
-        PUBLISHED = "/plugins/tweakui/admin/themes/";
+        PERFORMANCE = "/plugins/tweakui/performance/", PUBLISHED = "/plugins/tweakui/admin/themes/";
     // The WebODM elements it relies on, to check against a new WebODM: the side menu, its About item and
     // Administration's Theme item
     var SELECTORS = {sideMenu: "#side-menu", about: "#about-menu", adminTheme: '#side-menu .nav-second-level a[href^="/admin/app/theme/"]'};
@@ -23,29 +23,33 @@
         item.className += " tweakui-menu";
     }
 
-    // Settings > Storage: the Diagnostic item opens to System (WebODM's page) and Storage; without Diagnostic (an admin
-    // disabled it), TweakUI's item opens to Settings and Storage, expanded. WebODM's metisMenu makes a parent item
-    // open and close when it starts (end of the page); when it has already started, the item does so itself.
-    function storageMenu() {
+    // Settings > Diagnostic > Storage View and Performance View: the Diagnostic item opens to System (WebODM's page)
+    // and the pages turned on; without Diagnostic (an admin disabled it), TweakUI's item opens to Settings and them,
+    // expanded. WebODM's metisMenu makes a parent item open and close when it starts (end of the page); when it has
+    // already started, the item does so itself.
+    function diagnosticMenu() {
         var settings = ui.settingsOf(window);
         var menu = document.querySelector(SELECTORS.sideMenu);
-        if (!settings.storage_view || !menu || menu.getAttribute("data-tweakui-storage")) return;
+        var pages = [];
+        if (settings.storage_view) pages.push(["Storage", STORAGE, "fa fa-database fa-fw"]);
+        if (settings.performance_view) pages.push(["Performance", PERFORMANCE, "fa fa-tachometer-alt fa-fw"]);
+        if (!pages.length || !menu || menu.getAttribute("data-tweakui-diagnostic")) return;
         var item = sideItem(DIAGNOSTIC), subs, expanded = false;
-        if (item) subs = [["System", DIAGNOSTIC, "fa fa-chart-pie fa-fw"], ["Storage", STORAGE, "fa fa-database fa-fw"]];
+        if (item) subs = [["System", DIAGNOSTIC, "fa fa-chart-pie fa-fw"]].concat(pages);
         else {
             item = sideItem(TWEAKUI);
             if (!item) return;
-            subs = [["Settings", TWEAKUI, "fa fa-sliders-h fa-fw"], ["Storage", STORAGE, "fa fa-database fa-fw"]];
+            subs = [["Settings", TWEAKUI, "fa fa-sliders-h fa-fw"]].concat(pages);
             expanded = true;
         }
-        menu.setAttribute("data-tweakui-storage", "1");
+        menu.setAttribute("data-tweakui-diagnostic", "1");
         var path = window.location.pathname, link = item.querySelector("a");
         link.setAttribute("href", "#");
         var arrow = document.createElement("span");
         arrow.className = "fa arrow";
         link.appendChild(arrow);
         var list = document.createElement("ul");
-        list.className = "nav nav-second-level tweakui-storage-menu";
+        list.className = "nav nav-second-level tweakui-diagnostic-menu";
         subs.forEach(function (s) {
             var li = ui.sideLink(document, s[0], s[1], s[2]);
             if (path === s[1]) { li.firstChild.className = "active"; expanded = true; }
@@ -92,7 +96,7 @@
 
     var menus = ui.guard(NAME, function () {
         moveMenuItem();
-        storageMenu();
+        diagnosticMenu();
         publishedMenu();
     });
 

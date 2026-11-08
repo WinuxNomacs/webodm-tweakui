@@ -6,7 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from app.plugins import Menu, MountPoint, PluginBase
 
 from . import custom_themes, features, settings, themes
-from .api import (FramesView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
+from .api import (FramesView, PerformanceView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
                   SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
                   ThemesView, ThemeView, settings_script)
 
@@ -53,6 +53,15 @@ class Plugin(PluginBase):
                 "on": settings.load(request.user)["storage_view"],
             })
 
+        @login_required
+        def performance_page(request):
+            return render(request, self.template_path("performance.html"), {
+                "title": _("Performance"),
+                "public": self.public_url(""),
+                "api": "/api/plugins/{}/".format(self.get_name()),
+                "on": settings.load(request.user)["performance_view"],
+            })
+
         # Administration > TweakUI Themes: the published themes, for superusers only (main.js adds the link)
         @login_required
         def published_page(request):
@@ -74,6 +83,7 @@ class Plugin(PluginBase):
             MountPoint("$", settings_page),
             MountPoint(r"admin/themes/$", published_page),
             MountPoint(r"storage/$", storage_page),
+            MountPoint(r"performance/$", performance_page),
             MountPoint(r"settings\.js$", settings_script),
             MountPoint(r"theme\.css$", themes.theme_css),
         ]
@@ -91,6 +101,7 @@ class Plugin(PluginBase):
             MountPoint(r"published/export$", PublishedExportView.as_view()),
             MountPoint(r"published/(?P<theme_id>[0-9a-f]{1,32})$", PublishedThemeView.as_view()),
             MountPoint("storage$", StorageView.as_view()),
+            MountPoint("performance$", PerformanceView.as_view()),
             MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
             MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
         ]

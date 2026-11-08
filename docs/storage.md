@@ -2,13 +2,13 @@
 
 ## Storage View > Show Storage View
 
-Off by default.
+Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Performance View.
 
 ![The Storage page with a project opened to its tasks](../tweakui/public/previews/storage.webp)
 
 The **Diagnostic** item in the side menu gets two sub-items: **System** (WebODM's own Diagnostic page) and
-**Storage**. If an administrator has turned the Diagnostic plugin off, the **TweakUI** item gets **Settings** and
-**Storage** instead, already expanded.
+**Storage** (and [**Performance**](performance) when that is on too). If an administrator has turned the Diagnostic
+plugin off, the **TweakUI** item gets **Settings** and **Storage** instead, already expanded.
 
 The Storage page shows how much of your quota is used ("X of Y used", or "X used" without a quota) and the projects
 you own, largest first. A project opens to its tasks (status, date, size), with failed, canceled and compactable

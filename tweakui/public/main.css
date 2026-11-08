@@ -294,6 +294,29 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-storage .tweakui-storage-share { width: 80px; }
 }
 
+/* Diagnostic > Performance (templates/performance.html, performance_page.js): verdicts, then cards (a processing node
+   each, the server) that wrap to one column on a phone, and the recent tasks' table, which scrolls sideways there
+   rather than the page. Bars are Bootstrap's progress bars, as WebODM's own Diagnostic page has. */
+.tweakui-performance .tweakui-performance-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
+.tweakui-performance .tweakui-performance-verdicts { margin-bottom: 20px; }
+.tweakui-performance .tweakui-performance-verdicts > li { padding: 3px 0; }
+.tweakui-performance .tweakui-performance-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
+.tweakui-performance .tweakui-performance-card { flex: 0 1 360px; min-width: 0; padding: 8px 12px; border-width: 1px; border-style: solid; border-radius: 4px; }
+.tweakui-performance .tweakui-performance-card h5 { margin: 4px 0 8px; font-weight: bold; overflow-wrap: anywhere; }
+.tweakui-performance .tweakui-performance-facts { width: 100%; }
+.tweakui-performance .tweakui-performance-facts th { width: 100px; padding: 3px 12px 3px 0; vertical-align: top; white-space: nowrap; }
+.tweakui-performance .tweakui-performance-facts td { padding: 3px 0; }
+.tweakui-performance .tweakui-performance-progress { height: 10px; margin: 4px 0 0; }
+.tweakui-performance .tweakui-performance-scroll { overflow-x: auto; }
+.tweakui-performance .tweakui-performance-table td { vertical-align: middle; }
+.tweakui-performance .tweakui-performance-number { text-align: right; white-space: nowrap; }
+.tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step { white-space: nowrap; }
+@media (max-width: 767px) {
+    .tweakui-performance .tweakui-performance-card { flex-basis: 100%; }
+    .tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step,
+    .tweakui-performance .tweakui-performance-node { display: none; }
+}
+
 /* General > Just for Fun > Surprise Me: fireworks-js's canvas over the whole page, above dialogs and the maps'
    controls; clicks go through it */
 .tweakui-fireworks {

@@ -1,0 +1,48 @@
+# Performance
+
+## Performance View > Show Performance View
+
+Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Storage View.
+
+![The Performance page with a processing node, the server and recent tasks](../tweakui/public/previews/performance.webp)
+
+The **Diagnostic** item in the side menu gets a **Performance** sub-item, after **System** (WebODM's own Diagnostic
+page) and **Storage** if that is on too. If an administrator has turned the Diagnostic plugin off, the **TweakUI**
+item gets it instead. The page is asked afresh each time it opens, and again with **Refresh**.
+
+At the top are sentences on what the figures mean: whether a processing node has enough memory for your largest
+task, about how many photos per task each node suits, tasks waiting on a node that processes only so many at a time,
+a node that is not answering, and a server under WebODM's recommended 100 GB of free disk or 16 GB of memory.
+
+## Processing Nodes
+
+A card for each processing node you may use (the ones WebODM can choose for your tasks), with what the node says of
+itself: its engine and version, CPU cores, memory (free of total, with a bar), its queue and how many tasks it
+processes at a time, the most photos it accepts, and about how many photos per task its memory suits. A node that
+doesn't answer within 3 seconds is marked **Not Answering**, with when WebODM last saw it.
+
+"Suits about N photos" reads WebODM's
+[hardware requirements](https://docs.webodm.org/installation/#hardware-requirements), which give memory by number
+of photos (250 photos, 16 GB; 1,500 photos, 64 GB; 5,000 photos, 256 GB), between their rows. They are conservative:
+options such as a higher resolution need more, and swap can make up some of it, slowly. In Docker a node has the
+memory Docker gives it, which on Windows and macOS is Docker's own memory setting, not the computer's.
+
+There is no GPU line: nothing WebODM or a node reports says whether a GPU is used.
+
+## Server
+
+The disk WebODM keeps its tasks on (free of total) and the server's memory, as WebODM's own **System** page shows
+them.
+
+## Recent Processing
+
+Your last 10 completed tasks, newest first, each with its photos, processing time, time per photo, the slowest of
+the structure-from-motion steps ODM times in its report (feature extraction, matching, reconstruction...; the later
+steps are not timed one by one) and the node that processed it. Administrators see the last 10 on the server, whoever
+they belong to, and the largest task anyone has run.
+
+With 4 or more tasks to compare, a line says whether the newer half took more or less time per photo than the older
+half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it as a
+hint, not a measurement.
+
+TweakUI only reads: it asks each node for its info and reads each task's report, and changes nothing.

@@ -1,7 +1,7 @@
 """
 Tests of the TweakUI plugin: it registers, its scripts and stylesheet are on WebODM's pages, and each user's
-settings (the data store, the API, settings.js and the settings page), the themes (theme.css), Source Frames and
-Storage.
+settings (the data store, the API, settings.js and the settings page), the themes (theme.css), Source Frames,
+Storage and Performance.
 """
 import json
 import math
@@ -34,7 +34,7 @@ def defaults(**changes):
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
                  "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
-                 "zoom_override_3d": False, "storage_view": False, "show_theme_menu": True, "theme": "webodm"},
+                 "zoom_override_3d": False, "storage_view": False, "performance_view": False, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
 
@@ -1186,14 +1186,14 @@ class TestStorage(TweakUITestCase):
         self.assertEqual(res.json()["kinds"]["photos"], 1000)
         self.assertEqual(res.json()["kinds"]["elevation"], 0)
 
-    def test_the_setting_is_off_by_default_in_its_own_section_and_the_page_says_where_to_turn_it_on(self):
+    def test_the_setting_is_off_by_default_in_the_diagnostic_section_and_the_page_says_where_to_turn_it_on(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
-        self.assertIn('href="#storage"', page)
-        section = page[page.index('<section id="tweakui-storage"'):]
+        self.assertIn('href="#diagnostic"', page)
+        section = page[page.index('<section id="tweakui-diagnostic"'):]
         self.assertIn('data-setting="storage_view">', section[:section.index("</section>")])
         off = self.client.get("/plugins/tweakui/storage/")
         self.assertEqual(off.status_code, status.HTTP_200_OK)
-        self.assertContains(off, 'href="/plugins/tweakui/#storage"')
+        self.assertContains(off, 'href="/plugins/tweakui/#diagnostic"')
         self.assertNotContains(off, "storage_page.js")
         self.assertEqual(self.patch({"storage_view": True}).json(), defaults(storage_view=True))
         on = self.client.get("/plugins/tweakui/storage/")
@@ -1203,3 +1203,189 @@ class TestStorage(TweakUITestCase):
         self.assertNotContains(on, "comment %}")
         self.assertEqual(self.script_settings(self.client)["storage_view"], True)
         self.assertEqual(Client().get("/plugins/tweakui/storage/").status_code, status.HTTP_302_FOUND)
+
+
+class FakeInfo:
+    """What pyodx's Node.info() gives for a node"""
+    def __init__(self, **values):
+        self.__dict__.update({"version": "2.4.0", "task_queue_count": 0, "total_memory": 64 * GB,
+                              "available_memory": 48 * GB, "cpu_cores": 16, "max_images": None,
+                              "max_parallel_tasks": 1, "engine": "odx", "engine_version": "3.8.5"}, **values)
+
+
+GB = 1024 ** 3
+
+
+class TestPerformance(TweakUITestCase):
+    """testuser owns a project of completed tasks of known photos and times (one with a stats.json); testuser2 owns
+    one; the processing nodes are asked through a mocked pyodx"""
+
+    def setUp(self):
+        super().setUp()
+        from nodeodm import status_codes
+        from nodeodm.models import ProcessingNode
+        from guardian.shortcuts import assign_perm
+        self.user = User.objects.get(username="testuser")
+        self.project = Project.objects.create(owner=self.user, name="Flights")
+        self.node = ProcessingNode.objects.create(hostname="big-node", port=3000, label="Big Node")
+        self.small = ProcessingNode.objects.create(hostname="small-node", port=3000)
+        self.hidden = ProcessingNode.objects.create(hostname="hidden-node", port=3000)
+        for n in (self.node, self.small):
+            assign_perm("view_processingnode", self.user, n)
+        # Oldest first: 2, 2, 4 and 4 seconds a photo, then a running one and one without a time
+        self.tasks = []
+        for i, (images, ms) in enumerate([(100, 200000), (100, 200000), (200, 800000), (300, 1200000)]):
+            self.tasks.append(Task.objects.create(project=self.project, name="T%d" % i, status=status_codes.COMPLETED,
+                                                  images_count=images, processing_time=ms, processing_node=self.node))
+        self.running = Task.objects.create(project=self.project, name="Running", status=status_codes.RUNNING,
+                                           images_count=50)
+        self.untimed = Task.objects.create(project=self.project, name="Untimed", status=status_codes.COMPLETED,
+                                           images_count=0, processing_time=-1)
+        self.other = Project.objects.create(owner=User.objects.get(username="testuser2"), name="Theirs")
+        self.theirs = Task.objects.create(project=self.other, name="Theirs", status=status_codes.COMPLETED,
+                                          images_count=2000, processing_time=4000000)
+        stats = self.tasks[-1].assets_path("odm_report")
+        os.makedirs(stats, exist_ok=True)
+        with open(os.path.join(stats, "stats.json"), "w") as f:
+            json.dump({"processing_statistics": {"steps_times": {"Feature Extraction": 30.5, "Reconstruction": 90.0,
+                                                                 "Total Time": 130.0}},
+                       "odm_processing_statistics": {"average_gsd": 1.5}}, f)
+        self.patch({"performance_view": True})
+
+    def tearDown(self):
+        for task in self.tasks + [self.running, self.untimed, self.theirs]:
+            path = task.task_path()
+            if os.path.isdir(path) and str(task.id) in path:
+                shutil.rmtree(path)
+        super().tearDown()
+
+    def report(self, infos=None, client=None):
+        """The report, each node answering with infos[hostname] (a FakeInfo), or not at all when it has none"""
+        from pyodx import exceptions as odx_exceptions
+        infos = {"big-node": FakeInfo(), "small-node": FakeInfo(total_memory=8 * GB, available_memory=2 * GB,
+                                                                  task_queue_count=3)} if infos is None else infos
+
+        def api_client(node, timeout=30):
+            client = mock.Mock()
+            if node.hostname in infos:
+                client.info.return_value = infos[node.hostname]
+            else:
+                client.info.side_effect = odx_exceptions.NodeConnectionError("refused")
+            return client
+
+        with mock.patch("nodeodm.models.ProcessingNode.api_client", autospec=True, side_effect=api_client):
+            res = (client or self.client).get("/api/plugins/tweakui/performance")
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        return res.json()
+
+    def test_the_nodes_the_user_may_use_are_asked_and_report_their_cores_memory_and_queue(self):
+        r = self.report()
+        self.assertEqual([n["name"] for n in r["nodes"]], ["Big Node", "small-node:3000"])
+        big = r["nodes"][0]
+        self.assertEqual((big["online"], big["cpu_cores"], big["total_memory"], big["available_memory"], big["queue"],
+                          big["max_parallel_tasks"], big["engine"], big["engine_version"]),
+                         (True, 16, 64 * GB, 48 * GB, 0, 1, "odx", "3.8.5"))
+        self.assertEqual(big["suits_images"], 1500)
+        self.assertEqual(r["nodes"][1]["suits_images"], 110)
+
+    def test_a_node_that_does_not_answer_is_shown_as_such_with_what_webodm_last_stored(self):
+        r = self.report({"big-node": FakeInfo()})
+        small = r["nodes"][1]
+        self.assertEqual((small["online"], small["total_memory"], small["suits_images"]), (False, None, None))
+        self.assertIn({"level": "warning", "text": "small-node:3000 is not answering."}, r["verdicts"])
+        none = self.report({})
+        self.assertEqual(none["verdicts"][0]["level"], "danger")
+        self.assertIn("No processing node is answering", none["verdicts"][0]["text"])
+
+    def test_a_user_with_no_node_is_told_no_task_can_be_processed(self):
+        r = self.report(client=self.login("testuser2"))
+        self.assertEqual(r["nodes"], [])
+        self.assertEqual(r["verdicts"][0]["level"], "danger")
+
+    def test_the_recent_tasks_are_the_users_completed_ones_newest_first_with_time_per_photo_and_slowest_step(self):
+        r = self.report()
+        self.assertFalse(r["admin"])
+        self.assertEqual([t["name"] for t in r["tasks"]], ["Untimed", "T3", "T2", "T1", "T0"])
+        t3 = r["tasks"][1]
+        self.assertEqual((t3["images"], t3["seconds"], t3["seconds_per_image"], t3["node"], t3["owner"]),
+                         (300, 1200.0, 4.0, "Big Node", None))
+        self.assertEqual(t3["slowest_step"], {"name": "Reconstruction", "seconds": 90.0})
+        self.assertEqual(t3["average_gsd"], 1.5)
+        untimed = r["tasks"][0]
+        self.assertEqual((untimed["seconds"], untimed["seconds_per_image"], untimed["slowest_step"]), (None, None, None))
+        self.assertEqual(r["largest"], 300)
+
+    def test_the_trend_compares_the_newer_half_with_the_older_by_median_time_per_photo(self):
+        trend = self.report()["trend"]
+        self.assertEqual((trend["recent"], trend["earlier"], trend["change"], trend["same"]), (4.0, 2.0, 1.0, False))
+        from coreplugins.tweakui import performance
+        self.assertIsNone(performance.trend([{"seconds_per_image": 2}] * 3))
+        self.assertTrue(performance.trend([{"seconds_per_image": s} for s in (2.1, 2.0, 2.0, 2.0)])["same"])
+
+    def test_an_admin_sees_every_users_tasks_and_the_largest_on_the_server(self):
+        r = self.report(client=self.login("testsuperuser"))
+        self.assertTrue(r["admin"])
+        theirs = next(t for t in r["tasks"] if t["name"] == "Theirs")
+        self.assertEqual(theirs["owner"], "testuser2")
+        self.assertEqual(r["largest"], 2000)
+        self.assertIn("hidden-node:3000", [n["name"] for n in r["nodes"]])
+
+    def test_the_verdicts_weigh_memory_queue_and_disk_against_webodms_requirements(self):
+        r = self.report()
+        texts = [v["text"] for v in r["verdicts"]]
+        self.assertIn("Big Node has enough memory for your largest task (300 photos, about 19 GB).", texts)
+        self.assertIn("2 tasks are waiting on small-node:3000: it processes 1 at a time.", texts)
+        self.assertIn("Big Node suits about 1,500 photos per task (64 GB of memory).", texts)
+        self.assertIn("small-node:3000 suits about 110 photos per task (8.0 GB of memory).", texts)
+        levels = [v["level"] for v in r["verdicts"]]
+        self.assertEqual(levels, sorted(levels, key=["danger", "warning", "success"].index))
+        too_small = self.report({"big-node": FakeInfo(total_memory=12 * GB)})
+        self.assertIn("Your largest task (300 photos) needs about 19 GB of memory; the most any node has is 12 GB. "
+                      "Add memory (or swap), or split the task.", [v["text"] for v in too_small["verdicts"]])
+        tiny = self.report({"big-node": FakeInfo(total_memory=2 * GB, available_memory=GB)})["verdicts"]
+        self.assertEqual(tiny[0], {"level": "danger", "text": "Big Node has under 4 GB of memory (2.0 GB): too little "
+                                                              "for even a small task."})
+        low = shutil.disk_usage(".")._replace(free=50 * GB)
+        with mock.patch("coreplugins.tweakui.performance.shutil.disk_usage", return_value=low), \
+                mock.patch("coreplugins.tweakui.performance.memory_stats",
+                           return_value={"total": 8 * GB, "free": 4 * GB, "used": 4 * GB}):
+            texts = [v["text"] for v in self.report()["verdicts"]]
+        self.assertIn("The server's disk has 50 GB free; WebODM recommends at least 100 GB.", texts)
+        self.assertIn("The server has 8.0 GB of memory; WebODM recommends at least 16 GB.", texts)
+
+    def test_the_memory_table_is_read_between_its_rows(self):
+        from coreplugins.tweakui import performance
+        self.assertEqual(performance.images_for_memory(16 * GB), 250)
+        self.assertEqual(performance.images_for_memory(48 * GB), 1000)
+        self.assertEqual(performance.images_for_memory(2 * GB), 0)
+        self.assertIsNone(performance.images_for_memory(512 * GB))
+        self.assertEqual(performance.memory_for_images(20), 4 * GB)
+        self.assertEqual(performance.memory_for_images(1000), 48 * GB)
+        self.assertEqual(performance.memory_for_images(6500), 320 * GB)
+
+    def test_a_missing_or_partial_stats_json_leaves_the_steps_out(self):
+        from coreplugins.tweakui import performance
+        self.assertEqual(performance.read_stats(self.tasks[0]), ({}, None))
+        path = self.tasks[0].assets_path("odm_report")
+        os.makedirs(path, exist_ok=True)
+        for content in ("not json", "[]", '{"processing_statistics": {"steps_times": "?"}}'):
+            with open(os.path.join(path, "stats.json"), "w") as f:
+                f.write(content)
+            self.assertEqual(performance.read_stats(self.tasks[0]), ({}, None))
+
+    def test_the_page_says_where_to_turn_it_on_and_the_api_needs_a_login(self):
+        self.patch({"performance_view": False})
+        off = self.client.get("/plugins/tweakui/performance/")
+        self.assertContains(off, 'href="/plugins/tweakui/#diagnostic"')
+        self.assertNotContains(off, "performance_page.js")
+        self.patch({"performance_view": True})
+        on = self.client.get("/plugins/tweakui/performance/")
+        self.assertContains(on, "performance_page.js")
+        self.assertContains(on, 'data-api="/api/plugins/tweakui/"')
+        self.assertNotContains(on, "comment %}")
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        section = page[page.index('<section id="tweakui-diagnostic"'):]
+        self.assertIn('data-setting="performance_view" checked>', section[:section.index("</section>")])
+        self.assertEqual(Client().get("/plugins/tweakui/performance/").status_code, status.HTTP_302_FOUND)
+        self.assertEqual(Client().get("/api/plugins/tweakui/performance").status_code, status.HTTP_403_FORBIDDEN)
+

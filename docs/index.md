@@ -27,6 +27,9 @@ features:
   - title: Storage
     details: How much of your quota each project and task uses, and cleaning them up.
     link: /storage
+  - title: Performance
+    details: Your processing nodes' cores, memory and queue, the server's disk, recent tasks' times, and whether the memory suits your tasks.
+    link: /performance
 ---
 
 ## How it works

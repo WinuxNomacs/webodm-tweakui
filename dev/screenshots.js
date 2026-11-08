@@ -315,6 +315,15 @@ const SHOTS = [
             return "page";
         },
     },
+    {
+        name: "performance", settings: {performance_view: true},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/performance/");
+            await s.page.waitForSelector(".tweakui-performance-cards");
+            await s.page.waitForTimeout(500);
+            return "page";
+        },
+    },
 ];
 
 // The page script that turns PNGs (base64) into one WebP: side by side with a label each when there are several,
