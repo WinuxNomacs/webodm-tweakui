@@ -218,6 +218,20 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-other-tasks .tweakui-other-task-name input { margin: 0; flex: none; }
 .tweakui-other-tasks .tweakui-other-task-opacity { width: 90px; flex: none; }
 
+/* 2D Map > Add Search Button (map_search.js): the button (Leaflet's bar), and the box it opens in its place */
+.leaflet-control.tweakui-map-search a.tweakui-map-search-button { display: flex; align-items: center; justify-content: center; font-size: 14px; }
+.leaflet-control.tweakui-map-search .tweakui-map-search-box { display: none; width: 300px; max-width: calc(100vw - 40px); padding: 6px; border-radius: 4px; }
+.leaflet-control.tweakui-map-search.open a.tweakui-map-search-button { display: none; }
+.leaflet-control.tweakui-map-search.open .tweakui-map-search-box { display: block; }
+.tweakui-map-search .tweakui-map-search-row { display: flex; gap: 4px; }
+.tweakui-map-search .tweakui-map-search-input { flex: 1; min-width: 0; }
+.tweakui-map-search .tweakui-map-search-status:not(:empty) { margin-top: 4px; }
+.tweakui-map-search .tweakui-map-search-results { margin: 4px 0 0; max-height: 200px; overflow-y: auto; }
+.tweakui-map-search .tweakui-map-search-results:empty { display: none; }
+.leaflet-control.tweakui-map-search .tweakui-map-search-results a { display: block; width: auto; height: auto; padding: 3px 4px; border: 0; line-height: 1.3; text-align: left; white-space: normal; background: none; color: inherit; }
+.leaflet-control.tweakui-map-search .tweakui-map-search-results a:hover { text-decoration: underline; }
+.tweakui-map-search .tweakui-map-search-results li.active a { font-weight: bold; }
+
 /* 2D Map and 3D Map > Source Frames (source_frames.js): the bar to pick a place, the window of photos, the full-screen
    viewer. The place drawn on a photo (and the map) is yellow with a dark edge, as it must show on any photo, not
    follow the theme */

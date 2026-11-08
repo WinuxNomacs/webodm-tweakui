@@ -267,6 +267,27 @@ const SHOTS = [
         },
     },
     {
+        // The search box with the middle of the task's orthophoto typed in degrees, minutes and seconds: the map has
+        // flown there and marks it (coordinates send no request to Nominatim)
+        name: "map-search", settings: {map_search: true},
+        async run(s) {
+            await s.openMap();
+            const b = await s.page.evaluate(async t => {
+                const res = await fetch(`/api/projects/${t.project}/tasks/${t.id}/orthophoto/metadata`, {credentials: "same-origin"});
+                return (await res.json()).bounds.value;
+            }, s.task);
+            const dms = (v, pos, neg) => {
+                const a = Math.abs(v), d = Math.floor(a), m = Math.floor((a - d) * 60), sec = ((a - d) * 3600 - m * 60).toFixed(1);
+                return `${d}°${m}'${sec}"${v < 0 ? neg : pos}`;
+            };
+            await s.page.click(".tweakui-map-search-button");
+            await s.page.fill(".tweakui-map-search-input", `${dms((b[1] + b[3]) / 2, "N", "S")} ${dms((b[0] + b[2]) / 2, "E", "W")}`);
+            await s.page.press(".tweakui-map-search-input", "Enter");
+            await s.page.waitForTimeout(3500);
+            return "page";
+        },
+    },
+    {
         name: "zoom-override-2d", settings: {zoom_override_2d: false},
         async run(s) {
             const shots = [];

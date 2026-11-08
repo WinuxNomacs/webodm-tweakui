@@ -3,10 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
-
-**Then**
-2. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+1. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
    Pane").
 
 **Later**
@@ -14,6 +11,15 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button") — branch `map-search`:
+  `tweakui/public/map_search.js` (`parseCoordinates`, `places`, `build`: the button and box, Nominatim at most once a
+  second, results remembered for the visit), the `map_search` setting in `features.py`, a section of `main.css`; tests
+  in `__tests__/map_search.test.js` (13) and `TestSettingsPage`/`TestPlugin`. Docs `docs/map-2d.md`, README, CHANGELOG,
+  screenshot `map-search`. Live on 4.0.0 (a task's map, light and dark themes, phone width: an address through
+  Nominatim, one request; coordinates with none; Escape closes and takes the marker away; no console errors but
+  WebODM's own orthophoto tiles answering 404 outside the task while the map flies past). 3.3.2 has no task, so there
+  only the settings page and the script loading on a project's map (no Leaflet map without a task); same Leaflet
+  1.3.1 and map hook as 4.0.0. Django 112 on both stacks. Windows app not checked.
 - **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
   users' access to Storage and Performance") — branch `admin-feature-access`: `access.py` (the global data store's
   `available_to_users`, `withheld(user)`: none for superusers), `features.py`'s `admin_label`/`admin_help` on Storage
@@ -1916,7 +1922,7 @@ user may not have is refused); `storage.is_admin` (superusers).
 **Phase**: branch `admin-feature-access`, after Performance View (so both pages exist; it could also come first and
 cover Storage alone, then Performance joins with its flag).
 
-## 2D Map: Add Search Button (new.md, 2026-11-08)
+## 2D Map: Add Search Button (new.md, 2026-11-08) — done
 
 **Request**: "Under 2D Map, add an option named "Add Search Button" that adds a button to the 2D Map's buttons that
 when clicked opens a search box that accepts addresses or coordinates. Allowing the user to search for a location and
@@ -1938,11 +1944,10 @@ chosen on Enter. The map flies to the place (to a result's bounding box when it 
 when the box closes. Escape closes the box. Tests in Jest (the coordinates' parsing, the request, the results);
 live on both stacks.
 
-**Open decisions** (to ask when planned):
-1. The search service: Nominatim (free, no key; its policy allows about one request a second and no
-   search-as-you-type, so the search runs on Enter), or coordinates only, with no outside request.
-2. Where the button sits: under the zoom buttons (top left) or with Layers and the other panels (top right).
-3. Which coordinate forms: decimal degrees only, or DMS and UTM too.
+**Decided** (2026-11-08): Nominatim, the search on Enter (coordinates send no request); the button with the zoom
+buttons (WebODM puts those bottom left, so it sits right above + and −, not top left as the question said); decimal
+degrees and degrees-minutes-seconds (and degrees with decimal minutes), with or without N/S/E/W, not UTM. The marker
+is yellow, as Source Frames' spot (it must show on any imagery); the flight takes 1.5 s however far. — done
 
 ## Global Controls: Auto-hide Navigation Pane (new.md, 2026-11-08)
 

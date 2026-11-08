@@ -52,3 +52,29 @@ Off by default.
 
 The map zooms in 3 steps further than WebODM lets it (zoom 27 instead of 24, each step twice as close), with the
 wheel, the + button and a pinch. Past the orthophoto's own detail, its pixels are enlarged.
+
+## Controls > Add Search Button
+
+Off by default.
+
+![The search box above the zoom buttons, with coordinates typed in and the map marking them](../tweakui/public/previews/map-search.webp)
+
+A magnifier button above the zoom buttons (bottom left of the map) opens a search box. Type in it and press Enter
+(or click its magnifier); the map flies there and marks the place with a yellow ring. Close the box with its × or
+Esc, which also takes the ring away. It works on a task's map and a project's map alike.
+
+- **Coordinates** go straight there, at close zoom, with no request to any service. Latitude comes first, unless
+  letters say otherwise. These all mean the same place:
+  - `46.84, -91.99` or `46.84 -91.99` (decimal degrees, south and west negative)
+  - `46.84 N, 91.99 W` or `N46.84 W91.99`
+  - `46°50'24"N 91°59'24"W` or `46 50 24 N 91 59 24 W` (degrees, minutes and seconds)
+  - `46°50.4'N 91°59.4'W` (degrees and decimal minutes)
+- **Anything else** (an address, a town, a landmark) is looked up with
+  [OpenStreetMap's Nominatim](https://nominatim.org/), the service WebODM already asks for a photo's place name. Up
+  to five results are listed, and the map goes to the first; click another to go there instead. The map fits a
+  result's area (a town, a park) or, for a single point, zooms close.
+
+What is sent: only the text of an address search, from your browser to `nominatim.openstreetmap.org`, when you
+press Enter, never as you type, and at most once a second, as
+[Nominatim's usage policy](https://operations.osmfoundation.org/policies/nominatim/) asks. A search repeated in the
+same visit is answered from memory. A server with no internet access can still go to coordinates.

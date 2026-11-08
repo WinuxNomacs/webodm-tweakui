@@ -154,6 +154,11 @@ CATEGORIES = [
                     _("The map zooms in 3 steps further than WebODM lets it (each step twice as close), with the wheel, "
                       "the + button and a pinch."),
                     preview="zoom-override-2d", scripts=["pick3d.js", "zoom_override.js"]),
+            Setting("map_search", False, _("Add Search Button"),
+                    _("A button above the zoom buttons opens a search box. Type an address or place and press Enter "
+                      "(OpenStreetMap's Nominatim looks it up), or coordinates such as 46.84, -91.99 or "
+                      "46°50'24\"N 91°59'24\"W, and the map goes there."),
+                    preview="map-search", scripts=["map_search.js"]),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
