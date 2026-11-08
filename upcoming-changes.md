@@ -4,7 +4,7 @@
 
 **Up next**
 1. **Task Options: two settings renamed** (new.md, 2026-11-08; see "Task Options: two settings renamed").
-2. **Storage: export and import tasks** (new.md, 2026-11-08; see "Storage: export and import tasks").
+2. **Storage: back up and import tasks** (new.md, 2026-11-08; see "Storage: back up and import tasks").
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -1733,44 +1733,50 @@ this file keep the old names.
 **Phase**: one branch, `rename-configured-options`; Jest, Django on both stacks, the settings page live on both,
 screenshots retaken, the selector check.
 
-## Storage: export and import tasks (new.md, 2026-11-08)
+## Storage: back up and import tasks (new.md, 2026-11-08)
 
 **Request**: under TweakUI's Storage page, let users export and import tasks as zip files of the whole task. An
 Export button next to Compact on each task; an "Export All" that downloads several zips at once, one per ticked
-task, or per task of a ticked project.
+task, or per task of a ticked project. **Renamed with the user (2026-11-08): Export is "Backup"**, since the zip is
+WebODM's own task backup, in its format and under its name.
 
 **What WebODM offers** (checked in 3.3.2 and 4.0.0, the same in both; no change to WebODM needed):
-- **Export**: `GET /api/projects/<p>/tasks/<t>/backup` streams a zip of the whole task folder (photos, assets,
-  `data/backup.json` with its name, options, times, tags, crop...), named `<task>-backup.zip` by WebODM. It is the
-  "Backup" item of a completed task's Download menu (4.0.0's `AssetDownloadButtons`). Permission: view the task.
+- **Backup**: `GET /api/projects/<p>/tasks/<t>/backup` (`TaskBackup`) streams a zip of the whole task folder
+  (photos, assets, `data/backup.json` with its name, options, times, tags, crop...), named `<task>-backup.zip` by
+  WebODM. It is the "Backup" item of a completed task's Download menu (`AssetDownloadButtons`, both versions).
+  Permission: view the task.
 - **Import**: `POST /api/projects/<p>/tasks/import` (the project's Import button uses it), one file, chunked
   Dropzone-style (`dzuuid`, `dzchunkindex`, `dztotalchunkcount`, `dzchunkbyteoffset`) for big files. WebODM
   recognises a backup (`data/backup.json` and `assets/`) and restores it: the task comes back with its name,
   options, times and photos (`Task.handle_import`, `read_backup_file`). Other zips (assets only) import as
   WebODM's usual imported task. Permission: change the project.
 - So both go through WebODM's API from the browser, its permissions and quota applying, as Compact and Delete do.
+  TweakUI adds no format of its own: a backup made on the Storage page is the same file as one from WebODM's
+  Download menu, and either imports through the Storage page or WebODM's Import.
 
 **Builds on**: the Storage page (`storage_page.js`: the task rows' buttons, the ticked selection, the action bar
 with Compact and Delete, the status line; `storage.html`; `docs/storage.md`; the `storage` screenshot).
 
 **Proposed design**:
-- **Export** (a task row, beside Compact; `fa-download`, title "Export: download the whole task as a zip"): a
-  download of WebODM's backup URL, the browser's own download (no memory held by the page, whatever the size).
-- **Export All** (the action bar, beside Compact and Delete): each ticked task, and every task of a ticked project,
+- **Backup** (a task row, beside Compact; `fa-file-download` as WebODM's Backup item, title "Backup: download the
+  whole task as a zip"): a download of WebODM's backup URL, the browser's own download (no memory held by the page,
+  whatever the size).
+- **Backup All** (the action bar, beside Compact and Delete): each ticked task, and every task of a ticked project,
   downloaded one after another (a hidden link per task, a short pause between them). The browser asks once to
   allow multiple downloads; the status line says how many started. No confirmation (nothing is changed).
-- **Import**: a file chooser taking one or more zips; each is uploaded in chunks with a progress line ("Importing
-  2 of 3: name.zip, 45%"), one task per zip, then the list refreshes. WebODM then restores each (shown with the
-  page's "Importing" mark until done).
-- **Tests**: Jest (the buttons shown per task state, Export All's list from ticks, the downloads' URLs, the chunked
+- **Import** (WebODM's name for it, which takes asset zips too, not only backups): a file chooser taking one or
+  more zips; each is uploaded in chunks with a progress line ("Importing 2 of 3: name.zip, 45%"), one task per
+  zip, then the list refreshes. WebODM then restores each (shown with the page's "Importing" mark until done).
+- **Tests**: Jest (the buttons shown per task state, Backup All's list from ticks, the downloads' URLs, the chunked
   upload's requests and progress, errors shown); Django only if the report changes. Live on both stacks: a
-  "Live check" task exported (the zip's size and `backup.json` read, then deleted from disk) and imported into a
+  "Live check" task backed up (the zip's size and `backup.json` read, then deleted from disk) and imported into a
   "Live check" project, which is deleted afterwards; on the Windows app too (large files, cp1252 not involved).
 
 **Decided with the user** (2026-11-08):
 1. **Import on each project row**: an "Import" button beside the project's Delete; the zips chosen go into that
    project, one task each.
-2. **Export for completed tasks only**, as WebODM's own Backup: the row's Export and Export All skip the rest
-   (Export All's status line says how many were skipped).
+2. **Backup for completed tasks only**, as WebODM's own Backup: the row's Backup and Backup All skip the rest
+   (Backup All's status line says how many were skipped).
+3. **Named Backup and Backup All**, not Export: the file is WebODM's backup. Import keeps WebODM's name.
 
-**Phase**: one branch, `storage-export-import`, after the renames.
+**Phase**: one branch, `storage-backup-import`, after the renames.
