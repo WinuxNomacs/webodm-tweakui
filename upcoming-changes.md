@@ -8,6 +8,11 @@
 3. **Administration: users' access to Storage and Performance** (asked in chat, 2026-11-08; see "Administration:
    users' access to Storage and Performance").
 
+**Then**
+4. **2D Map: Add Search Button** (new.md, 2026-11-08; see "2D Map: Add Search Button").
+5. **Global Controls: Auto-hide Navigation Pane** (new.md, 2026-11-08; see "Global Controls: Auto-hide Navigation
+   Pane").
+
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
@@ -1878,3 +1883,55 @@ user may not have is refused); `storage.is_admin` (superusers).
 
 **Phase**: branch `admin-feature-access`, after Performance View (so both pages exist; it could also come first and
 cover Storage alone, then Performance joins with its flag).
+
+## 2D Map: Add Search Button (new.md, 2026-11-08)
+
+**Request**: "Under 2D Map, add an option named "Add Search Button" that adds a button to the 2D Map's buttons that
+when clicked opens a search box that accepts addresses or coordinates. Allowing the user to search for a location and
+the map takes them there."
+
+**What WebODM has** (both versions): no forward geocoder and no search control on the map. It already asks
+OpenStreetMap's Nominatim (`nominatim.openstreetmap.org/reverse`) from the browser, for a photo's place name
+(`ProjectListItem.jsx`), so a search through Nominatim adds no new kind of outside request. The 2D map's controls
+are Leaflet's, reached through `PluginsAPI.Map.didAddControls` as Other Tasks and Source Frames already do.
+
+**Builds on**: `other_tasks.js` and `source_frames.js` (a Leaflet button of TweakUI's own on the map, not
+`addActionButton`, which keeps only the first answers), Movable Controls (a panel with a title bar can be dragged).
+
+**Proposed design**: a setting "Add Search Button" under 2D Map (off by default), script `map_search.js`. A
+magnifier button with the map's other buttons; a click opens a small box with a text field ("Address or
+Coordinates"). Coordinates (`lat, lon` in decimal degrees, also with N/S/E/W; perhaps DMS) go straight there, with
+no request; anything else is sent to Nominatim's search, whose results are listed (up to five) and the first one
+chosen on Enter. The map flies to the place (to a result's bounding box when it has one), with a marker that goes
+when the box closes. Escape closes the box. Tests in Jest (the coordinates' parsing, the request, the results);
+live on both stacks.
+
+**Open decisions** (to ask when planned):
+1. The search service: Nominatim (free, no key; its policy allows about one request a second and no
+   search-as-you-type, so the search runs on Enter), or coordinates only, with no outside request.
+2. Where the button sits: under the zoom buttons (top left) or with Layers and the other panels (top right).
+3. Which coordinate forms: decimal degrees only, or DMS and UTM too.
+
+## Global Controls: Auto-hide Navigation Pane (new.md, 2026-11-08)
+
+**Request**: "Under General, Global Controls, Hide Navigation Pane. Add a sub-item named Auto-hide Navigation Pane
+that when enabled automatically hides the navigation pane until the user nears the navigation pane. When the user
+moves away from the pane it should automatically hide again after a short delay."
+
+**Builds on**: Hide Navigation Pane (`nav_pane.js` `create`: the tab's three steps, the `tweakui-nav-hidden` class,
+the window `resize` sent after each change) and the settings' `parts` (a sub-setting greyed out while its parent is
+off, as Surprise Me's Enable Interaction).
+
+**Proposed design**: a part of Hide Navigation Pane, `auto_hide_nav_pane`, off by default. From 768 px wide, the
+pane starts hidden; the pointer near the left edge (a strip of a few pixels, and the tab) shows it over the page,
+without moving the page; leaving it hides it again after a short delay (about half a second), unless the pointer
+comes back or a menu inside it is open. No touch (a phone width keeps WebODM's hamburger menu). Tests in Jest
+(fake timers); live on both stacks and the Windows app (desktop mode, the pane fixed at the top).
+
+**Open decisions** (to ask when planned):
+1. Shown over the page (the map keeps its size, no redraw) or pushing the page aside as the tab does.
+2. What the tab does while auto-hide is on: pins the pane open (auto-hide paused until clicked again), or nothing
+   (the tab hidden).
+3. With Resize Navigation Pane, whether it shows at the remembered width or at the icons' width.
+4. The delay: a fixed half second, or a choice on the settings page.
+
