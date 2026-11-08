@@ -49,50 +49,52 @@ test("turned on, a dropdown of TweakUI's own takes the select's place, showing t
     expect(button().title).toBe("Options: auto");
 });
 
-test("(Custom) stays at the top; User Presets and System Presets follow, closed when neither holds the choice", () => {
+const ALL = ["User Presets", "  M4T-RGB", "  m4t-Thermal", "  Multispectral", "System Presets", "  3D Model", "  Buildings",
+    "  Default", "  Fast Orthophoto", "  High Resolution"];
+
+test("(Custom) stays at the top; User Presets and System Presets follow, both open, each A-Z regardless of case", () => {
     form({custom: true, value: "-1"});
     start();
     button().click();
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
-    expect(items()).toEqual(["(Custom)", "User Presets", "System Presets"]);
+    expect(items()).toEqual(["(Custom)"].concat(ALL));
 });
 
-test("User Presets opens in the list to the user's presets, A-Z regardless of case, and closes again", () => {
-    form({custom: true, value: "-1"});
+test("a click on a submenu's name closes it and opens it again, the other left as it is", () => {
+    form();
     start();
     button().click();
     link("User Presets").click();
-    expect(items()).toEqual(["(Custom)", "User Presets", "  M4T-RGB", "  m4t-Thermal", "  Multispectral", "System Presets"]);
+    expect(items()).toEqual(["User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
+        "  Fast Orthophoto", "  High Resolution"]);
     expect(document.querySelector(".tweakui-presets").classList.contains("open")).toBe(true);
     expect(document.activeElement.textContent.trim()).toBe("User Presets");
+    link("System Presets").click();
+    expect(items()).toEqual(["User Presets", "System Presets"]);
+    expect(document.activeElement.textContent.trim()).toBe("System Presets");
     link("User Presets").click();
-    expect(items()).not.toContain("  M4T-RGB");
+    link("System Presets").click();
+    expect(items()).toEqual(ALL);
 });
 
-test("System Presets holds WebODM's presets, Default among them, A-Z, and opens on its own", () => {
-    form({custom: true, value: "-1"});
+test("a submenu closed stays closed while the form is open, until opened again", () => {
+    form();
     start();
     button().click();
     link("System Presets").click();
-    expect(items()).toEqual(["(Custom)", "User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
-        "  Fast Orthophoto", "  High Resolution"]);
-    expect(document.activeElement.textContent.trim()).toBe("System Presets");
+    button().click();
+    button().click();
+    expect(items()).not.toContain("  Default");
 });
 
-test("the submenu that holds the chosen preset starts open, the preset marked", () => {
+test("the chosen preset is marked", () => {
     form({value: "11"});
     start();
     expect(button().textContent).toBe("m4t-Thermal");
     button().click();
-    expect(items()).toContain("  m4t-Thermal");
-    expect(items()).not.toContain("  Default");
     expect(link("m4t-Thermal").parentNode.className).toBe("tweakui-presets-current");
     expect(link("m4t-Thermal").className).toContain("theme-background-highlight");
-    form();
-    start();
-    button().click();
-    expect(items()).toEqual(["User Presets", "System Presets", "  3D Model", "  Buildings", "  Default",
-        "  Fast Orthophoto", "  High Resolution"]);
+    expect(link("Default").parentNode.className).toBe("");
 });
 
 test("without presets of the user's, there is no User Presets", () => {

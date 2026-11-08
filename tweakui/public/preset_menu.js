@@ -1,7 +1,7 @@
 // General > Task Options > Sort Preset Options: the Options preset dropdown of a task's form (the New Task panel's and
 // a task's Edit form, EditTaskForm in WebODM) becomes a dropdown of TweakUI's own, in theme colours: (Custom) at the
 // top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own) and
-// "System Presets" (WebODM's, Default among them), each A-Z and open at first when it holds the chosen preset. WebODM's select stays on the page, hidden: choosing an item sets
+// "System Presets" (WebODM's, Default among them), each A-Z and open at first. WebODM's select stays on the page, hidden: choosing an item sets
 // its value and sends it a change event, so WebODM's own code selects the preset, and the button follows the select
 // (its options, value and title change as WebODM re-renders it). UMD, so Jest can load it.
 (function (root, factory) {
@@ -66,8 +66,8 @@
         menu.setAttribute("role", "menu");
         wrap.appendChild(button);
         wrap.appendChild(menu);
-        // Each submenu, by key: null opens it when it holds the chosen preset; then as the user left it
-        var groupOpen = {user: null, system: null};
+        // Each submenu, by key: open at first, then as the user left it
+        var groupOpen = {user: true, system: true};
 
         function selected() {
             var o = select.options[select.selectedIndex];
@@ -99,8 +99,7 @@
         // A submenu's heading, and its presets while open; none without presets
         function group(key, label, presets) {
             if (!presets.length) return;
-            var now = selected(), held = presets.some(function (p) { return p.value === now; });
-            var open = groupOpen[key] === null ? held : groupOpen[key];
+            var open = groupOpen[key];
             var li = ui.el(doc, "li", "tweakui-presets-group");
             li.setAttribute("role", "presentation");
             var head = ui.el(doc, "a", "tweakui-presets-group-head");
