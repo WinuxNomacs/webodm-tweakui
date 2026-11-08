@@ -88,7 +88,7 @@ easier to scan:
 - **User Presets**: the presets you saved, A to Z. Without presets of your own, it isn't there.
 - **System Presets**: WebODM's presets, Default among them, A to Z.
 
-Each submenu opens and closes in the list with a click on its name, and starts open when it holds the chosen preset.
+Both submenus start open; a click on a submenu's name closes it, and opens it again.
 
 The chosen preset is in bold and highlighted, in your theme's colours (WebODM's own dropdown shows the system presets
 on a light background, which a dark theme makes hard to read). Choosing a preset works as it does in WebODM's dropdown,

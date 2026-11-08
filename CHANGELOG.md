@@ -3,7 +3,7 @@
 ## Unreleased
 
 - General > Task Options > Sort Preset Options: the Options dropdown of a new or edited task lists (Custom) first,
-  then two submenus that open in the list, User Presets (your saved presets) and System Presets (WebODM's, Default
+  then two submenus, open at first and closed with a click, User Presets (your saved presets) and System Presets (WebODM's, Default
   among them), each A-Z, in your theme's colours.
 - General > Global Controls > Hide Navigation Pane: the tab cycles through three steps: the side menu's icons only
   (their names on hover, as Resize Navigation Pane's narrowest), hidden, and back at the usual width.

@@ -1679,6 +1679,7 @@ A native select cannot hold a submenu.
 - Changed by the user (2026-11-08), after seeing it: a System Presets submenu like User Presets, below it, holding
   every system preset with Default among them, A-Z; (Custom) alone at the top. Each submenu starts open when it
   holds the chosen preset (branch `system-presets-submenu`).
+- Changed by the user (2026-11-08): both submenus start open (branch `presets-submenus-open`).
 
 **Built**: see Done.
 
