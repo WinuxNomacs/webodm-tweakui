@@ -29,6 +29,6 @@ test("the check's notes name selectors the scripts have", () => {
 test("a script with selectors and no page is reported, and a relative selector is checked inside its parent's", () => {
     const {byPage, unplaced} = plan({...selectors, new_tweak: {thing: ".thing"}});
     expect(unplaced).toEqual(["new_tweak"]);
-    expect(byPage.dashboard.find(c => c.script === "core" && c.name === "user").within).toBe(selectors.core.headerLinks);
+    expect(byPage.task.find(c => c.script === "task_details" && c.name === "rows").within).toBe(selectors.task_details.table);
     expect(byPage.model.find(c => c.script === "source_frames").name).toBe("modelView");
 });

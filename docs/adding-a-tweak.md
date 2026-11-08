@@ -197,7 +197,7 @@ a dark theme if your tweak has colours.
 | `el(doc, tag, className, text)` | A new element, with its text set as text (never as HTML) |
 | `whenElement(doc, win, selector, callback)` | Calls back with the element once it is on the page |
 | `sideItem(doc, href)`, `sideLink(doc, label, href, icon)` | Finds a side-menu item; builds one shaped like WebODM's |
-| `placeMenu(doc, win, menu, label, {before, sideBefore})` | Puts a dropdown in the header, or in the side menu on WebODM's Windows app, which has no header |
+| `placeMenu(doc, win, menu, label, {before, sideBefore})` | Puts a dropdown in the header, or in the side menu on WebODM's Windows app, which has no header. TweakUI's header menus stay ahead of other plugins' and narrow on a crowded phone header |
 | `csrfToken(doc)` | The token WebODM's API wants with a POST, PATCH or DELETE |
 | `saveSettings(doc, win, changes, fetchFn)` | Saves some of the user's settings (`{name: value}`); a promise of the saved settings, refused with the reason |
 | `wholeNumber(text, min, max)` | A number setting's box: its whole number when in range, else what it should be (a message) |

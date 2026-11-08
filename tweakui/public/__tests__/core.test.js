@@ -142,4 +142,75 @@ describe("the header menus' order doesn't depend on which script starts first", 
             });
         }
     }
+
+    // DJI Thermal's Temperature Unit menu goes first in the list, after its own request, so before or after TweakUI's
+    function addOther(name) {
+        const links = document.querySelector(".navbar-top-links");
+        const li = document.createElement("li");
+        li.className = "dropdown";
+        li.textContent = name;
+        links.insertBefore(li, links.firstChild);
+    }
+    const settle = () => new Promise(r => setTimeout(r, 0));
+
+    for (const otherFirst of [true, false]) {
+        test(`TweakUI's menus stay ahead of another plugin's, which ${otherFirst ? "starts before" : "starts after"} them`, async () => {
+            page();
+            const win = {TweakUI: Object.assign({desktop: false}, THEMES), localStorage: window.localStorage,
+                MutationObserver: window.MutationObserver};
+            if (otherFirst) addOther("Temperature");
+            themeMenu.build(document, win);
+            unitsMenu.build(document, win);
+            if (!otherFirst) addOther("Temperature");
+            await settle();
+            expect(order(".navbar-top-links > li")).toEqual(["units", "theme", "Temperature", "user"]);
+        });
+    }
+
+    test("on a crowded phone header the menus get narrower, then WebODM's name is left out, and back when there's room", () => {
+        page();
+        document.querySelector(".navbar-header").insertAdjacentHTML("beforeend", '<a class="navbar-link"><p class="navbar-text">WebODM</p></a>');
+        const html = document.documentElement;
+        // The name ends at 120 px; the list's first item starts at 69 px with 4 menus, 121 px once narrower
+        let firstLeft = 69;
+        const box = (left, right) => ({left, right, top: 0, bottom: 50, width: right - left});
+        document.querySelector(".navbar-text").getBoundingClientRect = () =>
+            html.classList.contains("tweakui-header-nameless") ? box(0, 0) : box(55, 120);
+        const firstItem = () => document.querySelector(".navbar-top-links").firstElementChild;
+        const realRect = Element.prototype.getBoundingClientRect;
+        Element.prototype.getBoundingClientRect = function () {
+            return this === firstItem() ? box(firstLeft + (html.classList.contains("tweakui-header-compact") ? 40 : 0), firstLeft + 62) : realRect.call(this);
+        };
+        const win = {TweakUI: Object.assign({desktop: false}, THEMES), localStorage: window.localStorage, addEventListener: window.addEventListener.bind(window)};
+        try {
+            themeMenu.build(document, win);
+            unitsMenu.build(document, win);
+            expect([html.classList.contains("tweakui-header-compact"), html.classList.contains("tweakui-header-nameless")]).toEqual([true, true]);
+            firstLeft = 85;
+            window.dispatchEvent(new Event("resize"));
+            expect([html.classList.contains("tweakui-header-compact"), html.classList.contains("tweakui-header-nameless")]).toEqual([true, false]);
+            firstLeft = 200;
+            window.dispatchEvent(new Event("resize"));
+            expect([html.classList.contains("tweakui-header-compact"), html.classList.contains("tweakui-header-nameless")]).toEqual([false, false]);
+        } finally {
+            Element.prototype.getBoundingClientRect = realRect;
+            html.classList.remove("tweakui-header-compact", "tweakui-header-nameless");
+        }
+    });
+
+    test("TweakUI stops moving its menus when another plugin keeps putting its own first", async () => {
+        page();
+        const win = {TweakUI: Object.assign({desktop: false}, THEMES), localStorage: window.localStorage,
+            MutationObserver: window.MutationObserver};
+        themeMenu.build(document, win);
+        unitsMenu.build(document, win);
+        const links = document.querySelector(".navbar-top-links");
+        addOther("Stubborn");
+        const stubborn = links.firstChild;
+        new MutationObserver(() => {
+            if (links.firstChild !== stubborn) links.insertBefore(stubborn, links.firstChild);
+        }).observe(links, {childList: true});
+        for (let i = 0; i < 30; i++) await settle();
+        expect(order(".navbar-top-links > li")[0]).toBe("Stubborn");
+    });
 });

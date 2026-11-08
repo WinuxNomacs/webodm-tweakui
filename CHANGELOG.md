@@ -2,6 +2,9 @@
 
 ## Unreleased
 
+- Header menus: TweakUI's units and theme menus come before other plugins' menus (such as DJI Thermal Analyzer's
+  °C / °F), the same order on every page. On a phone with more menus than fit, they get narrower, then WebODM's name
+  beside the logo is left out.
 - Performance View: Recent Processing lists failed and canceled tasks too (a failure with its error), and gains
   columns from each task's report and log: photos placed of those given, area, separate reconstructions, position
   error (GPS or GCP) and whether the GPU was used. A Notes button opens what the log says the user should know (out of

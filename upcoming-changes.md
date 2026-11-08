@@ -3,10 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
-   TweakUI") — install the DJI Thermal plugin on the dev stacks and check the two side by side, above all the header's
-   menus (DJI Thermal's Temperature Unit next to TweakUI's Units and Theme). Open decisions listed there.
-2. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
+1. **Documentation review before the release** (new.md, 2026-11-08; see "Documentation review before the release")
    — every docs page, the README, CHANGELOG and the developer guide checked against the code, then the first release
    (`release/X.Y.Z`). Open decisions listed there.
 
@@ -15,6 +12,18 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Compatibility: DJI Thermal beside TweakUI** (new.md, 2026-11-08; see "Compatibility: DJI Thermal beside
+  TweakUI") — branch `dji-thermal`: DJI Thermal's `main` (DJI Thermal Analyzer) zipped with its `DT_ZIP` and installed
+  through Administration > Plugins on both stacks (an upgrade of 1.1.0 on 4.0.0), left installed. `core.js`:
+  `menuSpot` puts a header menu after TweakUI's others, ahead of every other item; `keepFirst` (a MutationObserver on
+  the list, at most 10 moves) moves TweakUI's menus back to the front when another plugin adds one before them;
+  `fitHeader` (on placing, list changes, resize) adds `tweakui-header-compact` (8 px padding) when the list's first
+  item reaches WebODM's name, then `tweakui-header-nameless` (the name hidden); `SELECTORS.user` gone, `appName` new.
+  `main.css`, `dev/selector-check.js` (core's `within` gone). Tests: `core.test.js` (4 new). Docs `general.md`,
+  `themes.md`, `adding-a-tweak.md`, CHANGELOG. Live on 4.0.0 and 3.3.2: "Units, Theme, °C, user" on every load and at
+  phone width, each menu opens, nothing overlaps, Imperial gives °F and °C gives Metric; 4.0.0's map has DJI
+  Thermal's legend and Inspector beside Other Tasks, Search and Zoom Sensitivity; no console errors. 3.3.2 has no
+  task, so no map there.
 - **Diagnostic: Performance View, the photos left out by name** (new.md, 2026-11-08; see "Performance View: the photos
   left out, by name") — branch `left-out`: `performance.py` (`placed_photos` from `odm_report/shots.geojson`,
   `left_out_photos`: `Task.scan_images` by photo extension, not `align.tif`, less the placed, up to 500;
@@ -2247,7 +2256,7 @@ Decided by the user (2026-11-08):
   in a new tab (WebODM's `/api/projects/P/tasks/T/images/download/NAME`), with its reason beside it when the log gives
   one, and hovering (or focusing) a name shows its thumbnail (`.../images/thumbnail/NAME`, as Source Frames uses).
 
-## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08)
+## Compatibility: DJI Thermal beside TweakUI (new.md, 2026-11-08) — done
 
 **Request**: "Install dji-thermal plugin into the dev instance to ensure there are no compatibility issues. One
 potential issue is that it adds a Temperature Unit selecter to the header bar. We'll want to make sure ours have no
@@ -2275,11 +2284,13 @@ units still linked; the 2D map with DJI Thermal's Inspector beside TweakUI's map
 Frames, Zoom Override, Add Search Button); the side menu with Hide, Resize and Auto-hide Navigation Pane; no console
 errors from either. A problem is fixed on whichever side it belongs (DJI Thermal's on a branch in its own repo).
 
-**Open decisions** (to ask when the phase starts):
-1. Which DJI Thermal: the built 1.1.0 zip, or its `main` as it is then?
-2. Leave it installed on the dev stacks afterwards, or uninstall it?
-3. Whether the header menus' order should be fixed (e.g. Temperature Unit next to Units), and on which side.
-4. The Windows app too, or the Docker stacks only?
+**Decisions** (the user, 2026-11-08):
+1. DJI Thermal's `main` as it is now (named DJI Thermal Analyzer), zipped with its `dev/package.sh` into a scratch
+   folder, installed on both stacks through Administration > Plugins.
+2. Left installed on both dev stacks afterwards.
+3. The header menus' order is fixed: TweakUI's menus go left of any other plugin's, so Temperature Unit sits next
+   to the user icon on every load.
+4. The Docker stacks only; the Windows app is covered at the release check.
 
 ## Documentation review before the release (new.md, 2026-11-08)
 

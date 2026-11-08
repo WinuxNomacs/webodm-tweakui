@@ -147,6 +147,9 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
     .navbar-top-links .tweakui-theme-list, .navbar-top-links .tweakui-units-list { right: 8px; left: auto; }
     .navbar-top-links .tweakui-units-name { display: none; }
 }
+/* A header with more menus than fit beside WebODM's name (core.js fitHeader): narrower menus, then no name */
+html.tweakui-header-compact #navbar-top .navbar-top-links > li > a { padding-left: 8px; padding-right: 8px; }
+html.tweakui-header-nameless #navbar-top .navbar-header > .navbar-link { display: none; }
 
 /* Hide Navigation Pane (nav_pane.js): a small tab on the divider between the side menu and the page, fixed below the
    header (its top set by the script); hidden, the side menu goes and the page takes the whole width, the tab at the
