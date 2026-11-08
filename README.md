@@ -70,6 +70,10 @@ settings page's previews and the documentation's images) are retaken from a runn
 (VitePress): `npm run docs:dev` to work on it, `npm run docs:build` to build it; `.github/workflows/docs.yml`
 publishes it to GitHub Pages on a release tag or by hand.
 
+## Community
+
+Questions, ideas or help with WebODM: [Join the WebODM Community Discord](https://discord.gg/hYDk9f28J6).
+
 ## Thanks
 
 TweakUI exists thanks to these projects and the people behind them.
