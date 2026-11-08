@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- 2D Map > Controls > Add Search Button (off by default): a button above the map's zoom buttons opens a search box.
+  Coordinates (decimal degrees or degrees, minutes and seconds, with or without N/S/E/W) go straight there; an
+  address or place is looked up with OpenStreetMap's Nominatim when you press Enter, with up to five results listed.
+  The map flies there and marks the place until the box closes.
 - Administration > TweakUI (superusers only, linked after Administration > Theme): Available to Users, where a
   superuser can withhold Storage View or Performance View from every user but superusers. A withheld setting is
   greyed with "Turned off by your administrator", and its page and API refuse them; each user's own choice is kept

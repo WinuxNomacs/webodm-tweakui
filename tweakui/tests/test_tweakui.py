@@ -33,7 +33,7 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False,
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "map_search": False,
                  "zoom_override_3d": False, "storage_view": False, "performance_view": False, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
@@ -80,7 +80,7 @@ class TestThePlugin(TweakUITestCase):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
-                     "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "surprise_me.js"):
+                     "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "map_search.js", "surprise_me.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         # The settings, then the helpers (core.js), before every other script
@@ -97,7 +97,7 @@ class TestThePlugin(TweakUITestCase):
     def test_the_scripts_and_stylesheet_are_served(self):
         for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
                      "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
-                     "surprise_me.js", "settings_page.js", "vendor/fireworks-js/fireworks.umd.js",
+                     "map_search.js", "surprise_me.js", "settings_page.js", "vendor/fireworks-js/fireworks.umd.js",
                      "main.css", "theme.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
@@ -305,12 +305,13 @@ class TestSettingsPage(TweakUITestCase):
         self.assertIn('href="#map2d"', page)
         map2d = page[page.index('<section id="tweakui-map2d"'):]
         map2d = map2d[:map2d.index("</section>")]
-        for name in ("movable_controls", "other_tasks", "source_frames_2d", "zoom_override_2d"):
+        for name in ("movable_controls", "other_tasks", "source_frames_2d", "zoom_override_2d", "map_search"):
             self.assertIn('data-setting="%s">' % name, map2d)
             self.assertEqual(self.patch({name: True}).json()[name], True)
             self.assertEqual(self.script_settings(self.client)[name], True)
         self.assertEqual(self.client.get(API).json(),
-                         defaults(movable_controls=True, other_tasks=True, source_frames_2d=True, zoom_override_2d=True))
+                         defaults(movable_controls=True, other_tasks=True, source_frames_2d=True, zoom_override_2d=True,
+                                  map_search=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="other_tasks" checked')
 
     def test_the_3d_map_settings_are_off_by_default_in_their_own_section(self):
