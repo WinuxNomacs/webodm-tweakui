@@ -388,6 +388,28 @@ const SHOTS = [
             return "page";
         },
     },
+    {
+        // Recent Processing, with the first task's notes open (the newest task with notes)
+        name: "performance-tasks", settings: {performance_view: true},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/performance/");
+            await s.page.waitForSelector(".tweakui-performance-table");
+            const notes = await s.page.$("[data-act=notes]");
+            if (notes) {
+                await notes.click();
+                await notes.evaluate(b => b.blur());
+            }
+            const box = await s.page.evaluate(() => {
+                const scroll = document.querySelector(".tweakui-performance-scroll");
+                const head = Array.from(document.querySelectorAll(".tweakui-performance-body h4")).find(h => h.textContent === "Recent Processing");
+                head.scrollIntoView();
+                const top = head.getBoundingClientRect(), bottom = scroll.getBoundingClientRect();
+                return {x: bottom.left, y: top.top, width: bottom.width, height: bottom.bottom - top.top};
+            });
+            await s.page.waitForTimeout(300);
+            return {clip: {x: Math.max(box.x - 16, 0), y: Math.max(box.y - 8, 0), width: box.width + 32, height: box.height + 12}};
+        },
+    },
 ];
 
 // The page script that turns PNGs (base64) into one WebP: side by side with a label each when there are several,

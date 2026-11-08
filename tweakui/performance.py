@@ -1,9 +1,9 @@
 """
 Diagnostic > Performance: how WebODM's processing nodes and server are doing, and whether they suit the tasks run on
 them. Each processing node the user may use is asked for its own info (NodeODX's /info: cores, memory, queue, tasks at
-a time), which WebODM doesn't keep; the server's disk and memory are WebODM's Diagnostic page's; the recent completed
-tasks (an admin's: everyone's, as on the Storage page) come with their photos, processing time and OpenSfM's steps
-(odm_report/stats.json). Verdicts, sentences at the top, compare them with WebODM's hardware requirements. The server's
+a time), which WebODM doesn't keep; the server's disk and memory are WebODM's Diagnostic page's; the recent finished
+tasks (completed, failed or canceled; an admin's: everyone's, as on the Storage page) come with their photos,
+processing time, OpenSfM's steps and figures (odm_report/stats.json) and what their log says (task_log.py). Verdicts, sentences at the top, compare them with WebODM's hardware requirements. The server's
 CPU load (no node reports its own), memory and the nodes' memory are refreshed through `live`. Read only.
 """
 import json
@@ -23,6 +23,7 @@ from app.models import Task
 from nodeodm import status_codes
 from nodeodm.models import ProcessingNode
 
+from . import task_log
 from .storage import is_admin
 
 GB = 1024 ** 3
@@ -37,8 +38,10 @@ MIN_DISK = 100 * GB
 # How long a node has to answer, and how many are asked at once
 NODE_TIMEOUT, NODE_WORKERS = 3, 8
 
-# Recent Processing: this many completed tasks, and a trend once there are at least TREND_MIN with a time per photo
+# Recent Processing: this many finished tasks, and a trend once there are at least TREND_MIN completed with a time per
+# photo
 RECENT, TREND_MIN, TREND_SAME = 10, 4, 0.1
+FINISHED = {status_codes.COMPLETED: "completed", status_codes.FAILED: "failed", status_codes.CANCELED: "canceled"}
 
 
 def _round(n):
@@ -223,36 +226,85 @@ def live(user, disk=False):
     return out
 
 
+def _number(v):
+    return v if isinstance(v, (int, float)) and not isinstance(v, bool) else None
+
+
 def read_stats(task):
-    """The task's OpenSfM steps ({name: seconds}, without "Total Time") and average GSD (cm) from its
-    odm_report/stats.json; empty when it is missing or doesn't say"""
+    """What the task's odm_report/stats.json says: {steps: {name: seconds} of OpenSfM's (without "Total Time"),
+    average_gsd (cm), photos_given, photos_reconstructed, components (reconstructions after merging), area (m²),
+    position_error: {kind: gcp or gps, meters} (the GCPs' when the task had them)}; each None (steps empty) when it is
+    missing or doesn't say"""
+    out = {"steps": {}, "average_gsd": None, "photos_given": None, "photos_reconstructed": None, "components": None,
+           "area": None, "position_error": None}
     try:
         with open(task.assets_path("odm_report", "stats.json"), encoding="utf-8") as f:
             data = json.load(f)
     except (OSError, ValueError):
-        return {}, None
+        return out
     if not isinstance(data, dict):
-        return {}, None
-    steps = (data.get("processing_statistics") or {}).get("steps_times") or {}
-    steps = {k: v for k, v in steps.items() if k != "Total Time" and isinstance(v, (int, float))} if isinstance(steps, dict) else {}
-    gsd = (data.get("odm_processing_statistics") or {}).get("average_gsd")
-    return steps, gsd if isinstance(gsd, (int, float)) else None
+        return out
+
+    def part(name):
+        v = data.get(name)
+        return v if isinstance(v, dict) else {}
+
+    processing, reconstruction = part("processing_statistics"), part("reconstruction_statistics")
+    steps = processing.get("steps_times")
+    if isinstance(steps, dict):
+        out["steps"] = {k: v for k, v in steps.items() if k != "Total Time" and _number(v) is not None}
+    out["average_gsd"] = _number(part("odm_processing_statistics").get("average_gsd"))
+    out["area"] = _number(processing.get("area"))
+    out["photos_given"] = _number(reconstruction.get("initial_shots_count"))
+    out["photos_reconstructed"] = _number(reconstruction.get("reconstructed_shots_count"))
+    out["components"] = _number(reconstruction.get("components"))
+    gcp = _number(part("gcp_errors").get("average_error")) if reconstruction.get("has_gcp") else None
+    gps = _number(part("gps_errors").get("average_error"))
+    if gcp is not None:
+        out["position_error"] = {"kind": "gcp", "meters": gcp}
+    elif gps is not None:
+        out["position_error"] = {"kind": "gps", "meters": gps}
+    return out
+
+
+def photos_left_out(stats):
+    """A note when stats.json says photos were left out of the reconstruction, else None"""
+    given, placed = stats["photos_given"], stats["photos_reconstructed"]
+    if not given or placed is None or placed >= given:
+        return None
+    return {"key": "left_out", "level": "warning", "line": "",
+            "text": _("%(left)s of %(given)s photos couldn't be placed in the reconstruction and were left out (too "
+                      "little overlap, or too few features).") % {"left": "{:,}".format(given - placed),
+                                                                  "given": "{:,}".format(given)}}
 
 
 def task_entry(task, user):
+    status = FINISHED.get(task.status, "completed")
     seconds = task.processing_time / 1000 if task.processing_time and task.processing_time > 0 else None
     images = task.images_count or 0
-    steps, gsd = read_stats(task)
+    stats = read_stats(task)
+    log = task_log.read(task)
+    steps = stats["steps"]
     slowest = max(steps.items(), key=lambda s: s[1]) if steps else None
     owner = task.project.owner
+    notes = log["notes"]
+    left = photos_left_out(stats)
+    if left:
+        notes = [n for n in notes if n["level"] == "danger"] + [left] + [n for n in notes if n["level"] != "danger"]
+    components = stats["components"]
+    reconstructions = max(log["reconstructions"] or 0, components or 0) or None
     return {
         "id": str(task.id), "project": {"id": task.project_id, "name": task.project.name},
         "name": task.name or "", "created_at": task.created_at.isoformat() if task.created_at else None,
         "owner": None if owner.id == user.id else owner.get_username(),
+        "status": status, "error": (task.last_error or None) if status == "failed" else None,
         "images": images, "seconds": seconds,
-        "seconds_per_image": seconds / images if seconds and images else None,
+        "seconds_per_image": seconds / images if seconds and images and status == "completed" else None,
         "slowest_step": {"name": slowest[0], "seconds": slowest[1]} if slowest else None,
-        "average_gsd": gsd,
+        "average_gsd": stats["average_gsd"],
+        "photos_given": stats["photos_given"], "photos_reconstructed": stats["photos_reconstructed"],
+        "area": stats["area"], "reconstructions": reconstructions, "position_error": stats["position_error"],
+        "gpu": log["gpu"], "notes": notes, "other": log["other"], "more": log["more"],
         "node": str(task.processing_node) if task.processing_node_id else None,
     }
 
@@ -264,9 +316,9 @@ def tasks_of(user):
 
 
 def recent_tasks(user):
-    tasks = (tasks_of(user).filter(status=status_codes.COMPLETED)
+    tasks = (tasks_of(user).filter(status__in=list(FINISHED))
              .select_related("project", "project__owner", "processing_node")
-             .only("id", "name", "created_at", "images_count", "processing_time", "processing_node",
+             .only("id", "name", "created_at", "status", "last_error", "images_count", "processing_time", "processing_node",
                    "project__id", "project__name", "project__owner__id", "project__owner__username",
                    "processing_node__hostname", "processing_node__port", "processing_node__label")
              .order_by("-created_at")[:RECENT])
@@ -274,8 +326,9 @@ def recent_tasks(user):
 
 
 def trend(tasks):
-    """The newer half of the tasks (newest first) against the older half, by their median time per photo: {recent,
-    earlier, change (recent / earlier - 1), same (within TREND_SAME)}; None with fewer than TREND_MIN to compare"""
+    """The newer half of the tasks (newest first) against the older half, by their median time per photo (only a
+    completed task has one): {recent, earlier, change (recent / earlier - 1), same (within TREND_SAME)}; None with
+    fewer than TREND_MIN to compare"""
     times = [t["seconds_per_image"] for t in tasks if t["seconds_per_image"]]
     if len(times) < TREND_MIN:
         return None

@@ -29,7 +29,8 @@ of photos (250 photos, 16 GB; 1,500 photos, 64 GB; 5,000 photos, 256 GB), betwee
 options such as a higher resolution need more, and swap can make up some of it, slowly. In Docker a node has the
 memory Docker gives it, which on Windows and macOS is Docker's own memory setting, not the computer's.
 
-There is no GPU line: nothing WebODM or a node reports says whether a GPU is used.
+There is no GPU line: a node doesn't say whether it has a GPU. [Recent Processing](#recent-processing) shows whether
+each task used one, from its log.
 
 ## Server
 
@@ -57,14 +58,53 @@ refreshed while the browser tab is hidden, and a refresh waits for the last to b
 
 ## Recent Processing
 
-Your last 10 completed tasks, newest first, each with its photos, processing time, time per photo, the slowest of
-the structure-from-motion steps ODM times in its report (feature extraction, matching, reconstruction...; the later
-steps are not timed one by one) and the node that processed it. Administrators see the last 10 on the server, whoever
-they belong to, and the largest task anyone has run.
+![Recent Processing with a task's notes open](../tweakui/public/previews/performance-tasks.webp)
 
-With 4 or more tasks to compare, a line says whether the newer half took more or less time per photo than the older
-half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it as a
-hint, not a measurement.
+Your last 10 finished tasks, newest first: completed, failed or canceled. A failed task says so under its name, with
+WebODM's error, and its notes open; a canceled one says **Canceled**. Each task has:
 
-TweakUI only reads: it asks each node for its info, reads the server's CPU counters and each task's report, and
-changes nothing.
+- **Photos**: the photos placed in the reconstruction of those given ("208 of 220"), from the task's report
+  (`odm_report/stats.json`); in the warning colour when some were left out. Just the photos when there is no report.
+- **Time** and **Per Photo**: its processing time, and that time per photo (completed tasks only).
+- **Slowest SfM Step**: the slowest of the structure-from-motion steps ODM times in its report (feature extraction,
+  matching, reconstruction...; the later steps are not timed one by one).
+- **Area**: the area the photos cover.
+- **Reconstructions**: how many separate reconstructions the photos made before ODM merged them, in the warning colour
+  above one, a sign that some areas did not overlap enough. It comes from the log, since the report counts the merged
+  one.
+- **Position Error**: the reconstruction's average distance from the photos' GPS positions, or from the ground
+  control points (**GCP**) when the task had them.
+- **GPU**: whether the node used a GPU, from the log (**No** when it found none).
+- **Node**: the node that processed it.
+
+Area and Position Error are in WebODM's unit system, the one the maps' unit selector and
+[Units in Header](general#global-controls-units-in-header) set: square metres or hectares and centimetres or metres in metric, square
+feet or acres and inches or feet in imperial. They change with it. At phone width these columns, the date, the step and
+the node fold into a line under the task's name.
+
+Administrators see the last 10 on the server, whoever they belong to, and the largest task anyone has run.
+
+### Notes from the Log
+
+TweakUI reads each listed task's log (what the processing node printed, as on the task's panel) for the messages
+worth knowing, and a **Notes** button by the task's name opens them, each in a plain sentence with the line it came
+from:
+
+- Out of memory: processing stopped (or a step was run again with less memory, a sign the node is short of it).
+- Stopped on strange values in the reconstruction, not enough usable photos, a problem with the GCP file, a CPU too
+  old for ODX or a program missing on the node.
+- Photos left out of the reconstruction, photos with no features found, separate reconstructions merged.
+- Photos without a GPS position or with an altitude of zero, ground control points not used, GCP lines naming photos
+  the task hasn't, multispectral bands with photos missing.
+- The GPU failed and the CPU finished the point cloud.
+
+Below them, **Other Messages** opens every other warning and error line in the log, once each with how many times it
+came (GDAL's `CPLE_AppDefined` warnings, one per texture, are left out). A huge log is read only at its start and end
+(its first and last 8 MB), and a finished task's log only once.
+
+With 4 or more completed tasks to compare, a line says whether the newer half took more or less time per photo than the
+older half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it
+as a hint, not a measurement.
+
+TweakUI only reads: it asks each node for its info, reads the server's CPU counters and each task's report and log,
+and changes nothing.

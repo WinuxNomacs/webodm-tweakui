@@ -1356,7 +1356,7 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual(r["nodes"], [])
         self.assertEqual(r["verdicts"][0]["level"], "danger")
 
-    def test_the_recent_tasks_are_the_users_completed_ones_newest_first_with_time_per_photo_and_slowest_step(self):
+    def test_the_recent_tasks_are_the_users_finished_ones_newest_first_with_time_per_photo_and_slowest_step(self):
         r = self.report()
         self.assertFalse(r["admin"])
         self.assertEqual([t["name"] for t in r["tasks"]], ["Untimed", "T3", "T2", "T1", "T0"])
@@ -1419,13 +1419,142 @@ class TestPerformance(TweakUITestCase):
 
     def test_a_missing_or_partial_stats_json_leaves_the_steps_out(self):
         from coreplugins.tweakui import performance
-        self.assertEqual(performance.read_stats(self.tasks[0]), ({}, None))
+        empty = {"steps": {}, "average_gsd": None, "photos_given": None, "photos_reconstructed": None,
+                 "components": None, "area": None, "position_error": None}
+        self.assertEqual(performance.read_stats(self.tasks[0]), empty)
         path = self.tasks[0].assets_path("odm_report")
         os.makedirs(path, exist_ok=True)
-        for content in ("not json", "[]", '{"processing_statistics": {"steps_times": "?"}}'):
+        for content in ("not json", "[]", ('{"processing_statistics": {"steps_times": "?", "area": "big"}, '
+                                          '"reconstruction_statistics": [], "gps_errors": {"average_error": true}}')):
             with open(os.path.join(path, "stats.json"), "w") as f:
                 f.write(content)
-            self.assertEqual(performance.read_stats(self.tasks[0]), ({}, None))
+            self.assertEqual(performance.read_stats(self.tasks[0]), empty)
+
+    def write_stats(self, task, **reconstruction):
+        path = task.assets_path("odm_report")
+        os.makedirs(path, exist_ok=True)
+        stats = {"processing_statistics": {"area": 384.7},
+                 "reconstruction_statistics": dict({"components": 1, "has_gcp": False, "initial_shots_count": 220,
+                                                    "reconstructed_shots_count": 208}, **reconstruction),
+                 "gps_errors": {"average_error": 0.0236}, "gcp_errors": {"average_error": 0.012}}
+        with open(os.path.join(path, "stats.json"), "w") as f:
+            json.dump(stats, f)
+
+    def write_log(self, task, lines):
+        os.makedirs(task.data_path(), exist_ok=True)
+        with open(task.data_path("console_output.txt"), "w", encoding="utf-8") as f:
+            f.write("\n".join(lines) + "\n")
+
+    def task_of(self, name, r=None):
+        return next(t for t in (r or self.report())["tasks"] if t["name"] == name)
+
+    def test_failed_and_canceled_tasks_are_listed_with_their_error_but_left_out_of_the_trend(self):
+        from nodeodm import status_codes
+        failed = Task.objects.create(project=self.project, name="Failed", status=status_codes.FAILED, images_count=100,
+                                     processing_time=600000, last_error="Process exited with code 137")
+        canceled = Task.objects.create(project=self.project, name="Canceled", status=status_codes.CANCELED,
+                                       images_count=100, processing_time=1000, last_error="left over")
+        for t in (failed, canceled):
+            self.addCleanup(shutil.rmtree, t.task_path(), True)
+        r = self.report()
+        self.assertEqual([t["name"] for t in r["tasks"]], ["Canceled", "Failed", "Untimed", "T3", "T2", "T1", "T0"])
+        f, c = r["tasks"][1], r["tasks"][0]
+        self.assertEqual((f["status"], f["error"], f["seconds"], f["seconds_per_image"]),
+                         ("failed", "Process exited with code 137", 600.0, None))
+        self.assertEqual((c["status"], c["error"]), ("canceled", None))
+        self.assertEqual(r["tasks"][3]["status"], "completed")
+        trend = r["trend"]
+        self.assertEqual((trend["recent"], trend["earlier"]), (4.0, 2.0))
+
+    def test_the_photos_placed_area_and_position_error_come_from_stats_json(self):
+        self.write_stats(self.tasks[0])
+        t0 = self.task_of("T0")
+        self.assertEqual((t0["photos_given"], t0["photos_reconstructed"], t0["area"], t0["reconstructions"],
+                          t0["position_error"], t0["gpu"]),
+                         (220, 208, 384.7, 1, {"kind": "gps", "meters": 0.0236}, None))
+        self.assertEqual(t0["notes"], [{"key": "left_out", "level": "warning", "line": "",
+                                        "text": "12 of 220 photos couldn't be placed in the reconstruction and were left "
+                                                "out (too little overlap, or too few features)."}])
+        self.write_stats(self.tasks[0], has_gcp=True, reconstructed_shots_count=220)
+        t0 = self.task_of("T0")
+        self.assertEqual((t0["position_error"], t0["notes"]), ({"kind": "gcp", "meters": 0.012}, []))
+        # A task without a report or a log has none of them
+        t1 = self.task_of("T1")
+        self.assertEqual((t1["photos_given"], t1["area"], t1["reconstructions"], t1["position_error"], t1["notes"],
+                          t1["other"]), (None, None, None, None, [], []))
+
+    def test_the_log_gives_notes_for_known_messages_and_lists_the_others_once_each(self):
+        self.write_stats(self.tasks[0], reconstructed_shots_count=220)
+        self.write_log(self.tasks[0], [
+            "[INFO] No nvidia-smi detected",
+            "[WARNING] No features found in image DJI_0001.JPG",
+            "[WARNING] No features found in image DJI_0002.JPG",
+            ("[WARNING] Multiple reconstructions detected (2), this might be an indicator that some areas did not have "
+            "sufficient overlap"),
+            ("[WARNING] Multiple reconstructions detected (3), this might be an indicator that some areas did not have "
+            "sufficient overlap"),
+            "[WARNING] CPLE_AppDefined in RowsPerStrip not defined ... assuming value 1",
+            "[WARNING] Shots and/or GCPs are aligned on a single-line. Using vertical prior",
+            "[WARNING] Shots and/or GCPs are aligned on a single-line. Using vertical prior",
+            "[WARNING] GCP-7 was not used (observations: 1)",
+            "[WARNING] GPS position not available for DJI_0003.JPG",
+            "[ERROR] Whoops! You ran out of memory! Add more RAM to your computer",
+            "[ERROR] Something else went wrong",
+        ])
+        t0 = self.task_of("T0")
+        self.assertEqual((t0["gpu"], t0["reconstructions"]), (False, 3))
+        self.assertEqual([(n["key"], n["level"]) for n in t0["notes"]],
+                         [("out_of_memory", "danger"), ("no_features", "warning"), ("reconstructions", "warning"),
+                          ("gcp_unused", "warning"), ("no_gps", "warning")])
+        notes = {n["key"]: n for n in t0["notes"]}
+        self.assertEqual(notes["no_features"]["text"], "No features were found in 2 photos (blurred, too dark, or of "
+                                                        "water, snow or sand), so they were left out.")
+        self.assertEqual(notes["no_features"]["line"], "[WARNING] No features found in image DJI_0001.JPG")
+        self.assertIn("3 separate reconstructions", notes["reconstructions"]["text"])
+        self.assertEqual(notes["gcp_unused"]["text"], "Ground control points not used, too few photos mark them: GCP-7.")
+        self.assertEqual(notes["no_gps"]["text"], "1 photos have no GPS position.")
+        self.assertEqual(t0["other"], [
+            {"text": "[WARNING] Shots and/or GCPs are aligned on a single-line. Using vertical prior", "count": 2},
+            {"text": "[ERROR] Something else went wrong", "count": 1}])
+        self.assertEqual(t0["more"], 0)
+
+    def test_the_log_says_whether_the_gpu_was_used(self):
+        from coreplugins.tweakui import task_log
+        scan = task_log.scan
+        self.assertTrue(scan(["[INFO] nvidia-smi detected"])["gpu"])
+        self.assertFalse(scan(["[INFO] Disabling GPU features (--no-gpu is set)"])["gpu"])
+        self.assertTrue(scan(['[INFO] running "DensifyPointCloud" -v 0 --cuda-device -1'])["gpu"])
+        self.assertFalse(scan(['[INFO] running "DensifyPointCloud" -v 0 --cuda-device -2'])["gpu"])
+        self.assertFalse(scan(["[INFO] No nvidia-smi detected", "--cuda-device -1"])["gpu"])
+        self.assertIsNone(scan([])["gpu"])
+        failed = task_log.describe(scan(["[INFO] nvidia-smi detected", ("[WARNING] OpenMVS failed with GPU, is your "
+                                         "graphics card driver up to date? Falling back to CPU.")]))
+        self.assertEqual((failed["gpu"], [n["key"] for n in failed["notes"]]), (True, ["gpu_failed"]))
+
+    def test_a_huge_log_is_read_at_its_start_and_end_and_other_messages_are_capped(self):
+        from coreplugins.tweakui import task_log
+        lines = ["[INFO] nvidia-smi detected", "[WARNING] Multiple reconstructions detected (4)"] + \
+                ["[INFO] filler line %d" % i for i in range(2000)] + ["[ERROR] Whoops! You ran out of memory!"]
+        self.write_log(self.tasks[0], lines)
+        with mock.patch.object(task_log, "LOG_WHOLE", 1000), mock.patch.object(task_log, "LOG_PART", 200):
+            r = task_log.read(self.tasks[0])
+        self.assertEqual((r["gpu"], r["reconstructions"]), (True, 4))
+        self.assertEqual([n["key"] for n in r["notes"]], ["out_of_memory", "reconstructions"])
+        many = task_log.scan(["[WARNING] message %d" % i for i in range(task_log.OTHER_MAX + 5)] + ["[WARNING] " + "x" * 400])
+        self.assertEqual((len(many["other"]), many["more"]), (task_log.OTHER_MAX, 6))
+        self.assertEqual(len(task_log.scan(["[WARNING] " + "x" * 400])["other"][0]["text"]), task_log.LINE_MAX)
+
+    def test_a_log_is_read_again_only_when_it_changes(self):
+        from coreplugins.tweakui import task_log
+        self.write_log(self.tasks[0], ["[WARNING] first"])
+        self.assertEqual(task_log.read(self.tasks[0])["other"], [{"text": "[WARNING] first", "count": 1}])
+        with mock.patch.object(task_log, "scan", wraps=task_log.scan) as scan:
+            task_log.read(self.tasks[0])
+            scan.assert_not_called()
+            self.write_log(self.tasks[0], ["[WARNING] first", "[WARNING] second is longer"])
+            self.assertEqual(len(task_log.read(self.tasks[0])["other"]), 2)
+            scan.assert_called_once()
+        self.assertEqual(task_log.read(Task(project=self.project))["notes"], [])
 
     def live(self, query="", infos=None):
         """The live figures, each node answering as in report()"""
