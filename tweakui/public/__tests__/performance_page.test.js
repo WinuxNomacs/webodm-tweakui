@@ -47,6 +47,12 @@ function cpu(total, cores, load = [1.5, 1.25, 1]) {
     return {total, cores, load};
 }
 
+// A drive's counters (the API's: since the system started) and a reading of them all at `time` seconds
+function drive(name, reads, writes, readBytes, writeBytes, ms, busy) {
+    return {name, mounts: ["/" + name], tasks: false, reads, writes, read_bytes: readBytes, write_bytes: writeBytes,
+        read_ms: ms / 2, write_ms: ms / 2, busy_ms: busy};
+}
+const io = (time, drives) => ({time, drives});
 const json = (data, ok = true, status = 200) => Promise.resolve({ok, status, json: () => Promise.resolve(data)});
 
 const views = [];
@@ -352,6 +358,54 @@ describe("the Performance page", () => {
         expect(words(root.querySelector("[data-server]"))).toContain("Disk 500 GB free of 1000 GB");
         await jest.advanceTimersByTimeAsync(3000);
         expect(fetchFn.mock.calls[5][0]).toBe("/api/plugins/tweakui/performance/live");
+    });
+
+    test("each drive's activity comes from two readings: per second, the size of one operation, busy and the wait", () => {
+        const a = io(10, [drive("sde", 1000, 500, 0, 0, 2000, 100)]);
+        const b = io(12, [drive("sde", 1400, 700, 4096 * 400, 65536 * 200, 2800, 1100), drive("sdf", 1, 1, 0, 0, 0, 0)]);
+        expect(performancePage.diskShares(a, b)).toEqual({sde: {reads: 200, writes: 100, read_rate: 819200, write_rate: 6553600,
+            read_size: 4096, write_size: 65536, busy: 0.5, wait: (800 / 600)}});
+        // Windows counts idle time; a drive whose counters went back is left out; one reading gives nothing
+        const win = (t, idle) => io(t, [{name: "C:", mounts: ["C:"], tasks: true, reads: 10, writes: 0, read_bytes: 0, write_bytes: 0,
+            read_ms: 0, write_ms: 0, idle_ms: idle}]);
+        expect(performancePage.diskShares(win(0, 0), win(4, 3000))["C:"]).toEqual({reads: 0, writes: 0, read_rate: 0,
+            write_rate: 0, read_size: null, write_size: null, busy: 0.25, wait: null});
+        expect(performancePage.diskShares(a, io(12, [drive("sde", 5, 700, 0, 0, 0, 0)]))).toEqual({});
+        expect(performancePage.diskShares(null, b)).toBeNull();
+        expect(performancePage.diskShares(b, b)).toBeNull();
+    });
+
+    test("a drive's card says where it is mounted and whether it holds the tasks, then its reads, writes, busy share and wait", () => {
+        const d = Object.assign(drive("sde", 0, 0, 0, 0, 0, 0), {mounts: ["/webodm/app/media", "/webodm/venv"], tasks: true});
+        const div = document.createElement("div");
+        div.innerHTML = performancePage.driveCardHtml(d, null);
+        expect(words(div)).toBe("sde \u00b7 Tasks Mounted At /webodm/app/media, /webodm/venv Activity Measuring...");
+        div.innerHTML = performancePage.driveCardHtml(d, {reads: 2.5, writes: 1200, read_rate: 10240, write_rate: 75 * 1024 * 1024,
+            read_size: 4096, write_size: 65536, busy: 0.97, wait: 3.25});
+        expect(words(div)).toBe("sde \u00b7 Tasks Mounted At /webodm/app/media, /webodm/venv Reads 2.5/s \u00b7 10 KB/s \u00b7 4 KB each " +
+            "Writes 1,200/s \u00b7 75 MB/s \u00b7 64 KB each Busy 97% Wait 3.3 ms per operation");
+        expect(div.querySelector(".progress-bar").className).toBe("progress-bar progress-bar-danger");
+        expect(div.querySelector(".progress").title).toBe("97% busy");
+        div.innerHTML = performancePage.driveCardHtml(Object.assign({}, d, {tasks: false}), {reads: 0, writes: 0, read_rate: 0, write_rate: 0,
+            read_size: null, write_size: null, busy: null, wait: null});
+        expect(words(div)).toBe("sde Mounted At /webodm/app/media, /webodm/venv Reads None Writes None Wait No operations");
+    });
+
+    test("the drives' activity is refreshed with CPU Load, the tasks' drive first", async () => {
+        jest.useFakeTimers();
+        const disks = (t, reads) => io(t, [Object.assign(drive("sde", reads, 0, reads * 4096, 0, 0, 0), {tasks: true, mounts: ["/media"]}),
+            drive("sdd", 0, 0, 0, 0, 0, 0)]);
+        const first = report({server: Object.assign(report().server, {disk_io: disks(100, 0)})});
+        const {root} = await started([json(first), json({cpu: null, nodes: [], disk_io: disks(101, 300)}),
+            json({cpu: null, nodes: [], disk_io: disks(104, 900)})]);
+        expect(Array.from(root.querySelectorAll("[data-server-cards] > [data-drive]")).map(c => c.getAttribute("data-drive"))).toEqual(["sde", "sdd"]);
+        expect(words(root.querySelector("[data-drive=sde]"))).toContain("Measuring...");
+        expect(root.querySelector(".tweakui-performance-disk-note")).not.toBeNull();
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(words(root.querySelector("[data-drive=sde]"))).toContain("Reads 300/s \u00b7 1.2 MB/s \u00b7 4 KB each");
+        expect(root.querySelector("[data-server]")).not.toBeNull();
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(words(root.querySelector("[data-drive=sde]"))).toContain("Reads 200/s");
     });
 
     test("no refresh is asked while the last is unanswered, and a failed one keeps the figures", async () => {

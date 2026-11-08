@@ -382,8 +382,10 @@ const SHOTS = [
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/performance/");
             await s.page.waitForSelector(".tweakui-performance-cards");
-            // CPU Load, a second after the report
+            // CPU Load and the drives' activity, a second after the report
             await s.page.waitForSelector("[data-cpu-total]", {timeout: 10000});
+            await s.page.waitForFunction(() => !Array.from(document.querySelectorAll("[data-drive]"))
+                .some(d => d.textContent.includes("Measuring")), null, {timeout: 10000});
             await s.page.waitForTimeout(500);
             return "page";
         },

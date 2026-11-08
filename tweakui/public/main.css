@@ -367,6 +367,9 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-every input[type=range] { flex: 1 1 auto; min-width: 0; margin: 0; }
 .tweakui-performance .tweakui-performance-every input[type=number] { flex: 0 0 64px; width: 64px; }
 .tweakui-performance .tweakui-performance-cpu-note { margin: 6px 0 2px; }
+/* A drive's card: its mount points wrap anywhere (long paths at phone width) */
+.tweakui-performance .tweakui-performance-drive td { overflow-wrap: anywhere; }
+.tweakui-performance .tweakui-performance-disk-note { margin: -12px 0 20px; }
 /* Recent Processing: a task's Notes button opens the row below it (its notes, each with its line from the log, and the
    log's other messages); at phone width the wide columns are hidden and their figures come under the task's name */
 .tweakui-performance .tweakui-performance-gpu, .tweakui-performance .tweakui-performance-node { white-space: nowrap; }

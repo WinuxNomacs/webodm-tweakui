@@ -3,8 +3,9 @@
 // tasks (an admin's: every user's) with their time per photo, figures from their report, notes from their log and a
 // trend (performance.py and task_log.py through the plugin's API). Areas and errors are in WebODM's unit system (the
 // maps' choice, Units.js's localStorage "unit_system"), redrawn when it changes.
-// Asked on opening and with Refresh. The server's CPU load and memory and the nodes' memory are asked again every
-// Refresh Every seconds (a setting, also on the page), the disk every 10 seconds, while the browser tab is shown.
+// Asked on opening and with Refresh. The server's CPU load and memory, each drive's activity and the nodes' memory
+// are asked again every Refresh Every seconds (a setting, also on the page), the disk's free space every 10 seconds,
+// while the browser tab is shown.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
@@ -95,11 +96,12 @@
     }
 
     // A used-of-total bar: the share used, coloured as it fills; plain (a CPU's, busy by nature while processing)
-    // always in the theme's colour for bars (theme.css colours only progress-bar-success)
-    function barHtml(used, total, plain) {
+    // always in the theme's colour for bars (theme.css colours only progress-bar-success); its title says "busy" for
+    // plain bars and when told (a disk's, coloured as it fills: a disk always busy holds the work up)
+    function barHtml(used, total, plain, busy) {
         var share = total > 0 ? Math.min(Math.max(used / total, 0), 1) : 0;
         var kind = " progress-bar-" + (plain || share < FULL_WARNING ? "success" : share >= FULL_DANGER ? "danger" : "warning");
-        return '<div class="progress tweakui-performance-progress" title="' + Math.round(share * 100) + (plain ? "% busy" : "% used") + '">' +
+        return '<div class="progress tweakui-performance-progress" title="' + Math.round(share * 100) + (plain || busy ? "% busy" : "% used") + '">' +
             '<div class="progress-bar' + kind + '" style="width: ' + (share * 100).toFixed(0) + '%"></div></div>';
     }
 
@@ -113,6 +115,36 @@
         if (!prev || !next) return null;
         var a = prev.total, b = next.total, all = a && b ? b[1] - a[1] : 0;
         return {total: all > 0 ? Math.min(Math.max((b[0] - a[0]) / all, 0), 1) : null};
+    }
+
+    // Each drive's activity between two readings of its counters ({time, drives}, the API's): {name: {reads, writes
+    // (per second), read_rate, write_rate (bytes per second), read_size, write_size (bytes per operation, null without
+    // any), busy (0 to 1), wait (ms per operation, null without any)}}; a drive whose counters went back (restarted,
+    // wrapped) is left out; null without two readings
+    function diskShares(prev, next) {
+        if (!prev || !next || !(next.time > prev.time)) return null;
+        var seconds = next.time - prev.time, before = {}, out = {};
+        prev.drives.forEach(function (d) { before[d.name] = d; });
+        next.drives.forEach(function (d) {
+            var a = before[d.name];
+            if (!a) return;
+            var delta = {};
+            var keys = ["reads", "writes", "read_bytes", "write_bytes", "read_ms", "write_ms", "busy_ms", "idle_ms"];
+            for (var i = 0; i < keys.length; i++) {
+                if (!(keys[i] in d)) continue;
+                delta[keys[i]] = d[keys[i]] - a[keys[i]];
+                if (!(delta[keys[i]] >= 0)) return;
+            }
+            var ops = delta.reads + delta.writes, ms = seconds * 1000;
+            var busy = "busy_ms" in delta ? delta.busy_ms / ms : "idle_ms" in delta ? 1 - delta.idle_ms / ms : null;
+            out[d.name] = {reads: delta.reads / seconds, writes: delta.writes / seconds,
+                read_rate: delta.read_bytes / seconds, write_rate: delta.write_bytes / seconds,
+                read_size: delta.reads ? delta.read_bytes / delta.reads : null,
+                write_size: delta.writes ? delta.write_bytes / delta.writes : null,
+                busy: busy === null ? null : Math.min(Math.max(busy, 0), 1),
+                wait: ops ? (delta.read_ms + delta.write_ms) / ops : null};
+        });
+        return out;
     }
 
     function rowHtml(label, value, extra) {
@@ -184,6 +216,35 @@
         return rows;
     }
 
+    // Operations per second: one decimal under 10
+    function formatRate(n) {
+        return (n < 10 ? n.toFixed(1).replace(/\.0$/, "") : formatNumber(Math.round(n))) + "/s";
+    }
+
+    // Reads or writes: per second, bytes per second and the average size of one (small means scattered work)
+    function ioText(ops, rate, size) {
+        if (!ops) return "None";
+        return escapeHtml(formatRate(ops) + " \u00b7 " + formatBytes(rate) + "/s") +
+            (size ? ' <span class="text-muted">\u00b7 ' + escapeHtml(formatBytes(size)) + " each</span>" : "");
+    }
+
+    // A drive's card: where it is mounted, then its activity once two readings give it
+    function driveCardHtml(d, rates) {
+        var rows = rowHtml("Mounted At", escapeHtml(d.mounts.join(", ")));
+        if (!rates) {
+            rows += rowHtml("Activity", '<span class="text-muted">Measuring...</span>');
+        } else {
+            rows += rowHtml("Reads", ioText(rates.reads, rates.read_rate, rates.read_size));
+            rows += rowHtml("Writes", ioText(rates.writes, rates.write_rate, rates.write_size));
+            if (rates.busy !== null) rows += rowHtml("Busy", "<span data-busy>" + percent(rates.busy) + "</span>", barHtml(rates.busy, 1, false, true));
+            rows += rowHtml("Wait", rates.wait === null ? '<span class="text-muted">No operations</span>'
+                : escapeHtml(rates.wait.toFixed(1)) + ' ms <span class="text-muted">per operation</span>');
+        }
+        return '<div class="tweakui-performance-card tweakui-performance-drive theme-border" data-drive="' + escapeHtml(d.name) + '">' +
+            '<h5><i class="far fa-hdd fa-fw"></i> ' + escapeHtml(d.name) + (d.tasks ? ' <span class="text-muted">\u00b7 Tasks</span>' : "") +
+            '</h5><table class="tweakui-performance-facts">' + rows + "</table></div>";
+    }
+
     // The server's card: CPU Load (of the machine WebODM runs on), disk and memory; "" when it says nothing
     function serverCardHtml(server, load) {
         var rows = cpuRows(server.cpu, load);
@@ -196,9 +257,21 @@
                 "processing nodes don't report theirs. A node on the same machine shares it.</p>" : "") + "</div>";
     }
 
-    function serverHtml(server, load) {
-        var card = serverCardHtml(server, load);
-        return card ? '<h4>Server</h4><div class="tweakui-performance-cards">' + card + "</div>" : "";
+    // The server's card, then a card per drive it uses (diskRates: diskShares's, or null while measuring)
+    function serverCardsHtml(server, load, diskRates) {
+        var io = server.disk_io;
+        return serverCardHtml(server, load) + (io ? io.drives.map(function (d) {
+            return driveCardHtml(d, diskRates && diskRates[d.name]);
+        }).join("") : "");
+    }
+
+    function serverHtml(server, load, diskRates) {
+        var cards = serverCardsHtml(server, load, diskRates);
+        if (!cards) return "";
+        return '<h4>Server</h4><div class="tweakui-performance-cards" data-server-cards>' + cards + "</div>" +
+            (server.disk_io ? '<p class="text-muted small tweakui-performance-disk-note">Disk activity is what the system counts for each ' +
+                "whole disk: in Docker, the disks of the machine Docker runs on, so a processing node's work on them counts too. " +
+                "Small operations mean scattered (random) work, large ones sequential.</p>" : "");
     }
 
     // The trend in a sentence: recent tasks' median time per photo against earlier ones'
@@ -365,9 +438,9 @@
             report.tasks.map(function (t) { return taskHtml(t, system); }).join("") + "</tbody></table></div>";
     }
 
-    function render(page, report, load, system) {
+    function render(page, report, load, system, diskRates) {
         page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes) +
-            serverHtml(report.server, load) + tasksHtml(report, system) +
+            serverHtml(report.server, load, diskRates) + tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
             '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +
             "In Docker, a node has the memory Docker gives it.</p>";
@@ -423,7 +496,7 @@
         fetchFn = fetchFn || (win.fetch && win.fetch.bind(win));
         var api = page.getAttribute("data-api"), button = page.querySelector("[data-act=refresh]");
         var status = page.querySelector(".tweakui-performance-status");
-        var state = {report: null, cpu: null, load: null, seconds: EVERY_DEFAULT, diskAt: 0, timer: null, busy: false,
+        var state = {report: null, cpu: null, load: null, io: null, diskRates: null, seconds: EVERY_DEFAULT, diskAt: 0, timer: null, busy: false,
             looping: false, stopped: false};
 
         function ask(path) {
@@ -433,10 +506,12 @@
             });
         }
 
-        // A new reading of the CPU counters: the load since the last one
-        function reading(cpu) {
+        // A new reading of the CPU and disk counters: the load and the disks' activity since the last one
+        function reading(cpu, io) {
             state.load = cpuShares(state.cpu, cpu);
             state.cpu = cpu || null;
+            state.diskRates = diskShares(state.io, io);
+            state.io = io || null;
         }
 
         // The next live refresh in `delay` ms, none while the tab is hidden or once stopped
@@ -448,14 +523,16 @@
         }
 
         function redrawServer() {
-            var card = page.querySelector("[data-server]"), html = serverCardHtml(state.report.server, state.load);
-            if (card && html) card.outerHTML = html;
+            var cards = page.querySelector("[data-server-cards]");
+            var html = serverCardsHtml(state.report.server, state.load, state.diskRates);
+            if (cards && html) cards.innerHTML = html;
         }
 
         function applyLive(data) {
             var server = state.report.server;
-            reading(data.cpu);
+            reading(data.cpu, data.disk_io);
             server.cpu = data.cpu || null;
+            if ("disk_io" in data) server.disk_io = data.disk_io || null;
             if (data.memory) server.memory = data.memory;
             if ("disk" in data) {
                 if (data.disk) server.disk = data.disk;
@@ -488,9 +565,9 @@
             if (status) status.textContent = state.report ? "Refreshing..." : "";
             return ask("performance").then(function (report) {
                 state.report = report;
-                reading(report.server && report.server.cpu);
+                reading(report.server && report.server.cpu, report.server && report.server.disk_io);
                 state.diskAt = Date.now();
-                render(page, report, state.load, unitSystem(win));
+                render(page, report, state.load, unitSystem(win), state.diskRates);
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
                 if (!state.looping) {
                     state.looping = true;
@@ -521,7 +598,7 @@
 
         // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
         var onUnits = ui.guard(NAME, function () {
-            if (state.report) render(page, state.report, state.load, unitSystem(win));
+            if (state.report) render(page, state.report, state.load, unitSystem(win), state.diskRates);
         });
         doc.addEventListener(UNIT_EVENT, onUnits);
 
@@ -590,5 +667,6 @@
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, verdictsHtml: verdictsHtml, formatArea: formatArea, formatLength: formatLength,
-        tasksHtml: tasksHtml, notesHtml: notesHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows};
+        tasksHtml: tasksHtml, notesHtml: notesHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
+        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml};
 });

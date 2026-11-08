@@ -2,6 +2,10 @@
 
 ## Unreleased
 
+- Performance View: Disk Activity, a card for each disk WebODM's server uses (the tasks' first, with where it is
+  mounted): reads and writes per second, bytes per second and the average size of one (small ones mean scattered,
+  random work), how busy the disk was and the average wait, refreshed with CPU Load. From the system's own counters
+  (Linux's /proc/diskstats, Windows' disk performance counters); nothing is written to measure it.
 - Header menus: TweakUI's units and theme menus come before other plugins' menus (such as DJI Thermal Analyzer's
   °C / °F), the same order on every page. On a phone with more menus than fit, they get narrower, then WebODM's name
   beside the logo is left out.
