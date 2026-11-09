@@ -1513,6 +1513,98 @@ class TestPerformance(TweakUITestCase):
         self.assertNotIn("photos", note)
         self.assertIsNone(performance.placed_photos(self.tasks[1]))
 
+    def left_out_task(self):
+        """T0 with five photos, of which its report places two: DJI_0002.JPG, DJI_0003.jpg and DJI_0005.tif are left
+        out; a node copy (uuid) on the big node"""
+        task = self.tasks[0]
+        Task.objects.filter(pk=task.pk).update(uuid="node-copy", images_count=5)
+        task.refresh_from_db()
+        self.write_stats(task, initial_shots_count=5, reconstructed_shots_count=2)
+        os.makedirs(task.task_path(), exist_ok=True)
+        for name in ("DJI_0001.JPG", "DJI_0002.JPG", "DJI_0003.jpg", "DJI_0004.JPG", "DJI_0005.tif", "gcp_list.txt"):
+            open(task.task_path(name), "w").close()
+        shots = {"type": "FeatureCollection", "features": [{"type": "Feature", "properties": {"filename": n}}
+                                                           for n in ("DJI_0001.JPG", "DJI_0004.JPG")]}
+        with open(task.assets_path("odm_report", "shots.geojson"), "w") as f:
+            json.dump(shots, f)
+        return task
+
+    def remove_photos(self, task, names, client=None):
+        return (client or self.client).post("/api/plugins/tweakui/performance/%s/%s/remove-photos" % (task.project_id, task.id),
+                                            json.dumps({"names": names}), content_type="application/json")
+
+    def test_remove_photos_deletes_the_named_photos_left_out_and_drops_the_nodes_copy(self):
+        from nodeodm import status_codes
+        task = self.left_out_task()
+        with mock.patch("nodeodm.models.ProcessingNode.remove_task", autospec=True) as remove_task:
+            res = self.remove_photos(task, ["DJI_0002.JPG", "DJI_0005.tif"])
+        self.assertEqual(res.status_code, 200)
+        self.assertEqual(res.json(), {"removed": ["DJI_0002.JPG", "DJI_0005.tif"], "failed": [], "images": 4})
+        self.assertEqual(sorted(task.scan_images()), ["DJI_0001.JPG", "DJI_0003.jpg", "DJI_0004.JPG", "gcp_list.txt"])
+        remove_task.assert_called_once_with(self.node, "node-copy")
+        task.refresh_from_db()
+        self.assertEqual((task.uuid, task.images_count, task.status), ("", 4, status_codes.COMPLETED))
+        # The list now names only the one left
+        note = next(n for n in self.task_of("T0")["notes"] if n["key"] == "left_out")
+        self.assertEqual([p["name"] for p in note["photos"]], ["DJI_0003.jpg"])
+
+    def test_remove_photos_leaves_the_nodes_copy_a_duplicate_still_points_to(self):
+        task = self.left_out_task()
+        copy = task.duplicate()
+        try:
+            with mock.patch("nodeodm.models.ProcessingNode.remove_task", autospec=True) as remove_task:
+                res = self.remove_photos(copy, ["DJI_0002.JPG"])
+            self.assertEqual(res.json()["removed"], ["DJI_0002.JPG"])
+            remove_task.assert_not_called()
+            copy.refresh_from_db()
+            task.refresh_from_db()
+            self.assertEqual((copy.uuid, task.uuid), ("", "node-copy"))
+            # The duplicate's folder is hard links: the original keeps its photo
+            self.assertIn("DJI_0002.JPG", task.scan_images())
+            self.assertNotIn("DJI_0002.JPG", copy.scan_images())
+        finally:
+            shutil.rmtree(copy.task_path(), ignore_errors=True)
+
+    def test_remove_photos_goes_on_when_the_node_cant_be_reached(self):
+        from pyodx import exceptions as odx_exceptions
+        task = self.left_out_task()
+        with mock.patch("nodeodm.models.ProcessingNode.remove_task", autospec=True,
+                        side_effect=odx_exceptions.NodeConnectionError("refused")):
+            res = self.remove_photos(task, ["DJI_0003.jpg"])
+        self.assertEqual(res.json()["removed"], ["DJI_0003.jpg"])
+        task.refresh_from_db()
+        self.assertEqual(task.uuid, "")
+
+    def test_remove_photos_takes_only_photos_the_report_left_out_of_a_completed_idle_task(self):
+        from nodeodm import status_codes
+        from app import pending_actions
+        task = self.left_out_task()
+        with mock.patch("nodeodm.models.ProcessingNode.remove_task", autospec=True) as remove_task:
+            for names in (["DJI_0001.JPG"], ["gcp_list.txt"], ["../../../etc/passwd"], ["DJI_0002.JPG", "nope.jpg"], [], "DJI_0002.JPG", [3]):
+                self.assertEqual(self.remove_photos(task, names).status_code, 400, names)
+            Task.objects.filter(pk=task.pk).update(pending_action=pending_actions.RESTART)
+            self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"]).status_code, 409)
+            Task.objects.filter(pk=task.pk).update(pending_action=None, status=status_codes.RUNNING)
+            self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"]).status_code, 409)
+        remove_task.assert_not_called()
+        self.assertEqual(len(task.scan_images()), 6)
+        task.refresh_from_db()
+        self.assertEqual(task.uuid, "node-copy")
+
+    def test_remove_photos_is_for_those_who_may_change_the_project(self):
+        from guardian.shortcuts import assign_perm
+        task = self.left_out_task()
+        other = self.login("testuser2")
+        self.patch({"performance_view": True}, client=other)
+        self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"], client=other).status_code, 404)
+        assign_perm("view_project", User.objects.get(username="testuser2"), self.project)
+        self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"], client=other).status_code, 403)
+        self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"], client=Client()).status_code, 403)
+        strict = Client(enforce_csrf_checks=True)
+        strict.login(username="testuser", password="test1234")
+        self.assertEqual(self.remove_photos(task, ["DJI_0002.JPG"], client=strict).status_code, 403)
+        self.assertEqual(len(task.scan_images()), 6)
+
     def test_the_log_gives_notes_for_known_messages_and_lists_the_others_once_each(self):
         self.write_stats(self.tasks[0], reconstructed_shots_count=220)
         self.write_log(self.tasks[0], [

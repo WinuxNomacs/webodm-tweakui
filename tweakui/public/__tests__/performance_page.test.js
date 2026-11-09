@@ -248,7 +248,8 @@ describe("the Performance page", () => {
         root.querySelector("[data-act=notes]").click();
         const list = root.querySelector("[data-note=left_out] details.tweakui-performance-photos");
         expect([list.open, words(list.querySelector("summary"))]).toEqual([false, "Photos Left Out (4)"]);
-        expect(texts(list, "li")).toEqual(["DJI_0007_T.JPG No features", "a b&c.tif No GPS", "DJI_0051_T.JPG", "1 more photo not shown."]);
+        expect(texts(list, "li")).toEqual(["DJI_0007_T.JPG No features Remove Photo", "a b&c.tif No GPS Remove Photo", "DJI_0051_T.JPG Remove Photo",
+            "1 more photo not shown."]);
         const links = list.querySelectorAll("a");
         expect([links[1].getAttribute("href"), links[1].target, links[1].rel])
             .toEqual(["/api/projects/3/tasks/t1/images/thumbnail/a%20b%26c.tif?size=2048", "_blank", "noopener"]);
@@ -269,6 +270,61 @@ describe("the Performance page", () => {
         expect(writeText).toHaveBeenCalledWith("DJI_0007_T.JPG\na b&c.tif\nDJI_0051_T.JPG");
         expect(list.querySelector("[data-act=copy-names] i").className).toBe("fa fa-check");
         delete window.navigator.clipboard;
+    });
+
+    // The page with one task whose photos left out are a.JPG, b.JPG and c.JPG; removal answers with removeAnswer
+    async function leftOutPage(removeAnswer) {
+        const photos = [{name: "a.JPG", reason: "no_features"}, {name: "b.JPG", reason: null}, {name: "c.JPG", reason: null}];
+        const t = reported("t1", {notes: [{key: "left_out", level: "warning", text: "3 of 220 photos were left out.", line: "", photos, more: 0}]});
+        const root = page();
+        const fetchFn = jest.fn(url => /remove-photos$/.test(url) ? removeAnswer() : url.indexOf("performance/live") >= 0 ?
+            json({}) : json(report({tasks: [t]})));
+        const view = performancePage.start(document, window, fetchFn);
+        views.push(view);
+        await view.loaded;
+        root.querySelector("[data-act=notes]").click();
+        return {root, fetchFn, list: () => root.querySelector("[data-note=left_out] details.tweakui-performance-photos")};
+    }
+    const removeCalls = fetchFn => fetchFn.mock.calls.filter(c => /remove-photos$/.test(c[0]));
+
+    test("Remove Photo asks first, then deletes that photo through the plugin's API and lists the rest, saying to Restart", async () => {
+        const confirm = jest.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValue(true);
+        const {fetchFn, list} = await leftOutPage(() => json({removed: ["b.JPG"], failed: [], images: 219}));
+        list().querySelectorAll("[data-act=remove-photo]")[1].click();
+        expect(confirm.mock.calls[0][0]).toMatch(/^Remove b\.JPG from "Task t1"\?\n\nIt is deleted from the task for good/);
+        expect(removeCalls(fetchFn)).toHaveLength(0);
+        list().querySelectorAll("[data-act=remove-photo]")[1].click();
+        await flush();
+        await flush();
+        const [url, options] = removeCalls(fetchFn)[0];
+        expect([url, options.method, JSON.parse(options.body)]).toEqual(["/api/plugins/tweakui/performance/3/t1/remove-photos", "POST", {names: ["b.JPG"]}]);
+        expect(options.headers["X-CSRFToken"]).toBeDefined();
+        expect(list().open).toBe(true);
+        expect(words(list().querySelector("summary"))).toBe("Photos Left Out (2)");
+        expect(texts(list(), "li").map(x => x.split(" ")[0])).toEqual(["a.JPG", "c.JPG"]);
+        expect(words(list().querySelector(".tweakui-performance-removed"))).toBe("1 photo removed from the task. Restart the task to process it without it.");
+        confirm.mockRestore();
+    });
+
+    test("Remove Photos From Task removes every listed photo, and a refusal is shown with the list kept", async () => {
+        const confirm = jest.spyOn(window, "confirm").mockReturnValue(true);
+        const answers = [json({detail: "Only a completed task that WebODM isn't working on can have photos removed."}, false, 409),
+            json({removed: ["a.JPG", "b.JPG", "c.JPG"], failed: [], images: 217})];
+        const {fetchFn, list} = await leftOutPage(() => answers.shift());
+        list().querySelector("[data-act=remove-photos]").click();
+        expect(confirm.mock.calls[0][0]).toMatch(/^Remove these 3 photos from "Task t1"\?\n\nThey are deleted/);
+        await flush();
+        await flush();
+        expect(words(list().querySelector(".tweakui-performance-remove-status"))).toBe("Only a completed task that WebODM isn't working on can have photos removed.");
+        expect(list().querySelectorAll("li")).toHaveLength(3);
+        expect(list().querySelector("[data-act=remove-photos]").disabled).toBe(false);
+        list().querySelector("[data-act=remove-photos]").click();
+        await flush();
+        await flush();
+        expect(JSON.parse(removeCalls(fetchFn)[1][1].body)).toEqual({names: ["a.JPG", "b.JPG", "c.JPG"]});
+        expect(list().querySelectorAll("li, [data-act=remove-photos], [data-act=copy-names]")).toHaveLength(0);
+        expect(words(list().querySelector(".tweakui-performance-removed"))).toBe("3 photos removed from the task. Restart the task to process it without them.");
+        confirm.mockRestore();
     });
 
     test("the trend reads as a sentence: faster, slower or about the same", async () => {

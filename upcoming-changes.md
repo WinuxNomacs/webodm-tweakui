@@ -3,14 +3,25 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: Remove Photos From Task** (new.md, 2026-11-09; see "Performance View: controls and removing
-   photos left out") — branch `remove-photos`.
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: Remove Photos From Task** (new.md, 2026-11-09) — branch `remove-photos`: `performance.py`
+  (`left_out_names`; `remove_left_out`: a completed task without a pending action, names among those left out, the
+  uuid cleared by a conditional update first, the files deleted, `images_count` updated, the node's `remove_task`
+  unless another task on that node shares the uuid, as WebODM's Duplicate copies it), `api.py` (`RemovePhotosView`,
+  404 without view_project, 403 without change_project), `plugin.py` (the mount point), `performance_page.js`
+  (`photosListHtml` with the buttons and the outcome, `removeQuestion`, `removePhotos`: confirm, POST with the CSRF
+  token, the list redrawn open), `main.css` (the buttons; a task's notes sticky and the screen's width at phone width,
+  the table being wider there), `features.py` (descriptions). Tests: `test_tweakui.py` (5 new), `performance_page.test.js`
+  (2 new). Docs `performance.md` (Remove Photos From Task), README, CHANGELOG, screenshot `performance-tasks`. Live on
+  4.0.0 on a duplicate of TestThermal named "Live check copy": one photo removed, then the other 11; the copy's
+  photo count went to 208 and its list empty after a reload; the original kept its 220 photos and its uuid; the copy
+  then removed. 3.3.2 has no completed task to try it on: its Django tests pass (134 on each stack).
 - **Performance View: the page's controls above Recent Processing** (new.md, 2026-11-09) — branch `perf-controls`:
   `performance.html` (the body, then the bar with Refresh and its status on a line of their own, then
   `.tweakui-performance-recent`), `performance_page.js` (`render` writes Recent Processing and the closing note into
@@ -2440,7 +2451,7 @@ Refresh and its status sit on the first line, with the two sliders stacked under
 body redraws, so a slider being dragged is not replaced. The phone layout is checked, as are the docs
 (`performance.md`: "at the top of the Performance page") and the `performance` screenshot.
 
-### Phase 2: Remove Photos From Task (branch `remove-photos`)
+### Phase 2: Remove Photos From Task (branch `remove-photos`) — done
 Builds on Photos Left Out (`task_log.py`, the `photos` of a note; `performance_page.js`'s Copy Names) and Storage
 View's task actions (permission checks, CSRF).
 - **Where:** in a completed task's Notes > Photos Left Out, a **Remove Photos From Task** button beside Copy Names

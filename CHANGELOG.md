@@ -4,6 +4,9 @@
 
 ### Diagnostic
 
+- Performance View > Recent Processing: **Remove Photos From Task** beside Copy Names and **Remove Photo** beside
+  each name in a completed task's Photos Left Out delete those photos from the task, and the task stops using the
+  processing node's copy of it, so its next Restart goes without them.
 - Performance View: Refresh, Refresh Every and History Length moved from the top of the page to just above Recent
   Processing, the two sliders under Refresh.
 
