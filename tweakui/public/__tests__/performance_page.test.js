@@ -181,6 +181,9 @@ describe("the Performance page", () => {
         expect(cells(rows[1]).slice(0, 1).concat(cells(rows[1]).slice(4, 8))).toEqual(["220 of 220", "2.50 ha", "1", "1.23 m GCP", "Yes"]);
         // Fewer photos placed than given, and more than one reconstruction, in the warning colour
         expect(rows[0].querySelectorAll("td .text-warning").length).toBe(2);
+        // Not by colour alone: each with the warning icon
+        expect(rows[0].querySelectorAll("td .text-warning i.fa-exclamation-triangle").length).toBe(2);
+        expect(rows[1].querySelectorAll("td i.fa-exclamation-triangle").length).toBe(0);
         expect(rows[1].querySelectorAll("td .text-warning").length).toBe(0);
         // At phone width the wide columns hide; their figures come under the task's name
         expect(words(rows[0].querySelector(".tweakui-performance-detail")))

@@ -162,7 +162,8 @@ html.tweakui .tweakui-nav-tab { display: none; }
     html.tweakui .tweakui-nav-tab { display: block; position: fixed; z-index: 2; left: calc(var(--tweakui-nav-width, 250px) - 7px); width: 14px; height: 40px; padding: 0; border-width: 1px; border-style: solid; border-radius: 4px; color: inherit; font-size: 11px; line-height: 1; cursor: pointer; }
     html.tweakui .tweakui-nav-tab:hover, html.tweakui .tweakui-nav-tab:focus-visible { filter: brightness(1.25); }
     html.tweakui.tweakui-nav-hidden .navbar-default.sidebar { display: none; }
-    html.tweakui.tweakui-nav-hidden #page-wrapper { margin-left: 0; }
+    /* The page's left padding makes room for the tab at its edge, so it doesn't touch the page's title */
+    html.tweakui.tweakui-nav-hidden #page-wrapper { margin-left: 0; padding-left: 30px; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-tab { left: 0; border-left-width: 0; border-radius: 0 4px 4px 0; }
     /* Auto-hide Navigation Pane: the hidden pane shown over the page (which keeps its whole width), fixed below the
        header (--tweakui-nav-top, from the script) to the bottom of the window, scrolling on its own; the tab on its
@@ -331,6 +332,14 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-storage .tweakui-storage-size { text-align: right; white-space: nowrap; }
 .tweakui-storage .tweakui-storage-date, .tweakui-storage .tweakui-storage-buttons { white-space: nowrap; }
 .tweakui-storage .tweakui-storage-buttons { text-align: right; }
+/* At phone width a row's buttons stack, so the table fits the screen rather than hiding them past its edge */
+@media (max-width: 767px) {
+    .tweakui-storage .tweakui-storage-buttons { white-space: normal; width: 40px; }
+    .tweakui-storage .tweakui-storage-buttons .btn { margin: 2px 0; }
+}
+/* Bootstrap's bar track keeps its light grey in every theme (WebODM's theme.css doesn't colour it): a faint track in
+   the text's colour instead */
+.tweakui-storage .progress, .tweakui-performance .progress { background-color: transparent; background-color: color-mix(in srgb, currentColor 15%, transparent); box-shadow: none; }
 .tweakui-storage .tweakui-storage-kinds { margin-left: 24px; }
 .tweakui-storage .tweakui-storage-kinds td { padding: 2px 12px 2px 0; }
 .tweakui-storage .tweakui-storage-share { width: 160px; }

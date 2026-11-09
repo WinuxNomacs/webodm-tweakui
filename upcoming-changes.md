@@ -3,13 +3,23 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests go in `new.md`.
+1. **UX review, Phase B: Performance page layout** (controls at the top, notes behind ⓘ, Process View as a section,
+   graph labels, fewer table columns, row actions in one place) — open decisions below.
+2. **UX review, Phase C: Settings page readability** (one-line descriptions with More, enlargeable previews, a
+   Navigation Pane group) — open decisions below.
+3. **UX review: setting names** — waits for the user's decision (a rename across docs, previews and CHANGELOG).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **UX review, Phase A: quick fixes** (user request, 2026-11-09) — branch `ux-quick-fixes`: `main.css` (Storage's
+  row buttons stack at phone width; the bars' track from `currentColor` at 15% through `color-mix`; `#page-wrapper`
+  30px from the left with the side menu hidden), `storage_page.js` and `storage.html` (Delete `btn-default` until
+  something is selected; "Your Storage"), `performance_page.js` (`levelIcon`/`shareIcon` beside warning and danger
+  figures). Tests: `storage_page.test.js`, `performance_page.test.js`. CHANGELOG, screenshots `storage` and
+  `performance`. Live on 4.0.0 (Solarized Dark and WebODM's theme) and 3.3.2.
 - **Performance View: Process View's tables outlined, resizable, command lines wrapped** (user request, 2026-11-09)
   — branch `perf-process-table`: `performance_page.js` (`table-bordered theme-border`, a `colgroup` and a resize
   handle on each heading: drag, arrow keys, double-click to reset; widths in pixels shared by both tables, kept in
@@ -775,6 +785,55 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## UX review of the plugin's pages (user request, 2026-11-09)
+
+A review of Settings, Storage, Performance, Administration > TweakUI and the Dashboard (4.0.0, Solarized Dark, 1400px
+and 390px), and the feature previews. All within the plugin's extension points: no WebODM change.
+
+### Phase A: quick fixes (branch `ux-quick-fixes`) — done
+
+Built as planned; item 1 stacks the row's buttons at phone width (the table fits) rather than scrolling it.
+
+
+1. Storage at phone width: each project's Import and Delete buttons run past the right edge, half hidden. The table
+   scrolls sideways in its box at phone width (as Performance's tables do), so nothing is cut off.
+2. Bootstrap's `.progress` track keeps its light grey in dark themes (WebODM's theme.css doesn't theme it): the
+   plugin's bars get a track from `currentColor` at low opacity (no hard-coded colour).
+3. "Your storage" → "Your Storage" (Title Case).
+4. Hide Navigation Pane's tab touches each page's title: it moves clear of it.
+5. Storage's Delete stays solid red (dimmed) with nothing selected: the default style until something is selected,
+   red once it is.
+6. Colour-only figures (Recent Task History's "208 of 220" in the warning colour) get the ⚠ icon the Notes button
+   uses.
+
+### Phase B: Performance page layout (to plan)
+
+- Refresh, Updated, Refresh Every and History Length move to a bar beside the page's heading, the two sliders in a
+  popover.
+- The explanatory notes (CPU, disk, Docker, memory sizing, Process View) behind an ⓘ beside their heading.
+- Process View as a "Processes" section inside Server that opens and closes (as the page's other `<details>`).
+- Graphs: the time window said once, labels at least 11px, a little taller on desktop.
+- Recent Task History: Task, Created, Photos, Time, Per Photo and Node in the table; Slowest SfM Step, Area,
+  Reconstructions, Position Error and GPU in the row Notes opens (or a column chooser).
+- Row actions in one place: WebODM's "•••" at the row's end, on Performance and Storage alike.
+Open decisions: the popover or a plain bar; the columns moved or a chooser; "•••" at the row's end replacing
+"Actions ▾" beside the name.
+
+### Phase C: Settings page readability (to plan)
+
+- Each description's first line says what you get; the caveats (Windows app, phone, remembered in this browser)
+  behind a More toggle.
+- Previews enlarge on click; at phone width hidden behind a Preview link.
+- A "Navigation Pane" group: Hide, Auto-hide (with Hide Delay) and Resize together.
+Open decisions: whether to rewrite the descriptions as one line plus More; previews hidden on phones.
+
+### Setting names (waits for the user)
+
+Settings are named in mixed styles ("Show Configured Option Count", "Add Search Button", "Units in Header", "Show
+Storage View", which Administration calls "Storage View"). Proposed: each named after what you get, without "Show" or
+"Add". A rename touches `features.py`, the docs (headings and anchors), previews, `dev/screenshots.js` and the
+CHANGELOG.
 
 ## Storage View: the selection bar's message
 
