@@ -662,6 +662,11 @@ describe("the Performance page", () => {
         // CPU of one core, of all cores in its title; the command line whole in its title
         expect(cpuRowsShown[0].querySelector("td:nth-child(5) span").title).toBe("31.3% of all 8 cores");
         expect(cpuRowsShown[0].querySelector("code").title).toBe("");
+        // CPU and Memory left-aligned, PID right-aligned
+        expect(Array.from(holder.querySelectorAll("[data-processes-by=cpu] th")).map(th => th.classList.contains("tweakui-performance-number")))
+            .toEqual([true, false, false, false, false, false]);
+        expect(Array.from(cpuRowsShown[0].cells).map(td => td.classList.contains("tweakui-performance-number")))
+            .toEqual([true, false, false, false, false, false]);
         // Copy Command Line in front of the command line
         expect(cpuRowsShown[0].querySelector(".tweakui-performance-command-cell").firstElementChild.getAttribute("data-act")).toBe("copy-command");
         const writeText = jest.fn(() => Promise.resolve());
