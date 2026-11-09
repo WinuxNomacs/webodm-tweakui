@@ -3,7 +3,8 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+1. **Storage View: the selection bar's message** — see "Storage View: the selection bar's message".
+2. **Administration: TweakUI Themes merged into Administration > TweakUI** — see "Administration: one page".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -718,6 +719,47 @@
   - Checked: Ruff, ESLint, Jest 1; Django `test_tweakui` (4) and `app.tests.test_plugins` (5) on 4.0.0 and
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
+
+
+## Storage View: the selection bar's message
+
+Request (new.md, 2026-11-09): "Storage UI, change the message at the top to say select one or multiple tasks or
+projects".
+
+Diagnostic > Storage, the bar above the projects table, says "Tick tasks or projects to back up or clean up several
+at once." while nothing is ticked (`templates/storage.html` and `storage_page.js`'s `renderSelection`, which puts it
+back when the selection empties). Decided (2026-11-09): it becomes **"Select one or multiple tasks or projects to back
+up, compact or delete them."**, naming the bar's three buttons. One branch `storage-message`: both places, the Jest
+test that reads it, `docs/storage.md` if it quotes it, the `storage` screenshot if the bar shows; CHANGELOG
+(Unreleased). Live on both stacks.
+
+## Administration: one page
+
+Request (new.md, 2026-11-09): "Move the TweakUI Themes Administration page functionality to the TweakUI
+Administration page. We don't need 2 administration pages for one plugin at this time."
+
+Now: Administration > TweakUI (`/plugins/tweakui/admin/`, `admin.html`, `admin_page.js`: Available to Users) and
+Administration > TweakUI Themes (`/plugins/tweakui/admin/themes/`, `published.html`, `theme_editor.js`: the published
+themes, Import, Export, Copy JSON, Delete, Publish One of Your Themes, the import panel). `main.js`'s `adminMenu` adds
+both links after WebODM's Theme item.
+
+Decided (2026-11-09): **stacked sections** on Administration > TweakUI: Available to Users, then a **Published
+Themes** section with everything TweakUI Themes has now (its heading becomes the section's, `id="published-themes"`
+for a link). Plan, branch `admin-merge`:
+- `plugin.py`: `admin_page` gets the published page's context; `admin/themes/` redirects to `admin/#published-themes`
+  (old bookmarks, the docs' old links), superusers only as now; `published_page` and `published.html` go (the
+  section moves into `admin.html`, loading both `admin_page.js` and `theme_editor.js`, checked to not clash: the
+  banner and status elements, the CSRF token read once).
+- `main.js`: one link, TweakUI; `adminMenu`'s "already added" check moves to the TweakUI link.
+- Links to `admin/themes/` elsewhere (settings page's Published group, comments, `api.py`'s docstrings,
+  `import_panel.html`) point to the new section.
+- Tests: `test_tweakui.py` (the page has both sections for a superuser, 403 for others, the redirect),
+  `main.test.js` (one link), `theme_editor.test.js` where it builds the published page.
+- Docs: `administration.md` gets a Published Themes section (from `themes.md`'s, which then links there), README,
+  CHANGELOG (Unreleased); `dev/screenshots.js`'s `theme-published` opens the section; screenshots retaken.
+- Live on both stacks as a superuser: both sections work (publish, delete, import of a "Live check" theme, removed
+  afterwards), the side menu shows one link and opens Administration, the old URL lands on the section; desktop and
+  phone.
 
 ## Requests (from new.md, 2026-11-06)
 
