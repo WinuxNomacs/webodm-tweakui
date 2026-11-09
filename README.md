@@ -40,7 +40,7 @@ Every feature is off until you turn it on, except the theme menu.
   uses, each task's files by kind, compacting or deleting them, and backing up and importing tasks as WebODM's own
   backup zips; administrators see every user's.
 - [**Performance**](https://winuxnomacs.github.io/webodm-tweakui/performance): each processing node's cores, memory
-  and queue, the server's CPU load (live, as in top), disk space and activity (reads and writes per second for each
+  and queue, the server's OS and CPU (model, cores and threads, clock), its CPU load (live, as in top), disk space and activity (reads and writes per second for each
   drive) and memory, with graphs over time as the page refreshes (and, for superusers, the server's
   top processes by CPU and memory), recent tasks' processing times, photos placed (and
   those left out, by name, which you can remove from the task), GPU and what their logs warn of (failed tasks too),

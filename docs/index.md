@@ -28,7 +28,7 @@ features:
     details: How much of your quota each project and task uses, cleaning them up, and backing up and importing tasks.
     link: /storage
   - title: Performance
-    details: Your processing nodes' cores, memory and queue; the server's CPU load, memory and disk activity, drawn as graphs over time; recent tasks' times, photos left out and what their logs warn of; and whether the memory suits your tasks.
+    details: Your processing nodes' cores, memory and queue; the server's OS and CPU, its CPU load, memory and disk activity, drawn as graphs over time; recent tasks' times, photos left out and what their logs warn of; and whether the memory suits your tasks.
     link: /performance
   - title: Administration
     details: Superusers choose whether users may have Storage and Performance.

@@ -1866,6 +1866,74 @@ class TestPerformance(TweakUITestCase):
         finally:
             shutil.rmtree(proc)
 
+    def write(self, folder, name, text):
+        path = os.path.join(folder, name)
+        with open(path, "w") as f:
+            f.write(text)
+        return path
+
+    def test_the_server_s_cpu_is_read_from_cpuinfo_with_its_cores_threads_sockets_and_maximum_clock(self):
+        from coreplugins.tweakui import performance
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        blocks = []
+        for n, (socket, core) in enumerate([(0, 0), (0, 0), (0, 1), (0, 1), (1, 0), (1, 0), (1, 1), (1, 1)]):
+            blocks.append("processor\t: %d\nmodel name\t: Intel(R) Xeon(R) Gold\ncpu MHz\t\t: 1200.000\n"
+                          "physical id\t: %d\ncore id\t\t: %d\n" % (n, socket, core))
+        cpuinfo = self.write(folder, "cpuinfo", "\n".join(blocks))
+        freq = self.write(folder, "max_freq", "3700000\n")
+        self.assertEqual(performance.linux_cpu(cpuinfo, freq),
+                         {"model": "Intel(R) Xeon(R) Gold", "cores": 4, "threads": 8, "sockets": 2, "mhz": 3700,
+                          "speed": "max"})
+        # Without cpufreq (WSL, a VM): the clock cpuinfo reports
+        cpu = performance.linux_cpu(cpuinfo, os.path.join(folder, "none"))
+        self.assertEqual((cpu["mhz"], cpu["speed"]), (1200, "reported"))
+        self.assertIsNone(performance.linux_cpu(os.path.join(folder, "none")))
+
+    def test_a_cpu_without_core_ids_counts_its_threads_and_one_socket(self):
+        from coreplugins.tweakui import performance
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        cpuinfo = self.write(folder, "cpuinfo", "processor\t: 0\nHardware\t: BCM2835\n\nprocessor\t: 1\n")
+        cpu = performance.linux_cpu(cpuinfo, os.path.join(folder, "none"))
+        self.assertEqual((cpu["model"], cpu["cores"], cpu["threads"], cpu["sockets"], cpu["mhz"], cpu["speed"]),
+                         ("BCM2835", None, 2, 1, None, None))
+
+    def test_the_server_s_os_in_docker_is_the_machine_s_kernel_with_where_it_runs_and_the_container_s_system(self):
+        from coreplugins.tweakui import performance
+        self.assertEqual(performance.linux_os("6.18.33.2-microsoft-standard-WSL2", "Ubuntu 24.04.5 LTS", True),
+                         {"name": "Linux 6.18.33.2 (WSL2 on Windows)", "detail": "Docker: Ubuntu 24.04.5 LTS",
+                          "kernel": "6.18.33.2-microsoft-standard-WSL2"})
+        self.assertEqual(performance.linux_os("6.10.14-linuxkit", "Ubuntu 22.04.5 LTS", True)["name"],
+                         "Linux 6.10.14 (Docker Desktop)")
+        # A Linux host's kernel says nothing of its system: no guess
+        self.assertEqual(performance.linux_os("6.8.0-45-generic", "Ubuntu 24.04.5 LTS", True)["name"], "Linux 6.8.0")
+        # Natively: the system, then its kernel
+        self.assertEqual(performance.linux_os("6.8.0-45-generic", "Debian GNU/Linux 12 (bookworm)", False),
+                         {"name": "Debian GNU/Linux 12 (bookworm)", "detail": "Linux 6.8.0",
+                          "kernel": "6.8.0-45-generic"})
+
+    def test_windows_is_11_from_build_22000_on_with_its_release_and_build(self):
+        from coreplugins.tweakui import performance
+        self.assertEqual(performance.windows_os("10.0.26200", "25H2"),
+                         {"name": "Windows 11", "detail": "25H2, build 26200", "kernel": "10.0.26200"})
+        self.assertEqual(performance.windows_os("10.0.19045", None)["name"], "Windows 10")
+        self.assertEqual(performance.windows_os("", None), {"name": "Windows", "detail": None, "kernel": ""})
+
+    def test_the_distribution_is_read_from_os_release(self):
+        from coreplugins.tweakui import performance
+        folder = tempfile.mkdtemp()
+        self.addCleanup(shutil.rmtree, folder)
+        path = self.write(folder, "os-release", 'NAME="Ubuntu"\nPRETTY_NAME="Ubuntu 24.04.5 LTS"\nID=ubuntu\n')
+        self.assertEqual(performance.os_release(path), "Ubuntu 24.04.5 LTS")
+        self.assertIsNone(performance.os_release(os.path.join(folder, "none")))
+
+    def test_the_report_has_the_server_s_os_and_cpu(self):
+        system = self.report()["server"]["system"]
+        self.assertTrue(system["os"]["name"])
+        self.assertTrue(system["cpu"]["threads"])
+        self.assertIn("architecture", system["cpu"])
+
     def test_process_view_reads_a_linux_process_s_command_line_and_user_and_whether_the_server_is_in_a_container(self):
         from coreplugins.tweakui import performance
         proc = tempfile.mkdtemp(suffix="-proc")

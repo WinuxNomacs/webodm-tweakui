@@ -13,6 +13,14 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Performance View: the server's OS and CPU** (asked in chat, 2026-11-09) — branch `perf-server-system`:
+  `performance.py` (`system_entry`, read once per process: `linux_os`/`windows_os` and `kernel_host`, `os_release`,
+  `linux_cpu` from `/proc/cpuinfo` and cpufreq's maximum, `windows_cpu` from the registry and
+  `GetLogicalProcessorInformation`; in `server_entry`), `performance_page.js` (`systemRows`: OS and CPU at the top of
+  the server's card; `speedHtml`; CPU Load in threads when the CPU has more threads than cores). Tests:
+  `test_tweakui.py` (6), `performance_page.test.js` (3). Docs `performance.md`, `index.md`, README, CHANGELOG.
+  Screenshot `performance`. Live on 4.0.0 and 3.3.2 (desktop and 390px); the Windows half run in the Windows app's own
+  Python 3.14 (Windows 11 25H2, build 26200, 10 cores, 20 threads). See "Performance View: the server's OS and CPU".
 - **UX review: setting names** (user request, 2026-11-09) — branch `ux-setting-names`: every label in `features.py`
   as decided (see "Setting names"; the setting keys, element ids and preview files unchanged, so saved settings stay),
   and every mention in the scripts' and CSS's comments, `README.md`, `CLAUDE.md`'s example, `docs/` and
@@ -820,6 +828,24 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## Performance View: the server's OS and CPU (asked in chat, 2026-11-09)
+
+Asked: the OS type and version and the CPU's model, speed and type (and the memory's speed) under Server, and the
+same for the processing nodes if they support it.
+
+What can be read (checked in both containers, a node's /info and the Windows app's Python):
+- Docker: `/proc/cpuinfo` (model, threads, core ids; `physical id` missing in WSL: one socket), the clock it reports
+  (WSL's is the base clock), no cpufreq in WSL (a Linux host has `cpuinfo_max_freq`); the kernel is the machine's, the
+  distribution the container's; no SMBIOS (`/sys/firmware/dmi`), so no memory speed.
+- Windows app: the registry's processor name and `~MHz`, `GetLogicalProcessorInformation`, the Windows build and
+  `DisplayVersion`; SMBIOS through `GetSystemFirmwareTable` would give memory speed.
+- Processing nodes: `/info` has cores and memory only (NodeODX reads the CPU's brand and speed but doesn't send them);
+  OpenMVS writes CPU, RAM and OS into a task's log.
+
+Decided by the user: no processing nodes (a task log's figures aren't live), no memory speed (not shown everywhere),
+and the OS in Docker as the kernel with a host guess where its name says (WSL2, Docker Desktop, OrbStack) and the
+container's system.
 
 ## Diagnostic: Logs View (dropped) (asked in chat, 2026-11-09)
 

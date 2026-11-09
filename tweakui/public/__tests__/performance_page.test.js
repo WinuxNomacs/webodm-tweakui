@@ -646,6 +646,36 @@ describe("the Performance page", () => {
         expect(performancePage.cpuRows(null, null)).toBe("");
     });
 
+    test("CPU Load counts threads when the CPU's row says it has fewer cores than threads", () => {
+        const div = document.createElement("table");
+        const system = {cpu: {model: "Ryzen", cores: 10, threads: 20}};
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], 20), {total: 0.5}, undefined, system);
+        expect(words(div)).toContain("50% of 20 threads");
+        div.innerHTML = performancePage.cpuRows(cpu([0, 0], 20), {total: 0.5}, undefined, {cpu: {cores: 20, threads: 20}});
+        expect(words(div)).toContain("50% of 20 cores");
+    });
+
+    test("the server's OS and CPU: in Docker the kernel and where it runs, then the CPU's model, architecture, cores, threads and clock", () => {
+        const div = document.createElement("table");
+        div.innerHTML = performancePage.systemRows({
+            os: {name: "Linux 6.18.33.2 (WSL2 on Windows)", detail: "Docker: Ubuntu 24.04.5 LTS", kernel: "6.18.33.2-microsoft-standard-WSL2"},
+            cpu: {model: "AMD Ryzen AI 9 465", architecture: "x86_64", cores: 10, threads: 20, sockets: 1, mhz: 1996, speed: "reported"}});
+        expect(words(div)).toBe("OS Linux 6.18.33.2 (WSL2 on Windows) \u00b7 Docker: Ubuntu 24.04.5 LTS CPU AMD Ryzen AI 9 465 x86_64 \u00b7 10 cores, 20 threads \u00b7 2.0 GHz");
+        expect(div.textContent).toContain("2.0\u00a0GHz");
+        expect(div.querySelector("span[title]").title).toBe("6.18.33.2-microsoft-standard-WSL2");
+    });
+
+    test("a CPU's clock says whether it is the maximum or the base clock, and two sockets show", () => {
+        const div = document.createElement("table");
+        div.innerHTML = performancePage.systemRows({os: null, cpu: {model: "Xeon", cores: 32, threads: 32, sockets: 2, mhz: 3700, speed: "max"}});
+        expect(words(div)).toBe("CPU Xeon 32 cores \u00b7 2 sockets \u00b7 up to 3.7 GHz");
+        div.innerHTML = performancePage.systemRows({os: {name: "Windows 11", detail: "25H2, build 26200"}, cpu: {model: "Ryzen", threads: 8, mhz: 2000, speed: "base"}});
+        expect(words(div)).toContain("Windows 11 \u00b7 25H2, build 26200");
+        expect(words(div)).toContain("8 cores \u00b7 2.0 GHz base");
+        expect(performancePage.systemRows(null)).toBe("");
+        expect(performancePage.systemRows({os: null, cpu: null})).toBe("");
+    });
+
     test("the live figures are asked a second after the report, then every Refresh Every seconds, with the disk every 10", async () => {
         jest.useFakeTimers();
         const first = report({server: Object.assign(report().server, {cpu: cpu([0, 0], 2)})});
