@@ -59,7 +59,8 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-import-report p, .tweakui-settings .tweakui-import-report ul { margin: 0 0 6px; }
 .tweakui-settings .tweakui-import code { white-space: normal; }
 .tweakui-settings .tweakui-themes-empty { margin: 0; }
-/* Administration > TweakUI Themes (published.html) */
+/* Administration > TweakUI > Published Themes (admin.html): inside its group, padded like the settings */
+.tweakui-admin .tweakui-published { padding: 8px 12px 12px; }
 .tweakui-published .tweakui-themes-heading { margin-top: 0; }
 .tweakui-published .tweakui-published-status { margin: 12px 0 0; }
 .tweakui-published .tweakui-published-status:empty { display: none; }

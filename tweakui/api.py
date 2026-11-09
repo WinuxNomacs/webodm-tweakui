@@ -116,7 +116,7 @@ class ThemesExportView(APIView):
 
 
 class IsSuperuser(permissions.BasePermission):
-    """Administration > TweakUI and TweakUI Themes: superusers only (not other staff)"""
+    """Administration > TweakUI (its features and published themes): superusers only (not other staff)"""
 
     def has_permission(self, request, view):
         return bool(request.user and request.user.is_authenticated and request.user.is_superuser)
@@ -304,7 +304,7 @@ def settings_script(request):
     if request.user.is_authenticated:
         script += "window.TweakUI.themes = %s;\n" % _script_json(themes.theme_list(request.user))
     if request.user.is_authenticated and request.user.is_superuser:
-        # main.js adds Administration > TweakUI Themes to the side menu
+        # main.js adds Administration > TweakUI to the side menu
         script += "window.TweakUI.superuser = true;\n"
     if getattr(django_settings, "DESKTOP_MODE", False):
         # WebODM hides its header (its Windows app): the theme and units menus go in the side menu

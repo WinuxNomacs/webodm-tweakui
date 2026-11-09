@@ -51,25 +51,12 @@ Administration > Theme, and a file can hold one theme or a list of them.
 
 ## Published themes
 
-![Administration > TweakUI Themes with two published themes](../tweakui/public/previews/theme-published.webp)
-
 Themes an administrator gives every user. They're listed under **Published**, between the presets and My Themes,
 when there are any. Everyone can choose one, **Copy** it into a theme of their own or **Copy JSON**, but only a
 superuser can change the list. If a published theme you're using is deleted, you're back on WebODM's theme.
 
-Superusers manage them in **Administration > TweakUI Themes**, a link TweakUI adds after Administration > Theme in
-the side menu (other staff don't see it, and the page and its API refuse them):
-
-- **Publish One of Your Themes**: choose one of your own themes (make it in Settings > Themes > My Themes) and
-  **Publish**. Every user gets a copy, so later changes to your theme aren't published until you publish it again. A
-  published theme with the same name is replaced, and users who chose it keep it.
-- **Import** adds a file or pasted JSON to the published themes, as under [Import and export](#import-and-export).
-  A theme with the same name as a published one replaces it.
-- **Export** downloads all the published themes as `tweakui-published-themes.json`; each theme's download button
-  downloads just it, and **Copy JSON** puts it on the clipboard.
-- **Delete** deletes a published theme, after asking.
-
-There can be up to 50 published themes.
+Superusers publish, import, export and delete them in
+[Administration > TweakUI > Published Themes](administration#published-themes). There can be up to 50.
 
 ## Sample Form for Viewing Theme Effects
 

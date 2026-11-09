@@ -808,7 +808,7 @@ class TestCustomThemes(TweakUITestCase):
 
 
 PUBLISHED = "/api/plugins/tweakui/published"
-ADMIN_PAGE = "/plugins/tweakui/admin/themes/"
+ADMIN_PAGE = "/plugins/tweakui/admin/"
 
 
 class TestPublishedThemes(TweakUITestCase):
@@ -952,6 +952,20 @@ class TestPublishedThemes(TweakUITestCase):
         self.assertContains(res, 'data-theme-action="json"', count=1)
         self.assertContains(res, '<option value="%s">Night</option>' % mine["id"])
         self.assertIn("published:" + published["id"], res.context["theme_colors"])
+
+    def test_the_published_themes_are_a_section_of_administration_tweakui_with_both_scripts(self):
+        body = self.admin.get(ADMIN_PAGE).content.decode()
+        self.assertLess(body.index("Available to Users"), body.index('id="published-themes">Published Themes<'))
+        self.assertLess(body.index('id="published-themes"'), body.index('id="tweakui-published"'))
+        self.assertIn("admin_page.js", body)
+        self.assertIn("theme_editor.js", body)
+        self.assertIn('id="tweakui-theme-colors"', body)
+
+    def test_the_old_tweakui_themes_address_leads_to_the_section(self):
+        for client in (self.admin, Client()):
+            res = client.get("/plugins/tweakui/admin/themes/")
+            self.assertEqual(res.status_code, status.HTTP_302_FOUND)
+            self.assertEqual(res["Location"], "/plugins/tweakui/admin/#published-themes")
 
 
 class TestSourceFrames(TweakUITestCase):

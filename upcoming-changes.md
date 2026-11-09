@@ -3,13 +3,27 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Administration: TweakUI Themes merged into Administration > TweakUI** — see "Administration: one page".
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Administration: TweakUI Themes merged into Administration > TweakUI** (new.md, 2026-11-09) — branch
+  `admin-merge`: `admin.html` (a Published Themes group under Available to Users, holding `#tweakui-published` as
+  the old page had it, so `theme_editor.js` works unchanged; both scripts and the themes' colours), `published.html`
+  removed, `plugin.py` (`admin_page` with the published context; `admin/themes/` redirects to
+  `admin/#published-themes`), `main.js` (`adminMenu`: one link), `main.css` (the section's padding), comments in
+  `api.py`, `custom_themes.py`, `theme_editor.js`, `import_panel.html`. Tests: `test_tweakui.py` (the published
+  tests on the merged page; 2 new: the section and its scripts, the old address), `main.test.js` (one link).
+  Docs `administration.md` (Available to Users and Published Themes sections, the managing moved from `themes.md`,
+  which links there), README, CHANGELOG, `dev/screenshots.js` (`admin` the first group, `theme-published` the
+  section), both retaken. Django 136 on each stack, Jest 354. Live on 4.0.0 and 3.3.2: the old address lands on the
+  section, one active link, a feature toggled and back ("Saved"), a "Live check theme" published and a "Live check
+  import" imported through the page, both deleted through it, the own theme removed; desktop and phone, no console
+  errors. While `plugin.py` was being edited it named an undefined view for a few seconds: one request to 4.0.0's
+  Performance page got a 500.
 - **Storage View: the selection bar's message** (new.md, 2026-11-09) — branch `storage-message`: `storage.html` and
   `storage_page.js` (`renderSelection`) say "Select one or multiple tasks or projects to back up, compact or delete
   them." Tests: `storage_page.test.js` (the whole text after a Delete, where it matched "Tick" before). Docs

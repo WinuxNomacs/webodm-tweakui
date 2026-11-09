@@ -264,7 +264,7 @@ test("an import with everything refused changes nothing, so Close doesn't reload
     expect(win.location.reload).not.toHaveBeenCalled();
 });
 
-describe("Administration > TweakUI Themes", () => {
+describe("Administration > TweakUI > Published Themes", () => {
     const PUBLISHED = {"published:p1": {name: "Shared", colors: THEMES.nord.colors}};
 
     function adminPage(own) {
