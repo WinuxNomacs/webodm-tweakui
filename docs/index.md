@@ -41,7 +41,9 @@ Each user has their own TweakUI settings: the **TweakUI** item near the bottom o
 About, opens them. The settings page has a navigation pane of categories on the left (above the settings on a
 phone); it opens on **General**. A change is saved as soon as it is made, which a green **Saved** banner at the
 top of the settings confirms for 3 seconds (a red one says why when a change can't be saved), and takes effect on
-the next page you open. Beside each feature is a screenshot of it; click it to see it full size.
+the next page you open. Each setting says in a line what you get; **More** after it shows the rest (how it works,
+what differs on a phone or in WebODM's Windows app). Beside each feature is a screenshot of it; click it to see it
+full size. On a phone the screenshot is a **Preview** link under the description.
 
 Every feature is off until you turn it on, except the theme menu.
 

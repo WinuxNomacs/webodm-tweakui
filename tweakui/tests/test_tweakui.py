@@ -13,6 +13,7 @@ from unittest import mock
 
 from django.contrib.auth.models import User
 from django.test import Client
+from django.utils.html import escape
 from rest_framework import status
 
 from app.plugins import disable_plugin, enable_plugin, get_plugin_by_name
@@ -256,6 +257,27 @@ class TestSettingsPage(TweakUITestCase):
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="units_in_header" checked')
         self.assertEqual(self.script_settings(self.client)["units_in_header"], True)
 
+    def test_the_navigation_pane_settings_have_a_group_of_their_own_after_global_controls(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        general = page[page.index('<section id="tweakui-general"'):]
+        general = general[:general.index("</section>")]
+        group = general.index(">Navigation Pane</h5>")
+        self.assertLess(general.index("Global Controls"), group)
+        self.assertLess(general.index('data-setting="units_in_header"'), group)
+        for name in ("hide_nav_pane", "auto_hide_nav_pane", "resize_nav_pane"):
+            self.assertLess(group, general.index('data-setting="%s"' % name))
+        self.assertLess(general.index('data-setting="resize_nav_pane"'), general.index("Task Options"))
+
+    def test_a_settings_summary_shows_with_a_more_button_for_the_rest_of_its_description_hidden_until_pressed(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        hide = features.setting("hide_nav_pane")
+        self.assertIn(str(escape(hide.summary)), page)
+        self.assertIn('aria-controls="tweakui-hide_nav_pane-more">More</a>', page)
+        self.assertIn('id="tweakui-hide_nav_pane-more" hidden>', page)
+        # A setting whose summary says it all has no More
+        self.assertIsNone(features.setting("task_details_times").more)
+        self.assertNotIn("tweakui-task_details_times-more", page)
+
     def test_hide_navigation_pane_is_off_by_default_under_general_global_controls_and_can_be_turned_on(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         general = page[page.index('<section id="tweakui-general"'):]
@@ -426,7 +448,7 @@ class TestFeatures(TweakUITestCase):
                 self.assertIn('type="number" id="tweakui-%s"' % s.name, page)
             else:
                 self.assertIsInstance(s.default, bool, s.name)
-            self.assertTrue(s.help, s.name)
+            self.assertTrue(s.summary, s.name)
             self.assertIn('data-setting="%s"' % s.name, page)
 
     def test_a_settings_parts_sit_under_it_greyed_out_while_it_is_off(self):

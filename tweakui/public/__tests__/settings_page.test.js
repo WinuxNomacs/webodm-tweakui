@@ -430,3 +430,46 @@ describe("a number setting", () => {
         expect(slider.disabled).toBe(true);
     });
 });
+
+test("a thumbnail is a link acting as a button that reads Preview on a phone, and Space opens it without changing the address", () => {
+    const root = previewPage();
+    settingsPage.addPreviews(root, document);
+    const link = root.querySelector(".tweakui-preview");
+    expect(link.tagName).toBe("A");
+    expect(link.getAttribute("role")).toBe("button");
+    expect(link.querySelector(".tweakui-preview-text").textContent).toBe("Preview");
+    const before = window.location.hash;
+    const click = new MouseEvent("click", {bubbles: true, cancelable: true});
+    link.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(window.location.hash).toBe(before);
+    document.querySelector(".tweakui-preview-overlay .close").click();
+    const space = new KeyboardEvent("keydown", {key: " ", bubbles: true, cancelable: true});
+    link.dispatchEvent(space);
+    expect(space.defaultPrevented).toBe(true);
+    expect(document.querySelector(".tweakui-preview-overlay")).not.toBeNull();
+    document.querySelector(".tweakui-preview-overlay .close").click();
+});
+
+test("More shows the rest of a setting's description and reads Less, which hides it again", () => {
+    document.body.innerHTML = `
+      <div id="tweakui-settings">
+        <div class="tweakui-setting"><label><input type="checkbox" data-setting="hide_nav_pane"> Hide</label>
+          <p class="text-muted tweakui-summary">A tab. <a href="#tweakui-hide_nav_pane-more" role="button" class="tweakui-more-toggle"
+            aria-expanded="false" aria-controls="tweakui-hide_nav_pane-more">More</a></p>
+          <p class="text-muted tweakui-more" id="tweakui-hide_nav_pane-more" hidden>The rest.</p></div>
+      </div>`;
+    const root = document.getElementById("tweakui-settings");
+    settingsPage.addMore(root);
+    const toggle = root.querySelector(".tweakui-more-toggle"), more = root.querySelector(".tweakui-more");
+    const click = new MouseEvent("click", {bubbles: true, cancelable: true});
+    toggle.dispatchEvent(click);
+    expect(click.defaultPrevented).toBe(true);
+    expect(more.hidden).toBe(false);
+    expect(toggle.getAttribute("aria-expanded")).toBe("true");
+    expect(toggle.textContent).toBe("Less");
+    toggle.dispatchEvent(new KeyboardEvent("keydown", {key: " ", cancelable: true}));
+    expect(more.hidden).toBe(true);
+    expect(toggle.getAttribute("aria-expanded")).toBe("false");
+    expect(toggle.textContent).toBe("More");
+});

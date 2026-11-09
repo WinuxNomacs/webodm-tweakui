@@ -1,5 +1,5 @@
-{% comment %}A setting on the settings page (features.py): a checkbox with its label and description, or for a number
-setting its label with its default, a slider in its steps and a box for any whole number in its range; and its preview's name for
+{% comment %}A setting on the settings page (features.py): a checkbox with its label and its summary (with a More
+button showing the rest of its description, when it has more), or for a number setting its label with its default, a slider in its steps and a box for any whole number in its range; and its preview's name for
 settings_page.js; one an admin withholds from the user (access.py) greyed, with the reason{% endcomment %}
 {% load i18n %}
 <div class="tweakui-setting{% if setting.number %} tweakui-number-setting{% endif %}{% if setting.withheld %} tweakui-withheld{% endif %}"{% if setting.preview %} data-preview="{{ setting.preview }}"{% endif %}>
@@ -17,5 +17,6 @@ settings_page.js; one an admin withholds from the user (access.py) greyed, with 
     </label>
     {% endif %}
     {% if setting.withheld %}<p class="tweakui-withheld-reason"><i class="fa fa-lock fa-fw"></i> {% trans "Turned off by your administrator." %}</p>{% endif %}
-    <p class="text-muted">{{ setting.help }}</p>
+    <p class="text-muted tweakui-summary">{{ setting.summary }}{% if setting.more %} <a href="#tweakui-{{ setting.name }}-more" role="button" class="tweakui-more-toggle" aria-expanded="false" aria-controls="tweakui-{{ setting.name }}-more">{% trans "More" %}</a>{% endif %}</p>
+    {% if setting.more %}<p class="text-muted tweakui-more" id="tweakui-{{ setting.name }}-more" hidden>{{ setting.more }}</p>{% endif %}
 </div>

@@ -1,6 +1,7 @@
 """
 Every TweakUI setting, declared once: its name and default, where it sits on the settings page (a category and a
-group), its label and description there, its preview screenshot, and the scripts it needs on WebODM's pages.
+group), its label and description there (a line and More), its preview screenshot, and the scripts it needs on
+WebODM's pages.
 
 From this list come the defaults (settings.DEFAULTS), the settings page's controls (templates/settings.html) and
 the scripts the plugin puts on every page (plugin.py). Adding a tweak starts here; the docs' "Adding a Tweak" page
@@ -19,15 +20,17 @@ class Setting:
     unit the word after the box; one without a label has no control there (its category's template draws it). parts:
     settings shown under this one, greyed out while it is off (a part may have parts of its own). scripts: in
     public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
-    admin_label and admin_help: a superuser may withhold the setting from users on Administration > TweakUI
-    (access.py), where these name and describe it."""
+    summary: one line under the label saying what you get; more: the rest (how it works, the Windows app, a phone,
+    what is remembered), behind the summary's More button. admin_label and admin_help: a superuser may withhold the
+    setting from users on Administration > TweakUI (access.py), where these name and describe it."""
 
-    def __init__(self, name, default, label=None, help=None, preview=None, scripts=(), parts=(), admin_label=None,
-                 admin_help=None, number=None, unit=None):
+    def __init__(self, name, default, label=None, summary=None, more=None, preview=None, scripts=(), parts=(),
+                 admin_label=None, admin_help=None, number=None, unit=None):
         self.name = name
         self.default = default
         self.label = label
-        self.help = help
+        self.summary = summary
+        self.more = more
         self.preview = preview
         self.scripts = list(scripts)
         self.parts = list(parts)
@@ -64,20 +67,24 @@ CATEGORIES = [
     Category("general", _("General"), "fa fa-cog fa-fw", groups=[
         Group(_("Global Controls"), [
             Setting("units_in_header", False, _("Units in Header"),
-                    _("A units menu in the header, left of the paintbrush: Metric, Imperial or Imperial (US), the same "
-                      "choice as the units selector on the 2D and 3D maps, kept in step with it. In the side menu on "
-                      "WebODM's Windows app, which has no header."),
+                    _("A units menu in the header: Metric, Imperial or Imperial (US)."),
+                    more=_("The same choice as the units selector on the 2D and 3D maps, kept in step with it. It sits "
+                           "left of the paintbrush, or in the side menu on WebODM's Windows app, which has no header."),
                     preview="units-in-header", scripts=["units_menu.js"]),
+        ]),
+        Group(_("Navigation Pane"), [
             Setting("hide_nav_pane", False, _("Hide Navigation Pane"),
-                    _("A small tab on the divider between the side menu and the page, near the top. Each click takes "
-                      "the side menu one step: its icons alone (each one's name shows when you point at it), then "
-                      "hidden, giving the page the whole width, then back to its usual width. Remembered in this "
-                      "browser. Not on a phone, where the side menu is already the header's menu button."),
+                    _("A tab on the side menu's edge shrinks it to its icons, hides it or brings it back."),
+                    more=_("The tab sits on the divider between the side menu and the page, near the top. Each click "
+                           "takes the side menu one step: its icons alone (each one's name shows when you point at "
+                           "it), then hidden, giving the page the whole width, then back to its usual width. "
+                           "Remembered in this browser. Not on a phone, where the side menu is already the header's "
+                           "menu button."),
                     preview="hide-navigation-pane", scripts=["nav_pane.js"], parts=[
                         Setting("auto_hide_nav_pane", False, _("Auto-hide Navigation Pane"),
-                                _("The side menu stays hidden until the pointer nears the window's left edge, then "
-                                  "shows over the page (which keeps its size), and hides again once the pointer leaves "
-                                  "it. The tab pins it open, and a second click unpins it."),
+                                _("The side menu stays hidden until the pointer nears the window's left edge."),
+                                more=_("Then it shows over the page (which keeps its size), and hides again once the "
+                                       "pointer leaves it. The tab pins it open, and a second click unpins it."),
                                 preview="auto-hide-navigation-pane", parts=[
                                     Setting("auto_hide_delay", 500, _("Hide Delay"),
                                             _("How long the side menu waits after the pointer leaves it before it "
@@ -86,25 +93,27 @@ CATEGORIES = [
                                 ]),
                     ]),
             Setting("resize_nav_pane", False, _("Resize Navigation Pane"),
-                    _("Drag the divider between the side menu and the page to make the side menu wider or narrower, down "
-                      "to its icons alone (each one's name shows when you point at it). A double click on the divider "
-                      "puts back the usual width. Remembered in this browser. Not on a phone."),
+                    _("Drag the side menu's edge to make it wider or narrower."),
+                    more=_("The divider between the side menu and the page is the handle, down to the side menu's "
+                           "icons alone (each one's name shows when you point at it). A double click on the divider "
+                           "puts back the usual width. Remembered in this browser. Not on a phone."),
                     preview="resize-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
             Setting("show_configured_option_count", False, _("Show Configured Option Count"),
-                    _("In the Task Options dialog, each group's heading shows how many of its options are configured "
-                      "(not at their default), e.g. (1/13)."),
+                    _("In the Task Options dialog, each group's heading counts its configured options."),
+                    more=_("An option is configured when it isn't at its default; the count reads e.g. (1/13)."),
                     preview="show-configured-option-count", scripts=["task_options.js"]),
             Setting("expand_configured_options", False, _("Expand Configured Options"),
-                    _("In the Task Options dialog, a collapsed group still shows its configured options (those not at "
-                      "their default), so you can change them there. The Expand/Collapse button cycles Expand All, "
-                      "Collapse All and Collapse All but Configured."),
+                    _("In the Task Options dialog, a collapsed group still shows its configured options."),
+                    more=_("Those not at their default, so you can change them there. The Expand/Collapse button "
+                           "cycles Expand All, Collapse All and Collapse All but Configured."),
                     preview="expand-configured-options", scripts=["task_options.js"]),
             Setting("replace_preset_menu", False, _("Replace Preset Options Menu"),
-                    _("Replaces the Options dropdown of a new or edited task with a menu that lists its presets A-Z in "
-                      "two submenus, User Presets (your own saved presets) and System Presets (WebODM's, Default among "
-                      "them), below (Custom), and a box at the top that filters them as you type."),
+                    _("A task's Options dropdown becomes a menu of its presets A-Z, with a filter box."),
+                    more=_("For a new or edited task: the presets in two submenus, User Presets (your own saved "
+                           "presets) and System Presets (WebODM's, Default among them), below (Custom), and a box at "
+                           "the top that filters them as you type."),
                     preview="replace-preset-options-menu", scripts=["preset_menu.js"]),
         ]),
         Group(_("Task Details"), [
@@ -123,27 +132,29 @@ CATEGORIES = [
                                 _("While the task runs, the ODM stage it is in, e.g. Current Step (8/13): Texturing.")),
                     ]),
             Setting("expand_task_controls", False, _("Expand Task Controls"),
-                    _("On the Dashboard, a minimized task still shows its buttons (Download, Map, Report, Edit…). The "
-                      "+/- beside its name cycles buttons only, expanded and fully minimized."),
+                    _("On the Dashboard, a minimized task still shows its buttons (Download, Map, Report…)."),
+                    more=_("The +/- beside its name cycles buttons only, expanded and fully minimized."),
                     preview="expand-task-controls", scripts=["task_controls.js"]),
         ]),
         Group(_("Just for Fun"), [
             Setting("surprise_me", False, _("Surprise Me"),
-                    _("Fireworks go off over every page every few seconds until you turn this off, and with Enable "
-                      "Interaction a right-click (Ctrl+click on a Mac) sends one to the pointer (Shift + right-click for "
-                      "the browser's menu). They're silent and clicks go through them."),
+                    _("Fireworks go off over every page every few seconds until you turn this off."),
+                    more=_("With Enable Interaction a right-click (Ctrl+click on a Mac) sends one to the pointer "
+                           "(Shift + right-click for the browser's menu). They're silent and clicks go through them."),
                     preview="surprise-me", scripts=["surprise_me.js"], parts=[
                         Setting("surprise_me_interaction", True, _("Enable Interaction"),
-                                _("A right-click (Ctrl+click on a Mac) sends a rocket. Turn this off to leave the mouse "
-                                  "to the browser and the page: the fireworks still go off.")),
+                                _("A right-click (Ctrl+click on a Mac) sends a rocket."),
+                                more=_("Turn this off to leave the mouse to the browser and the page: the fireworks "
+                                       "still go off.")),
                     ]),
         ]),
     ]),
     Category("themes", _("Themes"), "fa fa-palette fa-fw", groups=[
         Group(_("Theme Menu"), [
             Setting("show_theme_menu", True, _("Show Theme Menu"),
-                    _("A paintbrush in the header, left of your user icon, to change the theme from any page (in the "
-                      "side menu on WebODM's Windows app, which has no header)."),
+                    _("A paintbrush in the header to change the theme from any page."),
+                    more=_("It sits left of your user icon, or in the side menu on WebODM's Windows app, which has no "
+                           "header."),
                     preview="theme-menu", scripts=["theme_menu.js"]),
         ]),
     ], settings=[
@@ -154,48 +165,54 @@ CATEGORIES = [
     Category("map2d", _("2D Map"), "fa fa-map fa-fw", groups=[
         Group(_("Controls"), [
             Setting("movable_controls", False, _("Movable Controls"),
-                    _("Drag the map's panels (Layers, Base Maps, Measure, Contours…) by their title, anywhere within "
-                      "the map. A panel that closes reopens in its usual place."),
+                    _("Drag the map's panels (Layers, Base Maps, Measure, Contours…) anywhere within the map."),
+                    more=_("A panel is dragged by its title. A panel that closes reopens in its usual place."),
                     preview="movable-controls", scripts=["movable_controls.js"]),
             Setting("other_tasks", False, _("Compare Orthophotos from Other Tasks"),
-                    _("On a task's map, a button below Layers lists the project's other tasks that have an orthophoto. "
-                      "Check one to show it over this task's, with its own opacity slider."),
+                    _("On a task's map, show another task's orthophoto over this one's."),
+                    more=_("A button below Layers lists the project's other tasks that have an orthophoto. Check one "
+                           "to show it over this task's, with its own opacity slider."),
                     preview="other-tasks", scripts=["other_tasks.js"]),
             Setting("source_frames_2d", False, _("Source Frames"),
-                    _("A button beside Share turns it on. Then click the map: a window lists the task's photos that "
-                      "show that spot, best first, with each photo's details, a full-frame view and a download."),
+                    _("Click the map to list the task's photos that show that spot."),
+                    more=_("A button beside Share turns it on. A window lists the photos best first, with each "
+                           "photo's details, a full-frame view and a download."),
                     preview="source-frames-2d", scripts=["pick3d.js", "source_frames.js"]),
             Setting("zoom_override_2d", False, _("Zoom Override"),
-                    _("The map zooms in 3 steps further than WebODM lets it (each step twice as close), with the wheel, "
-                      "the + button and a pinch."),
+                    _("The map zooms in 3 steps further than WebODM lets it."),
+                    more=_("Each step twice as close, with the wheel, the + button and a pinch."),
                     preview="zoom-override-2d", scripts=["pick3d.js", "zoom_override.js"], parts=[
                 Setting("zoom_sensitivity_2d", 100, _("Zoom Sensitivity"),
-                        _("How far a mouse wheel notch zooms the map: 100% as WebODM does (a whole step, or two in some "
-                          "browsers), 50% half that, 200% twice. Away from 100% the map can rest between steps (its tiles "
-                          "slightly scaled). A button on the map changes it too, as you zoom."),
+                        _("How far a mouse wheel notch zooms the map."),
+                        more=_("100% as WebODM does (a whole step, or two in some browsers), 50% half that, 200% "
+                               "twice. Away from 100% the map can rest between steps (its tiles slightly scaled). A "
+                               "button on the map changes it too, as you zoom."),
                         preview="zoom-sensitivity-2d", number=(10, 200, 10), unit="%"),
             ]),
             Setting("map_search", False, _("Add Search Button"),
-                    _("A button above the zoom buttons opens a search box. Type an address or place and press Enter "
-                      "(OpenStreetMap's Nominatim looks it up), or coordinates such as 46.84, -91.99 or "
-                      "46°50'24\"N 91°59'24\"W, and the map goes there."),
+                    _("A search button on the map: go to an address, a place or coordinates."),
+                    more=_("The button above the zoom buttons opens a search box. Type an address or place and press "
+                           "Enter (OpenStreetMap's Nominatim looks it up), or coordinates such as 46.84, -91.99 or "
+                           "46°50'24\"N 91°59'24\"W, and the map goes there."),
                     preview="map-search", scripts=["map_search.js"]),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
         Group(_("Controls"), [
             Setting("source_frames_3d", False, _("Source Frames"),
-                    _("A button beside Share turns it on. Then click the model: a window lists the task's photos that "
-                      "show that spot, best first, with each photo's details, a full-frame view and a download."),
+                    _("Click the model to list the task's photos that show that spot."),
+                    more=_("A button beside Share turns it on. A window lists the photos best first, with each "
+                           "photo's details, a full-frame view and a download."),
                     preview="source-frames-3d", scripts=["pick3d.js", "source_frames.js"]),
             Setting("zoom_override_3d", False, _("Zoom Override"),
-                    _("The mouse wheel zooms toward what is under the pointer (the points or the model) instead of the "
-                      "middle of the view, so you can get close to any surface, and a trackpad's two-finger scroll "
-                      "zooms at a gentle pace. Over empty space it zooms as before."),
+                    _("The mouse wheel zooms toward what is under the pointer, not the middle of the view."),
+                    more=_("So you can get close to any surface (the points or the model), and a trackpad's "
+                           "two-finger scroll zooms at a gentle pace. Over empty space it zooms as before."),
                     preview="zoom-override-3d", scripts=["pick3d.js", "zoom_override.js"], parts=[
                 Setting("zoom_sensitivity_3d", 100, _("Zoom Sensitivity"),
-                        _("How far a mouse wheel notch zooms toward what is under the pointer: 100% is a tenth of the way, "
-                          "50% half that, 200% twice. A button in the 3D view changes it too, as you zoom."),
+                        _("How far a mouse wheel notch zooms toward what is under the pointer."),
+                        more=_("100% is a tenth of the way, 50% half that, 200% twice. A button in the 3D view "
+                               "changes it too, as you zoom."),
                         preview="zoom-sensitivity-3d", number=(10, 200, 10), unit="%"),
             ]),
         ]),
@@ -204,10 +221,11 @@ CATEGORIES = [
         Group(_("Storage View"), [
             # main.js adds the side-menu item; the page is the plugin's own (storage.html)
             Setting("storage_view", False, _("Show Storage View"),
-                    _("Adds a Storage page under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin "
-                      "is off). It shows how much of your quota each project and task uses and each task's files by "
-                      "kind, and lets you compact tasks (delete their photos, keep their results) or delete tasks and "
-                      "projects, back up completed tasks as WebODM's backup zips and import zips into a project."),
+                    _("A Storage page: how much of your quota each project and task uses."),
+                    more=_("Under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It "
+                           "also shows each task's files by kind, and lets you compact tasks (delete their photos, "
+                           "keep their results) or delete tasks and projects, back up completed tasks as WebODM's "
+                           "backup zips and import zips into a project."),
                     preview="storage", admin_label=_("Storage View"),
                     admin_help=_("Users may turn on the Storage page: their projects' and tasks' sizes, compact, delete, "
                                  "back up and import tasks.")),
@@ -215,24 +233,25 @@ CATEGORIES = [
         Group(_("Performance View"), [
             # main.js adds the side-menu item; the page is the plugin's own (performance.html)
             Setting("performance_view", False, _("Show Performance View"),
-                    _("Adds a Performance page under Diagnostic in the side menu (under TweakUI when the Diagnostic "
-                      "plugin is off). It shows each processing node's cores, memory and queue, the server's CPU load, "
-                      "disk space and activity and memory, your recent tasks (failed ones too) with their processing times and what their "
-                      "logs warn of (with a button to remove the photos a task left out) and a menu each (its log, "
-                      "Restart, its report), and whether the nodes have enough memory for your tasks, by WebODM's hardware "
-                      "requirements. Superusers also get Processes: the server's top processes by CPU and memory."),
+                    _("A Performance page: the processing nodes, the server's load and your recent tasks."),
+                    more=_("Under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It "
+                           "shows each processing node's cores, memory and queue, the server's CPU load, disk space "
+                           "and activity and memory, your recent tasks (failed ones too) with their processing times "
+                           "and what their logs warn of (with a button to remove the photos a task left out) and a "
+                           "menu each (its log, Restart, its report), and whether the nodes have enough memory for "
+                           "your tasks, by WebODM's hardware requirements. Superusers also get Processes: the "
+                           "server's top processes by CPU and memory."),
                     preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
                                  "server's CPU load, disk and memory, and their recent tasks with what their logs "
                                  "warn of; they can remove photos left out from their own tasks and restart them."),
                     parts=[
                         Setting("performance_refresh", 3, _("Refresh Every"),
-                                _("How often the Performance page refreshes the CPU load, the disks' activity and "
-                                  "the memory while it is open. The free disk space is refreshed every 10 seconds."),
+                                _("How often the Performance page refreshes its CPU load, disk activity and memory."),
+                                more=_("While the page is open. The free disk space is refreshed every 10 seconds."),
                                 number=(1, 10, 1), unit=_("s")),
                         Setting("performance_history", 5, _("History Length"),
-                                _("How much time the Performance page's graphs of the CPU load, the memory and the "
-                                  "disks' activity show, from when the page was opened."),
+                                _("How much time the Performance page's graphs show, from when the page was opened."),
                                 number=(1, 30, 1), unit=_("min")),
                     ]),
         ]),
@@ -293,7 +312,8 @@ def page(values, withheld=()):
     """The settings page's categories, each setting with the user's value (values: settings.load) and, for a number
     setting, its default; a withheld one (access.withheld) is greyed"""
     def control(setting):
-        return {"name": setting.name, "label": setting.label, "help": setting.help, "preview": setting.preview,
+        return {"name": setting.name, "label": setting.label, "summary": setting.summary, "more": setting.more,
+                "preview": setting.preview,
                 "value": values.get(setting.name, setting.default), "withheld": setting.name in withheld,
                 "number": ({"min": setting.number[0], "max": setting.number[1], "step": setting.number[2]}
                            if setting.number else None),

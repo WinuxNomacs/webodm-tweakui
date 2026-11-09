@@ -18,7 +18,7 @@ the user icon. That plugin follows WebODM's units, so choosing Imperial here sho
 shows Metric here. On a phone with more menus than fit beside WebODM's name, the menus get narrower, and if that
 isn't enough the name is left out (the logo still leads to the Dashboard).
 
-## Global Controls > Hide Navigation Pane
+## Navigation Pane > Hide Navigation Pane
 
 Off by default.
 
@@ -57,7 +57,7 @@ stays behind the header's menu button.
 **Hide Delay** sets how long the side menu waits after the pointer leaves it: from 200 to 3000 milliseconds, 500 by
 default. The slider moves in steps of 100, and the box beside it takes any whole number in that range.
 
-## Global Controls > Resize Navigation Pane
+## Navigation Pane > Resize Navigation Pane
 
 Off by default.
 

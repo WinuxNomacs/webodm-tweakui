@@ -7,7 +7,9 @@
 // Settings in a data-depends box are greyed out and disabled while the setting it names is off (or itself disabled,
 // for a box within another). A setting with a
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
-// overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. UMD, so Jest can load it.
+// overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. On a phone the thumbnail
+// is a Preview link (main.css). A setting's More button shows the rest of its description, and Less hides it again.
+// UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
     var api = factory(node ? require("./core") : root.TweakUI);
@@ -131,6 +133,14 @@
         });
     }
 
+    // A link acting as a button: a click, Enter or Space runs fn and leaves the address (its hash picks the category) alone
+    function pressed(link, fn) {
+        link.addEventListener("click", function (e) { e.preventDefault(); fn(); });
+        link.addEventListener("keydown", function (e) {
+            if (e.key === " " || e.keyCode === 32) { e.preventDefault(); fn(); }
+        });
+    }
+
     // The overlay showing a screenshot full size; closing it gives the focus back to the thumbnail
     function enlarge(doc, button) {
         var overlay = doc.createElement("div"), backdrop = doc.createElement("div"), figure = doc.createElement("figure");
@@ -175,8 +185,10 @@
             var label = box.querySelector("label");
             var name = label ? label.textContent.replace(/\s+/g, " ").trim()
                 : (box.closest("section") && box.closest("section").querySelector("h4").textContent.trim());
-            var button = doc.createElement("button"), img = doc.createElement("img");
-            button.type = "button";
+            // A link acting as a button, so a phone's Preview link takes the theme's link colour
+            var button = doc.createElement("a"), img = doc.createElement("img"), text = doc.createElement("span");
+            button.href = "#";
+            button.setAttribute("role", "button");
             button.className = "tweakui-preview theme-border";
             button.setAttribute("title", name);
             img.src = base + box.getAttribute("data-preview") + ".webp";
@@ -186,10 +198,27 @@
                 button.hidden = true;
                 box.className = box.className.replace(/\s*\btweakui-has-preview\b/, "");
             });
+            text.className = "tweakui-preview-text";
+            text.textContent = "Preview";
             button.appendChild(img);
-            button.addEventListener("click", function () { enlarge(doc, button); });
+            button.appendChild(text);
+            pressed(button, function () { enlarge(doc, button); });
             box.appendChild(button);
             box.className += " tweakui-has-preview";
+        });
+    }
+
+    // More shows the rest of a setting's description under its summary, then reads Less
+    function addMore(page) {
+        each(page.querySelectorAll(".tweakui-more-toggle"), function (button) {
+            pressed(button, function () {
+                var more = page.querySelector("#" + button.getAttribute("aria-controls"));
+                if (!more) return;
+                var open = more.hidden;
+                more.hidden = !open;
+                button.setAttribute("aria-expanded", String(open));
+                button.textContent = open ? "Less" : "More";
+            });
         });
     }
 
@@ -219,6 +248,7 @@
         showSection(page, win.location.hash);
         applyDepends(page);
         addPreviews(page, doc);
+        addMore(page);
         inertSample(page, win);
         // A save that reloaded the page
         var store = storage(win);
@@ -267,5 +297,5 @@
     }
 
     return {start: start, showSection: showSection, save: save, applyDepends: applyDepends,
-        addPreviews: addPreviews, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
+        addPreviews: addPreviews, addMore: addMore, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
 });

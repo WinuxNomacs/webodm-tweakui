@@ -85,8 +85,8 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-editor-buttons [data-editor=delete] { margin-left: auto; }
 .tweakui-swatch { display: inline-flex; border-width: 1px; border-style: solid; border-radius: 3px; overflow: hidden; flex: none; }
 .tweakui-swatch i { display: block; width: 14px; height: 22px; }
-/* A setting's preview (settings_page.js): a thumbnail right of its name and description, under them on a phone;
-   a click shows it full size in an overlay, over Bootstrap's modal backdrop */
+/* A setting's preview (settings_page.js): a thumbnail right of its name and description, a Preview link under them on
+   a phone; a click shows it full size in an overlay, over Bootstrap's modal backdrop */
 /* Settings > Themes > Sample: WebODM's own controls in the current theme, in two columns (one on a phone) */
 .tweakui-settings .tweakui-theme-groups ~ .tweakui-group { margin-top: 16px; }
 .tweakui-settings .tweakui-sample-group { border-width: 2px; }
@@ -101,9 +101,13 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 .tweakui-settings .tweakui-has-preview > :not(.tweakui-preview) { grid-column: 1; }
 .tweakui-settings .tweakui-intro { margin-bottom: 12px; }
 .tweakui-settings .tweakui-intro p { margin: 0; }
-.tweakui-settings .tweakui-preview { grid-column: 2; grid-row: 1 / span 3; padding: 2px; border-width: 1px; border-style: solid; border-radius: 4px; background: transparent; cursor: zoom-in; line-height: 0; }
+.tweakui-settings .tweakui-preview { grid-column: 2; grid-row: 1 / span 3; padding: 2px; border-width: 1px; border-style: solid; border-radius: 4px; background: transparent; cursor: zoom-in; line-height: 0; display: inline-block; }
 .tweakui-settings .tweakui-preview img { display: block; width: 160px; height: 90px; object-fit: cover; object-position: top left; border-radius: 2px; }
 .tweakui-settings .tweakui-preview:hover, .tweakui-settings .tweakui-preview:focus { border-color: currentColor; }
+.tweakui-settings .tweakui-preview-text { display: none; }
+/* A setting's More button: a link at the end of its summary; the rest of its description under it */
+.tweakui-settings .tweakui-more-toggle { white-space: nowrap; }
+.tweakui-settings .tweakui-setting p.tweakui-more { margin-top: 4px; }
 .tweakui-preview-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 40px; cursor: zoom-out; }
 .tweakui-preview-overlay .modal-backdrop { position: absolute; z-index: 0; }
 .tweakui-preview-overlay figure { position: relative; z-index: 1; margin: 0; max-width: 100%; max-height: 100%; padding: 8px; border-width: 1px; border-style: solid; border-radius: 4px; display: flex; flex-direction: column; }
@@ -118,9 +122,10 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
     .tweakui-settings .tweakui-nav a { border-right: 0; border-bottom: 3px solid transparent; }
     .tweakui-settings .tweakui-nav a.active { border-bottom-color: currentColor; }
     .tweakui-settings .tweakui-has-preview { grid-template-columns: minmax(0, 1fr); }
-    .tweakui-settings .tweakui-preview { grid-column: 1; grid-row: auto; justify-self: start; margin: 8px 0 0 20px; }
+    .tweakui-settings .tweakui-preview { grid-column: 1; grid-row: auto; justify-self: start; margin: 4px 0 0 20px; padding: 0; border: 0; line-height: inherit; cursor: pointer; }
     .tweakui-settings .tweakui-intro .tweakui-preview { margin-left: 0; }
-    .tweakui-settings .tweakui-preview img { width: 240px; height: 135px; }
+    .tweakui-settings .tweakui-preview img { display: none; }
+    .tweakui-settings .tweakui-preview-text { display: inline; }
 }
 
 /* The header's theme menu (theme_menu.js): beside the user icon, a list of swatches and names, the current one
