@@ -1789,6 +1789,116 @@ class TestPerformance(TweakUITestCase):
                 mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"):
             self.assertIsNone(performance.cpu_entry())
 
+    def write_process(self, proc, pid, name, cpu_ticks, start, rss_pages):
+        """A process in a fake /proc: its stat line (utime split over utime and stime)"""
+        os.makedirs(os.path.join(proc, str(pid)), exist_ok=True)
+        fields = ["S"] + ["0"] * 10 + [str(cpu_ticks - cpu_ticks // 4), str(cpu_ticks // 4)] + ["0"] * 6 + \
+            [str(start), "0", str(rss_pages), "0"]
+        with open(os.path.join(proc, str(pid), "stat"), "w") as f:
+            f.write("%d (%s) %s\n" % (pid, name, " ".join(fields)))
+
+    def test_process_view_takes_cpu_from_two_readings_of_proc_and_doesnt_take_a_reused_pid_for_the_old_process(self):
+        from coreplugins.tweakui import performance
+        proc = tempfile.mkdtemp(suffix="-proc")
+        sysconf = {"SC_CLK_TCK": 100, "SC_PAGE_SIZE": 4096}
+        try:
+            self.write_process(proc, 10, "web (odd) name", 100, 5, 1000)
+            self.write_process(proc, 11, "busy", 50, 6, 10)
+            self.write_process(proc, 12, "gone", 10, 7, 500)
+            os.makedirs(os.path.join(proc, "13"))  # ended while it was read: no stat
+            os.makedirs(os.path.join(proc, "self"))
+
+            def details(pid):
+                return ("cmd %d" % pid, "u%d" % pid)
+
+            with mock.patch("coreplugins.tweakui.performance.os.sysconf", side_effect=sysconf.get), \
+                    mock.patch.dict(performance._process_last, {"at": None, "times": {}}):
+                first = performance.process_tops(performance.linux_processes(proc), details, now=1000)
+                # Not yet: CPU needs an earlier reading; memory largest first
+                self.assertIsNone(first["cpu"])
+                self.assertEqual([(p["pid"], p["rss"]) for p in first["memory"]], [(10, 4096000), (12, 2048000), (11, 40960)])
+                self.assertEqual(first["memory"][0], {"pid": 10, "name": "web (odd) name", "command": "cmd 10", "user": "u10",
+                                                      "cpu": None, "rss": 4096000})
+                # Two seconds later: 10 used 2 s of CPU (100% of a core), 11 is a new process with the same pid, 12 ended
+                self.write_process(proc, 10, "web (odd) name", 300, 5, 1000)
+                self.write_process(proc, 11, "busy", 60, 99, 10)
+                shutil.rmtree(os.path.join(proc, "12"))
+                self.write_process(proc, 14, "new", 20, 100, 1)
+                second = performance.process_tops(performance.linux_processes(proc), details, now=1002)
+                self.assertEqual([(p["pid"], p["cpu"]) for p in second["cpu"]], [(10, 100.0)])
+                self.assertEqual([(p["pid"], p["cpu"]) for p in second["memory"]], [(10, 100.0), (11, None), (14, None)])
+                # A reading older than PROCESS_KEEP isn't compared with
+                late = performance.process_tops(performance.linux_processes(proc), details, now=1002 + performance.PROCESS_KEEP + 1)
+                self.assertIsNone(late["cpu"])
+                # At most PROCESS_TOP in each, the details read only for those shown
+                for pid in range(20, 32):
+                    self.write_process(proc, pid, "many", pid, pid, pid)
+                performance.process_tops(performance.linux_processes(proc), details, now=1070)
+                asked = []
+                many = performance.process_tops(performance.linux_processes(proc), lambda pid: asked.append(pid) or ("", ""),
+                                                now=1072)
+                self.assertEqual(len(many["memory"]), performance.PROCESS_TOP)
+                self.assertEqual(len(many["cpu"]), performance.PROCESS_TOP)
+                self.assertEqual(len(asked), len(set(asked)))
+                self.assertLessEqual(len(asked), 2 * performance.PROCESS_TOP)
+        finally:
+            shutil.rmtree(proc)
+
+    def test_process_view_reads_a_linux_process_s_command_line_and_user_and_whether_the_server_is_in_a_container(self):
+        from coreplugins.tweakui import performance
+        proc = tempfile.mkdtemp(suffix="-proc")
+        try:
+            os.makedirs(os.path.join(proc, "5"))
+            with open(os.path.join(proc, "5", "cmdline"), "wb") as f:
+                f.write(b"python3\0manage.py\0runserver\0\xff\0")
+            with open(os.path.join(proc, "5", "status"), "w") as f:
+                f.write("Name:\tpython3\nUid:\t0\t0\t0\t0\n")
+            self.assertEqual(performance.linux_details(5, proc), ("python3 manage.py runserver �", "root"))
+            with open(os.path.join(proc, "5", "status"), "w") as f:
+                f.write("Uid:\t4242424\t0\t0\t0\n")
+            self.assertEqual(performance.linux_details(5, proc)[1], "4242424")
+            self.assertEqual(performance.linux_details(6, proc), ("", ""))
+            marker, cgroup = os.path.join(proc, "dockerenv"), os.path.join(proc, "cgroup")
+            self.assertFalse(performance.in_container(marker, cgroup))
+            with open(cgroup, "w") as f:
+                f.write("0::/\n")
+            self.assertFalse(performance.in_container(marker, cgroup))
+            with open(cgroup, "w") as f:
+                f.write("0::/system.slice/docker-0123.scope\n")
+            self.assertTrue(performance.in_container(marker, cgroup))
+            os.remove(cgroup)
+            open(marker, "w").close()
+            self.assertTrue(performance.in_container(marker, cgroup))
+            with mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"):
+                self.assertFalse(performance.in_container(marker, cgroup))
+        finally:
+            shutil.rmtree(proc)
+
+    def test_process_view_is_listed_on_windows_through_its_own_reader_and_none_where_processes_can_t_be_read(self):
+        from coreplugins.tweakui import performance
+        reading = [{"key": (4, 1), "pid": 4, "name": "odx.exe", "cpu_seconds": 1.0, "rss": 10}]
+        with mock.patch("coreplugins.tweakui.performance.sys.platform", "win32"), \
+                mock.patch("coreplugins.tweakui.performance.windows_processes", return_value=reading), \
+                mock.patch("coreplugins.tweakui.performance.windows_details", return_value=("odx.exe run", "PC\\me")), \
+                mock.patch.dict(performance._process_last, {"at": None, "times": {}}):
+            entry = performance.processes_entry()
+        self.assertEqual(entry, {"cpu": None, "container": False, "memory": [
+            {"pid": 4, "name": "odx.exe", "command": "odx.exe run", "user": "PC\\me", "cpu": None, "rss": 10}]})
+        with mock.patch("coreplugins.tweakui.performance.linux_processes", side_effect=OSError("no /proc")), \
+                mock.patch("coreplugins.tweakui.performance.sys.platform", "linux"):
+            self.assertIsNone(performance.processes_entry())
+
+    def test_only_a_superuser_gets_process_view_s_processes_with_the_live_figures(self):
+        sample = {"cpu": None, "memory": [], "container": True}
+        with mock.patch("coreplugins.tweakui.performance.processes_entry", return_value=sample) as entry:
+            self.assertNotIn("processes", self.live("?processes=1"))
+            admin = self.login("testsuperuser")
+            self.patch({"performance_view": True}, client=admin)
+            self.client = admin
+            self.assertNotIn("processes", self.live())
+            self.assertEqual(self.live("?disk=1&processes=1")["processes"], sample)
+        entry.assert_called_once()
+
     def test_linux_disk_counters_are_each_mounted_disk_named_by_its_mount_points_with_the_tasks_drive_first(self):
         from coreplugins.tweakui import performance
         mounts = ("1650 1075 0:147 / / rw,relatime - overlay overlay rw,lowerdir=/x\n"

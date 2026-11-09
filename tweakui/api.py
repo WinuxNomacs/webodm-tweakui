@@ -235,13 +235,16 @@ class PerformanceView(APIView):
 
 
 class PerformanceLiveView(APIView):
-    """GET /api/plugins/tweakui/performance/live[?disk=1]: what the Performance page refreshes every few seconds,
-    the server's CPU counters and memory, the nodes' memory and, when asked, the disk (performance.live)"""
+    """GET /api/plugins/tweakui/performance/live[?disk=1][&processes=1]: what the Performance page refreshes every few
+    seconds, the server's CPU counters and memory, the nodes' memory and, when asked, the disk and, for a superuser
+    only (command lines can hold passwords and other users' work), Process View's processes (performance.live)"""
     permission_classes = (Available,)
     feature = "performance_view"
 
     def get(self, request):
-        return Response(performance.live(request.user, disk=request.query_params.get("disk") == "1"))
+        query = request.query_params
+        return Response(performance.live(request.user, disk=query.get("disk") == "1",
+                                         processes=query.get("processes") == "1" and request.user.is_superuser))
 
 
 class RemovePhotosView(APIView):

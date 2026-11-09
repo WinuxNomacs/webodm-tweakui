@@ -3,14 +3,25 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
-   branch `perf-process-view`.
+- Nothing planned: new requests go in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: Process View** (new.md, 2026-11-09) — branch `perf-process-view`: `performance.py`
+  (`linux_processes`/`linux_details` from `/proc`, `windows_processes`/`windows_details` through ctypes,
+  `process_tops`: CPU from the last reading kept per server process for 60 s by pid and start time, details read only
+  for the rows shown; `in_container`; `live(processes=)`), `api.py` (`PerformanceLiveView`: `?processes=1` for
+  superusers only), `performance_page.js` (`processViewHtml`, `processesHtml`; on or off in session storage, asked at
+  once when turned on, then with each refresh; Copy Command Line), `main.css`, `features.py` (the description). Tests:
+  `test_tweakui.py` (4: two readings of a fake `/proc` with a reused pid, a vanished process, expiry and the top 10;
+  command line, user and container; Windows' reader chosen and an unreadable server; superusers only),
+  `performance_page.test.js` (3). Docs `performance.md` (Process View), README, CHANGELOG, screenshots `performance`
+  and the new `performance-processes`. Live on 4.0.0 and 3.3.2 (the container's processes, phone width, on after a
+  reload); the Windows reader run with WebODM's Windows Python (274 processes, command lines and users read), not yet
+  in the Windows app (it needs a new zip and a restart).
 - **Performance View: an Actions menu on each task** (new.md, 2026-11-09) — branch `perf-task-actions`:
   `performance.py` (`task_entry`'s `can_restart`, by `can_restart`: WebODM's Restart rules and nothing pending, and
   `report`), `performance_page.js` (`actionsHtml`, its items in alphabetical order; the menu opened by the page's own script, `position: fixed` by its
@@ -860,7 +871,11 @@ and a compacted task), Jest (the menu's items by those fields; the restart's two
 the restart checked on a task created for the check ("Live check restart", a few of the sample photos), deleted
 afterwards; the menu at phone width.
 
-### Phase 3: Process View (branch `perf-process-view`)
+### Phase 3: Process View (branch `perf-process-view`) — done
+
+Built as planned, except: the page's superuser flag is the report's `admin` (`is_admin` is `is_superuser`), and the
+command line and user are read only for the processes shown (Windows has hundreds).
+
 
 Under the server's card and its Disk Activity, a **Process View** button (superusers only; `aria-pressed`, its state
 kept in the browser tab's session storage like the graphs, off at first). On, it opens two tables, **Top 10 by CPU**

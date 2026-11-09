@@ -13,6 +13,7 @@ import os
 import shutil
 import statistics
 import sys
+import threading
 import time
 from concurrent.futures import ThreadPoolExecutor
 
@@ -313,6 +314,231 @@ def disk_io_entry():
     return {"time": round(time.monotonic(), 3), "drives": drives}
 
 
+# Process View: the top processes by CPU and by memory, at most this many each; CPU is the difference between two
+# readings, the last kept in this server process's memory (each of WebODM's worker processes keeps its own) for at most
+# PROCESS_KEEP seconds, keyed by pid and start time so a pid used again isn't taken for the old process
+PROCESS_TOP, PROCESS_KEEP, COMMAND_MAX = 10, 60, 2000
+_process_last = {"at": None, "times": {}}
+_process_lock = threading.Lock()
+
+
+def linux_processes(proc="/proc"):
+    """Every process Linux lets the server see, as [{key, pid, name, cpu_seconds, rss}] (rss in bytes); a process that
+    ends while it is read is skipped"""
+    ticks, page = os.sysconf("SC_CLK_TCK"), os.sysconf("SC_PAGE_SIZE")
+    out = []
+    for entry in os.listdir(proc):
+        if not entry.isdigit():
+            continue
+        try:
+            with open(os.path.join(proc, entry, "stat"), encoding="utf-8", errors="replace") as f:
+                line = f.read()
+        except OSError:
+            continue
+        # pid (name) state ...: the name may hold spaces and brackets, the fields after it don't
+        head, _sep, tail = line.rpartition(")")
+        fields = tail.split()
+        if len(fields) < 22:
+            continue
+        # utime and stime are fields 14 and 15, the start time 22 and rss (in pages) 24; fields[0] is field 3
+        out.append({"key": (int(entry), int(fields[19])), "pid": int(entry), "name": head.partition("(")[2],
+                    "cpu_seconds": (int(fields[11]) + int(fields[12])) / ticks, "rss": int(fields[21]) * page})
+    return out
+
+
+def linux_details(pid, proc="/proc"):
+    """A Linux process's command line and user's name (or uid), "" where they can't be read"""
+    base = os.path.join(proc, str(pid))
+    command = user = ""
+    try:
+        with open(os.path.join(base, "cmdline"), "rb") as f:
+            command = " ".join(p.decode("utf-8", "replace") for p in f.read().split(b"\0") if p)
+    except OSError:
+        pass
+    try:
+        with open(os.path.join(base, "status"), encoding="utf-8", errors="replace") as f:
+            uid = next((line.split()[1] for line in f if line.startswith("Uid:")), "")
+    except OSError:
+        uid = ""
+    if uid:
+        import pwd
+        try:
+            user = pwd.getpwuid(int(uid)).pw_name
+        except (KeyError, ValueError):
+            user = uid
+    return command, user
+
+
+def _windows_api():
+    """The Windows functions and structures Process View uses, through ctypes as the CPU's counters"""
+    import ctypes
+    from ctypes import wintypes
+
+    class PROCESSENTRY32W(ctypes.Structure):
+        _fields_ = [("dwSize", wintypes.DWORD), ("cntUsage", wintypes.DWORD), ("th32ProcessID", wintypes.DWORD),
+                    ("th32DefaultHeapID", ctypes.c_size_t), ("th32ModuleID", wintypes.DWORD),
+                    ("cntThreads", wintypes.DWORD), ("th32ParentProcessID", wintypes.DWORD),
+                    ("pcPriClassBase", ctypes.c_long), ("dwFlags", wintypes.DWORD),
+                    ("szExeFile", ctypes.c_wchar * 260)]
+
+    class PROCESS_MEMORY_COUNTERS(ctypes.Structure):
+        _fields_ = [("cb", wintypes.DWORD), ("PageFaultCount", wintypes.DWORD)] + [(n, ctypes.c_size_t) for n in (
+            "PeakWorkingSetSize", "WorkingSetSize", "QuotaPeakPagedPoolUsage", "QuotaPagedPoolUsage",
+            "QuotaPeakNonPagedPoolUsage", "QuotaNonPagedPoolUsage", "PagefileUsage", "PeakPagefileUsage")]
+
+    class UNICODE_STRING(ctypes.Structure):
+        _fields_ = [("Length", wintypes.USHORT), ("MaximumLength", wintypes.USHORT), ("Buffer", ctypes.c_void_p)]
+
+    kernel32 = ctypes.windll.kernel32
+    kernel32.CreateToolhelp32Snapshot.restype = wintypes.HANDLE
+    kernel32.OpenProcess.restype = wintypes.HANDLE
+    return ctypes, wintypes, kernel32, PROCESSENTRY32W, PROCESS_MEMORY_COUNTERS, UNICODE_STRING
+
+
+# OpenProcess's right to ask a process's times, memory and command line (any user's but protected ones')
+PROCESS_QUERY_LIMITED = 0x1000
+
+
+def windows_processes():
+    """Every process Windows lets the server open, as linux_processes gives them (rss: the working set); one that
+    can't be opened or ends while it is read is skipped"""
+    ctypes, wintypes, kernel32, PROCESSENTRY32W, PROCESS_MEMORY_COUNTERS, _u = _windows_api()
+
+    def value(t):
+        return (t.dwHighDateTime << 32) | t.dwLowDateTime
+
+    snapshot = kernel32.CreateToolhelp32Snapshot(2, 0)  # TH32CS_SNAPPROCESS
+    if not snapshot or snapshot == wintypes.HANDLE(-1).value:
+        raise OSError("no process snapshot")
+    listed = []
+    try:
+        entry = PROCESSENTRY32W()
+        entry.dwSize = ctypes.sizeof(entry)
+        more = kernel32.Process32FirstW(wintypes.HANDLE(snapshot), ctypes.byref(entry))
+        while more:
+            listed.append((entry.th32ProcessID, entry.szExeFile))
+            more = kernel32.Process32NextW(wintypes.HANDLE(snapshot), ctypes.byref(entry))
+    finally:
+        kernel32.CloseHandle(wintypes.HANDLE(snapshot))
+    out = []
+    for pid, name in listed:
+        if not pid:
+            continue  # the System Idle Process: the machine's idle time
+        handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED, False, pid)
+        if not handle:
+            continue
+        handle = wintypes.HANDLE(handle)
+        try:
+            created, ended, kernel, user = (wintypes.FILETIME() for _i in range(4))
+            if not kernel32.GetProcessTimes(handle, ctypes.byref(created), ctypes.byref(ended), ctypes.byref(kernel),
+                                            ctypes.byref(user)):
+                continue
+            memory = PROCESS_MEMORY_COUNTERS()
+            memory.cb = ctypes.sizeof(memory)
+            rss = memory.WorkingSetSize if kernel32.K32GetProcessMemoryInfo(handle, ctypes.byref(memory),
+                                                                            memory.cb) else 0
+            # Times are in 100 ns
+            out.append({"key": (pid, value(created)), "pid": pid, "name": name,
+                        "cpu_seconds": (value(kernel) + value(user)) / 1e7, "rss": rss})
+        finally:
+            kernel32.CloseHandle(handle)
+    return out
+
+
+def windows_details(pid):
+    """A Windows process's command line (NtQueryInformationProcess's ProcessCommandLineInformation, Windows 8.1 and
+    later) and user (its token's account, DOMAIN\\name), "" where they can't be read"""
+    ctypes, wintypes, kernel32, _p, _m, UNICODE_STRING = _windows_api()
+    handle = kernel32.OpenProcess(PROCESS_QUERY_LIMITED, False, pid)
+    if not handle:
+        return "", ""
+    handle = wintypes.HANDLE(handle)
+    command = user = ""
+    try:
+        ntdll, size = ctypes.windll.ntdll, wintypes.ULONG()
+        ntdll.NtQueryInformationProcess(handle, 60, None, 0, ctypes.byref(size))
+        if size.value:
+            buf = ctypes.create_string_buffer(size.value)
+            if ntdll.NtQueryInformationProcess(handle, 60, buf, size, ctypes.byref(size)) == 0:
+                text = UNICODE_STRING.from_buffer(buf)
+                if text.Buffer:
+                    command = ctypes.wstring_at(text.Buffer, text.Length // 2)
+        advapi32, token = ctypes.windll.advapi32, wintypes.HANDLE()
+        if advapi32.OpenProcessToken(handle, 8, ctypes.byref(token)):  # TOKEN_QUERY
+            try:
+                size = wintypes.DWORD()
+                advapi32.GetTokenInformation(token, 1, None, 0, ctypes.byref(size))  # TokenUser
+                buf = ctypes.create_string_buffer(size.value or 1)
+                if size.value and advapi32.GetTokenInformation(token, 1, buf, size, ctypes.byref(size)):
+                    sid = ctypes.c_void_p.from_buffer(buf)  # TOKEN_USER starts with the SID's address
+                    name, domain = ctypes.create_unicode_buffer(256), ctypes.create_unicode_buffer(256)
+                    nlen, dlen, use = wintypes.DWORD(256), wintypes.DWORD(256), wintypes.DWORD()
+                    if advapi32.LookupAccountSidW(None, sid, name, ctypes.byref(nlen), domain, ctypes.byref(dlen),
+                                                  ctypes.byref(use)):
+                        user = (domain.value + "\\" if domain.value else "") + name.value
+            finally:
+                kernel32.CloseHandle(token)
+    finally:
+        kernel32.CloseHandle(handle)
+    return command, user
+
+
+def in_container(dockerenv="/.dockerenv", cgroup="/proc/1/cgroup"):
+    """Whether WebODM's server runs in a container (Docker's marker file, or the first process's control groups)"""
+    if sys.platform == "win32":
+        return False
+    if os.path.exists(dockerenv):
+        return True
+    try:
+        with open(cgroup, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return False
+    return any(word in text for word in ("docker", "kubepods", "containerd", "lxc"))
+
+
+def process_tops(readings, details, now=None):
+    """The top PROCESS_TOP processes by CPU and by memory from a reading (linux_processes'), with their command line
+    and user (details(pid)): {cpu: [...] or None while there is no earlier reading to compare with, memory: [...]},
+    each {pid, name, command, user, cpu (% of one core, as top shows it, or None for a process new since the last
+    reading), rss}. The reading is kept for the next one"""
+    now = time.monotonic() if now is None else now
+    times = {r["key"]: r["cpu_seconds"] for r in readings}
+    with _process_lock:
+        at, before = _process_last["at"], _process_last["times"]
+        _process_last.update(at=now, times=times)
+    elapsed = now - at if at is not None else 0
+    fresh = 0 < elapsed <= PROCESS_KEEP
+    for r in readings:
+        old = before.get(r["key"]) if fresh else None
+        r["cpu"] = None if old is None else round(max(r["cpu_seconds"] - old, 0) / elapsed * 100, 1)
+    by_memory = sorted(readings, key=lambda r: (-r["rss"], r["pid"]))[:PROCESS_TOP]
+    by_cpu = sorted((r for r in readings if r["cpu"] is not None), key=lambda r: (-r["cpu"], -r["rss"], r["pid"]))
+    by_cpu = by_cpu[:PROCESS_TOP] if fresh else None
+    shown = {}
+    for r in (by_cpu or []) + by_memory:
+        if r["pid"] not in shown:
+            command, user = details(r["pid"])
+            shown[r["pid"]] = {"pid": r["pid"], "name": r["name"], "command": command[:COMMAND_MAX], "user": user,
+                               "cpu": r["cpu"], "rss": r["rss"]}
+    return {"cpu": None if by_cpu is None else [shown[r["pid"]] for r in by_cpu],
+            "memory": [shown[r["pid"]] for r in by_memory]}
+
+
+def processes_entry():
+    """Process View: the processes WebODM's server can see (process_tops), with whether it runs in a container (where
+    that is its own container's only), or None where they can't be read"""
+    try:
+        if sys.platform == "win32":
+            tops = process_tops(windows_processes(), windows_details)
+        else:
+            tops = process_tops(linux_processes(), linux_details)
+    except (OSError, ValueError, AttributeError):
+        return None
+    tops["container"] = in_container()
+    return tops
+
+
 def server_entry():
     """The disk WebODM keeps its tasks on and the server's memory, in bytes, and its CPU and disk counters"""
     memory = memory_stats()
@@ -320,9 +546,10 @@ def server_entry():
             "disk_io": disk_io_entry()}
 
 
-def live(user, disk=False):
+def live(user, disk=False, processes=False):
     """What the Performance page refreshes every few seconds: the server's CPU and disk counters and memory, each node's memory
-    (the nodes the user may use, asked as for the report), and the disk when asked"""
+    (the nodes the user may use, asked as for the report), and the disk and Process View's processes when asked (the
+    caller checks the user may see those)"""
     memory = memory_stats()
     out = {
         "cpu": cpu_entry(), "memory": memory if memory.get("total") else None, "disk_io": disk_io_entry(),
@@ -331,6 +558,8 @@ def live(user, disk=False):
     }
     if disk:
         out["disk"] = disk_entry()
+    if processes:
+        out["processes"] = processes_entry()
     return out
 
 

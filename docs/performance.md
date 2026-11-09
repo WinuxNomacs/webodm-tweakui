@@ -85,6 +85,34 @@ The counters are for each whole disk, whatever uses it. In Docker they are the d
 Windows and macOS, Docker's own virtual machine's), so the processing node's and the worker's work on the same disk
 counts too.
 
+### Process View
+
+For superusers only: under the server's cards, a **Process View** button opens two tables of the processes WebODM's
+server can see, **Top 10 by CPU** above **Top 10 by Memory**, the highest first. Other users get no button, and the
+plugin's API gives them no processes: a command line can hold passwords, tokens or other users' work.
+
+![Process View in WebODM's Docker install: the web container's processes by CPU and by memory](../tweakui/public/previews/performance-processes.webp)
+
+Each process has its **PID**, its **Command** (the program's name, as top shows it), its **Command Line** (on one
+line, cut short; hover it to read it whole, or copy it with the button beside it), its **User**, its **CPU** and its
+**Memory**. CPU is the share of one core since the last refresh, as top shows it (a process using four cores reads
+400%); hover it for its share of all the cores. Memory is what the process holds in memory (its resident size, or
+working set on Windows) and its share of the machine's. A process whose command line can't be read (a kernel thread,
+or another user's protected process) says so.
+
+The tables refresh with CPU Load, every [Refresh Every](#refresh-every) seconds. CPU is the difference between two
+readings, so when Process View opens it lists memory first and CPU from the next refresh. The button stays on for the
+browser tab (its session storage), over a reload, until you turn it off; it starts off in a new tab. While it is off,
+nothing about processes is read.
+
+What the server can see depends on how WebODM runs:
+
+- **In Docker** (WebODM's usual install), its own container only: the web server, the worker and their helpers. The
+  processing node runs in its own container, so ODM's work isn't listed, although CPU Load and Disk Activity count it.
+  The page says so above the tables.
+- **WebODM's Windows app and native installs**: every process on the machine that WebODM's user may open, the
+  processing node's too while a task runs. Reading a Windows process's command line needs Windows 8.1 or later.
+
 ### Graphs
 
 Each live figure has a graph of its readings since the page opened, the newest at the right, over the last [History
