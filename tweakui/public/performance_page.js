@@ -29,6 +29,9 @@
     // The graphs: the readings kept (History Length's longest), the drawing's size (stretched to the card's width), and
     // a line broken where readings stopped for this many refreshes (the tab hidden), or at least this long
     var HISTORY_KEEP = 30 * 60000, GRAPH_W = 300, GRAPH_H = 44, GAP_REFRESHES = 3, GAP_MIN = 15000;
+    // The readings kept for the tab over a reload (sessionStorage): the key, saved at most this often while the page is
+    // open (and when it is hidden or left)
+    var SAVED_KEY = "tweakui.performance.readings", SAVE_EVERY = 5000;
     // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
     var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
     var FT = 3.28083989501, FT2_ACRE = 43560;
@@ -126,6 +129,34 @@
         var list = history[key] || (history[key] = []);
         list.push([time, value]);
         while (list.length && list[0][0] < time - HISTORY_KEEP) list.shift();
+    }
+
+    // What the page keeps over a reload: its readings (values rounded, which is all a graph shows) and the last CPU and
+    // disk counters, with when they were saved
+    function packReadings(state, now) {
+        var history = {};
+        Object.keys(state.history).forEach(function (key) {
+            history[key] = state.history[key].map(function (p) { return [p[0], Math.round(p[1] * 10000) / 10000]; });
+        });
+        return {at: now, history: history, cpu: state.cpu, io: state.io};
+    }
+
+    // What packReadings kept, read back at now: {history, cpu, io}, the readings older than HISTORY_KEEP dropped, and the
+    // counters only when they were saved within gap ms (else a load would span the time the page was closed); null for
+    // anything else (none saved, or not what packReadings writes)
+    function unpackReadings(data, now, gap) {
+        if (!data || typeof data !== "object" || typeof data.at !== "number" || !data.history || typeof data.history !== "object") return null;
+        var history = {};
+        Object.keys(data.history).forEach(function (key) {
+            var list = data.history[key];
+            if (!Array.isArray(list)) return;
+            list = list.filter(function (p) {
+                return Array.isArray(p) && typeof p[0] === "number" && typeof p[1] === "number" && p[0] >= now - HISTORY_KEEP && p[0] <= now;
+            });
+            if (list.length) history[key] = list;
+        });
+        var recent = now - data.at >= 0 && now - data.at <= gap;
+        return {history: history, cpu: recent && data.cpu ? data.cpu : null, io: recent && data.io ? data.io : null};
     }
 
     // A scale's top for the highest value: 1, 2 or 5 times a power of ten, at least 1
@@ -688,6 +719,34 @@
             seconds: EVERY_DEFAULT, minutes: HISTORY_DEFAULT, diskAt: 0, timer: null, busy: false,
             looping: false, stopped: false};
 
+        // The readings this tab kept before a reload (sessionStorage: a new tab starts fresh, closing it forgets them);
+        // storage that can't be used (a private window, blocked) starts empty
+        var savedAt = 0;
+        function saveReadings(force) {
+            var now = Date.now();
+            if (!force && now - savedAt < SAVE_EVERY) return;
+            savedAt = now;
+            try {
+                win.sessionStorage.setItem(SAVED_KEY, JSON.stringify(packReadings(state, now)));
+            } catch (e) {
+                // Full or blocked: this save is skipped
+            }
+        }
+
+        function restoreReadings() {
+            var saved;
+            try {
+                saved = JSON.parse(win.sessionStorage.getItem(SAVED_KEY) || "null");
+            } catch (e) {
+                return;
+            }
+            var back = unpackReadings(saved, Date.now(), view().gap);
+            if (!back) return;
+            state.history = back.history;
+            state.cpu = back.cpu;
+            state.io = back.io;
+        }
+
         function ask(path) {
             return fetchFn(api + path, {credentials: "same-origin"}).then(function (res) {
                 if (!res.ok) throw new Error(res.status);
@@ -720,6 +779,7 @@
             (nodes || []).forEach(function (n) {
                 if (n.online && n.total_memory) record(h, "node:" + n.id, now, (n.total_memory - n.available_memory) / n.total_memory);
             });
+            saveReadings(false);
         }
 
         // The hovered graph's readings under the pointer (state.hover: {id, at: 0 to 1 across}), again after a redraw
@@ -837,12 +897,19 @@
             if (state.report) redrawLive();
         }, fetchFn);
         if (length) state.minutes = length.value;
+        // After Refresh Every is known: the counters are taken back only within the gap it gives
+        restoreReadings();
 
         var onVisibility = ui.guard(NAME, function () {
-            if (doc.hidden) schedule(0);
-            else if (state.looping && !state.busy) schedule(0);
+            if (doc.hidden) {
+                schedule(0);
+                saveReadings(true);
+            } else if (state.looping && !state.busy) schedule(0);
         });
         doc.addEventListener("visibilitychange", onVisibility);
+        // Leaving the page or reloading it: the latest readings kept
+        var onLeave = ui.guard(NAME, function () { saveReadings(true); });
+        win.addEventListener("pagehide", onLeave);
 
         // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
         var onUnits = ui.guard(NAME, function () {
@@ -857,6 +924,7 @@
             state.stopped = true;
             schedule(0);
             doc.removeEventListener("visibilitychange", onVisibility);
+            win.removeEventListener("pagehide", onLeave);
             doc.removeEventListener(UNIT_EVENT, onUnits);
             win.removeEventListener("scroll", hideThumb, true);
         }
@@ -993,6 +1061,6 @@
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, assessmentHtml: assessmentHtml, tasksSummary: tasksSummary, formatArea: formatArea, formatLength: formatLength,
         tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
-        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip, spanText: spanText,
+        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip, spanText: spanText, packReadings: packReadings, unpackReadings: unpackReadings,
         record: record, niceCeil: niceCeil};
 });
