@@ -425,13 +425,15 @@
         return html + '<div class="tweakui-performance-cards">' + nodes.map(function (n) { return nodeHtml(n, view); }).join("") + "</div>";
     }
 
-    // CPU Load (the total of all cores) once two readings give it, and the load averages where the system keeps them
-    function cpuRows(cpu, load, view) {
+    // CPU Load (the total of all cores) once two readings give it, and the load averages where the system keeps them;
+    // of so many threads when the CPU's row (system) says it has fewer cores than threads
+    function cpuRows(cpu, load, view, system) {
         if (!cpu) return "";
-        var cores = cpu.cores || 0, rows;
+        var cores = cpu.cores || 0, rows, s = system && system.cpu;
+        var unit = s && s.cores && s.threads && s.cores !== s.threads ? ["thread", "threads"] : ["core", "cores"];
         if (load && load.total !== null) {
             rows = rowHtml("CPU Load", '<span data-cpu-total>' + percent(load.total) + "</span>" +
-                (cores ? ' <span class="text-muted">of ' + cores + (cores === 1 ? " core" : " cores") + "</span>" : ""), graphHtml(view, "cpu", [{key: "cpu"}], "percent"));
+                (cores ? ' <span class="text-muted">of ' + cores + " " + (cores === 1 ? unit[0] : unit[1]) + "</span>" : ""), graphHtml(view, "cpu", [{key: "cpu"}], "percent"));
         } else {
             rows = rowHtml("CPU Load", '<span class="text-muted">Measuring...</span>', graphHtml(view, "cpu", [{key: "cpu"}], "percent"));
         }
@@ -476,9 +478,42 @@
             '</h5><table class="tweakui-performance-facts">' + rows + "</table></div>";
     }
 
-    // The server's card: CPU Load (of the machine WebODM runs on), disk and memory; "" when it says nothing
+    // A CPU's clock: its maximum where the system gives it, Windows' base clock, or the clock Linux reports (in a
+    // virtual machine, usually the base clock)
+    function speedHtml(cpu) {
+        if (!cpu.mhz) return "";
+        var ghz = (cpu.mhz / 1000).toFixed(1) + "\u00a0GHz";
+        if (cpu.speed === "max") return escapeHtml("up to " + ghz);
+        if (cpu.speed === "base") return escapeHtml(ghz + " base");
+        return '<span title="The clock the system reports: in a virtual machine (WSL, Docker Desktop), usually the base clock">' + escapeHtml(ghz) + "</span>";
+    }
+
+    // The server's OS (in Docker, the machine's kernel, where it runs when its name says, and the container's system)
+    // and CPU (its model, then its architecture, cores and threads, sockets when more than one, and clock)
+    function systemRows(system) {
+        if (!system) return "";
+        var rows = "", os = system.os, cpu = system.cpu;
+        if (os && os.name) {
+            rows += rowHtml("OS", '<span title="' + escapeHtml(os.kernel || "") + '">' + escapeHtml(os.name) + "</span>" +
+                (os.detail ? ' <span class="text-muted">\u00b7 ' + escapeHtml(os.detail) + "</span>" : ""));
+        }
+        if (cpu && (cpu.model || cpu.threads)) {
+            var facts = [];
+            if (cpu.architecture) facts.push(escapeHtml(cpu.architecture));
+            if (cpu.cores && cpu.threads && cpu.cores !== cpu.threads) facts.push(escapeHtml(cpu.cores + " cores, " + cpu.threads + " threads"));
+            else if (cpu.cores || cpu.threads) facts.push(escapeHtml(plural(cpu.cores || cpu.threads, "core", "cores")));
+            if (cpu.sockets > 1) facts.push(escapeHtml(cpu.sockets + " sockets"));
+            var speed = speedHtml(cpu);
+            if (speed) facts.push(speed);
+            rows += rowHtml("CPU", escapeHtml(cpu.model || "Unknown") + (facts.length ? '<div class="text-muted small">' + facts.join(" \u00b7 ") + "</div>" : ""));
+        }
+        return rows;
+    }
+
+    // The server's card: its OS and CPU, CPU Load (of the machine WebODM runs on), disk and memory; "" when it says
+    // nothing
     function serverCardHtml(server, load, view) {
-        var rows = cpuRows(server.cpu, load, view);
+        var rows = systemRows(server.system) + cpuRows(server.cpu, load, view, server.system);
         if (server.disk) rows += rowHtml("Disk", memoryHtml(server.disk.free, server.disk.total));
         if (server.memory) rows += rowHtml("Memory", memoryGraphHtml(server.memory.free, server.memory.total, view, "memory"));
         if (!rows) return "";
@@ -1407,7 +1442,7 @@
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, assessmentHtml: assessmentHtml, tasksSummary: tasksSummary, formatArea: formatArea, formatLength: formatLength,
-        tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
+        tasksHtml: tasksHtml, notesHtml: notesHtml, systemRows: systemRows, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
         diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip, spanText: spanText, packReadings: packReadings, unpackReadings: unpackReadings,
         record: record, niceCeil: niceCeil, processesHtml: processesHtml};
 });

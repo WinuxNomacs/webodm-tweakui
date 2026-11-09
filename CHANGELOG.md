@@ -41,6 +41,10 @@
   Bootstrap's light grey, which glared in dark themes.
 - Performance View: a figure in a warning or danger colour (photos left out, several reconstructions, memory used,
   a disk's Busy) has its icon too, so it isn't told by colour alone.
+- Performance View: the server's card starts with its **OS** (in Docker, the machine's kernel, where it runs when the
+  kernel says so, such as WSL2 on Windows, and the container's system; on the Windows app, the Windows version, release
+  and build) and **CPU** (model, architecture, cores and threads, sockets when several, and its maximum, base or
+  reported clock); CPU Load counts threads when the CPU has more threads than cores.
 - Performance View: Recent Processing is now **Recent Task History**.
 - Performance View: **Processes**, for superusers, a section under the server's cards that opens: the top 10 processes WebODM's server
   can see by CPU and by memory (PID, command, command line with a copy button, user, CPU and memory), refreshed with

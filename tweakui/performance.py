@@ -192,6 +192,161 @@ def cpu_entry():
     return {"total": times, "cores": os.cpu_count(), "load": load}
 
 
+# The OS and CPU don't change while WebODM runs: read once per process
+_system = None
+# A kernel's release that says where a Docker or Linux machine runs: (what it contains, the host it means)
+KERNEL_HOSTS = (("microsoft", "WSL2 on Windows"), ("linuxkit", "Docker Desktop"), ("orbstack", "OrbStack on macOS"))
+# Windows names its architectures its own way
+ARCHITECTURES = {"amd64": "x86_64", "x86_64": "x86_64", "arm64": "arm64", "aarch64": "arm64", "x86": "x86"}
+
+
+def os_release(path="/etc/os-release"):
+    """The Linux distribution's name (PRETTY_NAME), or None"""
+    try:
+        with open(path, encoding="utf-8", errors="replace") as f:
+            for line in f:
+                if line.startswith("PRETTY_NAME="):
+                    return line.split("=", 1)[1].strip().strip('"').strip("'") or None
+    except OSError:
+        pass
+    return None
+
+
+def kernel_host(release):
+    """Where a Linux kernel runs, from its release (WSL2 on Windows, Docker Desktop...), or None"""
+    low = (release or "").lower()
+    return next((host for word, host in KERNEL_HOSTS if word in low), None)
+
+
+def linux_os(release, distribution, container):
+    """{name, detail, kernel}: in a container the kernel is the machine's (with where it runs, when its release says)
+    and the distribution the container's; otherwise the distribution with its kernel"""
+    version = (release or "").split("-")[0] or release
+    kernel = "Linux %s" % version if version else "Linux"
+    host = kernel_host(release)
+    if container:
+        return {"name": kernel + (" (%s)" % host if host else ""),
+                "detail": "Docker: %s" % distribution if distribution else "Docker", "kernel": release}
+    return {"name": distribution or kernel, "detail": (kernel + (" (%s)" % host if host else "")) if distribution else
+            (host or None), "kernel": release}
+
+
+def windows_os(version, display_version):
+    """{name, detail, kernel}: Windows 11 from build 22000 on (Windows still says 10 in its version), its release
+    (24H2) and build"""
+    parts = (version or "").split(".")
+    build = int(parts[2]) if len(parts) > 2 and parts[2].isdigit() else None
+    name = "Windows" if build is None else ("Windows 11" if build >= 22000 else "Windows 10")
+    detail = ", ".join(v for v in (display_version, "build %d" % build if build else None) if v)
+    return {"name": name, "detail": detail or None, "kernel": version}
+
+
+def _winreg_value(key, name):
+    try:
+        import winreg
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key) as k:
+            return winreg.QueryValueEx(k, name)[0]
+    except (ImportError, OSError):
+        return None
+
+
+def linux_cpu(cpuinfo="/proc/cpuinfo", cpufreq="/sys/devices/system/cpu/cpu0/cpufreq/cpuinfo_max_freq"):
+    """{model, cores (physical), threads, sockets, mhz, speed: max (cpufreq's, where the system has it) or reported
+    (cpuinfo's clock, which in a virtual machine is usually the base clock)} from Linux's files; None when unreadable"""
+    try:
+        with open(cpuinfo, encoding="utf-8", errors="replace") as f:
+            text = f.read()
+    except OSError:
+        return None
+    model, mhz, threads, cores, sockets = None, None, 0, set(), set()
+    for block in text.split("\n\n"):
+        fields = {}
+        for line in block.splitlines():
+            if ":" in line:
+                k, v = line.split(":", 1)
+                fields[k.strip()] = v.strip()
+        if "processor" not in fields:
+            continue
+        threads += 1
+        model = model or fields.get("model name") or fields.get("Hardware") or fields.get("cpu model")
+        if mhz is None and fields.get("cpu MHz"):
+            try:
+                mhz = float(fields["cpu MHz"])
+            except ValueError:
+                pass
+        socket = fields.get("physical id", "0")
+        sockets.add(socket)
+        if "core id" in fields:
+            cores.add((socket, fields["core id"]))
+    speed = "reported" if mhz else None
+    try:
+        with open(cpufreq, encoding="ascii") as f:
+            mhz, speed = int(f.read().strip()) / 1000, "max"
+    except (OSError, ValueError):
+        pass
+    return {"model": model, "cores": len(cores) or None, "threads": threads or os.cpu_count(),
+            "sockets": len(sockets) or None, "mhz": round(mhz) if mhz else None, "speed": speed}
+
+
+def windows_cpu():
+    """{model, cores, threads, sockets, mhz, speed: base}: the registry's processor name and clock, and the cores and
+    sockets GetLogicalProcessorInformation lists (of the processor group WebODM runs in)"""
+    key = r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
+    model = _winreg_value(key, "ProcessorNameString")
+    mhz = _winreg_value(key, "~MHz")
+    cores = sockets = None
+    try:
+        import ctypes
+        from ctypes import wintypes
+
+        class INFO(ctypes.Structure):
+            _fields_ = [("mask", ctypes.c_size_t), ("relationship", wintypes.DWORD), ("rest", ctypes.c_ulonglong * 2)]
+
+        size = wintypes.DWORD(0)
+        get = ctypes.windll.kernel32.GetLogicalProcessorInformation
+        get(None, ctypes.byref(size))
+        count = size.value // ctypes.sizeof(INFO)
+        if count:
+            items = (INFO * count)()
+            if get(items, ctypes.byref(size)):
+                kinds = [i.relationship for i in items[:size.value // ctypes.sizeof(INFO)]]
+                # RelationProcessorCore and RelationProcessorPackage
+                cores, sockets = kinds.count(0) or None, kinds.count(3) or None
+    except (ImportError, OSError, AttributeError, ValueError):
+        pass
+    return {"model": model.strip() if isinstance(model, str) else None, "cores": cores, "threads": os.cpu_count(),
+            "sockets": sockets, "mhz": mhz if isinstance(mhz, int) and mhz > 0 else None,
+            "speed": "base" if isinstance(mhz, int) and mhz > 0 else None}
+
+
+def system_entry():
+    """The server's OS ({name, detail, kernel}) and CPU (linux_cpu's or windows_cpu's, with its architecture), read
+    once per process; in Docker the CPU is the machine's (or its VM's)"""
+    global _system
+    if _system is not None:
+        return _system
+    import platform
+    try:
+        if sys.platform == "win32":
+            os_part = windows_os(platform.version(), _winreg_value(r"SOFTWARE\Microsoft\Windows NT\CurrentVersion",
+                                                                   "DisplayVersion"))
+            cpu = windows_cpu()
+        elif sys.platform.startswith("linux"):
+            os_part = linux_os(platform.release(), os_release(), in_container())
+            cpu = linux_cpu()
+        else:
+            os_part = {"name": platform.platform(terse=True), "detail": None, "kernel": platform.release()}
+            cpu = None
+        machine = platform.machine()
+        if cpu is not None:
+            cpu["architecture"] = ARCHITECTURES.get(machine.lower(), machine) or None
+    except Exception:  # the card goes without it rather than fail the page
+        logger.warning("TweakUI: cannot read the server's OS and CPU", exc_info=True)
+        os_part, cpu = None, None
+    _system = {"os": os_part, "cpu": cpu}
+    return _system
+
+
 def disk_entry():
     """The disk WebODM keeps its tasks on, in bytes, or None"""
     try:
@@ -542,10 +697,11 @@ def processes_entry():
 
 
 def server_entry():
-    """The disk WebODM keeps its tasks on and the server's memory, in bytes, and its CPU and disk counters"""
+    """The disk WebODM keeps its tasks on and the server's memory, in bytes, its CPU and disk counters, and its OS and
+    CPU (system_entry)"""
     memory = memory_stats()
     return {"disk": disk_entry(), "memory": memory if memory.get("total") else None, "cpu": cpu_entry(),
-            "disk_io": disk_io_entry()}
+            "disk_io": disk_io_entry(), "system": system_entry()}
 
 
 def live(user, disk=False, processes=False):

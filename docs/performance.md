@@ -56,12 +56,28 @@ each task used one, from its log.
 
 ## Server
 
-The CPU load of the machine WebODM's server runs on, the disk WebODM keeps its tasks on (free of total, with a bar)
+The server's card starts with its **OS** and **CPU**:
+
+- **OS**: in Docker, the kernel of the machine Docker runs on, with where it runs when the kernel's name says so (WSL2
+  on Windows, Docker Desktop, OrbStack on macOS), then the system inside WebODM's container ("Linux 6.18.33.2 (WSL2 on
+  Windows) · Docker: Ubuntu 24.04.5 LTS"). A container can't see the host's own system, only its kernel; pointing at
+  the OS shows the kernel's full name. Natively, the Linux distribution and its kernel; on WebODM's Windows app, the
+  Windows version, its release and build ("Windows 11 · 25H2, build 26200").
+- **CPU**: its model, then its architecture, cores and threads (with sockets when there are several), and its clock:
+  **up to** its maximum where the system gives it (a Linux machine), Windows' **base** clock, or the clock Linux
+  reports, which in a virtual machine (WSL, Docker Desktop) is usually the base clock. In Docker it is the machine's
+  CPU (or Docker's virtual machine's).
+
+They are read once each time WebODM's server starts. The processing nodes report none of this (a node's info has its
+cores and memory only), and memory speed is out of reach in Docker, so neither is shown.
+
+Then the CPU load of the machine WebODM's server runs on, the disk WebODM keeps its tasks on (free of total, with a bar)
 and the server's memory (free of total and the share used), as WebODM's own **System** page shows them. CPU Load and
 the memory each have a [graph](#graphs).
 
 **CPU Load** is the share of time the processors were busy since the last refresh, as top and htop show it: the
-total across all cores (100% is every core busy), with how many cores there are, and, on Linux and in
+total across all cores (100% is every core busy), with how many cores there are (threads, when the CPU has more
+threads than cores), and, on Linux and in
 Docker, the load averages over 1, 5 and 15 minutes (the number of processes running or waiting, to compare with the
 number of cores). Windows keeps no load average, so WebODM's Windows app shows the total without it. The first
 figures show a second after the page opens: a load is the difference between two readings.
