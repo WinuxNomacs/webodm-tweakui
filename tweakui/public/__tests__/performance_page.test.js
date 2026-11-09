@@ -327,6 +327,38 @@ describe("the Performance page", () => {
         confirm.mockRestore();
     });
 
+    test("General Assessment holds the verdicts, Recent Processing's problems and the trend, its edge in the worst line's colour", async () => {
+        const failed = reported("t1", {status: "failed", notes: [{key: "out_of_memory", level: "danger", text: "x", line: ""}]});
+        const leftOut = reported("t2", {notes: [{key: "left_out", level: "warning", text: "y", line: "", photos: [], more: 0}]});
+        const trend = {recent: 2, earlier: 4, change: -0.5, same: false};
+        const {root} = await started([json(report({tasks: [failed, leftOut, reported("t3")], trend}))]);
+        const card = root.querySelector(".tweakui-performance-body > section.tweakui-performance-assessment");
+        expect(card.querySelector("h4").textContent).toBe("General Assessment");
+        expect(card.nextElementSibling.textContent).toBe("Processing Nodes");
+        expect(Array.from(card.querySelectorAll("li")).map(li => li.dataset.level)).toEqual(["warning", "success", "warning", "info"]);
+        expect(card.querySelector("[data-summary]").textContent.trim())
+            .toBe("Of your last 3 tasks, 1 failed (1 ran out of memory) and 1 left photos out. See their Notes in Recent Processing.");
+        expect(card.querySelector("[data-summary] a").getAttribute("href")).toBe("#tweakui-performance-recent");
+        expect(root.querySelector("#tweakui-performance-recent").textContent).toBe("Recent Processing");
+        expect(card.querySelector("li.tweakui-performance-trend").textContent).toMatch(/50% less time per photo/);
+        expect(root.querySelectorAll(".tweakui-performance-recent .tweakui-performance-trend")).toHaveLength(0);
+        expect([card.dataset.level, card.querySelector(".tweakui-performance-assessment-edge").className]).toEqual(["warning", "tweakui-performance-assessment-edge text-warning"]);
+    });
+
+    test("Recent Processing's problems are summed up only when there are some, and its edge is green when all is well", () => {
+        const ok = report({tasks: [task("t1", {status: "completed", notes: []})], verdicts: [{level: "success", text: "fine"}]});
+        expect(performancePage.tasksSummary(ok)).toBeNull();
+        const div = document.createElement("div");
+        div.innerHTML = performancePage.assessmentHtml(ok);
+        expect([div.firstChild.dataset.level, div.querySelectorAll("li").length]).toEqual(["success", 1]);
+        const left = task("t1", {notes: [{key: "left_out"}]}), left2 = task("t2", {notes: [{key: "left_out"}]});
+        expect(performancePage.tasksSummary(report({admin: true, tasks: [left, left2]})))
+            .toEqual({level: "info", text: "Of the last 2 tasks on this server, 2 left photos out."});
+        expect(performancePage.tasksSummary(report({tasks: [task("t1", {status: "failed"})]})))
+            .toEqual({level: "warning", text: "Your last task failed."});
+        expect(performancePage.assessmentHtml(report({tasks: [], verdicts: [], trend: null}))).toBe("");
+    });
+
     test("the trend reads as a sentence: faster, slower or about the same", async () => {
         expect(performancePage.trendText(null)).toBe("");
         expect(performancePage.trendText({recent: 2, earlier: 4, change: -0.5, same: false}))

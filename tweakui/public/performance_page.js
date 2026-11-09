@@ -16,7 +16,9 @@
     "use strict";
 
     var REQUIREMENTS = "https://docs.webodm.org/installation/#hardware-requirements";
-    var ICONS = {success: "fa-check-circle", warning: "fa-exclamation-triangle", danger: "fa-times-circle"};
+    var ICONS = {success: "fa-check-circle", warning: "fa-exclamation-triangle", danger: "fa-times-circle", info: "fa-info-circle"};
+    // General Assessment's edge takes its worst line's level, in this order
+    var LEVELS = ["danger", "warning", "info", "success"];
     // A bar turns to a warning past this share used, and to danger past the next
     var FULL_WARNING = 0.8, FULL_DANGER = 0.95;
     var NAME = "performance_page";
@@ -249,12 +251,53 @@
         return freeOf(free, total) + barHtml(total - free, total);
     }
 
-    function verdictsHtml(verdicts) {
-        if (!verdicts.length) return "";
-        return '<ul class="tweakui-performance-verdicts list-unstyled">' + verdicts.map(function (v) {
-            return '<li data-level="' + escapeHtml(v.level) + '"><i class="fa ' + (ICONS[v.level] || ICONS.warning) +
-                " fa-fw text-" + escapeHtml(v.level) + '"></i> ' + escapeHtml(v.text) + "</li>";
-        }).join("") + "</ul>";
+    function lineHtml(level, html, attrs) {
+        return '<li data-level="' + escapeHtml(level) + '"' + (attrs || "") + '><i class="fa ' + (ICONS[level] || ICONS.warning) +
+            " fa-fw text-" + escapeHtml(level) + '"></i> ' + html + "</li>";
+    }
+
+    // Recent Processing's problems in a sentence ({level, text}), from the tasks the report lists: those that failed
+    // (and how many ran out of memory) and those that left photos out; null when none did
+    function tasksSummary(report) {
+        var tasks = report.tasks || [], failed = 0, memory = 0, leftOut = 0;
+        tasks.forEach(function (t) {
+            var keys = (t.notes || []).map(function (n) { return n.key; });
+            if (t.status === "failed") {
+                failed++;
+                if (keys.indexOf("out_of_memory") >= 0) memory++;
+            }
+            if (keys.indexOf("left_out") >= 0) leftOut++;
+        });
+        if (!failed && !leftOut) return null;
+        var parts = [], level = failed ? "warning" : "info";
+        if (tasks.length === 1) {
+            if (failed) parts.push("failed" + (memory ? " (it ran out of memory)" : ""));
+            if (leftOut) parts.push("left photos out");
+            return {level: level, text: (report.admin ? "The last task on this server " : "Your last task ") + parts.join(" and ") + "."};
+        }
+        if (failed) parts.push(formatNumber(failed) + " failed" + (memory ? " (" + formatNumber(memory) + " ran out of memory)" : ""));
+        if (leftOut) parts.push(formatNumber(leftOut) + " left photos out");
+        var whose = report.admin ? "Of the last " + plural(tasks.length, "task", "tasks") + " on this server, " :
+            "Of your last " + plural(tasks.length, "task", "tasks") + ", ";
+        return {level: level, text: whose + parts.join(" and ") + "."};
+    }
+
+    // General Assessment: a card of the verdicts, Recent Processing's problems (linking down to it) and the time-per-photo
+    // trend, its left edge in its worst line's colour; nothing without any of them
+    function assessmentHtml(report) {
+        var verdicts = report.verdicts || [], summary = tasksSummary(report), trend = trendText(report.trend);
+        var lines = verdicts.map(function (v) { return lineHtml(v.level, escapeHtml(v.text)); });
+        if (summary) {
+            lines.push(lineHtml(summary.level, escapeHtml(summary.text) + ' <a href="#tweakui-performance-recent">See their Notes in Recent Processing</a>.',
+                " data-summary"));
+        }
+        if (trend) lines.push(lineHtml("info", escapeHtml(trend), ' class="tweakui-performance-trend"'));
+        if (!lines.length) return "";
+        var levels = verdicts.map(function (v) { return v.level; }).concat(summary ? [summary.level] : [], trend ? ["info"] : []);
+        var worst = LEVELS.filter(function (l) { return levels.indexOf(l) >= 0; })[0] || "info";
+        return '<section class="tweakui-performance-assessment theme-background-highlight theme-border" data-level="' + worst + '">' +
+            '<span class="tweakui-performance-assessment-edge text-' + worst + '" aria-hidden="true"></span>' +
+            '<h4>General Assessment</h4><ul class="tweakui-performance-verdicts list-unstyled">' + lines.join("") + "</ul></section>";
     }
 
     function nodeHtml(n, view) {
@@ -542,13 +585,11 @@
     }
 
     function tasksHtml(report, system) {
-        var html = "<h4>Recent Processing</h4>";
+        var html = '<h4 id="tweakui-performance-recent">Recent Processing</h4>';
         if (!report.tasks.length) return html + '<p class="text-muted">No finished tasks yet.</p>';
-        var trend = trendText(report.trend);
         var wide = ' class="tweakui-performance-wide ';
         return html + '<p class="text-muted">The last ' + report.tasks.length + " finished " + (report.tasks.length === 1 ? "task" : "tasks") +
             (report.admin ? " on this server" : " of yours") + " (completed, failed or canceled), newest first.</p>" +
-            (trend ? '<p class="tweakui-performance-trend">' + escapeHtml(trend) + "</p>" : "") +
             '<div class="tweakui-performance-scroll"><table class="table tweakui-performance-table"><thead><tr><th>Task</th>' +
             "<th" + wide + 'tweakui-performance-date">Created</th>' +
             '<th class="tweakui-performance-number" title="Photos placed in the reconstruction, of those given">Photos</th>' +
@@ -563,7 +604,7 @@
     }
 
     function render(page, report, load, system, diskRates, view) {
-        page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes, view) +
+        page.querySelector(".tweakui-performance-body").innerHTML = assessmentHtml(report) + nodesHtml(report.nodes, view) +
             serverHtml(report.server, load, diskRates, view);
         // Recent Processing goes below the page's controls, which stay put while the parts around them redraw
         page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system) +
@@ -932,7 +973,7 @@
     }
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
-        trendText: trendText, verdictsHtml: verdictsHtml, formatArea: formatArea, formatLength: formatLength,
+        trendText: trendText, assessmentHtml: assessmentHtml, tasksSummary: tasksSummary, formatArea: formatArea, formatLength: formatLength,
         tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
         diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip,
         record: record, niceCeil: niceCeil};
