@@ -10,6 +10,9 @@
 ### Diagnostic
 
 - Performance View: Recent Processing is now **Recent Task History**.
+- Performance View > Recent Task History: an **Actions** menu on each task, in alphabetical order: Download Report
+  and View Report (for a task with a report), Download Task Logs, and Restart From Load Dataset (as WebODM's
+  Restart, where the Dashboard offers it).
 - Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or
   delete them." until something is selected.
 - Performance View: the graphs' readings survive a reload of the page (Ctrl+R or F5) in the same browser tab (its

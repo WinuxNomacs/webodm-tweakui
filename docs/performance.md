@@ -147,6 +147,21 @@ the node fold into a line under the task's name.
 
 Administrators see the last 10 on the server, whoever they belong to, and the largest task anyone has run.
 
+### Actions
+
+An **Actions** button beside each task's name opens a menu, in alphabetical order:
+
+- **Download Report** and **View Report**: the task's PDF report, saved or opened in a new tab. Only for a task that
+  has one (ODM writes it when a task completes).
+- **Download Task Logs**: the task's log, all of it, as WebODM's own console download, saved as the task's name with
+  `.txt`.
+- **Restart From Load Dataset**: what WebODM's **Restart** button on the Dashboard does by default. You're asked
+  first. The task runs again from ODM's first step, Load Dataset, and its results are replaced when it finishes.
+  The row then says it is restarting, and the next **Refresh** lists it no more while it runs, since the list holds
+  finished tasks. It is in the menu only where the Dashboard offers Restart: the task has a processing node, it
+  wasn't imported or compacted, WebODM isn't already working on it, and you may change its project (its owner,
+  someone it is shared with for editing, or an administrator).
+
 ### Notes from the Log
 
 TweakUI reads each listed task's log (what the processing node printed, as on the task's panel) for the messages
@@ -193,5 +208,6 @@ Below them, **Other Messages** opens every other warning and error line in the l
 came (GDAL's `CPLE_AppDefined` warnings, one per texture, are left out). A huge log is read only at its start and end
 (its first and last 8 MB), and a finished task's log only once.
 
-TweakUI only reads, except for [Remove Photos From Task](#remove-photos-from-task): it asks each node for its info,
-and reads the server's CPU and disk counters and each task's report and log.
+TweakUI only reads, except for [Remove Photos From Task](#remove-photos-from-task) and Restart From Load Dataset
+(through WebODM's own API, as its Restart button): it asks each node for its info, and reads the server's CPU and
+disk counters and each task's report and log.

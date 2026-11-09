@@ -3,10 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: an Actions menu on each task** (Download Task Logs, Restart From Load Dataset, View Report,
-   Download Report) — branch `perf-task-actions`; see "Performance View: Recent Task History, task actions and
-   Process View".
-2. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
+1. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
    branch `perf-process-view`.
 
 **Later**
@@ -14,6 +11,17 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: an Actions menu on each task** (new.md, 2026-11-09) — branch `perf-task-actions`:
+  `performance.py` (`task_entry`'s `can_restart`, by `can_restart`: WebODM's Restart rules and nothing pending, and
+  `report`), `performance_page.js` (`actionsHtml`, its items in alphabetical order; the menu opened by the page's own script, `position: fixed` by its
+  button so the table's scrolling box doesn't cut it off, following it on scroll; `restartTask`: GET the task, PATCH
+  its options with `rerun-from` = `can_rerun_from[1]` or none and `uuid: ""`, POST `restart/`), `main.css` (the
+  Notes and Actions buttons as one group), `features.py` (the description). Tests: `test_tweakui.py` (2: the fields
+  for imported, compacted, pending and reported tasks; the permission), `performance_page.test.js` (5: items, open
+  and close, scroll, restart's calls, no rerun-from and a refusal). Docs `performance.md` (Actions), README,
+  CHANGELOG, screenshot `performance-tasks`. Live on 4.0.0 (logs and report downloaded, report inline as a PDF,
+  restart of a "Live check restart" task: rerun-from dataset, running; phone width) and 3.3.2 (the restart, queued);
+  the check's tasks and projects deleted, 3.3.2's Performance View turned back off.
 - **Performance View: "Recent Processing" becomes "Recent Task History"** (new.md, 2026-11-09) — branch
   `perf-recent-history`: the heading and General Assessment's link (`performance_page.js`), comments in
   `performance.py`, `task_log.py`, `main.css`, `test_tweakui.py`, `dev/screenshots.js`. Tests:
@@ -824,7 +832,11 @@ The heading, its intro and anchor (`#tweakui-performance-recent` stays: an id, n
 Processing are reworded, since they're unreleased; 1.0.0's stay). Jest tests that read it. Screenshots
 `performance` and `performance-tasks` retaken. Live on both stacks.
 
-### Phase 2: an Actions menu on each task (branch `perf-task-actions`)
+### Phase 2: an Actions menu on each task (branch `perf-task-actions`) — done
+
+Built as planned, except: `rerun_from` isn't sent with the report (the page reads `can_rerun_from` and the options
+from WebODM's own task API just before restarting), and the menu is opened by the page's script rather than
+Bootstrap's (`data-toggle` isn't used, so its handlers don't interfere), fixed over the page by its button.
 
 A dropdown button **Actions** on each row of Recent Task History (WebODM's Bootstrap 3 dropdown, `btn btn-default
 btn-xs dropdown-toggle`, as WebODM's own task buttons; at phone width it stays in the task's cell), with:

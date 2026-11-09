@@ -506,7 +506,17 @@ def task_entry(task, user):
         "area": stats["area"], "reconstructions": reconstructions, "position_error": stats["position_error"],
         "gpu": log["gpu"], "notes": notes, "other": log["other"], "more": log["more"],
         "node": str(task.processing_node) if task.processing_node_id else None,
+        "can_restart": can_restart(task, user),
+        "report": "report.pdf" in (task.available_assets or ()),
     }
+
+
+def can_restart(task, user):
+    """The Actions menu's Restart From Load Dataset: offered when WebODM's Dashboard offers Restart (TaskListItem.jsx:
+    a finished task with a processing node, not imported, not compacted, for those who may change its project) and
+    nothing is pending on it"""
+    return (task.status in FINISHED and task.processing_node_id is not None and not task.import_url
+            and not task.compacted and task.pending_action is None and user.has_perm("change_project", task.project))
 
 
 def tasks_of(user):
@@ -519,7 +529,7 @@ def recent_tasks(user):
     tasks = (tasks_of(user).filter(status__in=list(FINISHED))
              .select_related("project", "project__owner", "processing_node")
              .only("id", "name", "created_at", "status", "last_error", "images_count", "processing_time", "processing_node",
-                   "project__id", "project__name", "project__owner__id", "project__owner__username",
+                   "import_url", "compacted", "pending_action", "available_assets", "project__id", "project__name", "project__owner__id", "project__owner__username",
                    "processing_node__hostname", "processing_node__port", "processing_node__label")
              .order_by("-created_at")[:RECENT])
     return [task_entry(t, user) for t in tasks]

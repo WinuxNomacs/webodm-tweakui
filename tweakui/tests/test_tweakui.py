@@ -1383,6 +1383,30 @@ class TestPerformance(TweakUITestCase):
         self.assertEqual((untimed["seconds"], untimed["seconds_per_image"], untimed["slowest_step"]), (None, None, None))
         self.assertEqual(r["largest"], 300)
 
+    def test_each_task_says_whether_it_can_be_restarted_and_has_a_report_for_its_actions_menu(self):
+        from app import pending_actions
+        Task.objects.filter(pk=self.tasks[0].pk).update(import_url="file://external")
+        Task.objects.filter(pk=self.tasks[1].pk).update(compacted=True)
+        Task.objects.filter(pk=self.tasks[2].pk).update(pending_action=pending_actions.RESTART)
+        Task.objects.filter(pk=self.tasks[3].pk).update(available_assets=["report.pdf", "orthophoto.tif"])
+        tasks = {t["name"]: t for t in self.report()["tasks"]}
+        self.assertEqual({n: tasks[n]["can_restart"] for n in tasks},
+                         {"T0": False, "T1": False, "T2": False, "T3": True, "Untimed": False})
+        self.assertEqual({n: tasks[n]["report"] for n in tasks},
+                         {"T0": False, "T1": False, "T2": False, "T3": True, "Untimed": False})
+
+    def test_restart_is_offered_only_to_those_who_may_change_the_project(self):
+        from guardian.shortcuts import assign_perm
+        from coreplugins.tweakui import performance
+        other = User.objects.get(username="testuser2")
+        task = Task.objects.select_related("project").get(pk=self.tasks[3].pk)
+        self.assertTrue(performance.can_restart(task, self.user))
+        self.assertFalse(performance.can_restart(task, other))
+        assign_perm("view_project", other, self.project)
+        self.assertFalse(performance.can_restart(task, other))
+        assign_perm("change_project", other, self.project)
+        self.assertTrue(performance.can_restart(task, User.objects.get(username="testuser2")))
+
     def test_the_trend_compares_the_newer_half_with_the_older_by_median_time_per_photo(self):
         trend = self.report()["trend"]
         self.assertEqual((trend["recent"], trend["earlier"], trend["change"], trend["same"]), (4.0, 2.0, 1.0, False))

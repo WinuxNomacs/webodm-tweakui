@@ -152,7 +152,7 @@ describe("the Performance page", () => {
         expect(texts(rows[0], "td").slice(2)).toEqual(["220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "", "", "", "", "node-odx-1"]);
         // Another user's (an admin's view), with no name, time or stats
         expect(words(rows[1].querySelector("td a"))).toBe("Task of 2026-11-06");
-        expect(words(rows[1].querySelector("td a + .text-muted"))).toBe("Flights of pat");
+        expect(words(rows[1].querySelector("td .tweakui-performance-task-buttons + .text-muted"))).toBe("Flights of pat");
         expect(texts(rows[1], "td").slice(3, 6)).toEqual(["", "", ""]);
         expect(texts(root, ".tweakui-performance-recent > p.text-muted")[0])
             .toBe("The last 2 finished tasks of yours (completed, failed or canceled), newest first.");
@@ -329,6 +329,102 @@ describe("the Performance page", () => {
         expect(JSON.parse(removeCalls(fetchFn)[1][1].body)).toEqual({names: ["a.JPG", "b.JPG", "c.JPG"]});
         expect(list().querySelectorAll("li, [data-act=remove-photos], [data-act=copy-names]")).toHaveLength(0);
         expect(words(list().querySelector(".tweakui-performance-removed"))).toBe("3 photos removed from the task. Restart the task to process it without them.");
+        confirm.mockRestore();
+    });
+
+    // The page with tasks t1 (restartable, with a report) and t2 (neither); WebODM's API answers with api(url, options)
+    async function actionsPage(api) {
+        const root = page();
+        const tasks = [reported("t1", {name: "Field: north/east", can_restart: true, report: true}), reported("t2", {can_restart: false, report: false})];
+        const fetchFn = jest.fn((url, options) => url.indexOf("/api/projects/") === 0 ? api(url, options || {}) :
+            url.indexOf("performance/live") >= 0 ? json({}) : json(report({tasks})));
+        const view = performancePage.start(document, window, fetchFn);
+        views.push(view);
+        await view.loaded;
+        const row = id => root.querySelector('tr[data-task="' + id + '"]');
+        return {root, fetchFn, row, menu: id => row(id).querySelector(".tweakui-performance-actions")};
+    }
+
+    test("each task's Actions menu has its log, and Restart and the report only where the task offers them", async () => {
+        const {menu} = await actionsPage(() => json({}));
+        const items = id => Array.from(menu(id).querySelectorAll(".dropdown-menu a")).map(a => [words(a), a.getAttribute("href"),
+            a.getAttribute("download"), a.getAttribute("target")]);
+        expect(items("t1")).toEqual([
+            ["Download Report", "/api/projects/3/tasks/t1/download/report.pdf", "", null],
+            ["Download Task Logs", "/api/projects/3/tasks/t1/output/?f=raw", "Field_ north_east.txt", null],
+            ["Restart From Load Dataset", "#", null, null],
+            ["View Report", "/api/projects/3/tasks/t1/download/report.pdf?inline=1", null, "_blank"]]);
+        expect(items("t2").map(i => i[0])).toEqual(["Download Task Logs"]);
+    });
+
+    test("the Actions button opens its menu, and a click elsewhere or Escape closes it", async () => {
+        const {menu, root} = await actionsPage(() => json({}));
+        const toggle = menu("t1").querySelector("[data-act=actions]");
+        toggle.click();
+        expect([menu("t1").classList.contains("open"), toggle.getAttribute("aria-expanded")]).toEqual([true, "true"]);
+        expect(words(document.activeElement)).toBe("Download Report");
+        menu("t2").querySelector("[data-act=actions]").click();
+        expect([menu("t1").classList.contains("open"), menu("t2").classList.contains("open")]).toEqual([false, true]);
+        document.body.click();
+        expect(menu("t2").classList.contains("open")).toBe(false);
+        toggle.click();
+        document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowDown", bubbles: true}));
+        expect(words(document.activeElement)).toBe("Download Task Logs");
+        document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowUp", bubbles: true}));
+        document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "ArrowUp", bubbles: true}));
+        expect(words(document.activeElement)).toBe("View Report");
+        document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
+        expect([menu("t1").classList.contains("open"), document.activeElement]).toEqual([false, toggle]);
+        expect(root.querySelector(".tweakui-performance-actions.open")).toBeNull();
+    });
+
+    test("an open Actions menu follows its button as the page scrolls, and closes once the button leaves the window", async () => {
+        const {menu} = await actionsPage(() => json({}));
+        const toggle = menu("t1").querySelector("[data-act=actions]"), list = menu("t1").querySelector(".dropdown-menu");
+        let top = 100;
+        toggle.getBoundingClientRect = () => ({top, bottom: top + 22, left: 40, right: 110, width: 70, height: 22});
+        toggle.click();
+        expect([list.style.top, list.style.left]).toEqual(["124px", "40px"]);
+        top = 300;
+        window.dispatchEvent(new Event("scroll"));
+        expect([menu("t1").classList.contains("open"), list.style.top]).toEqual([true, "324px"]);
+        top = window.innerHeight + 50;
+        window.dispatchEvent(new Event("scroll"));
+        expect(menu("t1").classList.contains("open")).toBe(false);
+    });
+
+    test("Restart From Load Dataset asks first, then sets rerun-from to dataset and restarts as WebODM's Restart does", async () => {
+        const confirm = jest.spyOn(window, "confirm").mockReturnValueOnce(false).mockReturnValue(true);
+        const {fetchFn, row} = await actionsPage((url, options) => json(options.method === "GET" ?
+            {can_rerun_from: ["", "dataset", "split"], options: [{name: "dsm", value: true}, {name: "rerun-from", value: "odm_meshing"}]} : {success: true}));
+        const calls = () => fetchFn.mock.calls.filter(c => c[0].indexOf("/api/projects/") === 0);
+        row("t1").querySelector("[data-act=restart]").click();
+        expect(confirm.mock.calls[0][0]).toBe("Restart this task from Load Dataset? Its results are replaced when it finishes.");
+        expect(calls()).toHaveLength(0);
+        row("t1").querySelector("[data-act=restart]").click();
+        expect(words(row("t1").querySelector(".tweakui-performance-action-status"))).toBe("Restarting...");
+        for (let i = 0; i < 6; i++) await flush();
+        expect(calls().map(c => [c[0], c[1].method])).toEqual([["/api/projects/3/tasks/t1/", "GET"],
+            ["/api/projects/3/tasks/t1/", "PATCH"], ["/api/projects/3/tasks/t1/restart/", "POST"]]);
+        expect(JSON.parse(calls()[1][1].body)).toEqual({options: [{name: "dsm", value: true}, {name: "rerun-from", value: "dataset"}]});
+        expect(calls()[2][1].headers["X-CSRFToken"]).toBeDefined();
+        expect(words(row("t1").querySelector(".tweakui-performance-action-status"))).toBe("Restarting: it leaves this list while it runs.");
+        expect(row("t1").querySelector("[data-act=actions]").disabled).toBe(true);
+        confirm.mockRestore();
+    });
+
+    test("a node without rerun-from restarts from the start, and a refused restart says so", async () => {
+        const confirm = jest.spyOn(window, "confirm").mockReturnValue(true);
+        const {fetchFn, row} = await actionsPage((url, options) => options.method === "GET" ?
+            json({can_rerun_from: [], options: [{name: "rerun-from", value: "dataset"}]}) :
+            options.method === "POST" ? json({error: "nope"}, false, 403) : json({}));
+        row("t1").querySelector("[data-act=restart]").click();
+        for (let i = 0; i < 6; i++) await flush();
+        const patch = fetchFn.mock.calls.filter(c => c[1] && c[1].method === "PATCH")[0];
+        expect(JSON.parse(patch[1].body)).toEqual({options: [], uuid: ""});
+        const said = row("t1").querySelector(".tweakui-performance-action-status");
+        expect([words(said), said.classList.contains("text-danger")]).toEqual(["Could not restart the task.", true]);
+        expect(row("t1").querySelector("[data-act=actions]").disabled).toBe(false);
         confirm.mockRestore();
     });
 

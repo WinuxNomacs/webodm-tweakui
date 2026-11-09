@@ -43,7 +43,8 @@ Every feature is off until you turn it on, except the theme menu.
   and queue, the server's CPU load (live, as in top), disk space and activity (reads and writes per second for each
   drive) and memory, with graphs over time as the page refreshes, recent tasks' processing times, photos placed (and
   those left out, by name, which you can remove from the task), GPU and what their logs warn of (failed tasks too),
-  and a General Assessment of whether the nodes' memory suits your tasks by WebODM's hardware requirements.
+  an Actions menu on each (its log, Restart, its report), and a General Assessment of whether the nodes' memory
+  suits your tasks by WebODM's hardware requirements.
 - [**Administration**](https://winuxnomacs.github.io/webodm-tweakui/administration): one page, Administration >
   TweakUI, where superusers can withhold Storage and Performance from users (both are available by default) and
   publish themes to every user.
