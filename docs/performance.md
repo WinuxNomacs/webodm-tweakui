@@ -95,7 +95,7 @@ plugin's API gives them no processes: a command line can hold passwords, tokens 
 
 Each process has its **PID**, its **Command** (the program's name, as top shows it), its **Command Line**, its
 **User**, its **CPU** and its **Memory**, in outlined tables. A command line wraps at its column's width and shows its
-first 512 characters, then "…" (hover a cut-short one to read it whole); the button beside it copies it whole, however
+first 512 characters, then "…" (hover a cut-short one to read it whole); the button in front of it copies it whole, however
 long.
 
 Drag a column heading's right edge to resize the column; the column takes that width in both tables, and the browser

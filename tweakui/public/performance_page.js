@@ -479,10 +479,10 @@
             "<span" + (cores ? ' title="' + escapeHtml((p.cpu / cores).toFixed(1) + "% of all " + plural(cores, "core", "cores")) + '"' : "") +
             ">" + escapeHtml(p.cpu.toFixed(1)) + "%</span>";
         var long = p.command && p.command.length > COMMAND_SHOWN;
-        var command = p.command ? '<code class="tweakui-performance-command"' + (long ? ' title="' + escapeHtml(p.command) + '"' : "") + ">" +
-            escapeHtml(long ? p.command.slice(0, COMMAND_SHOWN) + "\u2026" : p.command) +
-            '</code> <button type="button" class="btn btn-default btn-xs" data-act="copy-command" data-copy="' + escapeHtml(p.command) +
-            '" title="Copy Command Line" aria-label="Copy Command Line"><i class="far fa-clipboard"></i></button>' :
+        var command = p.command ? '<button type="button" class="btn btn-default btn-xs" data-act="copy-command" data-copy="' + escapeHtml(p.command) +
+            '" title="Copy Command Line" aria-label="Copy Command Line"><i class="far fa-clipboard"></i></button> ' +
+            '<code class="tweakui-performance-command"' + (long ? ' title="' + escapeHtml(p.command) + '"' : "") + ">" +
+            escapeHtml(long ? p.command.slice(0, COMMAND_SHOWN) + "\u2026" : p.command) + "</code>" :
             '<span class="text-muted">Not readable</span>';
         var memory = escapeHtml(formatBytes(p.rss)) + (total ? ' <span class="text-muted">\u00b7 ' + escapeHtml((p.rss / total * 100).toFixed(1)) + "%</span>" : "");
         return '<tr data-pid="' + escapeHtml(p.pid) + '"><td class="tweakui-performance-number">' + escapeHtml(p.pid) + "</td><td>" + escapeHtml(p.name) +

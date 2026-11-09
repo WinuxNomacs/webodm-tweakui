@@ -662,6 +662,8 @@ describe("the Performance page", () => {
         // CPU of one core, of all cores in its title; the command line whole in its title
         expect(cpuRowsShown[0].querySelector("td:nth-child(5) span").title).toBe("31.3% of all 8 cores");
         expect(cpuRowsShown[0].querySelector("code").title).toBe("");
+        // Copy Command Line in front of the command line
+        expect(cpuRowsShown[0].querySelector(".tweakui-performance-command-cell").firstElementChild.getAttribute("data-act")).toBe("copy-command");
         const writeText = jest.fn(() => Promise.resolve());
         Object.defineProperty(window.navigator, "clipboard", {value: {writeText}, configurable: true});
         cpuRowsShown[0].querySelector("[data-act=copy-command]").click();
