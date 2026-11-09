@@ -133,6 +133,14 @@
         return share >= FULL_DANGER ? "text-danger" : share >= FULL_WARNING ? "text-warning" : "";
     }
 
+    // A warning or danger figure's icon, so its level isn't told by colour alone ("" for any other level)
+    function levelIcon(level) {
+        return level === "warning" || level === "danger" ? '<i class="fa ' + ICONS[level] + '" aria-hidden="true"></i> ' : "";
+    }
+    function shareIcon(share) {
+        return levelIcon(share >= FULL_DANGER ? "danger" : share >= FULL_WARNING ? "warning" : "");
+    }
+
     // A reading [time, value] added to its series in history ({key: [[time, value], ...]}), readings older than
     // HISTORY_KEEP dropped
     function record(history, key, time, value) {
@@ -258,7 +266,7 @@
     function memoryGraphHtml(free, total, view, key) {
         var share = total > 0 ? (total - free) / total : 0;
         return freeOf(free, total) + ' <span class="text-muted">\u00b7</span> <span class="' + levelClass(share) + '" data-used>' +
-            percent(share) + " used</span>" + graphHtml(view, key, [{key: key}], "percent");
+            shareIcon(share) + percent(share) + " used</span>" + graphHtml(view, key, [{key: key}], "percent");
     }
 
     // The CPU's busy share between two readings of its counters ({total: [busy, total]}, the API's): {total}, from 0
@@ -432,7 +440,7 @@
             rows += rowHtml("Writes", '<i class="tweakui-performance-swatch theme-color-primary"></i>' + ioText(rates.writes, rates.write_rate, rates.write_size));
             rows += "<tr><th></th><td>" + graphHtml(view, key + "ops", [{key: key + "reads", label: "Reads"}, {key: key + "writes", label: "Writes"}], "rate") + "</td></tr>";
             if (rates.busy !== null) {
-                rows += rowHtml("Busy", '<span class="' + levelClass(rates.busy) + '" data-busy>' + percent(rates.busy) + "</span>",
+                rows += rowHtml("Busy", '<span class="' + levelClass(rates.busy) + '" data-busy>' + shareIcon(rates.busy) + percent(rates.busy) + "</span>",
                     graphHtml(view, key + "busy", [{key: key + "busy"}], "percent"));
             }
             rows += rowHtml("Wait", rates.wait === null ? '<span class="text-muted">No operations</span>'
@@ -553,12 +561,12 @@
             return escapeHtml(t.images ? formatNumber(t.images) : "");
         }
         var text = escapeHtml(formatNumber(t.photos_reconstructed) + " of " + formatNumber(given));
-        return t.photos_reconstructed < given ? '<span class="text-warning" title="Photos placed in the reconstruction, of those given">' + text + "</span>" : text;
+        return t.photos_reconstructed < given ? '<span class="text-warning" title="Photos placed in the reconstruction, of those given">' + levelIcon("warning") + text + "</span>" : text;
     }
 
     function reconstructionsHtml(t) {
         if (!t.reconstructions) return "";
-        return t.reconstructions > 1 ? '<span class="text-warning">' + escapeHtml(t.reconstructions) + "</span>" : escapeHtml(t.reconstructions);
+        return t.reconstructions > 1 ? '<span class="text-warning">' + levelIcon("warning") + escapeHtml(t.reconstructions) + "</span>" : escapeHtml(t.reconstructions);
     }
 
     function errorText(t, system) {

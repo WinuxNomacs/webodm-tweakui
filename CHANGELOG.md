@@ -7,8 +7,19 @@
 - Administration > TweakUI Themes is now the **Published Themes** section of Administration > TweakUI, under
   Available to Users: one link in the side menu, and the old address opens the section.
 
+### General
+
+- Hide Navigation Pane: with the side menu hidden, the page keeps room for the tab at its left edge, so it no longer
+  touches the page's title.
+
 ### Diagnostic
 
+- Storage View: at phone width a project's or task's buttons stack, so none is cut off past the screen's edge; the
+  selection bar's Delete turns red only once something is selected; "Your storage" is now "Your Storage".
+- Storage and Performance View: the bars' tracks follow the theme (a faint track in its text colour) instead of
+  Bootstrap's light grey, which glared in dark themes.
+- Performance View: a figure in a warning or danger colour (photos left out, several reconstructions, memory used,
+  a disk's Busy) has its icon too, so it isn't told by colour alone.
 - Performance View: Recent Processing is now **Recent Task History**.
 - Performance View: **Process View**, for superusers, under the server's cards: the top 10 processes WebODM's server
   can see by CPU and by memory (PID, command, command line with a copy button, user, CPU and memory), refreshed with

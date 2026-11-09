@@ -112,12 +112,16 @@ test("a task opens to its files by kind, measured once", async () => {
 
 test("ticking a project takes in its tasks; the bar counts what is ticked and what it frees", async () => {
     const {root, view} = await started(report());
+    // Delete in the danger colour only once something is ticked
+    const del = root.querySelector("[data-act=delete-selected]");
+    expect([del.classList.contains("btn-danger"), del.classList.contains("btn-default")]).toEqual([false, true]);
     click(row(root, '[data-project="10"] [data-act=open-project]'));
     click(row(root, '[data-project="11"] [data-act=open-project]'));
     tick(row(root, '[data-task="t3"] input'));
     expect(root.querySelector(".tweakui-storage-selected").textContent).toBe("Selected: 1 task (10 MB)");
     expect(root.querySelector("[data-act=compact-selected]").disabled).toBe(true);
     expect(root.querySelector("[data-act=delete-selected]").disabled).toBe(false);
+    expect([del.classList.contains("btn-danger"), del.classList.contains("btn-default")]).toEqual([true, false]);
     tick(row(root, '[data-task="t2"] input'));
     tick(row(root, '[data-project="10"] [data-act=tick-project]'));
     const t2 = row(root, '[data-task="t2"] input');
@@ -211,7 +215,7 @@ test("a refused action says which and why", async () => {
 
 test("an admin sees their own storage, then each other user's, named, without a quota when they have none", async () => {
     const {root} = await started(report(true));
-    expect(Array.from(root.querySelectorAll("h4")).map(h => h.textContent)).toEqual(["Your storage", "pat"]);
+    expect(Array.from(root.querySelectorAll("h4")).map(h => h.textContent)).toEqual(["Your Storage", "pat"]);
     const pat = root.querySelector('[data-user="2"]');
     expect(pat.querySelector(".tweakui-storage-quota").textContent.trim()).toBe("50 MB used");
     tick(pat.querySelector("[data-act=tick-project]"));

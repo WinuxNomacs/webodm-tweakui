@@ -189,7 +189,7 @@
     function render(page, state) {
         var body = page.querySelector(".tweakui-storage-body"), r = state.report;
         if (!r) return;
-        var html = sectionHtml(state, r.me, r.admin ? "Your storage" : null);
+        var html = sectionHtml(state, r.me, r.admin ? "Your Storage" : null);
         if (r.admin) {
             html += r.others.length ? r.others.map(function (s) { return sectionHtml(state, s, s.user.username); }).join("")
                 : '<p class="text-muted">No other user owns a project.</p>';
@@ -211,7 +211,11 @@
         }
         page.querySelector("[data-act=backup-selected]").disabled = !p.backup.length || state.working;
         page.querySelector("[data-act=compact-selected]").disabled = !p.compact.length || state.working;
-        page.querySelector("[data-act=delete-selected]").disabled = !n || state.working;
+        // Delete in the danger colour only once something is selected
+        var del = page.querySelector("[data-act=delete-selected]");
+        del.disabled = !n || state.working;
+        del.classList.toggle("btn-danger", !!n);
+        del.classList.toggle("btn-default", !n);
     }
 
     function setStatus(page, text, failed) {
