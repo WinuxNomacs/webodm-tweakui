@@ -42,6 +42,11 @@
     var PHOTO_OPEN = 2048, PHOTO_HOVER = 256;
     var REASONS = {no_features: "No features", no_gps: "No GPS"};
     var RESTART_QUESTION = "Restart this task from Load Dataset? Its results are replaced when it finishes.";
+    // Process View (superusers): on or off kept for the tab (sessionStorage, as the graphs' readings), and what it says
+    // when WebODM's server runs in a container
+    var PROCESSES_KEY = "tweakui.performance.processes";
+    var CONTAINER_NOTE = "Processes WebODM's server can see. In Docker that is its own container: the processing node's " +
+        "work runs in its own and isn't listed.";
 
     function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -462,6 +467,49 @@
                 "Small operations mean scattered (random) work, large ones sequential.</p>" : "");
     }
 
+    // A process's row: its command line on one line (whole in its title) with a copy button, its CPU as a share of one
+    // core (as top shows it; of all cores in its title) and its resident memory with its share of the machine's
+    function processRowHtml(p, cores, total) {
+        var cpu = p.cpu === null || p.cpu === undefined ? '<span class="text-muted">Measuring...</span>' :
+            "<span" + (cores ? ' title="' + escapeHtml((p.cpu / cores).toFixed(1) + "% of all " + plural(cores, "core", "cores")) + '"' : "") +
+            ">" + escapeHtml(p.cpu.toFixed(1)) + "%</span>";
+        var command = p.command ? '<code class="tweakui-performance-command" title="' + escapeHtml(p.command) + '">' + escapeHtml(p.command) +
+            '</code> <button type="button" class="btn btn-default btn-xs" data-act="copy-command" data-copy="' + escapeHtml(p.command) +
+            '" title="Copy Command Line" aria-label="Copy Command Line"><i class="far fa-clipboard"></i></button>' :
+            '<span class="text-muted">Not readable</span>';
+        var memory = escapeHtml(formatBytes(p.rss)) + (total ? ' <span class="text-muted">\u00b7 ' + escapeHtml((p.rss / total * 100).toFixed(1)) + "%</span>" : "");
+        return '<tr data-pid="' + escapeHtml(p.pid) + '"><td class="tweakui-performance-number">' + escapeHtml(p.pid) + "</td><td>" + escapeHtml(p.name) +
+            '</td><td class="tweakui-performance-command-cell">' + command + "</td><td>" + escapeHtml(p.user || "") +
+            '</td><td class="tweakui-performance-number">' + cpu + '</td><td class="tweakui-performance-number">' + memory + "</td></tr>";
+    }
+
+    // One of Process View's tables (list: null while there is nothing to show, which `empty` says)
+    function processTableHtml(kind, title, list, cores, total, empty) {
+        var html = "<h5>" + title + "</h5>";
+        if (!list) return html + '<p class="text-muted small">' + empty + "</p>";
+        return html + '<div class="tweakui-performance-scroll"><table class="table table-condensed tweakui-performance-process-table" data-processes-by="' +
+            kind + '"><thead><tr><th class="tweakui-performance-number">PID</th><th>Command</th><th>Command Line</th><th>User</th>' +
+            '<th class="tweakui-performance-number">CPU</th><th class="tweakui-performance-number">Memory</th></tr></thead><tbody>' +
+            list.map(function (p) { return processRowHtml(p, cores, total); }).join("") + "</tbody></table></div>";
+    }
+
+    // Process View's tables: Top 10 by CPU above Top 10 by Memory (processes: the live figures' processes, undefined
+    // until they come, null where the server can't read them)
+    function processesHtml(processes, cores, total) {
+        if (processes === undefined) return '<p class="text-muted">Loading...</p>';
+        if (!processes) return '<p class="text-muted">The server\'s processes can\'t be read.</p>';
+        return (processes.container ? '<p class="text-muted small">' + CONTAINER_NOTE + "</p>" : "") +
+            processTableHtml("cpu", "Top 10 by CPU", processes.cpu, cores, total, "Measuring: CPU use shows from the next refresh.") +
+            processTableHtml("memory", "Top 10 by Memory", processes.memory, cores, total, "None.");
+    }
+
+    // The Process View button (on: pressed) and the place for its tables
+    function processViewHtml(on) {
+        return '<div class="tweakui-performance-process-view"><button type="button" class="btn btn-default btn-sm' + (on ? " active" : "") +
+            '" data-act="processes" aria-pressed="' + on + '"><i class="fa fa-list fa-fw"></i> Process View</button>' +
+            '<div class="tweakui-performance-processes" data-processes' + (on ? "" : " hidden") + "></div></div>";
+    }
+
     // The trend in a sentence: recent tasks' median time per photo against earlier ones'
     function trendText(trend) {
         if (!trend) return "";
@@ -687,9 +735,9 @@
             report.tasks.map(function (t) { return taskHtml(t, system); }).join("") + "</tbody></table></div>";
     }
 
-    function render(page, report, load, system, diskRates, view) {
+    function render(page, report, load, system, diskRates, view, processesOn) {
         page.querySelector(".tweakui-performance-body").innerHTML = assessmentHtml(report) + nodesHtml(report.nodes, view) +
-            serverHtml(report.server, load, diskRates, view);
+            serverHtml(report.server, load, diskRates, view) + (report.admin ? processViewHtml(!!processesOn) : "");
         // Recent Task History goes below the page's controls, which stay put while the parts around them redraw
         page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
@@ -752,7 +800,12 @@
         var status = page.querySelector(".tweakui-performance-status");
         var state = {report: null, cpu: null, load: null, io: null, diskRates: null, history: {}, hover: null,
             seconds: EVERY_DEFAULT, minutes: HISTORY_DEFAULT, diskAt: 0, timer: null, busy: false,
-            looping: false, stopped: false};
+            looping: false, stopped: false, processesOn: false, processes: undefined};
+        try {
+            state.processesOn = win.sessionStorage.getItem(PROCESSES_KEY) === "1";
+        } catch (e) {
+            // Storage that can't be used: Process View starts off
+        }
 
         // The readings this tab kept before a reload (sessionStorage: a new tab starts fresh, closing it forgets them);
         // storage that can't be used (a private window, blocked) starts empty
@@ -859,6 +912,35 @@
             showTip();
         }
 
+        // Process View's tables drawn again (a superuser's page, while it is on)
+        function redrawProcesses() {
+            var holder = page.querySelector("[data-processes]");
+            if (!holder || !state.processesOn) return;
+            var server = state.report.server;
+            holder.innerHTML = processesHtml(state.processes, server.cpu && server.cpu.cores,
+                server.memory && server.memory.total);
+        }
+
+        // The Process View button: its tables open (asked at once, then on every refresh) or close
+        function toggleProcesses(btn) {
+            var on = !state.processesOn, holder = page.querySelector("[data-processes]");
+            state.processesOn = on;
+            state.processes = undefined;
+            btn.setAttribute("aria-pressed", String(on));
+            btn.classList.toggle("active", on);
+            if (holder) {
+                holder.hidden = !on;
+                holder.innerHTML = "";
+            }
+            try {
+                win.sessionStorage.setItem(PROCESSES_KEY, on ? "1" : "0");
+            } catch (e) {
+                // Not kept: the page still shows it
+            }
+            redrawProcesses();
+            if (on && state.looping && !state.busy) schedule(0);
+        }
+
         function applyLive(data) {
             var server = state.report.server;
             reading(data.cpu, data.disk_io, data.memory, data.nodes);
@@ -878,14 +960,20 @@
                 });
             });
             redrawLive();
+            if ("processes" in data && state.processesOn) {
+                state.processes = data.processes;
+                redrawProcesses();
+            }
         }
 
         // The live figures; the next is asked once this one is answered, so a slow server is never asked twice at once
         function tick() {
             state.timer = null;
-            var disk = Date.now() - state.diskAt >= DISK_EVERY;
+            var query = [];
+            if (Date.now() - state.diskAt >= DISK_EVERY) query.push("disk=1");
+            if (state.processesOn && state.report && state.report.admin) query.push("processes=1");
             state.busy = true;
-            return ask("performance/live" + (disk ? "?disk=1" : "")).then(function (data) {
+            return ask("performance/live" + (query.length ? "?" + query.join("&") : "")).then(function (data) {
                 if (state.report && !state.stopped) applyLive(data);
             }, function () {
                 // The last figures stay; the next refresh tries again
@@ -904,7 +992,8 @@
                 reading(server.cpu, server.disk_io, server.memory, report.nodes);
                 state.diskAt = Date.now();
                 closeMenu();
-                render(page, report, state.load, unitSystem(win), state.diskRates, view());
+                render(page, report, state.load, unitSystem(win), state.diskRates, view(), state.processesOn);
+                redrawProcesses();
                 showTip();
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
                 if (!state.looping) {
@@ -951,7 +1040,8 @@
         var onUnits = ui.guard(NAME, function () {
             if (state.report) {
                 closeMenu();
-                render(page, state.report, state.load, unitSystem(win), state.diskRates, view());
+                render(page, state.report, state.load, unitSystem(win), state.diskRates, view(), state.processesOn);
+                redrawProcesses();
                 showTip();
             }
         });
@@ -1166,10 +1256,16 @@
                 restartTask(restart);
                 return;
             }
-            var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names]") : null;
+            var processes = e.target && e.target.closest ? e.target.closest("[data-act=processes]") : null;
+            if (processes) {
+                toggleProcesses(processes);
+                return;
+            }
+            // Copy Names (a list's names) or a process's Copy Command Line
+            var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names], [data-act=copy-command]") : null;
             if (copy) {
                 var icon = copy.querySelector("i");
-                ui.copyText(copy.getAttribute("data-names"), doc, win).then(function () { icon.className = "fa fa-check"; },
+                ui.copyText(copy.getAttribute("data-names") || copy.getAttribute("data-copy"), doc, win).then(function () { icon.className = "fa fa-check"; },
                     function () { icon.className = "fa fa-times"; }).then(function () {
                     win.setTimeout(function () { icon.className = "far fa-clipboard"; }, 2000);
                 });
@@ -1207,5 +1303,5 @@
         trendText: trendText, assessmentHtml: assessmentHtml, tasksSummary: tasksSummary, formatArea: formatArea, formatLength: formatLength,
         tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
         diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip, spanText: spanText, packReadings: packReadings, unpackReadings: unpackReadings,
-        record: record, niceCeil: niceCeil};
+        record: record, niceCeil: niceCeil, processesHtml: processesHtml};
 });

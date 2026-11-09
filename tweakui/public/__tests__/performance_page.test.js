@@ -609,6 +609,89 @@ describe("the Performance page", () => {
         expect(fetchFn.mock.calls[5][0]).toBe("/api/plugins/tweakui/performance/live");
     });
 
+    // A process as the live figures give them
+    function proc(pid, name, cpuShare, rss, extra) {
+        return Object.assign({pid, name, command: "/usr/bin/" + name + " --serve", user: "odm", cpu: cpuShare, rss}, extra);
+    }
+    const LIVE = "/api/plugins/tweakui/performance/live";
+    const liveData = extra => json(Object.assign({cpu: cpu([0, 0], 8), memory: {total: 64 * GB, free: 32 * GB, used: 32 * GB}, nodes: []}, extra));
+    const adminReport = () => json(report({admin: true, server: Object.assign(report().server, {cpu: cpu([0, 0], 8)})}));
+
+    test("Process View is for superusers only: others get no button and the live figures never ask for processes", async () => {
+        jest.useFakeTimers();
+        const {root, fetchFn} = await started([json(report()), liveData()]);
+        window.sessionStorage.setItem("tweakui.performance.processes", "1");
+        await jest.advanceTimersByTimeAsync(7000);
+        expect(root.querySelector("[data-act=processes]")).toBeNull();
+        expect(fetchFn.mock.calls.slice(1).every(c => c[0].indexOf("processes") < 0)).toBe(true);
+    });
+
+    test("Process View opens Top 10 by CPU above Top 10 by Memory, asked at once and then with every refresh", async () => {
+        jest.useFakeTimers();
+        const first = {container: true, cpu: null, memory: [proc(7, "python3", null, 8 * GB), proc(9, "kworker", null, GB, {command: "", user: ""})]};
+        const next = {container: true, cpu: [proc(12, "celery", 250, 2 * GB), proc(7, "python3", 12.5, 8 * GB)],
+            memory: [proc(7, "python3", 12.5, 8 * GB), proc(12, "celery", 250, 2 * GB)]};
+        const {root, fetchFn} = await started([adminReport(), liveData(), liveData({processes: first}), liveData({processes: next}), liveData()]);
+        const button = root.querySelector("[data-act=processes]");
+        const holder = root.querySelector("[data-processes]");
+        // Under the server's cards, off at first
+        expect(root.querySelector("[data-server-cards] ~ .tweakui-performance-process-view [data-act=processes]")).toBe(button);
+        expect([button.getAttribute("aria-pressed"), holder.hidden, words(button)]).toEqual(["false", true, "Process View"]);
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(fetchFn.mock.calls[1][0]).toBe(LIVE);
+        button.click();
+        expect([button.getAttribute("aria-pressed"), button.classList.contains("active"), holder.hidden, words(holder)])
+            .toEqual(["true", true, false, "Loading..."]);
+        expect(window.sessionStorage.getItem("tweakui.performance.processes")).toBe("1");
+        await jest.advanceTimersByTimeAsync(0);
+        expect(fetchFn.mock.calls[2][0]).toBe(LIVE + "?processes=1");
+        // The first reading: memory only, CPU from the next; what is listed is said in Docker
+        expect(texts(holder, "h5")).toEqual(["Top 10 by CPU", "Top 10 by Memory"]);
+        expect(words(holder)).toContain("In Docker that is its own container");
+        expect(words(holder)).toContain("Measuring: CPU use shows from the next refresh.");
+        expect(holder.querySelector("[data-processes-by=cpu]")).toBeNull();
+        expect(texts(holder, "[data-processes-by=memory] th")).toEqual(["PID", "Command", "Command Line", "User", "CPU", "Memory"]);
+        expect(texts(holder, "[data-processes-by=memory] tbody tr")).toEqual([
+            "7 python3 /usr/bin/python3 --serve odm Measuring... 8 GB \u00b7 12.5%",
+            "9 kworker Not readable Measuring... 1 GB \u00b7 1.6%"]);
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(fetchFn.mock.calls[3][0]).toBe(LIVE + "?processes=1");
+        const cpuRowsShown = holder.querySelectorAll("[data-processes-by=cpu] tbody tr");
+        expect(Array.from(cpuRowsShown).map(r => r.getAttribute("data-pid"))).toEqual(["12", "7"]);
+        expect(words(cpuRowsShown[0])).toBe("12 celery /usr/bin/celery --serve odm 250.0% 2 GB \u00b7 3.1%");
+        // CPU of one core, of all cores in its title; the command line whole in its title
+        expect(cpuRowsShown[0].querySelector("td:nth-child(5) span").title).toBe("31.3% of all 8 cores");
+        expect(cpuRowsShown[0].querySelector("code").title).toBe("/usr/bin/celery --serve");
+        const writeText = jest.fn(() => Promise.resolve());
+        Object.defineProperty(window.navigator, "clipboard", {value: {writeText}, configurable: true});
+        cpuRowsShown[0].querySelector("[data-act=copy-command]").click();
+        await jest.advanceTimersByTimeAsync(0);
+        expect(writeText).toHaveBeenCalledWith("/usr/bin/celery --serve");
+        delete window.navigator.clipboard;
+        // Off: closed, and no longer asked
+        button.click();
+        expect([button.getAttribute("aria-pressed"), holder.hidden, window.sessionStorage.getItem("tweakui.performance.processes")])
+            .toEqual(["false", true, "0"]);
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(fetchFn.mock.calls[4][0]).toBe(LIVE);
+    });
+
+    test("Process View stays on for the tab over a reload, and says so where the server can't read its processes", async () => {
+        jest.useFakeTimers();
+        window.sessionStorage.setItem("tweakui.performance.processes", "1");
+        const {root, fetchFn} = await started([adminReport(), liveData({processes: null}), adminReport(), liveData({processes: null})]);
+        expect(root.querySelector("[data-act=processes]").getAttribute("aria-pressed")).toBe("true");
+        expect(words(root.querySelector("[data-processes]"))).toBe("Loading...");
+        await jest.advanceTimersByTimeAsync(1000);
+        expect(fetchFn.mock.calls[1][0]).toBe(LIVE + "?processes=1");
+        expect(words(root.querySelector("[data-processes]"))).toBe("The server's processes can't be read.");
+        // Refresh draws the page again with it on
+        root.querySelector("[data-act=refresh]").click();
+        await jest.advanceTimersByTimeAsync(0);
+        expect(root.querySelector("[data-act=processes]").getAttribute("aria-pressed")).toBe("true");
+        expect(words(root.querySelector("[data-processes]"))).toBe("The server's processes can't be read.");
+    });
+
     test("each drive's activity comes from two readings: per second, the size of one operation, busy and the wait", () => {
         const a = io(10, [drive("sde", 1000, 500, 0, 0, 2000, 100)]);
         const b = io(12, [drive("sde", 1400, 700, 4096 * 400, 65536 * 200, 2800, 1100), drive("sdf", 1, 1, 0, 0, 0, 0)]);

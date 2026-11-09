@@ -394,6 +394,25 @@ const SHOTS = [
         },
     },
     {
+        // Process View (a superuser's), on, once CPU shows: the button and its two tables
+        name: "performance-processes", settings: {performance_view: true, performance_refresh: 1},
+        async run(s) {
+            await s.page.goto(s.base + "/plugins/tweakui/performance/");
+            await s.page.waitForSelector("[data-act=processes]");
+            await s.page.click("[data-act=processes]");
+            await s.page.waitForSelector("[data-processes-by=cpu] tbody tr", {timeout: 15000});
+            await s.page.waitForTimeout(1500);
+            const box = await s.page.evaluate(() => {
+                const view = document.querySelector(".tweakui-performance-process-view");
+                view.scrollIntoView();
+                const b = view.getBoundingClientRect();
+                return {x: b.left, y: b.top, width: b.width, height: b.height};
+            });
+            await s.page.waitForTimeout(300);
+            return {clip: {x: Math.max(box.x - 16, 0), y: Math.max(box.y - 8, 0), width: box.width + 32, height: box.height + 12}};
+        },
+    },
+    {
         // Recent Task History, with the first task's notes open (the newest task with notes)
         name: "performance-tasks", settings: {performance_view: true},
         async run(s) {

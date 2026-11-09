@@ -220,7 +220,7 @@ CATEGORIES = [
                       "disk space and activity and memory, your recent tasks (failed ones too) with their processing times and what their "
                       "logs warn of (with a button to remove the photos a task left out) and an Actions menu (its log, "
                       "Restart, its report), and whether the nodes have enough memory for your tasks, by WebODM's hardware "
-                      "requirements."),
+                      "requirements. Superusers also get Process View: the server's top processes by CPU and memory."),
                     preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
                                  "server's CPU load, disk and memory, and their recent tasks with what their logs "
