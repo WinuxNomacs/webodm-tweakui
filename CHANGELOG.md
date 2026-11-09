@@ -1,6 +1,6 @@
 # Changelog
 
-## Unreleased
+## 1.0.0 (2026-11-09)
 
 The first release. Every feature is off until a user turns it on in their own TweakUI settings (the **TweakUI** item
 just above About in the side menu), except the theme menu. Experimental; runs on WebODM 3.3.2 and later (tested on
