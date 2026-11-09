@@ -15,9 +15,20 @@ CPU load, the disks' activity and the memory refresh by themselves (see [Refresh
 as a graph over the last few minutes (see [History Length](#history-length)), and the free disk space every 10
 seconds.
 
-At the top are sentences on what the figures mean: whether a processing node has enough memory for your largest
-task, about how many photos per task each node suits, tasks waiting on a node that processes only so many at a time,
-a node that is not answering, and a server under WebODM's recommended 100 GB of free disk or 16 GB of memory.
+## General Assessment
+
+At the top, a card sums up what the figures mean, each line with an icon of its level. The card's left edge takes the
+colour of its most pressing line: green when all is well, the warning or danger colour when something needs a look.
+
+- Whether a processing node has enough memory for your largest task, about how many photos per task each node suits,
+  tasks waiting on a node that processes only so many at a time, a node that is not answering, and a server under
+  WebODM's recommended 100 GB of free disk or 16 GB of memory.
+- Recent Processing's problems in a line, when there are any: how many of your last tasks failed (and how many of
+  those ran out of memory) and how many left photos out, with a link down to
+  [Recent Processing](#recent-processing), where each task's **Notes** say more.
+- With 4 or more completed tasks to compare, whether the newer half took more or less time per photo than the older
+  half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it as
+  a hint, not a measurement.
 
 ## Processing Nodes
 
@@ -174,10 +185,6 @@ again.
 Below them, **Other Messages** opens every other warning and error line in the log, once each with how many times it
 came (GDAL's `CPLE_AppDefined` warnings, one per texture, are left out). A huge log is read only at its start and end
 (its first and last 8 MB), and a finished task's log only once.
-
-With 4 or more completed tasks to compare, a line says whether the newer half took more or less time per photo than the
-older half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it
-as a hint, not a measurement.
 
 TweakUI only reads, except for [Remove Photos From Task](#remove-photos-from-task): it asks each node for its info,
 and reads the server's CPU and disk counters and each task's report and log.

@@ -343,13 +343,18 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-storage .tweakui-storage-share { width: 80px; }
 }
 
-/* Diagnostic > Performance (templates/performance.html, performance_page.js): verdicts, then cards (a processing node
+/* Diagnostic > Performance (templates/performance.html, performance_page.js): General Assessment, then cards (a processing node
    each, the server) that wrap to one column on a phone, and the recent tasks' table, which scrolls sideways there
    rather than the page. Bars are Bootstrap's progress bars, as WebODM's own Diagnostic page has. */
 /* The page's controls, above Recent Processing: Refresh and its status, then the sliders under it */
 .tweakui-performance .tweakui-performance-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
 .tweakui-performance .tweakui-performance-bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
-.tweakui-performance .tweakui-performance-verdicts { margin-bottom: 20px; }
+/* General Assessment: a card in the theme's highlight, its left edge in its worst line's colour (text-success,
+   text-warning... as the lines' icons) */
+.tweakui-performance .tweakui-performance-assessment { position: relative; margin-bottom: 20px; padding: 8px 14px 6px 20px; border-width: 1px; border-style: solid; border-radius: 4px; overflow: hidden; }
+.tweakui-performance .tweakui-performance-assessment-edge { position: absolute; top: 0; bottom: 0; left: 0; width: 6px; background-color: currentColor; }
+.tweakui-performance .tweakui-performance-assessment h4 { margin: 4px 0 8px; font-weight: bold; }
+.tweakui-performance .tweakui-performance-verdicts { margin-bottom: 4px; }
 .tweakui-performance .tweakui-performance-verdicts > li { padding: 3px 0; }
 .tweakui-performance .tweakui-performance-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
 .tweakui-performance .tweakui-performance-card { flex: 0 1 360px; min-width: 0; padding: 8px 12px; border-width: 1px; border-style: solid; border-radius: 4px; }
