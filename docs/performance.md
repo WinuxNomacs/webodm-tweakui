@@ -9,11 +9,16 @@ withhold it from users in [Administration > TweakUI](administration).
 
 The **Diagnostic** item in the side menu gets a **Performance** sub-item, after **System** (WebODM's own Diagnostic
 page) and **Storage** if that is on too. If an administrator has turned the Diagnostic plugin off, the **TweakUI**
-item gets it instead. The page is asked afresh each time it opens, and again with **Refresh** (above
-[Recent Task History](#recent-task-history), with Refresh Every and History Length under it). While it is open, the
+item gets it instead. The page is asked afresh each time it opens, and again with **Refresh**. While it is open, the
 CPU load, the disks' activity and the memory refresh by themselves (see [Refresh Every](#refresh-every)), each drawn
 as a graph over the last few minutes (see [History Length](#history-length)), and the free disk space every 10
 seconds.
+
+The page's controls are in a bar beside its heading: when it was last updated, how much time the graphs show
+("Graphs: last 5 min"), **Refresh**, and a gear button that opens **Refresh Every** and **History Length** in a small
+panel (Escape or a click elsewhere closes it). At phone width the bar goes under the heading. The notes that explain
+a section's figures (how memory sizing works, what CPU Load and disk activity count) are behind the
+<i>info</i> button beside its heading.
 
 ## General Assessment
 
@@ -25,7 +30,7 @@ colour of its most pressing line: green when all is well, the warning or danger 
   WebODM's recommended 100 GB of free disk or 16 GB of memory.
 - Recent Task History's problems in a line, when there are any: how many of your last tasks failed (and how many of
   those ran out of memory) and how many left photos out, with a link down to
-  [Recent Task History](#recent-task-history), where each task's **Notes** say more.
+  [Recent Task History](#recent-task-history), where each task's **Details** say more.
 - With 4 or more completed tasks to compare, whether the newer half took more or less time per photo than the older
   half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it as
   a hint, not a measurement.
@@ -85,13 +90,13 @@ The counters are for each whole disk, whatever uses it. In Docker they are the d
 Windows and macOS, Docker's own virtual machine's), so the processing node's and the worker's work on the same disk
 counts too.
 
-### Process View
+### Processes
 
-For superusers only: under the server's cards, a **Process View** button opens two tables of the processes WebODM's
-server can see, **Top 10 by CPU** above **Top 10 by Memory**, the highest first. Other users get no button, and the
+For superusers only: under the server's cards, **Processes** opens (click it) to two tables of the processes WebODM's
+server can see, **Top 10 by CPU** above **Top 10 by Memory**, the highest first. Other users don't get it, and the
 plugin's API gives them no processes: a command line can hold passwords, tokens or other users' work.
 
-![Process View in WebODM's Docker install: the web container's processes by CPU and by memory](../tweakui/public/previews/performance-processes.webp)
+![Processes in WebODM's Docker install: the web container's processes by CPU and by memory](../tweakui/public/previews/performance-processes.webp)
 
 Each process has its **PID**, its **Command** (the program's name, as top shows it), its **Command Line**, its
 **User**, its **CPU** and its **Memory**, in outlined tables. A command line wraps at its column's width and shows its
@@ -106,9 +111,9 @@ working set on Windows) and its share of the machine's. A process whose command 
 or another user's protected process) says so.
 
 The tables refresh with CPU Load, every [Refresh Every](#refresh-every) seconds. CPU is the difference between two
-readings, so when Process View opens it lists memory first and CPU from the next refresh. The button stays on for the
-browser tab (its session storage), over a reload, until you turn it off; it starts off in a new tab. While it is off,
-nothing about processes is read.
+readings, so when Processes opens it lists memory first and CPU from the next refresh. It stays open for the
+browser tab (its session storage), over a reload, until you close it; it starts closed in a new tab. While it is
+closed, nothing about processes is read.
 
 What the server can see depends on how WebODM runs:
 
@@ -123,8 +128,8 @@ What the server can see depends on how WebODM runs:
 Each live figure has a graph of its readings since the page opened, the newest at the right, over the last [History
 Length](#history-length): CPU Load, the server's memory, each node's memory, and each drive's reads and writes and
 Busy. Percentages are drawn from 0 to 100%. Each graph's scale is inside it, faint: its top (100%, or a drive's
-highest rate) at the top left, 0 at the bottom left and a dotted line at half height. Under it, its time line runs
-from the window's start ("5 min ago", following History Length) at the left to Now at the right. Moving the pointer
+highest rate) at the top left, 0 at the bottom left and a dotted line at half height. Every graph shows the same
+window, said once in the page's bar ("Graphs: last 5 min", following History Length), up to now at its right edge. Moving the pointer
 over a graph (or touching it on a phone) shows the readings under it and their time. The line breaks where readings
 stopped, as while the browser tab was hidden.
 
@@ -140,7 +145,7 @@ reading first, as when the page opens. A memory figure turns to a warning colour
 
 A part of Show Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the disks'
 activity, the server's memory and each node's memory, from 1 to 10 seconds. It is on the settings page and on the
-Performance page, under **Refresh** above Recent Task History (a slider and a box, as for the other number settings); a
+Performance page, behind the gear button beside **Refresh** (a slider and a box, as for the other number settings); a
 change there applies at once and is saved when you let go of the slider or leave the box. The free disk space
 refreshes every 10 seconds. Nothing is refreshed while the browser tab is hidden, and a refresh waits for the last to
 be answered.
@@ -148,20 +153,28 @@ be answered.
 ### History Length
 
 A part of Show Performance View, 5 minutes unless you change it. How much time the graphs show, from 1 to 30
-minutes, newest at the right. Like Refresh Every, it is on the settings page and on the Performance page, under it,
+minutes, newest at the right. Like Refresh Every, it is on the settings page and on the Performance page, beside it,
 where a change redraws the graphs at once (with the readings the page has kept: a longer window shows more once the
 page has been open that long).
 
 ## Recent Task History
 
-![Recent Task History with a task's notes open](../tweakui/public/previews/performance-tasks.webp)
+![Recent Task History with a task's Details open](../tweakui/public/previews/performance-tasks.webp)
 
 Your last 10 finished tasks, newest first: completed, failed or canceled. A failed task says so under its name, with
-WebODM's error, and its notes open; a canceled one says **Canceled**. Each task has:
+WebODM's error, and its Details open; a canceled one says **Canceled**. The table has each task's name, when it was
+created, and:
 
 - **Photos**: the photos placed in the reconstruction of those given ("208 of 220"), from the task's report
   (`odm_report/stats.json`); in the warning colour when some were left out. Just the photos when there is no report.
 - **Time** and **Per Photo**: its processing time, and that time per photo (completed tasks only).
+- **Node**: the node that processed it.
+- At the row's end, a **•••** button for its [Actions](#actions).
+
+A **Details** button beside the task's name opens a row under it with the figures from its report, those it has
+(hover a figure's name for what it means), then its [notes from the log](#notes-from-the-log). When the log gave
+notes, the button counts them, with the icon of the most pressing one:
+
 - **Slowest SfM Step**: the slowest of the structure-from-motion steps ODM times in its report (feature extraction,
   matching, reconstruction...; the later steps are not timed one by one).
 - **Area**: the area the photos cover.
@@ -171,18 +184,17 @@ WebODM's error, and its notes open; a canceled one says **Canceled**. Each task 
 - **Position Error**: the reconstruction's average distance from the photos' GPS positions, or from the ground
   control points (**GCP**) when the task had them.
 - **GPU**: whether the node used a GPU, from the log (**No** when it found none).
-- **Node**: the node that processed it.
 
 Area and Position Error are in WebODM's unit system, the one the maps' unit selector and
 [Units in Header](general#global-controls-units-in-header) set: square metres or hectares and centimetres or metres in metric, square
-feet or acres and inches or feet in imperial. They change with it. At phone width these columns, the date, the step and
-the node fold into a line under the task's name.
+feet or acres and inches or feet in imperial. They change with it. At phone width the date and the node fold into a
+line under the task's name.
 
 Administrators see the last 10 on the server, whoever they belong to, and the largest task anyone has run.
 
 ### Actions
 
-An **Actions** button beside each task's name opens a menu, in alphabetical order:
+The **•••** button at the end of each task's row (as on WebODM's Dashboard) opens its menu, in alphabetical order:
 
 - **Download Report** and **View Report**: the task's PDF report, saved or opened in a new tab. Only for a task that
   has one (ODM writes it when a task completes).
@@ -198,8 +210,7 @@ An **Actions** button beside each task's name opens a menu, in alphabetical orde
 ### Notes from the Log
 
 TweakUI reads each listed task's log (what the processing node printed, as on the task's panel) for the messages
-worth knowing, and a **Notes** button by the task's name opens them, each in a plain sentence with the line it came
-from:
+worth knowing. The task's **Details** show them, each in a plain sentence with the line it came from:
 
 - Out of memory: processing stopped (or a step was run again with less memory, a sign the node is short of it).
 - Stopped on strange values in the reconstruction, not enough usable photos, a problem with the GCP file, a CPU too

@@ -237,7 +237,7 @@ class PerformanceView(APIView):
 class PerformanceLiveView(APIView):
     """GET /api/plugins/tweakui/performance/live[?disk=1][&processes=1]: what the Performance page refreshes every few
     seconds, the server's CPU counters and memory, the nodes' memory and, when asked, the disk and, for a superuser
-    only (command lines can hold passwords and other users' work), Process View's processes (performance.live)"""
+    only (command lines can hold passwords and other users' work), the server's processes (performance.live)"""
     permission_classes = (Available,)
     feature = "performance_view"
 

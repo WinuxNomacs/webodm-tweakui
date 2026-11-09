@@ -3,11 +3,9 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **UX review, Phase B: Performance page layout** (controls at the top, notes behind ⓘ, Process View as a section,
-   graph labels, fewer table columns, row actions in one place) — decided, branch `ux-performance-layout`.
-2. **UX review, Phase C: Settings page readability** (one-line descriptions with More, enlargeable previews, a
+1. **UX review, Phase C: Settings page readability** (one-line descriptions with More, enlargeable previews, a
    Navigation Pane group) — open decisions below.
-3. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
+2. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
    CHANGELOG).
 
 **Later**
@@ -15,6 +13,22 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **UX review, Phase B: Performance page layout** (user request, 2026-11-09) — branch `ux-performance-layout`:
+  `performance.html` (the controls in a bar beside the heading, Refresh Every and History Length in the gear's
+  popover), `performance_page.js` (`headingHtml`: a section's notes behind an info button, kept open over a redraw;
+  Processes, renamed from Process View, a `<details>` in Server opened and closed by its `toggle`; `spanText`: the
+  graphs' window once in the bar, no time line under each graph; Recent Task History's six columns, `detailsButtonHtml`
+  and `figuresHtml`: every task gets a Details row with the five figures above its notes; the Actions menu now a "•••"
+  at the row's end), `core.js` (`rowMenu`/`rowMenuHtml`, the "•••" menu shared by Performance and Storage, moved from
+  the Performance script), `storage_page.js` (each row's Import, Backup, Compact and Delete in a "•••" menu; the project
+  row's empty date cell hidden at phone width as the others), `main.css` (the bar and popover, graphs 60px high on
+  desktop with 11px labels, the Details row's figures; a scroll box contains what is positioned in it; Storage's long
+  names break and marks wrap at phone width). Tests: `performance_page.test.js` (controls and popover, info notes,
+  Details, the "•••" menu, Processes), `storage_page.test.js` (the row menus), `test_tweakui.py` (the template's order).
+  Docs `performance.md`, `storage.md`, `adding-a-tweak.md` (the helper), README, CHANGELOG, screenshots `performance`,
+  `performance-processes`, `performance-tasks`, `storage`. Live on 4.0.0 and 3.3.2 at desktop and phone width (both
+  pages fit 390px). Processes' Docker note stays inside the opened section rather than behind an info button: it is
+  hidden until the section opens.
 - **UX review, Phase A: quick fixes** (user request, 2026-11-09) — branch `ux-quick-fixes`: `main.css` (Storage's
   row buttons stack at phone width; the bars' track from `currentColor` at 15% through `color-mix`; `#page-wrapper`
   30px from the left with the side menu hidden), `storage_page.js` and `storage.html` (Delete `btn-default` until
@@ -808,7 +822,7 @@ Built as planned; item 1 stacks the row's buttons at phone width (the table fits
 6. Colour-only figures (Recent Task History's "208 of 220" in the warning colour) get the ⚠ icon the Notes button
    uses.
 
-### Phase B: Performance page layout (to plan)
+### Phase B: Performance page layout (done)
 
 - Refresh, Updated, Refresh Every and History Length move to a bar beside the page's heading, the two sliders in a
   popover.

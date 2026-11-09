@@ -14,28 +14,36 @@
 
 ### Diagnostic
 
-- Storage View: at phone width a project's or task's buttons stack, so none is cut off past the screen's edge; the
-  selection bar's Delete turns red only once something is selected; "Your storage" is now "Your Storage".
+- Storage View: a project's actions (Import, Delete) and a task's (Backup, Compact, Delete) are in a **•••** menu at
+  the row's end, as on WebODM's Dashboard; at phone width a long name breaks and a task's mark wraps, so the table
+  fits the screen; the selection bar's Delete turns red only once something is selected; "Your storage" is now
+  "Your Storage".
 - Storage and Performance View: the bars' tracks follow the theme (a faint track in its text colour) instead of
   Bootstrap's light grey, which glared in dark themes.
 - Performance View: a figure in a warning or danger colour (photos left out, several reconstructions, memory used,
   a disk's Busy) has its icon too, so it isn't told by colour alone.
 - Performance View: Recent Processing is now **Recent Task History**.
-- Performance View: **Process View**, for superusers, under the server's cards: the top 10 processes WebODM's server
+- Performance View: **Processes**, for superusers, a section under the server's cards that opens: the top 10 processes WebODM's server
   can see by CPU and by memory (PID, command, command line with a copy button, user, CPU and memory), refreshed with
   CPU Load. In Docker that is the web container's own processes. The tables are outlined, their columns resizable
   (kept for the browser tab), and a command line wraps at its column's width, showing its first 512 characters; its
   copy button copies it whole.
-- Performance View > Recent Task History: an **Actions** menu on each task, in alphabetical order: Download Report
+- Performance View > Recent Task History: a **•••** menu at the end of each task's row, in alphabetical order: Download Report
   and View Report (for a task with a report), Download Task Logs, and Restart From Load Dataset (as WebODM's
   Restart, where the Dashboard offers it).
 - Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or
   delete them." until something is selected.
 - Performance View: the graphs' readings survive a reload of the page (Ctrl+R or F5) in the same browser tab (its
   session storage); nothing is measured while the page isn't open.
-- Performance View: each graph has its scale inside it (its top, 0, a line at half height), a time line under it
-  (from "5 min ago", following History Length, to Now) and, for a drive's reads and writes, a legend; the graphs are
-  10% taller.
+- Performance View: each graph has its scale inside it (its top, 0, a line at half height, in 11px labels) and, for a
+  drive's reads and writes, a legend; the window, the same for every graph, is said once in the page's bar ("Graphs:
+  last 5 min", following History Length); the graphs are taller on desktop.
+- Performance View: the page's controls are in a bar beside its heading (Updated, the graphs' window, Refresh and a
+  gear button whose panel holds Refresh Every and History Length), and the notes explaining a section's figures
+  (memory sizing, CPU Load, disk activity) are behind an info button beside its heading.
+- Performance View > Recent Task History: the table keeps Task, Created, Photos, Time, Per Photo and Node; Slowest SfM
+  Step, Area, Reconstructions, Position Error and GPU are in the row a task's **Details** button opens, above its notes
+  (the button counts the notes, with the most pressing one's icon).
 - Performance View: a **General Assessment** card at the top, its left edge in its most pressing line's colour, with
   the verdicts on memory and the nodes, a line summing up Recent Task History's failed tasks and photos left out, and
   the time-per-photo trend (moved up from Recent Task History).

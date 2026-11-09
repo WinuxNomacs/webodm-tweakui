@@ -1,7 +1,9 @@
-// Diagnostic > Performance (templates/performance.html): verdicts at the top, then a card per processing node the
-// user may use (what it says of itself: cores, memory, queue), the server's disk and memory, and the recent finished
-// tasks (an admin's: every user's) with their time per photo, figures from their report, notes from their log and a
-// trend (performance.py and task_log.py through the plugin's API). Areas and errors are in WebODM's unit system (the
+// Diagnostic > Performance (templates/performance.html): the page's controls beside its heading (Updated, the graphs'
+// window, Refresh, a gear's popover with Refresh Every and History Length), verdicts at the top, then a card per
+// processing node the user may use (what it says of itself: cores, memory, queue), the server's disk and memory (and,
+// for a superuser, its processes), each section's notes behind an info button, and the recent finished tasks (an
+// admin's: every user's) with their time per photo, a Details row of figures from their report and notes from their
+// log, a "•••" menu each, and a trend (performance.py and task_log.py through the plugin's API). Areas and errors are in WebODM's unit system (the
 // maps' choice, Units.js's localStorage "unit_system"), redrawn when it changes.
 // Asked on opening and with Refresh. The server's CPU load and memory, each drive's activity and the nodes' memory
 // are asked again every Refresh Every seconds (a setting, also on the page), the disk's free space every 10 seconds,
@@ -35,14 +37,27 @@
     // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
     var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
     var FT = 3.28083989501, FT2_ACRE = 43560;
-    // Recent Task History's columns (a notes row spans them all)
-    var TASK_COLUMNS = 11;
+    // Recent Task History's columns (a task's Details row spans them all)
+    var TASK_COLUMNS = 7;
+    // The figures a task's Details row shows from its report, with what each means
+    var FIGURES = {
+        step: ["Slowest SfM Step", "Of the structure-from-motion steps ODM times in its report (stats.json); the later steps are not timed one by one"],
+        area: ["Area", "The area the photos cover, from the task's report"],
+        reconstructions: ["Reconstructions", "Separate reconstructions the photos made before they were merged: more than one means some areas did not overlap enough"],
+        error: ["Position Error", "The reconstruction's average distance from the photos' GPS positions, or from the ground control points when the task had them"],
+        gpu: ["GPU", "Whether the node used a GPU, from the task's log"]
+    };
+    var MEMORY_NOTE = 'Memory sizing (a node\'s Suits) follows <a href="' + REQUIREMENTS + '" target="_blank" rel="noopener noreferrer">' +
+        "WebODM's hardware requirements</a>, which are conservative. In Docker, a node has the memory Docker gives it.";
+    var CPU_NOTE = "CPU Load is the machine WebODM runs on: processing nodes don't report theirs. A node on the same machine shares it.";
+    var DISK_NOTE = "Disk activity is what the system counts for each whole disk: in Docker, the disks of the machine Docker runs " +
+        "on, so a processing node's work on them counts too. Small operations mean scattered (random) work, large ones sequential.";
     // Photos Left Out: a name opens the photo this large (WebODM's thumbnail: its download is an attachment), and
     // hovering it shows it this large
     var PHOTO_OPEN = 2048, PHOTO_HOVER = 256;
     var REASONS = {no_features: "No features", no_gps: "No GPS"};
     var RESTART_QUESTION = "Restart this task from Load Dataset? Its results are replaced when it finishes.";
-    // Process View (superusers): on or off kept for the tab (sessionStorage, as the graphs' readings), and what it says
+    // Processes (superusers): open or closed, kept for the tab (sessionStorage, as the graphs' readings), and what it says
     // when WebODM's server runs in a container
     var PROCESSES_KEY = "tweakui.performance.processes";
     // Its tables' columns: their names and starting widths (shares of the table's width). Dragging a column's edge gives
@@ -203,16 +218,17 @@
         return kind === "rate" ? formatRate(v) : percent(v);
     }
 
-    // How far back a graph's window starts, as its time line says: "5 min ago"
+    // The graphs' window, said once in the page's bar: "Graphs: last 5 min"
     function spanText(ms) {
         var minutes = Math.round(ms / 60000);
-        return minutes >= 1 ? formatNumber(minutes) + " min ago" : Math.round(ms / 1000) + " s ago";
+        return "Graphs: last " + (minutes >= 1 ? formatNumber(minutes) + " min" : Math.round(ms / 1000) + " s");
     }
 
     // A graph of one or two series over the last view.span ms (view: {history, now, span, gap}; none draws an empty
     // one): the newest at the right, a percent graph from 0 to 100%, a rate graph up to its highest reading in the window.
     // Its scale is inside it: the top (100%, or the rate's top once it has readings) at top left, 0 at bottom left and a
-    // faint line at half height; under it, its time line (the window's start, Now) and, for two series, a legend. The
+    // faint line at half height (the window, the same for every graph, is said in the page's bar: spanText); under it,
+    // for two series, a legend. The
     // first series is in the theme's link colour (the bars' colour, start's accent) with a light fill under it, the
     // second in its text colour. Hovering it shows the readings under the pointer (start's hover)
     function graphHtml(view, id, series, kind) {
@@ -241,8 +257,6 @@
             '<svg viewBox="0 0 ' + GRAPH_W + " " + GRAPH_H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
             '<line class="tweakui-performance-graph-grid" x1="0" x2="' + GRAPH_W + '" y1="' + GRAPH_H / 2 + '" y2="' + GRAPH_H / 2 + '"></line>' +
             paths + "</svg></div>" +
-            (view ? '<div class="tweakui-performance-graph-axis text-muted small" aria-hidden="true"><span>' + escapeHtml(spanText(span)) +
-                "</span><span>Now</span></div>" : "") +
             (series.length > 1 ? '<div class="tweakui-performance-graph-legend small" aria-hidden="true">' + series.map(function (s, i) {
                 return '<span><i class="tweakui-performance-graph-swatch ' + (i === 0 ? "tweakui-performance-accent" : "theme-color-primary") +
                     '" aria-hidden="true"></i> ' + escapeHtml((s.label || "") + (kind === "rate" ? " (/s)" : "")) + "</span>";
@@ -356,7 +370,7 @@
         var verdicts = report.verdicts || [], summary = tasksSummary(report), trend = trendText(report.trend);
         var lines = verdicts.map(function (v) { return lineHtml(v.level, escapeHtml(v.text)); });
         if (summary) {
-            lines.push(lineHtml(summary.level, escapeHtml(summary.text) + ' <a href="#tweakui-performance-recent">See their Notes in Recent Task History</a>.',
+            lines.push(lineHtml(summary.level, escapeHtml(summary.text) + ' <a href="#tweakui-performance-recent">See their Details in Recent Task History</a>.',
                 " data-summary"));
         }
         if (trend) lines.push(lineHtml("info", escapeHtml(trend), ' class="tweakui-performance-trend"'));
@@ -394,8 +408,19 @@
             '</h5><table class="tweakui-performance-facts">' + rows + "</table></div>";
     }
 
+    // A section's heading, with an info button beside it that shows its notes (hidden until asked: start keeps them
+    // open over a redraw); a plain heading without notes
+    function headingHtml(title, id, notes) {
+        if (!notes) return "<h4>" + title + "</h4>";
+        var panel = "tweakui-performance-info-" + id;
+        return "<h4>" + title + ' <button type="button" class="btn btn-link btn-xs tweakui-performance-info-button" data-act="info" ' +
+            'aria-expanded="false" aria-controls="' + panel + '" aria-label="About ' + title + '" title="About ' + title + '">' +
+            '<i class="fa fa-info-circle"></i></button></h4><div class="tweakui-performance-info text-muted small" id="' + panel + '" hidden>' +
+            notes + "</div>";
+    }
+
     function nodesHtml(nodes, view) {
-        var html = "<h4>Processing Nodes</h4>";
+        var html = headingHtml("Processing Nodes", "nodes", nodes.length ? "<p>" + MEMORY_NOTE + "</p>" : "");
         if (!nodes.length) return html + '<p class="text-muted">No processing node is available to you.</p>';
         return html + '<div class="tweakui-performance-cards">' + nodes.map(function (n) { return nodeHtml(n, view); }).join("") + "</div>";
     }
@@ -458,9 +483,7 @@
         if (server.memory) rows += rowHtml("Memory", memoryGraphHtml(server.memory.free, server.memory.total, view, "memory"));
         if (!rows) return "";
         return '<div class="tweakui-performance-card tweakui-performance-server theme-border" data-server>' +
-            '<h5><i class="fa fa-hdd fa-fw"></i> WebODM</h5><table class="tweakui-performance-facts">' + rows + "</table>" +
-            (server.cpu ? '<p class="text-muted small tweakui-performance-cpu-note">The CPU load of the machine WebODM runs on: ' +
-                "processing nodes don't report theirs. A node on the same machine shares it.</p>" : "") + "</div>";
+            '<h5><i class="fa fa-hdd fa-fw"></i> WebODM</h5><table class="tweakui-performance-facts">' + rows + "</table></div>";
     }
 
     // The server's card, then a card per drive it uses (diskRates: diskShares's, or null while measuring)
@@ -474,10 +497,9 @@
     function serverHtml(server, load, diskRates, view) {
         var cards = serverCardsHtml(server, load, diskRates, view);
         if (!cards) return "";
-        return '<h4>Server</h4><div class="tweakui-performance-cards" data-server-cards>' + cards + "</div>" +
-            (server.disk_io ? '<p class="text-muted small tweakui-performance-disk-note">Disk activity is what the system counts for each ' +
-                "whole disk: in Docker, the disks of the machine Docker runs on, so a processing node's work on them counts too. " +
-                "Small operations mean scattered (random) work, large ones sequential.</p>" : "");
+        var notes = (server.cpu ? '<p class="tweakui-performance-cpu-note">' + CPU_NOTE + "</p>" : "") +
+            (server.disk_io ? '<p class="tweakui-performance-disk-note">' + DISK_NOTE + "</p>" : "");
+        return headingHtml("Server", "server", notes) + '<div class="tweakui-performance-cards" data-server-cards>' + cards + "</div>";
     }
 
     // A process's row: its command line on one line (whole in its title) with a copy button, its CPU as a share of one
@@ -498,7 +520,7 @@
             "</td><td>" + cpu + "</td><td>" + memory + "</td></tr>";
     }
 
-    // A Process View table's width and its columns' (widths: each column's in pixels, or null for the starting shares)
+    // A Processes table's width and its columns' (widths: each column's in pixels, or null for the starting shares)
     function tableStyle(widths) {
         return widths ? "width: " + widths.reduce(function (a, b) { return a + b; }, 0) + "px; min-width: 0" : "";
     }
@@ -508,7 +530,7 @@
         }).join("") + "</colgroup>";
     }
 
-    // One of Process View's tables (list: null while there is nothing to show, which `empty` says): outlined, each
+    // One of Processes' tables (list: null while there is nothing to show, which `empty` says): outlined, each
     // column's right edge a handle that resizes it
     function processTableHtml(kind, title, list, cores, total, empty, widths) {
         var html = "<h5>" + title + "</h5>";
@@ -522,7 +544,7 @@
             list.map(function (p) { return processRowHtml(p, cores, total); }).join("") + "</tbody></table></div>";
     }
 
-    // Process View's tables: Top 10 by CPU above Top 10 by Memory (processes: the live figures' processes, undefined
+    // Processes' tables: Top 10 by CPU above Top 10 by Memory (processes: the live figures' processes, undefined
     // until they come, null where the server can't read them)
     function processesHtml(processes, cores, total, widths) {
         if (processes === undefined) return '<p class="text-muted">Loading...</p>';
@@ -532,11 +554,10 @@
             processTableHtml("memory", "Top 10 by Memory", processes.memory, cores, total, "None.", widths);
     }
 
-    // The Process View button (on: pressed) and the place for its tables
+    // Processes, in Server: a section that opens (on) and closes, and the place for its tables
     function processViewHtml(on) {
-        return '<div class="tweakui-performance-process-view"><button type="button" class="btn btn-default btn-sm' + (on ? " active" : "") +
-            '" data-act="processes" aria-pressed="' + on + '"><i class="fa fa-list fa-fw"></i> Process View</button>' +
-            '<div class="tweakui-performance-processes" data-processes' + (on ? "" : " hidden") + "></div></div>";
+        return '<details class="tweakui-performance-other tweakui-performance-process-view" data-process-view' + (on ? " open" : "") +
+            '><summary>Processes</summary><div class="tweakui-performance-processes" data-processes></div></details>';
     }
 
     // The trend in a sentence: recent tasks' median time per photo against earlier ones'
@@ -584,15 +605,29 @@
         return levels.indexOf("danger") >= 0 ? "danger" : levels.indexOf("warning") >= 0 ? "warning" : "info";
     }
 
-    function notesButtonHtml(t, open) {
-        var notes = t.notes || [], other = t.other || [];
-        if (!notes.length && !other.length) return "";
-        var level = notes.length ? worstLevel(notes) : "info";
-        var icon = level === "info" ? "fa-info-circle" : ICONS[level];
-        var label = notes.length ? plural(notes.length, "Note", "Notes") : plural(other.length + (t.more || 0), "Message", "Messages");
-        return ' <button type="button" class="btn btn-default btn-xs tweakui-performance-notes-button" data-act="notes" aria-expanded="' +
-            open + '" aria-controls="tweakui-performance-notes-' + escapeHtml(t.id) + '"><i class="fa ' + icon + " text-" + level +
-            '"></i> ' + escapeHtml(label) + "</button>";
+    // A task's Details button: with its notes' count, and their worst level's icon, when its log gave notes
+    function detailsButtonHtml(t, open) {
+        var notes = t.notes || [], level = notes.length ? worstLevel(notes) : "";
+        var icon = level ? '<i class="fa ' + (level === "info" ? "fa-info-circle" : ICONS[level]) + " text-" + level + '"></i> ' : "";
+        return '<button type="button" class="btn btn-default btn-xs tweakui-performance-details-button" data-act="details" aria-expanded="' +
+            open + '" aria-controls="tweakui-performance-details-' + escapeHtml(t.id) + '"' +
+            (notes.length ? ' title="' + escapeHtml(plural(notes.length, "note", "notes")) + ' from its log"' : "") + ">" + icon + "Details" +
+            (notes.length ? " (" + escapeHtml(formatNumber(notes.length)) + ")" : "") + "</button>";
+    }
+
+    // The figures from a task's report, in its Details row (those it has): each named, with what it means in its title
+    function figuresHtml(t, system) {
+        var items = [];
+        function add(key, html) {
+            if (html) items.push('<div><dt title="' + escapeHtml(FIGURES[key][1]) + '">' + FIGURES[key][0] + "</dt><dd>" + html + "</dd></div>");
+        }
+        add("step", t.slowest_step ? escapeHtml(t.slowest_step.name) + ' <span class="text-muted">' + escapeHtml(formatDuration(t.slowest_step.seconds)) + "</span>" : "");
+        add("area", escapeHtml(formatArea(t.area, system)));
+        add("reconstructions", reconstructionsHtml(t));
+        add("error", escapeHtml(errorText(t, system)));
+        add("gpu", escapeHtml(gpuText(t)));
+        return items.length ? '<dl class="tweakui-performance-figures">' + items.join("") + "</dl>" :
+            '<p class="text-muted small tweakui-performance-figures">Its report gives no more figures.</p>';
     }
 
     // A task's notes from its log, each with its line, and the log's other messages in a list that opens
@@ -674,15 +709,10 @@
         return "";
     }
 
-    // At phone width the wide columns are hidden; their figures come in a line under the task's name
-    function detailHtml(t, system) {
+    // At phone width the wide columns (Created, Node) are hidden; their figures come in a line under the task's name
+    function detailHtml(t) {
         var parts = [];
         if (t.created_at) parts.push(new Date(t.created_at).toLocaleDateString());
-        if (t.slowest_step) parts.push("Slowest " + t.slowest_step.name + " " + formatDuration(t.slowest_step.seconds));
-        if (t.area !== null && t.area !== undefined) parts.push(formatArea(t.area, system));
-        if (t.reconstructions) parts.push(plural(t.reconstructions, "reconstruction", "reconstructions"));
-        if (t.position_error) parts.push(errorText(t, system) + " error");
-        if (gpuText(t)) parts.push("GPU: " + gpuText(t));
         if (t.node) parts.push(t.node);
         return parts.length ? '<div class="text-muted small tweakui-performance-detail">' + escapeHtml(parts.join(" \u00b7 ")) + "</div>" : "";
     }
@@ -700,8 +730,8 @@
 
     var RESTARTING = "Restarting: it leaves this list while it runs.";
 
-    // A task's Actions menu (a Bootstrap dropdown, opened by the page's own script): its log as WebODM's console
-    // download, Restart From Load Dataset where WebODM's Dashboard offers Restart, and its report when it has one
+    // A task's "•••" menu at its row's end (core.js's rowMenu): its log as WebODM's console download, Restart From Load
+    // Dataset where WebODM's Dashboard offers Restart, and its report when it has one
     function actionsHtml(t, name) {
         // In alphabetical order
         var items = [];
@@ -713,36 +743,28 @@
             items.push('<li><a href="' + escapeHtml(taskUrl(t, "download/report.pdf?inline=1")) + '" target="_blank" rel="noopener noreferrer">' +
                 '<i class="fa fa-file-pdf fa-fw"></i> View Report</a></li>');
         }
-        return ' <div class="btn-group tweakui-performance-actions"><button type="button" class="btn btn-default btn-xs dropdown-toggle" ' +
-            'data-act="actions" aria-haspopup="true" aria-expanded="false"' + (t.restarting ? " disabled" : "") +
-            '>Actions <span class="caret"></span></button><ul class="dropdown-menu">' + items.join("") + "</ul></div>";
+        return ui.rowMenuHtml(items, t.restarting);
     }
 
     function taskHtml(t, system) {
         var name = t.name || "Task of " + (t.created_at ? t.created_at.slice(0, 10) : "?");
         var where = escapeHtml(t.project.name) + (t.owner ? " of " + escapeHtml(t.owner) : "");
         var open = t.status === "failed";
-        var notes = notesButtonHtml(t, open);
         var wide = "tweakui-performance-wide ";
         return '<tr data-task="' + escapeHtml(t.id) + '"' + (t.status ? ' data-status="' + escapeHtml(t.status) + '"' : "") + '><td><a href="/map/project/' +
             escapeHtml(t.project.id) + "/task/" + escapeHtml(t.id) + '/">' + escapeHtml(name) + "</a>" +
-            ' <span class="tweakui-performance-task-buttons">' + notes + actionsHtml(t, name) + "</span>" +
+            ' <span class="tweakui-performance-task-buttons">' + detailsButtonHtml(t, open) + "</span>" +
             '<div class="text-muted small">' + where + "</div>" + statusHtml(t) +
             '<div class="small text-muted tweakui-performance-action-status" aria-live="polite">' + (t.restarting ? RESTARTING : "") + "</div>" +
-            detailHtml(t, system) + "</td>" +
+            detailHtml(t) + "</td>" +
             '<td class="' + wide + 'tweakui-performance-date">' + escapeHtml(t.created_at ? new Date(t.created_at).toLocaleDateString() : "") + "</td>" +
             '<td class="tweakui-performance-number">' + photosHtml(t) + "</td>" +
             '<td class="tweakui-performance-number">' + escapeHtml(formatDuration(t.seconds)) + "</td>" +
             '<td class="tweakui-performance-number">' + escapeHtml(t.seconds_per_image ? t.seconds_per_image.toFixed(1) + "s" : "") + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-step">' + (t.slowest_step ? escapeHtml(t.slowest_step.name) + ' <span class="text-muted">' +
-                escapeHtml(formatDuration(t.slowest_step.seconds)) + "</span>" : "") + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-number">' + escapeHtml(formatArea(t.area, system)) + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-number">' + reconstructionsHtml(t) + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-number">' + escapeHtml(errorText(t, system)) + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-gpu">' + escapeHtml(gpuText(t)) + "</td>" +
-            '<td class="' + wide + 'tweakui-performance-node">' + escapeHtml(t.node || "") + "</td></tr>" +
-            (notes ? '<tr class="tweakui-performance-notes-row" id="tweakui-performance-notes-' + escapeHtml(t.id) + '"' + (open ? "" : " hidden") +
-                '><td colspan="' + TASK_COLUMNS + '">' + notesHtml(t) + "</td></tr>" : "");
+            '<td class="' + wide + 'tweakui-performance-node">' + escapeHtml(t.node || "") + "</td>" +
+            '<td class="tweakui-performance-row-actions">' + actionsHtml(t, name) + "</td></tr>" +
+            '<tr class="tweakui-performance-details-row" id="tweakui-performance-details-' + escapeHtml(t.id) + '"' + (open ? "" : " hidden") +
+                '><td colspan="' + TASK_COLUMNS + '">' + figuresHtml(t, system) + notesHtml(t) + "</td></tr>";
     }
 
     function tasksHtml(report, system) {
@@ -755,23 +777,14 @@
             "<th" + wide + 'tweakui-performance-date">Created</th>' +
             '<th class="tweakui-performance-number" title="Photos placed in the reconstruction, of those given">Photos</th>' +
             '<th class="tweakui-performance-number">Time</th><th class="tweakui-performance-number">Per Photo</th>' +
-            "<th" + wide + 'tweakui-performance-step" title="Of the structure-from-motion steps ODM times in its report (stats.json); the later steps are not timed one by one">Slowest SfM Step</th>' +
-            "<th" + wide + 'tweakui-performance-number" title="The area the photos cover, from the task\'s report">Area</th>' +
-            "<th" + wide + 'tweakui-performance-number" title="Separate reconstructions the photos made before they were merged: more than one means some areas did not overlap enough">Reconstructions</th>' +
-            "<th" + wide + 'tweakui-performance-number" title="The reconstruction\'s average distance from the photos\' GPS positions, or from the ground control points when the task had them">Position Error</th>' +
-            "<th" + wide + 'tweakui-performance-gpu" title="Whether the node used a GPU, from the task\'s log">GPU</th>' +
-            "<th" + wide + 'tweakui-performance-node">Node</th></tr></thead><tbody>' +
+            "<th" + wide + 'tweakui-performance-node">Node</th><th><span class="sr-only">Actions</span></th></tr></thead><tbody>' +
             report.tasks.map(function (t) { return taskHtml(t, system); }).join("") + "</tbody></table></div>";
     }
 
     function render(page, report, load, system, diskRates, view, processesOn) {
         page.querySelector(".tweakui-performance-body").innerHTML = assessmentHtml(report) + nodesHtml(report.nodes, view) +
             serverHtml(report.server, load, diskRates, view) + (report.admin ? processViewHtml(!!processesOn) : "");
-        // Recent Task History goes below the page's controls, which stay put while the parts around them redraw
-        page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system) +
-            '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
-            '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +
-            "In Docker, a node has the memory Docker gives it.</p>";
+        page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system);
     }
 
     // A number setting on the page (Refresh Every, History Length: data-control="refresh" or "history"): a slider and a
@@ -829,14 +842,14 @@
         var status = page.querySelector(".tweakui-performance-status");
         var state = {report: null, cpu: null, load: null, io: null, diskRates: null, history: {}, hover: null,
             seconds: EVERY_DEFAULT, minutes: HISTORY_DEFAULT, diskAt: 0, timer: null, busy: false,
-            looping: false, stopped: false, processesOn: false, processes: undefined, columns: null};
+            looping: false, stopped: false, processesOn: false, processes: undefined, columns: null, info: {}};
         try {
             state.processesOn = win.sessionStorage.getItem(PROCESSES_KEY) === "1";
             var columns = JSON.parse(win.sessionStorage.getItem(COLUMNS_KEY) || "null");
             if (Array.isArray(columns) && columns.length === PROCESS_COLUMNS.length &&
                 columns.every(function (w) { return typeof w === "number" && w >= COLUMN_MIN; })) state.columns = columns;
         } catch (e) {
-            // Storage that can't be used: Process View starts off, its columns at their starting widths
+            // Storage that can't be used: Processes starts closed, its columns at their starting widths
         }
 
         // The readings this tab kept before a reload (sessionStorage: a new tab starts fresh, closing it forgets them);
@@ -932,6 +945,48 @@
             state.timer = win.setTimeout(ui.guard(NAME, tick), delay);
         }
 
+        // A section's notes (its info button) shown or hidden, and kept so over a redraw
+        function showInfo(btn, open) {
+            var panel = doc.getElementById(btn.getAttribute("aria-controls"));
+            if (!panel) return;
+            btn.setAttribute("aria-expanded", String(open));
+            panel.hidden = !open;
+            if (open) state.info[panel.id] = true;
+            else delete state.info[panel.id];
+        }
+        function restoreInfo() {
+            Array.prototype.forEach.call(page.querySelectorAll("[data-act=info]"), function (btn) {
+                if (state.info[btn.getAttribute("aria-controls")]) showInfo(btn, true);
+            });
+        }
+
+        // The page's settings (the bar's gear button): a popover below it, closed by the button again, a click elsewhere
+        // or Escape
+        var gear = page.querySelector("[data-act=settings]"), popover = doc.getElementById("tweakui-performance-settings");
+        function showSettings(open, focus) {
+            if (!gear || !popover) return;
+            gear.setAttribute("aria-expanded", String(open));
+            gear.classList.toggle("active", open);
+            popover.hidden = !open;
+            if (open) {
+                var first = popover.querySelector("input");
+                if (first) first.focus();
+            } else if (focus) gear.focus();
+        }
+        var onOutside = ui.guard(NAME, function (e) {
+            if (popover && !popover.hidden && !popover.contains(e.target) && !(gear && gear.contains(e.target))) showSettings(false);
+        });
+        doc.addEventListener("click", onOutside);
+        page.addEventListener("keydown", ui.guard(NAME, function (e) {
+            if (e.key === "Escape" && popover && !popover.hidden) showSettings(false, true);
+        }));
+
+        // The graphs' window, said once in the bar
+        var windowText = page.querySelector(".tweakui-performance-window");
+        function showWindow() {
+            if (windowText) windowText.textContent = spanText(state.minutes * 60000);
+        }
+
         // The live figures drawn again: the server's cards and each node's memory
         function redrawLive() {
             var v = view(), cards = page.querySelector("[data-server-cards]");
@@ -944,7 +999,7 @@
             showTip();
         }
 
-        // Process View's tables drawn again (a superuser's page, while it is on)
+        // Processes' tables drawn again (a superuser's page, while it is open)
         function redrawProcesses() {
             var holder = page.querySelector("[data-processes]");
             if (!holder || !state.processesOn) return;
@@ -958,7 +1013,7 @@
                 server.memory && server.memory.total, state.columns);
         }
 
-        // Process View's columns: a width each in pixels (null: the starting shares), set on both tables and kept for
+        // Processes' columns: a width each in pixels (null: the starting shares), set on both tables and kept for
         // the tab
         var drag = null;
         function setColumns(widths) {
@@ -1021,17 +1076,13 @@
             setColumns(widths);
         }));
 
-        // The Process View button: its tables open (asked at once, then on every refresh) or close
-        function toggleProcesses(btn) {
-            var on = !state.processesOn, holder = page.querySelector("[data-processes]");
+        // Processes opened (its tables asked at once, then on every refresh) or closed
+        function toggleProcesses(on) {
+            var holder = page.querySelector("[data-processes]");
+            if (on === state.processesOn) return;
             state.processesOn = on;
             state.processes = undefined;
-            btn.setAttribute("aria-pressed", String(on));
-            btn.classList.toggle("active", on);
-            if (holder) {
-                holder.hidden = !on;
-                holder.innerHTML = "";
-            }
+            if (holder) holder.innerHTML = "";
             try {
                 win.sessionStorage.setItem(PROCESSES_KEY, on ? "1" : "0");
             } catch (e) {
@@ -1091,8 +1142,9 @@
                 var server = report.server || {};
                 reading(server.cpu, server.disk_io, server.memory, report.nodes);
                 state.diskAt = Date.now();
-                closeMenu();
+                menu.close();
                 render(page, report, state.load, unitSystem(win), state.diskRates, view(), state.processesOn);
+                restoreInfo();
                 redrawProcesses();
                 showTip();
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
@@ -1119,9 +1171,11 @@
         // History Length: the graphs drawn again over the new window at once
         var length = numberControl(doc, win, page, "history", "performance_history", HISTORY_DEFAULT, function (minutes) {
             state.minutes = minutes;
+            showWindow();
             if (state.report) redrawLive();
         }, fetchFn);
         if (length) state.minutes = length.value;
+        showWindow();
         // After Refresh Every is known: the counters are taken back only within the gap it gives
         restoreReadings();
 
@@ -1139,8 +1193,9 @@
         // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
         var onUnits = ui.guard(NAME, function () {
             if (state.report) {
-                closeMenu();
+                menu.close();
                 render(page, state.report, state.load, unitSystem(win), state.diskRates, view(), state.processesOn);
+                restoreInfo();
                 redrawProcesses();
                 showTip();
             }
@@ -1154,9 +1209,8 @@
             win.removeEventListener("pagehide", onLeave);
             doc.removeEventListener(UNIT_EVENT, onUnits);
             win.removeEventListener("scroll", hideThumb, true);
-            doc.removeEventListener("click", onAway);
-            win.removeEventListener("scroll", onMove, true);
-            win.removeEventListener("resize", onMove);
+            doc.removeEventListener("click", onOutside);
+            menu.stop();
         }
 
         // Photos Left Out: hovering or focusing a photo's name shows its thumbnail to its right, from its top down (so the
@@ -1189,59 +1243,8 @@
         });
         win.addEventListener("scroll", hideThumb, true);
 
-        // A task's Actions menu: over the page (fixed, so the table's scrolling box doesn't cut it off), below its
-        // button, or above it where there is no room below, and kept there as the page scrolls or resizes; a click
-        // anywhere, Escape or its button leaving the window closes it
-        var openMenu = null;
-        function closeMenu(focus) {
-            if (!openMenu) return;
-            var group = openMenu, toggle = group.querySelector("[data-act=actions]");
-            openMenu = null;
-            group.classList.remove("open");
-            toggle.setAttribute("aria-expanded", "false");
-            if (focus) toggle.focus();
-        }
-        function openActions(toggle) {
-            var group = toggle.parentNode;
-            if (openMenu === group) return closeMenu();
-            closeMenu();
-            group.classList.add("open");
-            toggle.setAttribute("aria-expanded", "true");
-            openMenu = group;
-            placeMenu();
-            // Focused without scrolling the table's box to the menu
-            var first = group.querySelector(".dropdown-menu a");
-            if (first) first.focus({preventScroll: true});
-        }
-        var onAway = ui.guard(NAME, function (e) {
-            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=actions]") : null;
-            if (openMenu && !(toggle && toggle.parentNode === openMenu)) closeMenu();
-        });
-        function placeMenu() {
-            var toggle = openMenu.querySelector("[data-act=actions]"), list = openMenu.querySelector(".dropdown-menu");
-            var box = toggle.getBoundingClientRect(), high = win.innerHeight || 0, wide = win.innerWidth || 0;
-            if (high && (box.bottom < 0 || box.top > high)) return closeMenu();
-            var top = box.bottom + 2;
-            if (high && top + list.offsetHeight > high - 8 && box.top - list.offsetHeight - 2 >= 8) top = box.top - list.offsetHeight - 2;
-            list.style.top = Math.round(top) + "px";
-            list.style.left = Math.round(Math.max(8, Math.min(box.left, wide - list.offsetWidth - 8))) + "px";
-        }
-        var onMove = ui.guard(NAME, function () { if (openMenu) placeMenu(); });
-        doc.addEventListener("click", onAway);
-        win.addEventListener("scroll", onMove, true);
-        win.addEventListener("resize", onMove);
-        page.addEventListener("keydown", ui.guard(NAME, function (e) {
-            if (!openMenu) return;
-            if (e.key === "Escape") {
-                closeMenu(true);
-                return;
-            }
-            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
-            var items = Array.prototype.slice.call(openMenu.querySelectorAll(".dropdown-menu a"));
-            var at = items.indexOf(doc.activeElement);
-            e.preventDefault();
-            items[(at + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus({preventScroll: true});
-        }));
+        // Each task's "•••" menu
+        var menu = ui.rowMenu(doc, win, page, NAME);
 
         // Restart From Load Dataset: asks first, then does what WebODM's Restart button does by default
         // (TaskListItem.jsx): the task's options get rerun-from set to the node's second step (dataset), or lose it
@@ -1252,7 +1255,7 @@
             var id = row && row.getAttribute("data-task");
             var t = state.report && state.report.tasks.filter(function (x) { return String(x.id) === id; })[0];
             if (!t || !win.confirm(RESTART_QUESTION)) return;
-            var toggle = row.querySelector("[data-act=actions]"), said = row.querySelector(".tweakui-performance-action-status");
+            var toggle = row.querySelector("[data-act=menu]"), said = row.querySelector(".tweakui-performance-action-status");
             toggle.disabled = true;
             said.className = "small text-muted tweakui-performance-action-status";
             said.textContent = "Restarting...";
@@ -1305,6 +1308,10 @@
             state.hover = null;
             showTip();
         }));
+        // Processes opening or closing (a toggle doesn't bubble: caught on its way down)
+        page.addEventListener("toggle", ui.guard(NAME, function (e) {
+            if (e.target && e.target.matches && e.target.matches("[data-process-view]")) toggleProcesses(e.target.open);
+        }), true);
 
         // Remove Photos From Task (or Remove Photo, one): asks first, then deletes them through the plugin's API and
         // draws the list again without them, open, with what to do next (the report is changed to match)
@@ -1343,22 +1350,21 @@
             });
         }
 
-        // A task's Notes button opens and closes the row of its notes below it; Copy Names copies a list's names
+        // A task's Details button opens and closes its Details row below it; Copy Names copies a list's names
         page.addEventListener("click", ui.guard(NAME, function (e) {
-            var actions = e.target && e.target.closest ? e.target.closest("[data-act=actions]") : null;
-            if (actions) {
-                openActions(actions);
+            var info = e.target && e.target.closest ? e.target.closest("[data-act=info]") : null;
+            if (info) {
+                showInfo(info, info.getAttribute("aria-expanded") !== "true");
+                return;
+            }
+            if (gear && gear.contains(e.target)) {
+                showSettings(popover.hidden);
                 return;
             }
             var restart = e.target && e.target.closest ? e.target.closest("[data-act=restart]") : null;
             if (restart) {
                 e.preventDefault();
                 restartTask(restart);
-                return;
-            }
-            var processes = e.target && e.target.closest ? e.target.closest("[data-act=processes]") : null;
-            if (processes) {
-                toggleProcesses(processes);
                 return;
             }
             // Copy Names (a list's names) or a process's Copy Command Line
@@ -1376,7 +1382,7 @@
                 removePhotos(remove);
                 return;
             }
-            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=notes]") : null;
+            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=details]") : null;
             if (!toggle) return;
             var row = doc.getElementById(toggle.getAttribute("aria-controls"));
             if (!row) return;

@@ -30,8 +30,11 @@ function report(extra) {
 function page(every = 3, history = 5) {
     document.body.innerHTML = `
       <div id="tweakui-performance" data-api="/api/plugins/tweakui/">
-        <div class="tweakui-performance-body"></div>
-        <div class="tweakui-performance-bar"><button data-act="refresh"></button><span class="tweakui-performance-status"></span>
+        <div class="tweakui-performance-head"><h3>Performance</h3>
+        <div class="tweakui-performance-bar"><span class="tweakui-performance-status"></span><span class="tweakui-performance-window"></span>
+          <button data-act="refresh"></button>
+          <button data-act="settings" aria-expanded="false" aria-controls="tweakui-performance-settings"></button>
+          <div id="tweakui-performance-settings" hidden>
           <div class="tweakui-performance-every" data-control="refresh">
             <input type="range" class="tweakui-performance-every-slider" min="1" max="10" step="1" value="${every}">
             <input type="number" id="tweakui-performance-refresh" min="1" max="10" step="1" value="${every}">
@@ -42,7 +45,9 @@ function page(every = 3, history = 5) {
             <input type="number" id="tweakui-performance-history" min="1" max="30" step="1" value="${history}">
             <span class="tweakui-performance-every-status"></span>
           </div>
-        </div>
+          </div>
+        </div></div>
+        <div class="tweakui-performance-body"></div>
         <div class="tweakui-performance-recent"></div>
       </div>`;
     return document.getElementById("tweakui-performance");
@@ -92,6 +97,11 @@ function words(e) {
     return out.join(" ").replace(/\s+/g, " ").trim();
 }
 const texts = (root, selector) => Array.from(root.querySelectorAll(selector)).map(words);
+// A <details> opened or closed as a click on its summary does
+function setOpen(details, open) {
+    details.open = open;
+    details.dispatchEvent(new Event("toggle"));
+}
 
 beforeAll(() => { core.install(window); });
 
@@ -145,15 +155,20 @@ describe("the Performance page", () => {
         expect(server.querySelector(".tweakui-performance-graph").getAttribute("data-graph")).toBe("memory");
     });
 
-    test("recent tasks link to their map and show photos, time, time per photo, the slowest step and the node", async () => {
+    test("recent tasks link to their map and show photos, time, time per photo and the node, with a menu at the row's end", async () => {
         const {root} = await started([json(report())]);
-        const rows = root.querySelectorAll(".tweakui-performance-table tbody tr");
+        const rows = root.querySelectorAll(".tweakui-performance-table tbody tr[data-task]");
+        expect(texts(root, ".tweakui-performance-table thead th")).toEqual(["Task", "Created", "Photos", "Time", "Per Photo", "Node", "Actions"]);
         expect(rows[0].querySelector("a").getAttribute("href")).toBe("/map/project/3/task/t1/");
-        expect(texts(rows[0], "td").slice(2)).toEqual(["220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "", "", "", "", "node-odx-1"]);
+        expect(texts(rows[0], "td").slice(2, 6)).toEqual(["220", "13m 44s", "3.8s", "node-odx-1"]);
+        expect(rows[0].lastElementChild.querySelector("[data-act=menu] .fa-ellipsis-h")).not.toBeNull();
+        // The slowest step is in the task's Details row
+        expect(texts(root, "#tweakui-performance-details-t1 .tweakui-performance-figures > div")).toEqual(["Slowest SfM Step Reconstruction 1m 42s"]);
         // Another user's (an admin's view), with no name, time or stats
         expect(words(rows[1].querySelector("td a"))).toBe("Task of 2026-11-06");
         expect(words(rows[1].querySelector("td .tweakui-performance-task-buttons + .text-muted"))).toBe("Flights of pat");
-        expect(texts(rows[1], "td").slice(3, 6)).toEqual(["", "", ""]);
+        expect(texts(rows[1], "td").slice(3, 5)).toEqual(["", ""]);
+        expect(words(root.querySelector("#tweakui-performance-details-t2"))).toBe("Its report gives no more figures.");
         expect(texts(root, ".tweakui-performance-recent > p.text-muted")[0])
             .toBe("The last 2 finished tasks of yours (completed, failed or canceled), newest first.");
     });
@@ -171,23 +186,28 @@ describe("the Performance page", () => {
         return task(id, Object.assign({status: "completed", photos_given: 220, photos_reconstructed: 208, area: 384.7,
             reconstructions: 2, position_error: {kind: "gps", meters: 0.0236}, gpu: false, notes: [], other: [], more: 0}, extra));
     }
-    const cells = row => texts(row, "td").slice(2);
+    const cells = row => texts(row, "td").slice(2, 6);
+    const figures = (root, id) => texts(root, "#tweakui-performance-details-" + id + " .tweakui-performance-figures > div");
 
-    test("recent tasks show the photos placed of those given, area, reconstructions, position error and GPU", async () => {
+    test("recent tasks show the photos placed of those given; area, reconstructions, position error and GPU are in Details", async () => {
         const {root} = await started([json(report({tasks: [reported("t1"), reported("t2", {photos_reconstructed: 220,
             reconstructions: 1, position_error: {kind: "gcp", meters: 1.234}, gpu: true, area: 25000})]}))]);
-        const rows = root.querySelectorAll(".tweakui-performance-table tbody tr");
-        expect(cells(rows[0])).toEqual(["208 of 220", "13m 44s", "3.8s", "Reconstruction 1m 42s", "385 m\u00b2", "2", "2.4 cm GPS", "No", "node-odx-1"]);
-        expect(cells(rows[1]).slice(0, 1).concat(cells(rows[1]).slice(4, 8))).toEqual(["220 of 220", "2.50 ha", "1", "1.23 m GCP", "Yes"]);
-        // Fewer photos placed than given, and more than one reconstruction, in the warning colour
-        expect(rows[0].querySelectorAll("td .text-warning").length).toBe(2);
-        // Not by colour alone: each with the warning icon
-        expect(rows[0].querySelectorAll("td .text-warning i.fa-exclamation-triangle").length).toBe(2);
-        expect(rows[1].querySelectorAll("td i.fa-exclamation-triangle").length).toBe(0);
+        const rows = root.querySelectorAll(".tweakui-performance-table tbody tr[data-task]");
+        expect(cells(rows[0])).toEqual(["208 of 220", "13m 44s", "3.8s", "node-odx-1"]);
+        expect(cells(rows[1])[0]).toBe("220 of 220");
+        expect(figures(root, "t1")).toEqual(["Slowest SfM Step Reconstruction 1m 42s", "Area 385 m\u00b2", "Reconstructions 2",
+            "Position Error 2.4 cm GPS", "GPU No"]);
+        expect(figures(root, "t2").slice(1)).toEqual(["Area 2.50 ha", "Reconstructions 1", "Position Error 1.23 m GCP", "GPU Yes"]);
+        // Each figure says what it means in its title
+        expect(root.querySelector("#tweakui-performance-details-t1 dt[title]").title).toMatch(/^Of the structure-from-motion steps/);
+        // Fewer photos placed than given, and more than one reconstruction, in the warning colour, with the warning icon
+        const details = root.querySelector("#tweakui-performance-details-t1");
+        expect(rows[0].querySelectorAll("td .text-warning i.fa-exclamation-triangle").length).toBe(1);
+        expect(details.querySelectorAll("dd .text-warning i.fa-exclamation-triangle").length).toBe(1);
         expect(rows[1].querySelectorAll("td .text-warning").length).toBe(0);
+        expect(root.querySelectorAll("#tweakui-performance-details-t2 .text-warning").length).toBe(0);
         // At phone width the wide columns hide; their figures come under the task's name
-        expect(words(rows[0].querySelector(".tweakui-performance-detail")))
-            .toMatch(/Slowest Reconstruction 1m 42s · 385 m² · 2 reconstructions · 2\.4 cm GPS error · GPU: No · node-odx-1$/);
+        expect(words(rows[0].querySelector(".tweakui-performance-detail"))).toMatch(/ · node-odx-1$/);
     });
 
     test("areas and errors follow WebODM's unit system, and are redrawn when it changes", async () => {
@@ -199,11 +219,10 @@ describe("the Performance page", () => {
         window.localStorage.setItem("unit_system", "imperial");
         try {
             const {root} = await started([json(report({tasks: [reported("t1")]}))]);
-            const row = () => root.querySelector(".tweakui-performance-table tbody tr");
-            expect(cells(row()).slice(4, 7)).toEqual(["4,141 ft\u00b2", "2", "0.9 in GPS"]);
+            expect(figures(root, "t1").slice(1, 4)).toEqual(["Area 4,141 ft\u00b2", "Reconstructions 2", "Position Error 0.9 in GPS"]);
             window.localStorage.setItem("unit_system", "metric");
             document.dispatchEvent(new Event("onUnitSystemChanged"));
-            expect(cells(row()).slice(4, 7)).toEqual(["385 m\u00b2", "2", "2.4 cm GPS"]);
+            expect(figures(root, "t1").slice(1, 4)).toEqual(["Area 385 m\u00b2", "Reconstructions 2", "Position Error 2.4 cm GPS"]);
         } finally {
             window.localStorage.removeItem("unit_system");
         }
@@ -216,27 +235,32 @@ describe("the Performance page", () => {
         const failedRow = root.querySelector('tr[data-task="t1"]');
         expect(words(failedRow.querySelector("[data-status=failed]"))).toBe("Failed: Process exited with code 1");
         expect(words(root.querySelector('tr[data-task="t2"] [data-status=canceled]'))).toBe("Canceled");
-        const notes = root.querySelector("#tweakui-performance-notes-t1");
+        const notes = root.querySelector("#tweakui-performance-details-t1");
         expect(notes.hidden).toBe(false);
-        expect(failedRow.querySelector("[data-act=notes]").getAttribute("aria-expanded")).toBe("true");
-        expect(failedRow.querySelector("[data-act=notes] .fa").className).toContain("text-danger");
+        expect(failedRow.querySelector("[data-act=details]").getAttribute("aria-expanded")).toBe("true");
+        expect(failedRow.querySelector("[data-act=details] .fa").className).toContain("text-danger");
         expect(words(notes.querySelector("[data-note=out_of_memory]")))
             .toBe("Processing ran out of memory and stopped. [ERROR] Whoops! You ran out of memory!");
-        // The canceled task has no notes, so no button and no row
-        expect(root.querySelector('tr[data-task="t2"] [data-act=notes]')).toBeNull();
+        // The canceled task has no notes: a plain Details button, its row closed
+        expect(words(root.querySelector('tr[data-task="t2"] [data-act=details]'))).toBe("Details");
+        expect(root.querySelector('tr[data-task="t2"] [data-act=details] .fa')).toBeNull();
+        expect(root.querySelector("#tweakui-performance-details-t2").hidden).toBe(true);
     });
 
-    test("a task's Notes button opens its notes, with the log's other messages in a list that opens", async () => {
+    test("a task's Details button opens its figures and notes, with the log's other messages in a list that opens", async () => {
         const t = reported("t1", {
             notes: [{key: "reconstructions", level: "warning", text: "The photos made 2 separate reconstructions.", line: "[WARNING] Multiple reconstructions detected (2)"},
                 {key: "left_out", level: "warning", text: "12 of 220 photos were left out.", line: ""}],
             other: [{text: "[WARNING] Shots are aligned on a single-line", count: 3}, {text: "[ERROR] <b>odd</b>", count: 1}], more: 4});
         const {root} = await started([json(report({tasks: [t, reported("t2", {other: [{text: "[WARNING] x", count: 1}]})]}))]);
-        const button = root.querySelector('tr[data-task="t1"] [data-act=notes]'), row = root.querySelector("#tweakui-performance-notes-t1");
-        expect(words(button)).toBe("2 Notes");
+        const button = root.querySelector('tr[data-task="t1"] [data-act=details]'), row = root.querySelector("#tweakui-performance-details-t1");
+        expect([words(button), button.title]).toEqual(["Details (2)", "2 notes from its log"]);
+        expect(button.querySelector(".fa").className).toContain("text-warning");
         expect(row.hidden).toBe(true);
         button.click();
         expect([row.hidden, button.getAttribute("aria-expanded")]).toEqual([false, "true"]);
+        // The figures above the notes
+        expect(row.querySelector("td").firstElementChild.className).toBe("tweakui-performance-figures");
         expect(texts(row, ".tweakui-performance-notes > li")).toEqual([
             "The photos made 2 separate reconstructions. [WARNING] Multiple reconstructions detected (2)", "12 of 220 photos were left out."]);
         const other = row.querySelector("details.tweakui-performance-other");
@@ -245,15 +269,15 @@ describe("the Performance page", () => {
         expect(other.querySelector("b")).toBeNull();
         button.click();
         expect(row.hidden).toBe(true);
-        // Only other messages: the button counts them
-        expect(words(root.querySelector('tr[data-task="t2"] [data-act=notes]'))).toBe("1 Message");
+        // Only other messages: a plain Details button
+        expect(words(root.querySelector('tr[data-task="t2"] [data-act=details]'))).toBe("Details");
     });
 
     test("the photos left out are listed under their note: links that open them, a thumbnail on hover, and Copy Names", async () => {
         const photos = [{name: "DJI_0007_T.JPG", reason: "no_features"}, {name: "a b&c.tif", reason: "no_gps"}, {name: "DJI_0051_T.JPG", reason: null}];
         const t = reported("t1", {notes: [{key: "left_out", level: "warning", text: "4 of 220 photos were left out.", line: "", photos, more: 1}]});
         const {root} = await started([json(report({tasks: [t]}))]);
-        root.querySelector("[data-act=notes]").click();
+        root.querySelector("[data-act=details]").click();
         const list = root.querySelector("[data-note=left_out] details.tweakui-performance-photos");
         expect([list.open, words(list.querySelector("summary"))]).toEqual([false, "Photos Left Out (4)"]);
         expect(texts(list, "li")).toEqual(["DJI_0007_T.JPG No features Remove Photo", "a b&c.tif No GPS Remove Photo", "DJI_0051_T.JPG Remove Photo",
@@ -290,7 +314,7 @@ describe("the Performance page", () => {
         const view = performancePage.start(document, window, fetchFn);
         views.push(view);
         await view.loaded;
-        root.querySelector("[data-act=notes]").click();
+        root.querySelector("[data-act=details]").click();
         return {root, fetchFn, list: () => root.querySelector("[data-note=left_out] details.tweakui-performance-photos")};
     }
     const removeCalls = fetchFn => fetchFn.mock.calls.filter(c => /remove-photos$/.test(c[0]));
@@ -345,10 +369,10 @@ describe("the Performance page", () => {
         views.push(view);
         await view.loaded;
         const row = id => root.querySelector('tr[data-task="' + id + '"]');
-        return {root, fetchFn, row, menu: id => row(id).querySelector(".tweakui-performance-actions")};
+        return {root, fetchFn, row, menu: id => row(id).querySelector(".tweakui-row-menu")};
     }
 
-    test("each task's Actions menu has its log, and Restart and the report only where the task offers them", async () => {
+    test("each task's \"•••\" menu has its log, and Restart and the report only where the task offers them", async () => {
         const {menu} = await actionsPage(() => json({}));
         const items = id => Array.from(menu(id).querySelectorAll(".dropdown-menu a")).map(a => [words(a), a.getAttribute("href"),
             a.getAttribute("download"), a.getAttribute("target")]);
@@ -360,13 +384,13 @@ describe("the Performance page", () => {
         expect(items("t2").map(i => i[0])).toEqual(["Download Task Logs"]);
     });
 
-    test("the Actions button opens its menu, and a click elsewhere or Escape closes it", async () => {
+    test("the \"•••\" button opens its menu, and a click elsewhere or Escape closes it", async () => {
         const {menu, root} = await actionsPage(() => json({}));
-        const toggle = menu("t1").querySelector("[data-act=actions]");
+        const toggle = menu("t1").querySelector("[data-act=menu]");
         toggle.click();
         expect([menu("t1").classList.contains("open"), toggle.getAttribute("aria-expanded")]).toEqual([true, "true"]);
         expect(words(document.activeElement)).toBe("Download Report");
-        menu("t2").querySelector("[data-act=actions]").click();
+        menu("t2").querySelector("[data-act=menu]").click();
         expect([menu("t1").classList.contains("open"), menu("t2").classList.contains("open")]).toEqual([false, true]);
         document.body.click();
         expect(menu("t2").classList.contains("open")).toBe(false);
@@ -378,16 +402,17 @@ describe("the Performance page", () => {
         expect(words(document.activeElement)).toBe("View Report");
         document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
         expect([menu("t1").classList.contains("open"), document.activeElement]).toEqual([false, toggle]);
-        expect(root.querySelector(".tweakui-performance-actions.open")).toBeNull();
+        expect(root.querySelector(".tweakui-row-menu.open")).toBeNull();
     });
 
-    test("an open Actions menu follows its button as the page scrolls, and closes once the button leaves the window", async () => {
+    test("an open \"•••\" menu follows its button as the page scrolls, and closes once the button leaves the window", async () => {
         const {menu} = await actionsPage(() => json({}));
-        const toggle = menu("t1").querySelector("[data-act=actions]"), list = menu("t1").querySelector(".dropdown-menu");
+        const toggle = menu("t1").querySelector("[data-act=menu]"), list = menu("t1").querySelector(".dropdown-menu");
         let top = 100;
         toggle.getBoundingClientRect = () => ({top, bottom: top + 22, left: 40, right: 110, width: 70, height: 22});
         toggle.click();
-        expect([list.style.top, list.style.left]).toEqual(["124px", "40px"]);
+        // Its right edge under the button's (jsdom gives the list no width)
+        expect([list.style.top, list.style.left]).toEqual(["124px", "110px"]);
         top = 300;
         window.dispatchEvent(new Event("scroll"));
         expect([menu("t1").classList.contains("open"), list.style.top]).toEqual([true, "324px"]);
@@ -412,7 +437,7 @@ describe("the Performance page", () => {
         expect(JSON.parse(calls()[1][1].body)).toEqual({options: [{name: "dsm", value: true}, {name: "rerun-from", value: "dataset"}]});
         expect(calls()[2][1].headers["X-CSRFToken"]).toBeDefined();
         expect(words(row("t1").querySelector(".tweakui-performance-action-status"))).toBe("Restarting: it leaves this list while it runs.");
-        expect(row("t1").querySelector("[data-act=actions]").disabled).toBe(true);
+        expect(row("t1").querySelector("[data-act=menu]").disabled).toBe(true);
         confirm.mockRestore();
     });
 
@@ -427,7 +452,7 @@ describe("the Performance page", () => {
         expect(JSON.parse(patch[1].body)).toEqual({options: [], uuid: ""});
         const said = row("t1").querySelector(".tweakui-performance-action-status");
         expect([words(said), said.classList.contains("text-danger")]).toEqual(["Could not restart the task.", true]);
-        expect(row("t1").querySelector("[data-act=actions]").disabled).toBe(false);
+        expect(row("t1").querySelector("[data-act=menu]").disabled).toBe(false);
         confirm.mockRestore();
     });
 
@@ -438,10 +463,10 @@ describe("the Performance page", () => {
         const {root} = await started([json(report({tasks: [failed, leftOut, reported("t3")], trend}))]);
         const card = root.querySelector(".tweakui-performance-body > section.tweakui-performance-assessment");
         expect(card.querySelector("h4").textContent).toBe("General Assessment");
-        expect(card.nextElementSibling.textContent).toBe("Processing Nodes");
+        expect(card.nextElementSibling.textContent.trim()).toBe("Processing Nodes");
         expect(Array.from(card.querySelectorAll("li")).map(li => li.dataset.level)).toEqual(["warning", "success", "warning", "info"]);
         expect(card.querySelector("[data-summary]").textContent.trim())
-            .toBe("Of your last 3 tasks, 1 failed (1 ran out of memory) and 1 left photos out. See their Notes in Recent Task History.");
+            .toBe("Of your last 3 tasks, 1 failed (1 ran out of memory) and 1 left photos out. See their Details in Recent Task History.");
         expect(card.querySelector("[data-summary] a").getAttribute("href")).toBe("#tweakui-performance-recent");
         expect(root.querySelector("#tweakui-performance-recent").textContent).toBe("Recent Task History");
         expect(card.querySelector("li.tweakui-performance-trend").textContent).toMatch(/50% less time per photo/);
@@ -512,16 +537,53 @@ describe("the Performance page", () => {
         setItem.mockRestore();
     });
 
-    test("the page's controls sit between the server's cards and Recent Task History, and stay put as the page redraws", async () => {
+    test("the page's controls sit beside its heading, the sliders in a popover, and stay put as the page redraws", async () => {
         const {root, view} = await started([json(report()), json(report())]);
         const parts = Array.from(root.children).map(c => c.className);
-        expect(parts).toEqual(["tweakui-performance-body", "tweakui-performance-bar", "tweakui-performance-recent"]);
+        expect(parts).toEqual(["tweakui-performance-head", "tweakui-performance-body", "tweakui-performance-recent"]);
+        // The graphs' window, said once in the bar
+        expect(root.querySelector(".tweakui-performance-window").textContent).toBe("Graphs: last 5 min");
+        // The gear opens the popover with the sliders; Escape or a click elsewhere closes it
+        const gear = root.querySelector("[data-act=settings]"), popover = document.getElementById("tweakui-performance-settings");
+        expect(popover.hidden).toBe(true);
+        gear.click();
+        expect([popover.hidden, gear.getAttribute("aria-expanded"), document.activeElement.className]).toEqual([false, "true", "tweakui-performance-every-slider"]);
+        popover.querySelector("input").click();
+        expect(popover.hidden).toBe(false);
+        document.activeElement.dispatchEvent(new KeyboardEvent("keydown", {key: "Escape", bubbles: true}));
+        expect([popover.hidden, gear.getAttribute("aria-expanded"), document.activeElement]).toEqual([true, "false", gear]);
+        gear.click();
+        document.body.click();
+        expect(popover.hidden).toBe(true);
+        gear.click();
+        gear.click();
+        expect(popover.hidden).toBe(true);
         expect(root.querySelector(".tweakui-performance-body [data-server]")).not.toBeNull();
         expect(root.querySelector(".tweakui-performance-recent h4").textContent).toBe("Recent Task History");
         const slider = root.querySelector(".tweakui-performance-every-slider");
         await view.load();
         expect(root.querySelector(".tweakui-performance-every-slider")).toBe(slider);
         expect(root.querySelectorAll(".tweakui-performance-recent .tweakui-performance-table").length).toBe(1);
+    });
+
+    test("the sections' notes are behind an info button beside their heading, and stay open over a refresh", async () => {
+        const withCpu = () => json(report({server: Object.assign(report().server, {cpu: cpu([0, 0], 8), disk_io: io(100, [drive("sde", 0, 0, 0, 0, 0, 0)])})}));
+        const {root, view} = await started([withCpu(), withCpu()]);
+        const button = id => root.querySelector('[data-act=info][aria-controls="tweakui-performance-info-' + id + '"]');
+        const panel = id => document.getElementById("tweakui-performance-info-" + id);
+        expect(button("server").closest("h4").textContent.trim()).toBe("Server");
+        expect([panel("server").hidden, button("server").getAttribute("aria-expanded")]).toEqual([true, "false"]);
+        expect(texts(panel("server"), "p").map(t => t.split(":")[0])).toEqual(["CPU Load is the machine WebODM runs on", "Disk activity is what the system counts for each whole disk"]);
+        expect(words(panel("nodes"))).toMatch(/^Memory sizing \(a node's Suits\) follows WebODM's hardware requirements/);
+        expect(panel("nodes").querySelector("a").getAttribute("href")).toBe("https://docs.webodm.org/installation/#hardware-requirements");
+        // No notes below the page or in the cards any more
+        expect(root.querySelector("[data-server] .tweakui-performance-cpu-note, .tweakui-performance-recent .tweakui-performance-note")).toBeNull();
+        button("server").click();
+        expect([panel("server").hidden, button("server").getAttribute("aria-expanded")]).toEqual([false, "true"]);
+        await view.load();
+        expect([panel("server").hidden, panel("nodes").hidden]).toEqual([false, true]);
+        button("server").click();
+        expect(panel("server").hidden).toBe(true);
     });
 
     test("Refresh asks again, is disabled while it waits and keeps the page when it fails", async () => {
@@ -620,31 +682,30 @@ describe("the Performance page", () => {
     const liveData = extra => json(Object.assign({cpu: cpu([0, 0], 8), memory: {total: 64 * GB, free: 32 * GB, used: 32 * GB}, nodes: []}, extra));
     const adminReport = () => json(report({admin: true, server: Object.assign(report().server, {cpu: cpu([0, 0], 8)})}));
 
-    test("Process View is for superusers only: others get no button and the live figures never ask for processes", async () => {
+    test("Processes is for superusers only: others don't get it and the live figures never ask for processes", async () => {
         jest.useFakeTimers();
         const {root, fetchFn} = await started([json(report()), liveData()]);
         window.sessionStorage.setItem("tweakui.performance.processes", "1");
         await jest.advanceTimersByTimeAsync(7000);
-        expect(root.querySelector("[data-act=processes]")).toBeNull();
+        expect(root.querySelector("[data-process-view]")).toBeNull();
         expect(fetchFn.mock.calls.slice(1).every(c => c[0].indexOf("processes") < 0)).toBe(true);
     });
 
-    test("Process View opens Top 10 by CPU above Top 10 by Memory, asked at once and then with every refresh", async () => {
+    test("Processes opens to Top 10 by CPU above Top 10 by Memory, asked at once and then with every refresh", async () => {
         jest.useFakeTimers();
         const first = {container: true, cpu: null, memory: [proc(7, "python3", null, 8 * GB), proc(9, "kworker", null, GB, {command: "", user: ""})]};
         const next = {container: true, cpu: [proc(12, "celery", 250, 2 * GB), proc(7, "python3", 12.5, 8 * GB)],
             memory: [proc(7, "python3", 12.5, 8 * GB), proc(12, "celery", 250, 2 * GB)]};
         const {root, fetchFn} = await started([adminReport(), liveData(), liveData({processes: first}), liveData({processes: next}), liveData()]);
-        const button = root.querySelector("[data-act=processes]");
+        const section = root.querySelector("[data-process-view]");
         const holder = root.querySelector("[data-processes]");
-        // Under the server's cards, off at first
-        expect(root.querySelector("[data-server-cards] ~ .tweakui-performance-process-view [data-act=processes]")).toBe(button);
-        expect([button.getAttribute("aria-pressed"), holder.hidden, words(button)]).toEqual(["false", true, "Process View"]);
+        // Under the server's cards, closed at first
+        expect(root.querySelector("[data-server-cards] ~ details.tweakui-performance-process-view")).toBe(section);
+        expect([section.open, words(section.querySelector("summary"))]).toEqual([false, "Processes"]);
         await jest.advanceTimersByTimeAsync(1000);
         expect(fetchFn.mock.calls[1][0]).toBe(LIVE);
-        button.click();
-        expect([button.getAttribute("aria-pressed"), button.classList.contains("active"), holder.hidden, words(holder)])
-            .toEqual(["true", true, false, "Loading..."]);
+        setOpen(section, true);
+        expect(words(holder)).toBe("Loading...");
         expect(window.sessionStorage.getItem("tweakui.performance.processes")).toBe("1");
         await jest.advanceTimersByTimeAsync(0);
         expect(fetchFn.mock.calls[2][0]).toBe(LIVE + "?processes=1");
@@ -678,15 +739,14 @@ describe("the Performance page", () => {
         await jest.advanceTimersByTimeAsync(0);
         expect(writeText).toHaveBeenCalledWith("/usr/bin/celery --serve");
         delete window.navigator.clipboard;
-        // Off: closed, and no longer asked
-        button.click();
-        expect([button.getAttribute("aria-pressed"), holder.hidden, window.sessionStorage.getItem("tweakui.performance.processes")])
-            .toEqual(["false", true, "0"]);
+        // Closed: no longer asked
+        setOpen(section, false);
+        expect([words(holder), window.sessionStorage.getItem("tweakui.performance.processes")]).toEqual(["", "0"]);
         await jest.advanceTimersByTimeAsync(3000);
         expect(fetchFn.mock.calls[4][0]).toBe(LIVE);
     });
 
-    test("Process View's tables are outlined, and a command line wraps, shows 512 characters and is copied whole", async () => {
+    test("Processes' tables are outlined, and a command line wraps, shows 512 characters and is copied whole", async () => {
         jest.useFakeTimers();
         window.sessionStorage.setItem("tweakui.performance.processes", "1");
         const long = "/usr/bin/java " + "-Dsetting=value ".repeat(60);
@@ -741,11 +801,11 @@ describe("the Performance page", () => {
         expect(window.sessionStorage.getItem("tweakui.performance.process-columns")).toBeNull();
     });
 
-    test("Process View stays on for the tab over a reload, and says so where the server can't read its processes", async () => {
+    test("Processes stays open for the tab over a reload, and says so where the server can't read its processes", async () => {
         jest.useFakeTimers();
         window.sessionStorage.setItem("tweakui.performance.processes", "1");
         const {root, fetchFn} = await started([adminReport(), liveData({processes: null}), adminReport(), liveData({processes: null})]);
-        expect(root.querySelector("[data-act=processes]").getAttribute("aria-pressed")).toBe("true");
+        expect(root.querySelector("[data-process-view]").open).toBe(true);
         expect(words(root.querySelector("[data-processes]"))).toBe("Loading...");
         await jest.advanceTimersByTimeAsync(1000);
         expect(fetchFn.mock.calls[1][0]).toBe(LIVE + "?processes=1");
@@ -753,7 +813,7 @@ describe("the Performance page", () => {
         // Refresh draws the page again with it on
         root.querySelector("[data-act=refresh]").click();
         await jest.advanceTimersByTimeAsync(0);
-        expect(root.querySelector("[data-act=processes]").getAttribute("aria-pressed")).toBe("true");
+        expect(root.querySelector("[data-process-view]").open).toBe(true);
         expect(words(root.querySelector("[data-processes]"))).toBe("The server's processes can't be read.");
     });
 
@@ -823,17 +883,16 @@ describe("the Performance page", () => {
         expect(performancePage.niceCeil(4200)).toBe(5000);
     });
 
-    test("a graph's scale is inside it, its time line under it follows History Length, and two lines get a legend", () => {
+    test("a graph's scale is inside it, the window is said once (following History Length), and two lines get a legend", () => {
         const div = document.createElement("div");
         const percent = {history: {cpu: [[0, 0.2]]}, now: 300000, span: 300000, gap: 15000};
         div.innerHTML = performancePage.graphHtml(percent, "cpu", [{key: "cpu"}], "percent");
         expect([div.querySelector(".tweakui-performance-graph-max").textContent, div.querySelector(".tweakui-performance-graph-zero").textContent])
             .toEqual(["100%", "0"]);
         expect(div.querySelector("line.tweakui-performance-graph-grid").getAttribute("y1")).toBe("22");
-        expect(Array.from(div.querySelectorAll(".tweakui-performance-graph-axis span")).map(e => e.textContent)).toEqual(["5 min ago", "Now"]);
         expect(div.querySelector(".tweakui-performance-graph-legend")).toBeNull();
-        div.innerHTML = performancePage.graphHtml(Object.assign({}, percent, {span: 30 * 60000}), "cpu", [{key: "cpu"}], "percent");
-        expect(div.querySelector(".tweakui-performance-graph-axis span").textContent).toBe("30 min ago");
+        expect([performancePage.spanText(300000), performancePage.spanText(30 * 60000), performancePage.spanText(20000)])
+            .toEqual(["Graphs: last 5 min", "Graphs: last 30 min", "Graphs: last 20 s"]);
         // A rate graph shows its top only once it has readings; its two lines are named under it in their colours
         const rate = {history: {r: [[0, 3]]}, now: 60000, span: 60000, gap: 15000};
         div.innerHTML = performancePage.graphHtml({history: {}, now: 0, span: 60000, gap: 1}, "ops", [{key: "r", label: "Reads"}, {key: "w", label: "Writes"}], "rate");
@@ -842,9 +901,9 @@ describe("the Performance page", () => {
         expect(div.querySelector(".tweakui-performance-graph-max").textContent).toBe("5/s");
         expect(Array.from(div.querySelectorAll(".tweakui-performance-graph-legend span")).map(e => [e.textContent.trim(), e.querySelector("i").className]))
             .toEqual([["Reads (/s)", "tweakui-performance-graph-swatch tweakui-performance-accent"], ["Writes (/s)", "tweakui-performance-graph-swatch theme-color-primary"]]);
-        // Without a window yet (the page before its first reading), no time line
+        // Without a window yet (the page before its first reading), an empty graph
         div.innerHTML = performancePage.graphHtml(null, "cpu", [{key: "cpu"}], "percent");
-        expect(div.querySelector(".tweakui-performance-graph-axis")).toBeNull();
+        expect(div.querySelectorAll("path")).toHaveLength(0);
     });
 
     test("a rate graph has two lines, the first in the theme's link colour and the second in its text colour, up to its highest reading", () => {

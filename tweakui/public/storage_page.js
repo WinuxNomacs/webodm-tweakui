@@ -1,6 +1,6 @@
 // Diagnostic > Storage (templates/storage.html): the user's quota and the projects they own, largest first, each
 // opening to its tasks and a task to its files by kind (storage.py through the plugin's API); for an admin, a section
-// per other user too. Rows are ticked to clean up several at once, or cleaned up one by one with their own buttons;
+// per other user too. Rows are ticked to clean up several at once, or cleaned up one by one from their "•••" menus;
 // either way one confirmation names what goes and what it frees, and the work is WebODM's own API's (a task's compact
 // and remove, a project's delete), so its permissions, the processing node's cleanup and the quota apply. A completed
 // task is backed up as WebODM's Download > Backup does (its backup URL, the browser's own download), several one after
@@ -14,6 +14,7 @@
 })(typeof window !== "undefined" ? window : this, function (ui) {
     "use strict";
 
+    var NAME = "storage_page";
     // WebODM's task status codes (nodeodm/status_codes.py)
     var STATUS = {10: "Queued", 20: "Running", 30: "Failed", 40: "Completed", 50: "Canceled"};
     var KINDS = [["photos", "Photos"], ["orthophoto", "Orthophoto"], ["elevation", "Elevation"],
@@ -135,6 +136,24 @@
         }).join("") + "</table>";
     }
 
+    // A row's "•••" menu item (an action of the page's, or a link)
+    function itemHtml(act, icon, label, title) {
+        return '<li><a href="#" role="button" data-act="' + act + '" title="' + escapeHtml(title) + '"><i class="' + icon + ' fa-fw"></i> ' + label + "</a></li>";
+    }
+
+    // A task's "•••" menu: Backup (completed), Compact (when it would free something) and Delete (unless busy); none
+    // while it is busy and has nothing else
+    function taskMenuHtml(project, task) {
+        var items = [];
+        if (backupable(task)) {
+            items.push('<li><a href="' + escapeHtml(backupUrl({project: project, task: task})) + '" download data-act="backup-task" ' +
+                'title="Backup: download the whole task as a zip"><i class="fa fa-file-download fa-fw"></i> Backup</a></li>');
+        }
+        if (task.mark === "compactable") items.push(itemHtml("compact-task", "fa fa-compress", "Compact", "Compact: delete its photos, keep its maps and models"));
+        if (!busy(task)) items.push(itemHtml("delete-task", "fa fa-trash", "Delete", "Delete this task"));
+        return items.length ? ui.rowMenuHtml(items) : "";
+    }
+
     function taskHtml(state, project, task) {
         var open = !!state.open.tasks[task.id], underProject = !!state.selected.projects[project.id];
         var ticked = underProject || !!state.selected.tasks[task.id], mark = MARKS[task.mark];
@@ -149,12 +168,7 @@
             "<td>" + escapeHtml(statusLabel(task)) + (task.compacted ? " (compacted)" : "") + "</td>" +
             '<td class="tweakui-storage-date">' + (created && !isNaN(created) ? escapeHtml(created.toLocaleDateString()) : "") + "</td>" +
             '<td class="tweakui-storage-size">' + escapeHtml(formatBytes(task.size)) + "</td>" +
-            '<td class="tweakui-storage-buttons">' +
-            (backupable(task) ? '<a class="btn btn-default btn-xs" href="' + escapeHtml(backupUrl({project: project, task: task})) +
-                '" download title="Backup: download the whole task as a zip"><i class="fa fa-file-download"></i><span class="hidden-xs"> Backup</span></a> ' : "") +
-            (task.mark === "compactable" ? '<button type="button" class="btn btn-default btn-xs" data-act="compact-task" title="Compact: delete its photos, keep its maps and models"><i class="fa fa-compress"></i> Compact</button> ' : "") +
-            (busy(task) ? "" : '<button type="button" class="btn btn-danger btn-xs" data-act="delete-task" title="Delete this task"><i class="fa fa-trash"></i></button>') +
-            "</td></tr>";
+            '<td class="tweakui-storage-buttons">' + taskMenuHtml(project, task) + "</td></tr>";
         if (open) html += '<tr class="tweakui-storage-breakdown" data-task="' + escapeHtml(task.id) + '"><td></td><td colspan="5">' + breakdownHtml(state, task) + "</td></tr>";
         return html;
     }
@@ -165,11 +179,12 @@
             '<td><input type="checkbox" data-act="tick-project" aria-label="Select project ' + escapeHtml(project.name) + '"' + (ticked ? " checked" : "") + "></td>" +
             '<td class="tweakui-storage-name"><button type="button" class="btn btn-link btn-xs" data-act="open-project" aria-expanded="' + open + '">' +
             '<i class="fa fa-caret-' + (open ? "down" : "right") + ' fa-fw"></i> <strong>' + escapeHtml(project.name) + "</strong></button></td>" +
-            "<td>" + project.tasks.length + (project.tasks.length === 1 ? " task" : " tasks") + "</td><td></td>" +
+            "<td>" + project.tasks.length + (project.tasks.length === 1 ? " task" : " tasks") + '</td><td class="tweakui-storage-date"></td>' +
             '<td class="tweakui-storage-size"><strong>' + escapeHtml(formatBytes(project.size)) + "</strong></td>" +
-            '<td class="tweakui-storage-buttons"><button type="button" class="btn btn-default btn-xs" data-act="import-project" ' +
-            'title="Import: add tasks to this project from zips (backups or assets)"' + (state.working ? " disabled" : "") +
-            '><i class="glyphicon glyphicon-import"></i><span class="hidden-xs"> Import</span></button> <button type="button" class="btn btn-danger btn-xs" data-act="delete-project" title="Delete this project and its tasks"><i class="fa fa-trash"></i></button></td></tr>';
+            '<td class="tweakui-storage-buttons">' + ui.rowMenuHtml([
+                state.working ? '<li class="disabled"><a href="#" role="button" aria-disabled="true"><i class="glyphicon glyphicon-import fa-fw"></i> Import</a></li>' :
+                    itemHtml("import-project", "glyphicon glyphicon-import", "Import", "Import: add tasks to this project from zips (backups or assets)"),
+                itemHtml("delete-project", "fa fa-trash", "Delete", "Delete this project and its tasks")]) + "</td></tr>";
         if (open) {
             if (!project.tasks.length) html += '<tr><td></td><td colspan="5" class="text-muted tweakui-storage-indent">No tasks.</td></tr>';
             project.tasks.forEach(function (t) { html += taskHtml(state, project, t); });
@@ -483,8 +498,14 @@
             });
         }
 
+        // Each row's "•••" menu
+        ui.rowMenu(doc, win, page, NAME);
+
         page.addEventListener("click", function (ev) {
             var el = ev.target.closest ? ev.target.closest("[data-act]") : null;
+            // A menu item that is a page action, or a disabled one, goes nowhere
+            var item = ev.target.closest ? ev.target.closest('a[href="#"]') : null;
+            if (item) ev.preventDefault();
             if (!el) return;
             var what = el.getAttribute("data-act");
             var taskRow = el.closest("[data-task]"), projectBody = el.closest("[data-project]");
