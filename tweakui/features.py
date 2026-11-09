@@ -218,9 +218,9 @@ CATEGORIES = [
                     _("Adds a Performance page under Diagnostic in the side menu (under TweakUI when the Diagnostic "
                       "plugin is off). It shows each processing node's cores, memory and queue, the server's CPU load, "
                       "disk space and activity and memory, your recent tasks (failed ones too) with their processing times and what their "
-                      "logs warn of (with a button to remove the photos a task left out) and an Actions menu (its log, "
+                      "logs warn of (with a button to remove the photos a task left out) and a menu each (its log, "
                       "Restart, its report), and whether the nodes have enough memory for your tasks, by WebODM's hardware "
-                      "requirements. Superusers also get Process View: the server's top processes by CPU and memory."),
+                      "requirements. Superusers also get Processes: the server's top processes by CPU and memory."),
                     preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
                                  "server's CPU load, disk and memory, and their recent tasks with what their logs "

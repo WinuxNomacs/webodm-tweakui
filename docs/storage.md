@@ -18,7 +18,7 @@ other files. Projects shared with you are not listed: they count toward their ow
 
 ## Cleaning up
 
-Use a row's own **Compact** or **Delete**, or select one or multiple tasks and projects with their checkboxes and use
+Use **Compact** or **Delete** in a row's **•••** menu, at its end, or select one or multiple tasks and projects with their checkboxes and use
 the bar's **Compact** or **Delete** (selecting a project includes all its tasks). Before anything is done, a confirmation lists what will be
 removed and how much space it frees. Compact deletes a completed task's photos and keeps its maps and models (the task
 can no longer be restarted). The work is done by WebODM itself, as from the Dashboard, with its own permissions and
@@ -26,13 +26,13 @@ quota.
 
 ## Backup and Import
 
-A completed task's **Backup** downloads the whole task as a zip: WebODM's own backup, the same file as the
+**Backup**, in a completed task's **•••** menu, downloads the whole task as a zip: WebODM's own backup, the same file as the
 **Backup** item of the task's **Download** menu, with its photos, results, options and name. Select one or
 multiple tasks or projects and use the bar's **Backup All** to download one zip for each completed task among them, one after another
 (the browser may ask once to allow several downloads); tasks that are not completed are skipped, and the status line
 says how many.
 
-A project's **Import** adds tasks to it from zips: choose one or more, and each is uploaded (its progress shown) and
+**Import**, in a project's **•••** menu, adds tasks to it from zips: choose one or more, and each is uploaded (its progress shown) and
 becomes a task of that project. A backup comes back as the task it was, with its name, options and dates; a zip of a
 task's assets imports as WebODM's **Import** makes it. The task is marked **Importing** while WebODM unpacks it. Either
 kind of zip can also go through WebODM's own **Import** on the Dashboard.

@@ -202,6 +202,7 @@ a dark theme if your tweak has colours.
 | `saveSettings(doc, win, changes, fetchFn)` | Saves some of the user's settings (`{name: value}`); a promise of the saved settings, refused with the reason |
 | `wholeNumber(text, min, max)` | A number setting's box: its whole number when in range, else what it should be (a message) |
 | `copyText(text, doc, win)` | Copies text to the clipboard (a promise) |
+| `rowMenuHtml(items, disabled)`, `rowMenu(doc, win, root, name)` | A table row's "•••" menu, as on WebODM's Dashboard: the button and its menu (`items`: its `<li>`s), and what opens them anywhere in `root` (over the page, by its button; Escape, a click elsewhere or the arrow keys). Returns `{close, stop}` |
 
 `tweakui/public/pick3d.js` adds two helpers for the 3D view: `whenViewer` (the Potree viewer once the page has it)
 and `pick` (the point under the pointer).

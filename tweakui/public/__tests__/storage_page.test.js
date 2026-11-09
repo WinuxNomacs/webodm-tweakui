@@ -95,6 +95,27 @@ test("a project opens to its tasks with their marks, and a busy task can't be ti
     expect(row(root, '[data-task="t3"] [data-act=compact-task]')).toBeNull();
 });
 
+test("each row's actions are in a \"•••\" menu at its end: Import and Delete for a project, Backup, Compact and Delete for a task", async () => {
+    const {root} = await started(report());
+    click(row(root, '[data-project="10"] [data-act=open-project]'));
+    const items = sel => Array.from(row(root, sel).lastElementChild.querySelectorAll(".tweakui-row-menu .dropdown-menu a")).map(a => a.textContent.trim());
+    expect(items('[data-project="10"] .tweakui-storage-project-row')).toEqual(["Import", "Delete"]);
+    expect(items('[data-task="t1"]')).toEqual(["Backup", "Compact", "Delete"]);
+    expect(items('[data-task="t2"]')).toEqual(["Delete"]);
+    expect(row(root, '[data-task="t1"] [data-act=backup-task]').getAttribute("href")).toBe("/api/projects/10/tasks/t1/backup");
+    // The button opens its menu; an item's action runs and the menu closes
+    const menu = row(root, '[data-task="t2"] .tweakui-row-menu'), toggle = menu.querySelector("[data-act=menu]");
+    expect([toggle.getAttribute("aria-label"), toggle.querySelector(".fa-ellipsis-h") !== null]).toEqual(["Actions", true]);
+    click(toggle);
+    expect(menu.classList.contains("open")).toBe(true);
+    const item = menu.querySelector("[data-act=delete-task]"), ev = new MouseEvent("click", {bubbles: true, cancelable: true});
+    item.dispatchEvent(ev);
+    expect(ev.defaultPrevented).toBe(true);
+    await flush();
+    expect(root.querySelector(".tweakui-storage-confirm").hidden).toBe(false);
+    expect(root.querySelector(".tweakui-row-menu.open")).toBeNull();
+});
+
 test("a task opens to its files by kind, measured once", async () => {
     const kinds = {photos: 600, orthophoto: 200, elevation: 100, point_cloud: 50, textured_model: 50, other: 0};
     const {root, fetchFn} = await started(report(), {t1: {id: "t1", size: 300 * MB, kinds}});
@@ -282,7 +303,7 @@ describe("Backup and Import", () => {
         expect(document.querySelectorAll("a[hidden]").length).toBe(0);
     });
 
-    test("each project has an Import button that opens the file chooser for zips", async () => {
+    test("each project's menu has Import, which opens the file chooser for zips", async () => {
         const {root} = await started(report());
         const input = root.querySelector(".tweakui-storage-file");
         const opened = jest.spyOn(input, "click").mockImplementation(() => {});

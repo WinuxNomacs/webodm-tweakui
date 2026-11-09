@@ -314,7 +314,7 @@ def disk_io_entry():
     return {"time": round(time.monotonic(), 3), "drives": drives}
 
 
-# Process View: the top processes by CPU and by memory, at most this many each; CPU is the difference between two
+# Processes: the top processes by CPU and by memory, at most this many each; CPU is the difference between two
 # readings, the last kept in this server process's memory (each of WebODM's worker processes keeps its own) for at most
 # PROCESS_KEEP seconds, keyed by pid and start time so a pid used again isn't taken for the old process
 # A command line is sent whole up to COMMAND_MAX characters (Windows' longest; Linux's are rarely longer), for the page's
@@ -372,7 +372,7 @@ def linux_details(pid, proc="/proc"):
 
 
 def _windows_api():
-    """The Windows functions and structures Process View uses, through ctypes as the CPU's counters"""
+    """The Windows functions and structures Processes uses, through ctypes as the CPU's counters"""
     import ctypes
     from ctypes import wintypes
 
@@ -528,7 +528,7 @@ def process_tops(readings, details, now=None):
 
 
 def processes_entry():
-    """Process View: the processes WebODM's server can see (process_tops), with whether it runs in a container (where
+    """Processes: the processes WebODM's server can see (process_tops), with whether it runs in a container (where
     that is its own container's only), or None where they can't be read"""
     try:
         if sys.platform == "win32":
@@ -550,7 +550,7 @@ def server_entry():
 
 def live(user, disk=False, processes=False):
     """What the Performance page refreshes every few seconds: the server's CPU and disk counters and memory, each node's memory
-    (the nodes the user may use, asked as for the report), and the disk and Process View's processes when asked (the
+    (the nodes the user may use, asked as for the report), and the disk and the server's processes when asked (the
     caller checks the user may see those)"""
     memory = memory_stats()
     out = {

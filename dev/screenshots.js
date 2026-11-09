@@ -394,12 +394,12 @@ const SHOTS = [
         },
     },
     {
-        // Process View (a superuser's), on, once CPU shows: the button and its two tables
+        // Processes (a superuser's), open, once CPU shows: the section and its two tables
         name: "performance-processes", settings: {performance_view: true, performance_refresh: 1},
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/performance/");
-            await s.page.waitForSelector("[data-act=processes]");
-            await s.page.click("[data-act=processes]");
+            await s.page.waitForSelector("[data-process-view] > summary");
+            await s.page.click("[data-process-view] > summary");
             await s.page.waitForSelector("[data-processes-by=cpu] tbody tr", {timeout: 15000});
             await s.page.waitForTimeout(1500);
             const box = await s.page.evaluate(() => {
@@ -413,18 +413,18 @@ const SHOTS = [
         },
     },
     {
-        // Recent Task History, with the first task's notes open (the newest task with notes)
+        // Recent Task History, with the Details of the newest task with notes open
         name: "performance-tasks", settings: {performance_view: true},
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/performance/");
             await s.page.waitForSelector(".tweakui-performance-table");
-            const notes = await s.page.$("[data-act=notes]");
+            const notes = await s.page.$("[data-act=details][title]");
             if (notes) {
                 await notes.click();
                 await notes.evaluate(b => b.blur());
             }
             // Photos Left Out open, the first name hovered for its thumbnail
-            const photos = await s.page.$(".tweakui-performance-notes-row:not([hidden]) .tweakui-performance-photos summary");
+            const photos = await s.page.$(".tweakui-performance-details-row:not([hidden]) .tweakui-performance-photos summary");
             if (photos) await photos.click();
             const box = await s.page.evaluate(() => {
                 const scroll = document.querySelector(".tweakui-performance-scroll");

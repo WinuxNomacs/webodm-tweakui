@@ -322,7 +322,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-storage .tweakui-storage-user { margin-bottom: 24px; }
 .tweakui-storage .tweakui-storage-quota { margin-bottom: 8px; max-width: 480px; }
 .tweakui-storage .tweakui-storage-quota .progress { margin: 4px 0 0; }
-.tweakui-storage .tweakui-storage-scroll { overflow-x: auto; }
+.tweakui-storage .tweakui-storage-scroll { position: relative; overflow-x: auto; }
 .tweakui-storage .tweakui-storage-table { margin-bottom: 0; }
 .tweakui-storage .tweakui-storage-table > tbody + tbody { border-top-width: 1px; }
 .tweakui-storage .tweakui-storage-table td { vertical-align: middle; }
@@ -331,12 +331,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-storage .tweakui-storage-indent { padding-left: 24px; }
 .tweakui-storage .tweakui-storage-size { text-align: right; white-space: nowrap; }
 .tweakui-storage .tweakui-storage-date, .tweakui-storage .tweakui-storage-buttons { white-space: nowrap; }
-.tweakui-storage .tweakui-storage-buttons { text-align: right; }
-/* At phone width a row's buttons stack, so the table fits the screen rather than hiding them past its edge */
-@media (max-width: 767px) {
-    .tweakui-storage .tweakui-storage-buttons { white-space: normal; width: 40px; }
-    .tweakui-storage .tweakui-storage-buttons .btn { margin: 2px 0; }
-}
+/* A row's "•••" menu at its end */
+.tweakui-storage .tweakui-storage-buttons { width: 1%; text-align: right; }
 /* Bootstrap's bar track keeps its light grey in every theme (WebODM's theme.css doesn't colour it): a faint track in
    the text's colour instead */
 .tweakui-storage .progress, .tweakui-performance .progress { background-color: transparent; background-color: color-mix(in srgb, currentColor 15%, transparent); box-shadow: none; }
@@ -350,15 +346,29 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 @media (max-width: 767px) {
     .tweakui-storage .tweakui-storage-date { display: none; }
     .tweakui-storage .tweakui-storage-table th:nth-child(4) { display: none; }
+    /* A long name breaks anywhere and a task's mark ("Can be compacted") wraps under it, so the table fits the screen */
+    .tweakui-storage .tweakui-storage-name .btn-link { overflow-wrap: anywhere; }
+    .tweakui-storage .tweakui-storage-name .label { display: inline-block; white-space: normal; text-align: left; }
     .tweakui-storage .tweakui-storage-share { width: 80px; }
 }
+
+/* A row's "•••" menu (core.js's rowMenu, Diagnostic's Performance and Storage): over the page where the script puts
+   it, by its button, so a table's scrolling box doesn't cut it off */
+.tweakui-row-menu > .dropdown-menu { position: fixed; right: auto; }
 
 /* Diagnostic > Performance (templates/performance.html, performance_page.js): General Assessment, then cards (a processing node
    each, the server) that wrap to one column on a phone, and the recent tasks' table, which scrolls sideways there
    rather than the page. Bars are Bootstrap's progress bars, as WebODM's own Diagnostic page has. */
-/* The page's controls, above Recent Task History: Refresh and its status, then the sliders under it */
-.tweakui-performance .tweakui-performance-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
-.tweakui-performance .tweakui-performance-bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+/* The page's controls beside its heading (under it where there is no room): Updated, the graphs' window, Refresh and
+   the gear, whose popover (Refresh Every and History Length) opens below it, its right edge under the bar's */
+.tweakui-performance .tweakui-performance-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 4px 16px; margin-bottom: 12px; }
+.tweakui-performance .tweakui-performance-head h3 { margin: 10px 0; }
+.tweakui-performance .tweakui-performance-bar { position: relative; display: flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; }
+.tweakui-performance .tweakui-performance-status:empty, .tweakui-performance .tweakui-performance-window:empty { display: none; }
+.tweakui-performance .tweakui-performance-window::before { content: "\00b7"; margin-right: 10px; }
+.tweakui-performance .tweakui-performance-status:empty + .tweakui-performance-window::before { content: none; }
+.tweakui-performance .tweakui-performance-settings { position: absolute; top: calc(100% + 4px); right: 0; z-index: 1000; display: flex; flex-direction: column; gap: 12px; width: 300px; max-width: calc(100vw - 32px); padding: 10px 12px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 6px 12px rgba(0, 0, 0, 0.175); }
+.tweakui-performance .tweakui-performance-settings[hidden] { display: none; }
 /* General Assessment: a card in the theme's highlight, its left edge in its worst line's colour (text-success,
    text-warning... as the lines' icons) */
 .tweakui-performance .tweakui-performance-assessment { position: relative; margin-bottom: 20px; padding: 8px 14px 6px 20px; border-width: 1px; border-style: solid; border-radius: 4px; overflow: hidden; }
@@ -373,27 +383,29 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-facts th { width: 100px; padding: 3px 12px 3px 0; vertical-align: top; white-space: nowrap; }
 .tweakui-performance .tweakui-performance-facts td { padding: 3px 0; }
 .tweakui-performance .tweakui-performance-progress { height: 10px; margin: 4px 0 0; }
-.tweakui-performance .tweakui-performance-scroll { overflow-x: auto; }
+/* A table's box scrolls sideways at phone width; what is positioned in it (screen-reader text) stays in it */
+.tweakui-performance .tweakui-performance-scroll { position: relative; overflow-x: auto; }
 .tweakui-performance .tweakui-performance-table td { vertical-align: middle; }
 .tweakui-performance .tweakui-performance-number { text-align: right; white-space: nowrap; }
-.tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step { white-space: nowrap; }
-/* Refresh Every and History Length, under Refresh */
-.tweakui-performance .tweakui-performance-every { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
+.tweakui-performance .tweakui-performance-date { white-space: nowrap; }
+/* Refresh Every and History Length, in the gear's popover: each label over its slider and box */
+.tweakui-performance .tweakui-performance-every { display: flex; flex-direction: column; gap: 4px; }
 .tweakui-performance .tweakui-performance-every label { margin: 0; }
-/* The two sliders line up under each other where there is room for their labels on one line */
-@media (min-width: 768px) { .tweakui-performance .tweakui-performance-every label { min-width: 15em; } }
-.tweakui-performance .tweakui-performance-every .tweakui-number { display: flex; align-items: center; gap: 8px; width: 220px; }
+.tweakui-performance .tweakui-performance-every .tweakui-number { display: flex; align-items: center; gap: 8px; width: 100%; }
 .tweakui-performance .tweakui-performance-every input[type=range] { flex: 1 1 auto; min-width: 0; margin: 0; }
 .tweakui-performance .tweakui-performance-every input[type=number] { flex: 0 0 64px; width: 64px; }
 .tweakui-performance .tweakui-performance-every .tweakui-number > span { flex: 0 0 2.5em; }
-.tweakui-performance .tweakui-performance-cpu-note { margin: 6px 0 2px; }
+/* A section's notes, behind the info button beside its heading */
+.tweakui-performance .tweakui-performance-info-button { padding: 0 4px; font-size: 14px; vertical-align: baseline; }
+.tweakui-performance .tweakui-performance-info { max-width: 760px; margin: -4px 0 10px; }
+.tweakui-performance .tweakui-performance-info p { margin: 0 0 4px; }
 /* A drive's card: its mount points wrap anywhere (long paths at phone width) */
 .tweakui-performance .tweakui-performance-drive td { overflow-wrap: anywhere; }
-.tweakui-performance .tweakui-performance-disk-note { margin: -12px 0 20px; }
-/* Process View (superusers), under the server's cards: outlined tables whose columns keep the widths given (fixed
+/* Processes (superusers), a section under the server's cards that opens: outlined tables whose columns keep the widths given (fixed
    layout; at phone width the table scrolls in its box), each cell's text wrapping at its width, and on each heading's
    right edge a handle that resizes its column */
-.tweakui-performance .tweakui-performance-process-view { margin-bottom: 20px; }
+.tweakui-performance .tweakui-performance-process-view { margin: -8px 0 20px; }
+.tweakui-performance .tweakui-performance-process-view > summary { font-size: 14px; font-weight: bold; }
 .tweakui-performance .tweakui-performance-processes { margin-top: 10px; }
 .tweakui-performance .tweakui-performance-process-table { table-layout: fixed; width: 100%; min-width: 760px; border-width: 1px; border-style: solid; }
 .tweakui-performance .tweakui-performance-process-table th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -405,33 +417,34 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 /* The live figures' graphs (inline SVG stretched to the card's width): lines in currentColor, the first series in the
    theme's link colour (read by performance_page.js), the second in its text colour, a light fill under the first;
    hovering shows a cursor and the readings under it */
-.tweakui-performance .tweakui-performance-graph { position: relative; height: 46px; margin: 4px 0 2px; border-width: 1px; border-style: solid; border-radius: 3px; touch-action: pan-y; }
+.tweakui-performance .tweakui-performance-graph { position: relative; height: 48px; margin: 4px 0 2px; border-width: 1px; border-style: solid; border-radius: 3px; touch-action: pan-y; }
 .tweakui-performance .tweakui-performance-graph svg { display: block; width: 100%; height: 100%; overflow: hidden; }
 .tweakui-performance .tweakui-performance-graph path { fill: none; stroke: currentColor; stroke-width: 1.5px; stroke-linejoin: round; stroke-linecap: round; vector-effect: non-scaling-stroke; }
 .tweakui-performance .tweakui-performance-graph path.tweakui-performance-graph-area { fill: currentColor; fill-opacity: 0.18; stroke: none; }
-.tweakui-performance .tweakui-performance-graph-max, .tweakui-performance .tweakui-performance-graph-zero { position: absolute; left: 4px; font-size: 10px; line-height: 1; pointer-events: none; }
+.tweakui-performance .tweakui-performance-graph-max, .tweakui-performance .tweakui-performance-graph-zero { position: absolute; left: 4px; font-size: 11px; line-height: 1; pointer-events: none; }
+@media (min-width: 768px) { .tweakui-performance .tweakui-performance-graph { height: 60px; } }
 .tweakui-performance .tweakui-performance-graph-max { top: 2px; }
 .tweakui-performance .tweakui-performance-graph-zero { bottom: 2px; }
 .tweakui-performance .tweakui-performance-graph line.tweakui-performance-graph-grid { stroke: currentColor; stroke-opacity: 0.2; stroke-width: 1px; stroke-dasharray: 3 3; vector-effect: non-scaling-stroke; }
-/* Under a graph: its time line, then its legend (a swatch in each line's colour) */
-.tweakui-performance .tweakui-performance-graph-axis { display: flex; justify-content: space-between; font-size: 10px; line-height: 1.2; margin-bottom: 2px; }
+/* Under a graph of two series: its legend (a swatch in each line's colour) */
 .tweakui-performance .tweakui-performance-graph-legend { display: flex; flex-wrap: wrap; gap: 2px 12px; font-size: 11px; }
 .tweakui-performance .tweakui-performance-graph-swatch { display: inline-block; width: 14px; height: 3px; vertical-align: middle; background-color: currentColor; }
 .tweakui-performance .tweakui-performance-graph-cursor { position: absolute; top: 0; bottom: 0; width: 0; border-left: 1px dashed currentColor; opacity: 0.6; pointer-events: none; }
 .tweakui-performance .tweakui-performance-graph-tip { position: absolute; bottom: calc(100% + 2px); z-index: 2; padding: 2px 6px; border-width: 1px; border-style: solid; border-radius: 3px; font-size: 11px; white-space: nowrap; pointer-events: none; }
 .tweakui-performance .tweakui-performance-accent { color: var(--tweakui-performance-accent, currentColor); }
 .tweakui-performance .tweakui-performance-swatch { display: inline-block; width: 12px; height: 3px; margin: 0 6px 3px 0; vertical-align: middle; background-color: currentColor; }
-/* Recent Task History: a task's Notes button opens the row below it (its notes, each with its line from the log, and the
-   log's other messages); at phone width the wide columns are hidden and their figures come under the task's name */
-.tweakui-performance .tweakui-performance-gpu, .tweakui-performance .tweakui-performance-node { white-space: nowrap; }
-.tweakui-performance .tweakui-performance-notes-button { margin-left: 6px; vertical-align: baseline; }
-/* A task's Actions menu: over the page where its script puts it (by its button), so the table's scrolling box doesn't cut it off */
-/* A task's Notes and Actions buttons beside its name, wrapping under it together */
+/* Recent Task History: a task's Details button, beside its name, opens the row below it (the figures from its report,
+   then its notes, each with its line from the log, and the log's other messages); its "•••" menu is at the row's end;
+   at phone width the wide columns are hidden and their figures come under the task's name */
+.tweakui-performance .tweakui-performance-node { white-space: nowrap; }
 .tweakui-performance .tweakui-performance-task-buttons { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; vertical-align: middle; }
-.tweakui-performance .tweakui-performance-task-buttons .tweakui-performance-notes-button { margin-left: 0; }
-.tweakui-performance .tweakui-performance-actions > .dropdown-menu { position: fixed; }
+.tweakui-performance .tweakui-performance-row-actions { width: 1%; text-align: right; white-space: nowrap; }
 .tweakui-performance .tweakui-performance-action-status:empty { display: none; }
-.tweakui-performance .tweakui-performance-table > tbody > tr.tweakui-performance-notes-row > td { border-top: 0; padding-top: 0; }
+.tweakui-performance .tweakui-performance-table > tbody > tr.tweakui-performance-details-row > td { border-top: 0; padding-top: 0; }
+.tweakui-performance .tweakui-performance-figures { display: flex; flex-wrap: wrap; gap: 2px 24px; margin: 2px 0 6px; }
+.tweakui-performance .tweakui-performance-figures > div { display: flex; gap: 6px; }
+.tweakui-performance .tweakui-performance-figures dt { font-weight: bold; }
+.tweakui-performance .tweakui-performance-figures dd { margin: 0; }
 .tweakui-performance .tweakui-performance-notes { margin: 0 0 6px; }
 .tweakui-performance .tweakui-performance-notes > li { padding: 2px 0; }
 .tweakui-performance .tweakui-performance-line, .tweakui-performance .tweakui-performance-other li { overflow-wrap: anywhere; }
@@ -455,7 +468,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-performance .tweakui-performance-wide { display: none; }
     .tweakui-performance .tweakui-performance-detail { display: block; }
     /* The table can be wider than a phone (it scrolls sideways): a task's notes stay the screen's width, in view */
-    .tweakui-performance .tweakui-performance-notes-row td > * { position: sticky; left: 8px; max-width: calc(100vw - 46px); }
+    .tweakui-performance .tweakui-performance-details-row td > * { position: sticky; left: 8px; max-width: calc(100vw - 46px); }
 }
 
 /* General > Just for Fun > Surprise Me: fireworks-js's canvas over the whole page, above dialogs and the maps'

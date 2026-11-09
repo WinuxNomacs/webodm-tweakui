@@ -271,10 +271,93 @@
         return ok ? Promise.resolve() : Promise.reject(new Error("copy failed"));
     }
 
+    // A row's "•••" menu, as on WebODM's Dashboard: a button data-act="menu" in a .tweakui-row-menu with its
+    // .dropdown-menu, anywhere in root. It opens over the page (fixed, so a table's scrolling box doesn't cut it off),
+    // its right edge under its button's, below it or above it where there is no room below, and follows its button as
+    // the page scrolls or resizes; a click anywhere, Escape or its button leaving the window closes it, arrow keys move
+    // through its items. Returns {close(focus), stop()}
+    function rowMenu(doc, win, root, name) {
+        var open = null;
+        function toggleOf(group) { return group.querySelector("[data-act=menu]"); }
+        function close(focus) {
+            if (!open) return;
+            var group = open, toggle = toggleOf(group);
+            open = null;
+            group.classList.remove("open");
+            toggle.setAttribute("aria-expanded", "false");
+            if (focus && toggle.isConnected) toggle.focus();
+        }
+        function place() {
+            if (!open.isConnected) {
+                open = null;
+                return;
+            }
+            var toggle = toggleOf(open), list = open.querySelector(".dropdown-menu");
+            var box = toggle.getBoundingClientRect(), high = win.innerHeight || 0, wide = win.innerWidth || 0;
+            if (high && (box.bottom < 0 || box.top > high)) return close();
+            var top = box.bottom + 2;
+            if (high && top + list.offsetHeight > high - 8 && box.top - list.offsetHeight - 2 >= 8) top = box.top - list.offsetHeight - 2;
+            var left = box.right - list.offsetWidth;
+            if (wide) left = Math.min(left, wide - list.offsetWidth - 8);
+            list.style.top = Math.round(top) + "px";
+            list.style.left = Math.round(Math.max(8, left)) + "px";
+        }
+        function show(toggle) {
+            var group = toggle.parentNode;
+            if (open === group) return close();
+            close();
+            group.classList.add("open");
+            toggle.setAttribute("aria-expanded", "true");
+            open = group;
+            place();
+            // Focused without scrolling a table's box to the menu
+            var first = group.querySelector(".dropdown-menu a");
+            if (first) first.focus({preventScroll: true});
+        }
+        var onClick = guard(name, function (e) {
+            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=menu]") : null;
+            if (toggle && root.contains(toggle)) show(toggle);
+            else close();
+        });
+        var onKey = guard(name, function (e) {
+            if (!open) return;
+            if (e.key === "Escape") {
+                close(true);
+                return;
+            }
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+            var items = Array.prototype.slice.call(open.querySelectorAll(".dropdown-menu a"));
+            if (!items.length) return;
+            var at = items.indexOf(doc.activeElement);
+            e.preventDefault();
+            items[(at + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus({preventScroll: true});
+        });
+        var onMove = guard(name, function () { if (open) place(); });
+        doc.addEventListener("click", onClick);
+        doc.addEventListener("keydown", onKey);
+        win.addEventListener("scroll", onMove, true);
+        win.addEventListener("resize", onMove);
+        return {close: close, stop: function () {
+            close();
+            doc.removeEventListener("click", onClick);
+            doc.removeEventListener("keydown", onKey);
+            win.removeEventListener("scroll", onMove, true);
+            win.removeEventListener("resize", onMove);
+        }};
+    }
+
+    // A row's "•••" button and its menu (items: the menu's <li>s), for rowMenu
+    function rowMenuHtml(items, disabled) {
+        return '<div class="btn-group tweakui-row-menu"><button type="button" class="btn btn-default btn-xs dropdown-toggle" data-act="menu" ' +
+            'aria-haspopup="true" aria-expanded="false" aria-label="Actions" title="Actions"' + (disabled ? " disabled" : "") +
+            '><i class="fa fa-ellipsis-h"></i></button><ul class="dropdown-menu">' + items.join("") + "</ul></div>";
+    }
+
     var core = {
         report: report, guard: guard, settingsOf: settingsOf, ready: ready, feature: feature, el: el,
         whenElement: whenElement, sideItem: sideItem, sideLink: sideLink, placeMenu: placeMenu, csrfToken: csrfToken,
-        copyText: copyText, wholeNumber: wholeNumber, saveSettings: saveSettings, SELECTORS: SELECTORS
+        copyText: copyText, wholeNumber: wholeNumber, saveSettings: saveSettings, rowMenu: rowMenu, rowMenuHtml: rowMenuHtml,
+        SELECTORS: SELECTORS
     };
 
     // Puts the helpers on window.TweakUI, beside what settings.js put there
