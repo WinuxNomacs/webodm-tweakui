@@ -10,7 +10,7 @@ withhold it from users in [Administration > TweakUI](administration).
 The **Diagnostic** item in the side menu gets a **Performance** sub-item, after **System** (WebODM's own Diagnostic
 page) and **Storage** if that is on too. If an administrator has turned the Diagnostic plugin off, the **TweakUI**
 item gets it instead. The page is asked afresh each time it opens, and again with **Refresh** (above
-[Recent Processing](#recent-processing), with Refresh Every and History Length under it). While it is open, the
+[Recent Task History](#recent-task-history), with Refresh Every and History Length under it). While it is open, the
 CPU load, the disks' activity and the memory refresh by themselves (see [Refresh Every](#refresh-every)), each drawn
 as a graph over the last few minutes (see [History Length](#history-length)), and the free disk space every 10
 seconds.
@@ -23,9 +23,9 @@ colour of its most pressing line: green when all is well, the warning or danger 
 - Whether a processing node has enough memory for your largest task, about how many photos per task each node suits,
   tasks waiting on a node that processes only so many at a time, a node that is not answering, and a server under
   WebODM's recommended 100 GB of free disk or 16 GB of memory.
-- Recent Processing's problems in a line, when there are any: how many of your last tasks failed (and how many of
+- Recent Task History's problems in a line, when there are any: how many of your last tasks failed (and how many of
   those ran out of memory) and how many left photos out, with a link down to
-  [Recent Processing](#recent-processing), where each task's **Notes** say more.
+  [Recent Task History](#recent-task-history), where each task's **Notes** say more.
 - With 4 or more completed tasks to compare, whether the newer half took more or less time per photo than the older
   half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it as
   a hint, not a measurement.
@@ -44,7 +44,7 @@ of photos (250 photos, 16 GB; 1,500 photos, 64 GB; 5,000 photos, 256 GB), betwee
 options such as a higher resolution need more, and swap can make up some of it, slowly. In Docker a node has the
 memory Docker gives it, which on Windows and macOS is Docker's own memory setting, not the computer's.
 
-There is no GPU line: a node doesn't say whether it has a GPU. [Recent Processing](#recent-processing) shows whether
+There is no GPU line: a node doesn't say whether it has a GPU. [Recent Task History](#recent-task-history) shows whether
 each task used one, from its log.
 
 ## Server
@@ -107,7 +107,7 @@ reading first, as when the page opens. A memory figure turns to a warning colour
 
 A part of Show Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the disks'
 activity, the server's memory and each node's memory, from 1 to 10 seconds. It is on the settings page and on the
-Performance page, under **Refresh** above Recent Processing (a slider and a box, as for the other number settings); a
+Performance page, under **Refresh** above Recent Task History (a slider and a box, as for the other number settings); a
 change there applies at once and is saved when you let go of the slider or leave the box. The free disk space
 refreshes every 10 seconds. Nothing is refreshed while the browser tab is hidden, and a refresh waits for the last to
 be answered.
@@ -119,9 +119,9 @@ minutes, newest at the right. Like Refresh Every, it is on the settings page and
 where a change redraws the graphs at once (with the readings the page has kept: a longer window shows more once the
 page has been open that long).
 
-## Recent Processing
+## Recent Task History
 
-![Recent Processing with a task's notes open](../tweakui/public/previews/performance-tasks.webp)
+![Recent Task History with a task's notes open](../tweakui/public/previews/performance-tasks.webp)
 
 Your last 10 finished tasks, newest first: completed, failed or canceled. A failed task says so under its name, with
 WebODM's error, and its notes open; a canceled one says **Canceled**. Each task has:
@@ -186,7 +186,7 @@ photo from the task, and **Remove Photo**, beside a name, deletes that one. You'
 The list says how many photos were removed, and what to do next. Only the task's photos that its report left out can
 be removed, only from a completed task that WebODM isn't working on (not queued, restarting or being removed), and
 only by a user who can change the task's project (its owner, or someone it is shared with for editing, or an
-administrator). The figures in Recent Processing (Photos, the note's count) are the last run's until the task runs
+administrator). The figures in Recent Task History (Photos, the note's count) are the last run's until the task runs
 again.
 
 Below them, **Other Messages** opens every other warning and error line in the log, once each with how many times it

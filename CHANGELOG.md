@@ -9,6 +9,7 @@
 
 ### Diagnostic
 
+- Performance View: Recent Processing is now **Recent Task History**.
 - Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or
   delete them." until something is selected.
 - Performance View: the graphs' readings survive a reload of the page (Ctrl+R or F5) in the same browser tab (its
@@ -17,9 +18,9 @@
   (from "5 min ago", following History Length, to Now) and, for a drive's reads and writes, a legend; the graphs are
   10% taller.
 - Performance View: a **General Assessment** card at the top, its left edge in its most pressing line's colour, with
-  the verdicts on memory and the nodes, a line summing up Recent Processing's failed tasks and photos left out, and
-  the time-per-photo trend (moved up from Recent Processing).
-- Performance View > Recent Processing: **Remove Photos From Task** beside Copy Names and **Remove Photo** beside
+  the verdicts on memory and the nodes, a line summing up Recent Task History's failed tasks and photos left out, and
+  the time-per-photo trend (moved up from Recent Task History).
+- Performance View > Recent Task History: **Remove Photos From Task** beside Copy Names and **Remove Photo** beside
   each name in a completed task's Photos Left Out delete those photos from the task, and the task stops using the
   processing node's copy of it, so its next Restart goes without them.
 - Performance View: Refresh, Refresh Every and History Length moved from the top of the page to just above Recent

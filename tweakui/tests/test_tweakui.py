@@ -1864,7 +1864,7 @@ class TestPerformance(TweakUITestCase):
         self.assertIn('data-control="history"', on)
         self.assertIn('id="tweakui-performance-history" class="form-control input-sm theme-border" min="1" max="30" step="1" value="30"', on)
         self.assertLess(on.index('data-control="refresh"'), on.index('data-control="history"'))
-        # The controls come after the nodes' and server's part and before Recent Processing's
+        # The controls come after the nodes' and server's part and before Recent Task History's
         self.assertLess(on.index('class="tweakui-performance-body"'), on.index('data-act="refresh"'))
         self.assertLess(on.index('data-act="refresh"'), on.index('data-control="refresh"'))
         self.assertLess(on.index('data-control="history"'), on.index('class="tweakui-performance-recent"'))
