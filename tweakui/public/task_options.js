@@ -1,9 +1,9 @@
-// General > Task Options > Show Configured Option Count: in the Task Options dialog (EditPresetDialog in WebODM),
+// General > Task Options > Configured Option Counts: in the Task Options dialog (EditPresetDialog in WebODM),
 // each group heading's "(13)" becomes "(configured/total)", kept up to date as options change. An option is
 // configured when it is not at ODM's default, which is when its component's getValue() is undefined, as "Reset to
 // default" leaves it. The count goes in the heading's data-tweakui-count attribute, which main.css shows in place of
 // WebODM's number: React re-renders its own text but leaves the attribute alone.
-// General > Task Options > Expand Configured Options: a collapsed group still shows its configured options, WebODM's
+// General > Task Options > Configured Options When Collapsed: a collapsed group still shows its configured options, WebODM's
 // own controls, under its heading. WebODM keeps a collapsed group's options on the page, hidden by an inline
 // display: none; data-tweakui-expand on the group, data-tweakui-configured on its configured options and subgroups,
 // and main.css show only those. "Other Options" is not on the page while closed, so it shows nothing. The dialog's

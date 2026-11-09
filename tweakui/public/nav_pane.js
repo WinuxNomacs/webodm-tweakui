@@ -1,17 +1,17 @@
-// General > Navigation Pane > Hide Navigation Pane: a small tab on the divider between the side menu (WebODM's
+// General > Navigation Pane > Collapsible Navigation Pane: a small tab on the divider between the side menu (WebODM's
 // navigation pane) and the page, near the top. A click hides the pane, the page takes the whole width and only the
-// tab stays, at the left edge. The tab cycles: the pane at WebODM's width -> its icons alone (the same view as Resize
+// tab stays, at the left edge. The tab cycles: the pane at WebODM's width -> its icons alone (the same view as Resizable
 // Navigation Pane's narrowest) -> hidden -> WebODM's width again. Remembered in this browser (localStorage), so the
 // next page opens the same way. Only where WebODM shows the pane beside the page (768 px wide and more, main.css); narrower,
 // the pane is the header's hamburger menu, left as it is. The settings page announces each saved change
 // ("tweakuiSettingsChanged"), so turning it on or off there shows or removes the tab at once.
-// General > Navigation Pane > Resize Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
+// General > Navigation Pane > Resizable Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
 // from its icons' column to half the window, and a double click puts back WebODM's 250 px. Narrower than SNAP, it
 // snaps to the icons alone: labels and submenu arrows hidden, each link's name as its tooltip, submenu items unindented
 // so their icons line up. Remembered in this browser too.
-// General > Navigation Pane > Hide Navigation Pane > Auto-hide Navigation Pane: the pane stays hidden until the
+// General > Navigation Pane > Collapsible Navigation Pane > Auto-hide: the pane stays hidden until the
 // pointer nears the window's left edge (or the keyboard's focus goes into it), then shows over the page, which keeps
-// its size (no resize: the maps don't redraw), at its remembered width (Resize Navigation Pane's, else WebODM's); it
+// its size (no resize: the maps don't redraw), at its remembered width (Resizable Navigation Pane's, else WebODM's); it
 // hides again Hide Delay after the pointer leaves it and the tab (or at once with Escape). The tab then pins the pane
 // open beside the page, as without auto-hide, and a second click unpins it; remembered in this browser. UMD, so Jest
 // can load it.
@@ -214,10 +214,10 @@
             html.classList.remove(TAB);
         }
 
-        // The pane as the settings and the pin want it. Hide Navigation Pane on: hidden or icons only as last time
+        // The pane as the settings and the pin want it. Collapsible Navigation Pane on: hidden or icons only as last time
         // (at once, before the page is drawn, so a hidden pane doesn't flash) and the tab once the page is parsed;
         // with auto-hide, hidden unless pinned (and never icons only: the tab pins instead of cycling). Off: the pane
-        // shown, no tab (and WebODM's width, unless Resize Navigation Pane keeps another)
+        // shown, no tab (and WebODM's width, unless Resizable Navigation Pane keeps another)
         function refresh() {
             var autoHide = enabled && auto;
             html.classList.toggle(AUTO, autoHide);
@@ -245,7 +245,7 @@
             pinned: function () { return pinned; }, tab: function () { return tab; }};
     }
 
-    // Resize Navigation Pane: the handle on the divider, and the pane's width
+    // Resizable Navigation Pane: the handle on the divider, and the pane's width
     // Also the pane's width for the tab's icons only, with or without the handle
     function createResize(doc, win) {
         var html = doc.documentElement, handle = null, width = DEFAULT_WIDTH, listeners = {};
@@ -401,7 +401,7 @@
             else removeHandle();
         }
 
-        // Hide Navigation Pane on or off: its tab may keep the icons alone
+        // Collapsible Navigation Pane on or off: its tab may keep the icons alone
         function allowIcons(enabled) {
             iconsOk = enabled;
             restore();

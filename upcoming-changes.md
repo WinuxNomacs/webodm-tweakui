@@ -3,14 +3,22 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
-   CHANGELOG).
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **UX review: setting names** (user request, 2026-11-09) — branch `ux-setting-names`: every label in `features.py`
+  as decided (see "Setting names"; the setting keys, element ids and preview files unchanged, so saved settings stay),
+  and every mention in the scripts' and CSS's comments, `README.md`, `CLAUDE.md`'s example, `docs/` and
+  CHANGELOG (Unreleased; 1.0.0's entries keep their names). The tab's "Hide Navigation Pane" tooltip and the
+  handle's "Resize Navigation Pane" label are actions, not the setting, and stay. Docs headings renamed, each old
+  anchor as released in 1.0.0 (and Recent Processing's) kept by an empty `<div id>` before it (a `<span>` in the
+  heading would go into VitePress's permalink label). Tests: `test_tweakui.py`, Jest names. Screenshot
+  `zoom-override-2d` (its caption). Live on 4.0.0 and 3.3.2 (Settings and Administration > TweakUI, desktop and
+  390px); old anchors land on their headings in the built docs.
 - **UX review, Phase C: Settings page readability** (user request, 2026-11-09) — branch `ux-settings-readability`:
   `features.py` (a setting's `summary`, one line, and `more`, the rest of its description, in place of `help`; every
   description rewritten so; a Navigation Pane group in General after Global Controls with Hide, Auto-hide, Hide Delay
@@ -862,6 +870,17 @@ a click.
 Decided (2026-11-09): rename all, each after what you get, without "Show" or "Add"; Settings and Administration use the
 same name. Old docs anchors keep working where VitePress allows (an alias heading id). The list of new names is
 proposed to the user before the rename.
+
+The list approved (2026-11-09): Units in Header → Units Menu; Hide, Auto-hide and Resize Navigation Pane →
+Collapsible Navigation Pane, Auto-hide, Resizable Navigation Pane; Show Configured Option Count → Configured Option
+Counts; Expand Configured Options → Configured Options When Collapsed; Replace Preset Options Menu → Preset Menu with
+Filter; Task Start and End Time → Start and End Times; Show Configured Task Preset → Matching Preset; Options as
+Bubbles → Option Bubbles; Show ODX Command → ODX Command; Show Current Processing Stage → Current Processing Stage;
+Expand Task Controls → Task Buttons When Minimized; Enable Interaction → Rockets on Right-click; Show Theme Menu →
+Theme Menu; Movable Controls → Movable Panels; Compare Orthophotos from Other Tasks → Other Tasks' Orthophotos; 2D
+Zoom Override → Deeper Zoom; Add Search Button → Map Search; 3D Zoom Override → Zoom to Pointer; Show Storage View
+and Show Performance View → Storage View and Performance View. Unchanged: Hide Delay, Enhanced Task Details, Surprise
+Me, Source Frames (the tool's own window has that name), Zoom Sensitivity, Refresh Every, History Length.
 
 Settings are named in mixed styles ("Show Configured Option Count", "Add Search Button", "Units in Header", "Show
 Storage View", which Administration calls "Storage View"). Proposed: each named after what you get, without "Show" or

@@ -201,8 +201,8 @@ class TestSettingsPage(TweakUITestCase):
         self.assertLess(options, page.index('data-setting="show_configured_option_count"'))
         self.assertLess(page.index('data-setting="show_configured_option_count"'), details)
         self.assertLess(details, page.index('data-setting="enhanced_task_details"'))
-        for name in ("Task Start and End Time", "Show Configured Task Preset", "Options as Bubbles",
-                     "Show ODX Command", "Show Current Processing Stage"):
+        for name in ("Start and End Times", "Matching Preset", "Option Bubbles",
+                     "ODX Command", "Current Processing Stage"):
             self.assertGreater(page.index(name), details)
 
     def test_expand_configured_is_under_task_options_off_by_default_and_shows_the_saved_value(self):
@@ -210,7 +210,7 @@ class TestSettingsPage(TweakUITestCase):
         options, details = page.index(">Task Options</h5>"), page.index(">Task Details</h5>")
         self.assertLess(options, page.index('data-setting="expand_configured_options"'))
         self.assertLess(page.index('data-setting="expand_configured_options"'), details)
-        self.assertIn("Expand Configured Options", page)
+        self.assertIn("Configured Options When Collapsed", page)
         self.assertNotIn('data-setting="expand_configured_options" checked', page)
         self.patch({"expand_configured_options": True})
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_configured_options" checked')
@@ -220,7 +220,7 @@ class TestSettingsPage(TweakUITestCase):
         details = page.index(">Task Details</h5>")
         self.assertLess(details, page.index('data-setting="expand_task_controls"'))
         self.assertLess(page.index('data-setting="expand_task_controls"'), page.index('id="tweakui-themes"'))
-        self.assertIn("Expand Task Controls", page)
+        self.assertIn("Task Buttons When Minimized", page)
         self.assertNotIn('data-setting="expand_task_controls" checked', page)
         self.patch({"expand_task_controls": True})
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="expand_task_controls" checked')
@@ -252,7 +252,7 @@ class TestSettingsPage(TweakUITestCase):
         general = general[:general.index("</section>")]
         self.assertLess(general.index("Global Controls"), general.index("Task Options"))
         self.assertIn('data-setting="units_in_header">', general)
-        self.assertIn("Units in Header", general)
+        self.assertIn("Units Menu", general)
         self.assertEqual(self.patch({"units_in_header": True}).json(), defaults(units_in_header=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="units_in_header" checked')
         self.assertEqual(self.script_settings(self.client)["units_in_header"], True)
@@ -284,7 +284,7 @@ class TestSettingsPage(TweakUITestCase):
         general = general[:general.index("</section>")]
         self.assertLess(general.index('data-setting="units_in_header"'), general.index('data-setting="hide_nav_pane">'))
         self.assertLess(general.index('data-setting="hide_nav_pane"'), general.index("Task Options"))
-        self.assertIn("Hide Navigation Pane", general)
+        self.assertIn("Collapsible Navigation Pane", general)
         self.assertEqual(self.patch({"hide_nav_pane": True}).json(), defaults(hide_nav_pane=True))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="hide_nav_pane" checked')
         self.assertEqual(self.script_settings(self.client)["hide_nav_pane"], True)
@@ -301,7 +301,7 @@ class TestSettingsPage(TweakUITestCase):
         self.assertLess(auto, delay_box)
         self.assertLess(delay_box, general.index('data-setting="auto_hide_delay"'))
         self.assertLess(general.index('data-setting="auto_hide_delay"'), general.index('data-setting="resize_nav_pane"'))
-        self.assertIn("Auto-hide Navigation Pane", general)
+        self.assertIn("Auto-hide", general)
         self.assertIn("Hide Delay", general)
         self.assertIn('Hide Delay <span class="tweakui-default text-muted">(Default: 500 ms)</span>', general)
         self.assertIn('data-slider-of="auto_hide_delay" min="200" max="3000" step="100" value="500"', general)
@@ -342,7 +342,7 @@ class TestSettingsPage(TweakUITestCase):
         general = general[:general.index("</section>")]
         self.assertLess(general.index('data-setting="hide_nav_pane"'), general.index('data-setting="resize_nav_pane">'))
         self.assertLess(general.index('data-setting="resize_nav_pane"'), general.index("Task Options"))
-        self.assertIn("Resize Navigation Pane", general)
+        self.assertIn("Resizable Navigation Pane", general)
         self.assertEqual(self.patch({"resize_nav_pane": True}).json(), defaults(resize_nav_pane=True))
         self.assertEqual(self.script_settings(self.client)["resize_nav_pane"], True)
         self.assertEqual(plugin_scripts().count("nav_pane.js"), 1)
@@ -352,7 +352,7 @@ class TestSettingsPage(TweakUITestCase):
         general = page[page.index('<section id="tweakui-general"'):]
         general = general[:general.index("</section>")]
         self.assertLess(general.index("Task Details"), general.index("Just for Fun"))
-        # Last but its part, Enable Interaction (on by default)
+        # Last but its part, Rockets on Right-click (on by default)
         self.assertLess(general.index('data-setting="surprise_me">'), general.index('data-setting="surprise_me_interaction"'))
         self.assertEqual(general.rindex("data-setting="), general.index('data-setting="surprise_me_interaction"'))
         self.assertContains(self.client.get("/plugins/tweakui/"), 'data-setting="surprise_me_interaction" checked')
@@ -421,8 +421,8 @@ class TestFeatures(TweakUITestCase):
 
     PUBLIC = os.path.join(os.path.dirname(os.path.dirname(os.path.abspath(__file__))), "public")
     # On by default, each for its reason: the theme menu came before its setting (turning it off is the choice), and
-    # Enhanced Task Details' parts are shown once Enhanced Task Details itself is turned on, and Surprise Me's Enable
-    # Interaction keeps its right-click rockets, which came before the part (turning them off is the choice)
+    # Enhanced Task Details' parts are shown once Enhanced Task Details itself is turned on, and Surprise Me's Rockets
+    # on Right-click keeps its right-click rockets, which came before the part (turning them off is the choice)
     ON_BY_DEFAULT = frozenset({"show_theme_menu", "task_details_times", "task_details_preset", "task_details_options",
                                "task_details_command", "task_details_step", "surprise_me_interaction"})
 

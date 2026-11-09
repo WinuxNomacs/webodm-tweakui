@@ -234,7 +234,7 @@ test("on Linux and Mac (the contextmenu on the press), the menu key right after 
     expect(menu.defaultPrevented).toBe(false);
 });
 
-test("Enable Interaction off: the fireworks go on, but a right-click is the browser's, in either order", async () => {
+test("Rockets on Right-click off: the fireworks go on, but a right-click is the browser's, in either order", async () => {
     window.TweakUI = {settings: {surprise_me: true, surprise_me_interaction: false}};
     const f = fake();
     start(f.env);
@@ -245,7 +245,7 @@ test("Enable Interaction off: the fireworks go on, but a right-click is the brow
     expect(f.pending()).toHaveLength(1);
 });
 
-test("Enable Interaction turned off or on in the settings page takes effect at once, the shows going on", async () => {
+test("Rockets on Right-click turned off or on in the settings page takes effect at once, the shows going on", async () => {
     window.TweakUI = {settings: {surprise_me: true}};
     const f = fake();
     start(f.env);

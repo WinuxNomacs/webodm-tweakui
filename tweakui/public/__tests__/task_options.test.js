@@ -85,7 +85,7 @@ test("without a dialog on the page nothing is watched", () => {
     expect(taskOptions.watch(document, {}, window)).toBeNull();
 });
 
-describe("Expand Configured Options", () => {
+describe("Configured Options When Collapsed", () => {
     // A dialog with subgroups, as EditPresetDialog renders a group with more than one; collapsed groups' content
     // has WebODM's inline display: none
     function grouped(groups) {
@@ -119,13 +119,13 @@ describe("Expand Configured Options", () => {
         expect(expanded(root)).toEqual([false]);
     });
 
-    test("without Show Configured Option Count the headings keep WebODM's own number", () => {
+    test("without Configured Option Counts the headings keep WebODM's own number", () => {
         const root = grouped([{collapsed: true, subgroups: [["feature-quality"]]}]);
         taskOptions.update(root, components({"feature-quality": "ultra"}), {expand: true});
         expect(counts(root)).toEqual([null]);
     });
 
-    test("without Expand Configured Options nothing is marked", () => {
+    test("without Configured Options When Collapsed nothing is marked", () => {
         const root = grouped([{collapsed: true, subgroups: [["feature-quality"]]}]);
         taskOptions.update(root, components({"feature-quality": "ultra"}), {count: true});
         expect(expanded(root)).toEqual([false]);
@@ -208,7 +208,7 @@ describe("Expand Configured Options", () => {
             expect(shownGroups(root)).toEqual([true]);
         });
 
-        test("without Expand Configured Options the button is left to WebODM", async () => {
+        test("without Configured Options When Collapsed the button is left to WebODM", async () => {
             const root = withButton([{collapsed: true, subgroups: [["feature-quality"]]}]);
             taskOptions.watch(document, components({"feature-quality": "ultra"}), window, {count: true});
             await press(root);

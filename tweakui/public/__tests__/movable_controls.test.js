@@ -38,7 +38,7 @@ function drag(target, from, to) {
     press(target, "pointerup", to[0], to[1]);
 }
 
-test("with Movable Controls off nothing listens and a title stays put", () => {
+test("with Movable Panels off nothing listens and a title stays put", () => {
     const {layers, title} = mapPage();
     expect(start({movable_controls: false})).toBeNull();
     drag(title, [700, 20], [500, 120]);

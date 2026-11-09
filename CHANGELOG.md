@@ -7,8 +7,19 @@
 - Each setting's description is one line saying what you get, with **More** after it for the rest (how it works,
   what differs on a phone or in WebODM's Windows app); **Less** hides it again.
 - On a phone, a setting's screenshot is a **Preview** link under its description, which opens it full size.
-- General: Hide Navigation Pane (with Auto-hide Navigation Pane and Hide Delay) and Resize Navigation Pane are in a
+- General: Collapsible Navigation Pane (with Auto-hide and Hide Delay) and Resizable Navigation Pane are in a
   **Navigation Pane** group of their own, after Global Controls.
+- Settings are named after what you get, without "Show" or "Add", and Administration uses the same names; what
+  you had turned on stays on. Units in Header is now **Units Menu**; Hide, Auto-hide and Resize Navigation Pane
+  are **Collapsible Navigation Pane**, **Auto-hide** and **Resizable Navigation Pane**; Show Configured Option
+  Count, Expand Configured Options and Replace Preset Options Menu are **Configured Option Counts**, **Configured
+  Options When Collapsed** and **Preset Menu with Filter**; Enhanced Task Details' parts are **Start and End
+  Times**, **Matching Preset**, **Option Bubbles**, **ODX Command** and **Current Processing Stage**; Expand Task
+  Controls is **Task Buttons When Minimized**; Surprise Me's Enable Interaction is **Rockets on Right-click**; Show
+  Theme Menu is **Theme Menu**; on the 2D Map, Movable Controls, Compare Orthophotos from Other Tasks, Zoom
+  Override and Add Search Button are **Movable Panels**, **Other Tasks' Orthophotos**, **Deeper Zoom** and **Map
+  Search**; the 3D Map's Zoom Override is **Zoom to Pointer**; Show Storage View and Show Performance View are
+  **Storage View** and **Performance View**. The documentation's old links still lead to them.
 
 ### Administration
 
@@ -17,7 +28,7 @@
 
 ### General
 
-- Hide Navigation Pane: with the side menu hidden, the page keeps room for the tab at its left edge, so it no longer
+- Collapsible Navigation Pane: with the side menu hidden, the page keeps room for the tab at its left edge, so it no longer
   touches the page's title.
 
 ### Diagnostic

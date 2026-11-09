@@ -1,4 +1,4 @@
-// General > Task Options > Replace Preset Options Menu: the Options preset dropdown of a task's form (the New Task
+// General > Task Options > Preset Menu with Filter: the Options preset dropdown of a task's form (the New Task
 // panel's and a task's Edit form, EditTaskForm in WebODM) becomes a menu of TweakUI's own, in theme colours: (Custom)
 // at the top when the options were edited; then two submenus that open in the list, "User Presets" (the user's own)
 // and "System Presets" (WebODM's, Default among them), each A-Z and open at first. WebODM's select stays on the page,

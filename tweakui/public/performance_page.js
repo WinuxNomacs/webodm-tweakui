@@ -1190,7 +1190,7 @@
         var onLeave = ui.guard(NAME, function () { saveReadings(true); });
         win.addEventListener("pagehide", onLeave);
 
-        // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
+        // The maps' unit system changed (in another tab, or Units Menu): the figures again in it
         var onUnits = ui.guard(NAME, function () {
             if (state.report) {
                 menu.close();

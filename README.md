@@ -18,24 +18,24 @@ the next page you open. Beside each feature in the settings is a screenshot of i
 Every feature is off until you turn it on, except the theme menu.
 
 - [**General**](https://winuxnomacs.github.io/webodm-tweakui/general): a units menu in the header, linked to the
-  maps' units selector (Units in Header); a tab that narrows the side menu to its icons, then hides it (Hide
-  Navigation Pane), or keeps it hidden until the pointer reaches the window's edge (Auto-hide Navigation Pane), and a divider that resizes it, down to its icons (Resize Navigation Pane); in the Task Options
-  dialog, each group's count of configured options, those not at their default (Show Configured Option Count), and
-  those options shown under a collapsed group (Expand Configured Options); the Options dropdown replaced by a menu
-  with User Presets and System Presets submenus, A-Z (Replace Preset Options Menu); on the Dashboard, a task's start
-  and end times, preset, options as bubbles, ODX command and current step (Enhanced Task Details), a minimized task's buttons kept in view (Expand Task Controls), and fireworks every
-  few seconds, and at the pointer on a right-click unless you turn that off (Surprise Me, Enable Interaction).
+  maps' units selector (Units Menu); a tab that narrows the side menu to its icons, then hides it (Collapsible
+  Navigation Pane), or keeps it hidden until the pointer reaches the window's edge (Auto-hide), and a divider that resizes it, down to its icons (Resizable Navigation Pane); in the Task Options
+  dialog, each group's count of configured options, those not at their default (Configured Option Counts), and
+  those options shown under a collapsed group (Configured Options When Collapsed); the Options dropdown replaced by a menu
+  with User Presets and System Presets submenus, A-Z (Preset Menu with Filter); on the Dashboard, a task's start
+  and end times, preset, options as bubbles, ODX command and current step (Enhanced Task Details), a minimized task's buttons kept in view (Task Buttons When Minimized), and fireworks every
+  few seconds, and at the pointer on a right-click unless you turn that off (Surprise Me, Rockets on Right-click).
 - [**Themes**](https://winuxnomacs.github.io/webodm-tweakui/themes): your own colours for WebODM, seen only by you: WebODM's theme,
   one of 11 presets (Catppuccin, Solarized, Dracula, Nord, Gruvbox, One Dark), your own themes copied from any theme
   with a live preview (imported and exported as JSON) or themes an administrator publishes to every user; a sample of
   WebODM's controls in the current theme, and a theme menu in the header.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
-  (Movable Controls), the project's other tasks' orthophotos over the task's own (Compare Orthophotos from Other
-  Tasks), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
-  sensitivity, also set from a button on the map (Zoom Override, Zoom Sensitivity), and a search box for an address
-  or coordinates (Add Search Button).
+  (Movable Panels), the project's other tasks' orthophotos over the task's own (Other Tasks'
+  Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
+  sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), and a search box for an address
+  or coordinates (Map Search).
 - [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel
-  that zooms toward what is under the pointer (Zoom Override), as far a notch as you choose (Zoom Sensitivity).
+  that zooms toward what is under the pointer (Zoom to Pointer), as far a notch as you choose (Zoom Sensitivity).
 - [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): how much of your quota each project and task
   uses, each task's files by kind, compacting or deleting them, and backing up and importing tasks as WebODM's own
   backup zips; administrators see every user's.

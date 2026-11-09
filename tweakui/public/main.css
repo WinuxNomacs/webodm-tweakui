@@ -157,7 +157,7 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 html.tweakui-header-compact #navbar-top .navbar-top-links > li > a { padding-left: 8px; padding-right: 8px; }
 html.tweakui-header-nameless #navbar-top .navbar-header > .navbar-link { display: none; }
 
-/* Hide Navigation Pane (nav_pane.js): a small tab on the divider between the side menu and the page, fixed below the
+/* Collapsible Navigation Pane (nav_pane.js): a small tab on the divider between the side menu and the page, fixed below the
    header (its top set by the script); hidden, the side menu goes and the page takes the whole width, the tab at the
    left edge, within the page's 15 px padding. Only where the side menu is beside the page (from 768 px, as WebODM's
    sb-admin-2.css); narrower it is the header's hamburger menu, left as it is. The tab is in the header, as the side
@@ -170,14 +170,14 @@ html.tweakui .tweakui-nav-tab { display: none; }
     /* The page's left padding makes room for the tab at its edge, so it doesn't touch the page's title */
     html.tweakui.tweakui-nav-hidden #page-wrapper { margin-left: 0; padding-left: 30px; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-tab { left: 0; border-left-width: 0; border-radius: 0 4px 4px 0; }
-    /* Auto-hide Navigation Pane: the hidden pane shown over the page (which keeps its whole width), fixed below the
+    /* Auto-hide: the hidden pane shown over the page (which keeps its whole width), fixed below the
        header (--tweakui-nav-top, from the script) to the bottom of the window, scrolling on its own; the tab on its
        edge */
     html.tweakui.tweakui-nav-hidden.tweakui-nav-peek .navbar-default.sidebar { display: block; position: fixed; top: var(--tweakui-nav-top, 51px); bottom: 0; margin-top: 0; overflow-y: auto; box-shadow: 2px 0 8px rgba(0, 0, 0, 0.35); }
     html.tweakui.tweakui-nav-hidden.tweakui-nav-peek .tweakui-nav-tab { left: calc(var(--tweakui-nav-width, 250px) - 7px); border-left-width: 1px; border-radius: 4px; }
 }
 
-/* Resize Navigation Pane (nav_pane.js): the side menu and the page beside it take the width the script puts in
+/* Resizable Navigation Pane (nav_pane.js): the side menu and the page beside it take the width the script puts in
    --tweakui-nav-width; labels too long are cut off. The handle is a strip on the divider, from the header down,
    highlighted while the pointer is on it; under Bootstrap's dialogs (1040 and up). Icons only (the narrowest): the
    links' text at size 0 but their first icon, their tooltips the script's, submenu items unindented. */
@@ -198,15 +198,15 @@ html.tweakui .tweakui-nav-handle { display: none; }
     html.tweakui.tweakui-nav-hidden .tweakui-nav-handle { display: none; }
 }
 
-/* Show Configured Option Count (task_options.js): the heading's count in place of WebODM's own number */
+/* Configured Option Counts (task_options.js): the heading's count in place of WebODM's own number */
 .option-group-header[data-tweakui-count] > .option-count { display: none; }
 .option-group-header[data-tweakui-count]::after { content: attr(data-tweakui-count); font-size: 0.9em; }
-/* Expand Configured Options (task_options.js): a collapsed group shows its configured options, over WebODM's inline display: none */
+/* Configured Options When Collapsed (task_options.js): a collapsed group shows its configured options, over WebODM's inline display: none */
 .option-group[data-tweakui-expand] > .option-group-content { display: block !important; }
 .option-group[data-tweakui-expand] .option-subgroup:not([data-tweakui-configured]),
 .option-group[data-tweakui-expand] .processing-node-option:not([data-tweakui-configured]) { display: none; }
 
-/* General > Task Details > Expand Task Controls (task_controls.js): a task as buttons only, its +/- a caret */
+/* General > Task Details > Task Buttons When Minimized (task_controls.js): a task as buttons only, its +/- a caret */
 .task-list-item[data-tweakui-controls="buttons"] > .expanded-panel > .row:first-child { display: none; }
 .task-list-item[data-tweakui-controls="buttons"] > .row > .name > i.fa-minus-square::before { content: "\f150"; }
 
@@ -222,7 +222,7 @@ html.tweakui .tweakui-nav-handle { display: none; }
 /* The Current Step label keeps its count on its line */
 .info-table tr[data-tweakui-row="step"] > td:first-child { white-space: nowrap; padding-right: 8px; }
 
-/* 2D Map > Movable Controls (movable_controls.js): a panel is dragged by its title; a moved one stays above the
+/* 2D Map > Movable Panels (movable_controls.js): a panel is dragged by its title; a moved one stays above the
    others */
 html.tweakui-movable .leaflet-control .title,
 html.tweakui-movable .leaflet-control .leaflet-control-autolayers-title,
@@ -240,7 +240,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-other-tasks .tweakui-other-task-name input { margin: 0; flex: none; }
 .tweakui-other-tasks .tweakui-other-task-opacity { width: 90px; flex: none; }
 
-/* 2D Map > Add Search Button (map_search.js): the button (Leaflet's bar), and the box it opens in its place */
+/* 2D Map > Map Search (map_search.js): the button (Leaflet's bar), and the box it opens in its place */
 .leaflet-control.tweakui-map-search a.tweakui-map-search-button { display: flex; align-items: center; justify-content: center; font-size: 14px; }
 .leaflet-control.tweakui-map-search .tweakui-map-search-box { display: none; width: 300px; max-width: calc(100vw - 40px); padding: 6px; border-radius: 4px; }
 .leaflet-control.tweakui-map-search.open a.tweakui-map-search-button { display: none; }
@@ -254,7 +254,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .leaflet-control.tweakui-map-search .tweakui-map-search-results a:hover { text-decoration: underline; }
 .tweakui-map-search .tweakui-map-search-results li.active a { font-weight: bold; }
 
-/* 2D Map and 3D Map > Zoom Override > Zoom Sensitivity: the button on the map (a Leaflet control at the bottom left;
+/* 2D Map > Deeper Zoom and 3D Map > Zoom to Pointer > Zoom Sensitivity: the button on the map (a Leaflet control at the bottom left;
    in the 3D view an action button) and its panel, beside it on the 2D map and above it in the 3D view */
 .tweakui-zoom-sensitivity { position: relative; }
 .tweakui-zoom-sensitivity-3d { display: inline-block; }
@@ -492,7 +492,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     pointer-events: none;
 }
 
-/* Replace Preset Options Menu (preset_menu.js): TweakUI's menu in place of WebODM's preset select (hidden, kept on
+/* Preset Menu with Filter (preset_menu.js): TweakUI's menu in place of WebODM's preset select (hidden, kept on
    the page), shaped like it: a form-control button with a chevron, and a Bootstrap dropdown menu in theme colours. */
 .edit-task-form select[data-tweakui-presets] { display: none !important; }
 .tweakui-presets { display: inline-block; vertical-align: middle; position: relative; max-width: 100%; }

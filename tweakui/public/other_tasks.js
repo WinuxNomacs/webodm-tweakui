@@ -1,8 +1,8 @@
-// 2D Map > Compare Orthophotos from Other Tasks: on a task's map (not a project's map, which has every task's layers), a button below Layers
+// 2D Map > Other Tasks' Orthophotos: on a task's map (not a project's map, which has every task's layers), a button below Layers
 // opens an "Other Tasks" panel: the project's other tasks with an orthophoto, each with a checkbox that shows its
 // orthophoto over the task's own layers (cropped as its task is) and an opacity slider. None is shown on opening and
 // nothing is remembered. The panel takes the classes of WebODM's Layers panel, so it looks like it (and Movable
-// Controls drags it by its title). Leaflet comes from the map hook's dependencies, as WebODM's plugins get it; the
+// Panels drags it by its title). Leaflet comes from the map hook's dependencies, as WebODM's plugins get it; the
 // layers are built as WebODM's map builds an orthophoto's (Map.jsx: 512-px tiles, rescaled to the RGB bands'
 // statistics). UMD, so Jest can load it.
 (function (root, factory) {

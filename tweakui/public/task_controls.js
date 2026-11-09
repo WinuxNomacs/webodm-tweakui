@@ -1,4 +1,4 @@
-// General > Task Details > Expand Task Controls: on the Dashboard, a minimized task still shows its action buttons
+// General > Task Details > Task Buttons When Minimized: on the Dashboard, a minimized task still shows its action buttons
 // (Download, Map, 3D Model, Report, Edit, Restart, Delete and the plugins' own). WebODM leaves a minimized task's panel
 // out of the page altogether, so "buttons only" is WebODM's expanded task with all but its buttons hidden
 // (data-tweakui-controls="buttons" on the task, main.css). The +/- control and the task's name cycle buttons only,

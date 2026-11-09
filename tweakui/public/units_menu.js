@@ -1,4 +1,4 @@
-// General > Global Controls > Units in Header: a units menu in the header, left of the paintbrush (or of the user
+// General > Global Controls > Units Menu: a units menu in the header, left of the paintbrush (or of the user
 // icon), a shortcut to the unit system the 2D map and 3D view offer. It is WebODM's own preference (Units.js): the
 // browser's localStorage "unit_system" and the document event "onUnitSystemChanged", which measurements, histograms
 // and the 3D view follow. WebODM's selectors on the maps (select.unit-selector) read it only when they appear, so a

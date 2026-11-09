@@ -1,7 +1,7 @@
-// 2D Map and 3D Map > Zoom Override. The 2D map zooms 3 steps further than WebODM lets it (zoom 24, Map.jsx), with
+// 2D Map > Deeper Zoom and 3D Map > Zoom to Pointer. The 2D map zooms 3 steps further than WebODM lets it (zoom 24, Map.jsx), with
 // the wheel, the + button and a pinch: the map hook lifts Leaflet's limit (the layers already enlarge their tiles
 // past their own zoom). In the 3D view, Potree's orbit controls zoom toward the orbit centre and slow down as they
-// near it; with Zoom Override the wheel zooms toward what is under the pointer (the point cloud or the textured
+// near it; with Zoom to Pointer the wheel zooms toward what is under the pointer (the point cloud or the textured
 // model; pick3d.js) and the orbit centre moves to that depth, so any surface can be neared. Over nothing, and in
 // Potree's other navigation modes, the wheel is Potree's as before. Zoom Sensitivity (a part of each) scales how far
 // a wheel notch zooms: on the 2D map TweakUI's own wheel replaces Leaflet's while it isn't 100%; in the 3D view the

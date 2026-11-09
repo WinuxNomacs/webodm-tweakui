@@ -2,7 +2,7 @@
 // turned off. A show lasts a few seconds and the next follows 4 to 8 seconds later; none starts while the tab is
 // hidden. A right-click (also a Mac's Ctrl+click) sends a rocket that bursts where the pointer is, instead of the
 // browser's menu (which text fields and Shift + right-click still get); a right-drag (the 3D view's pan) sends none.
-// Its part Enable Interaction (surprise_me_interaction, on by default) turns the right-click's rocket off, leaving the
+// Its part Rockets on Right-click (surprise_me_interaction, on by default) turns the right-click's rocket off, leaving the
 // mouse to the browser and the page. The fireworks are fireworks-js (vendor/fireworks-js, MIT), loaded only
 // when a show starts, on a canvas over the page that clicks go through. The settings page announces each saved
 // change ("tweakuiSettingsChanged"), so turning it on there starts a show at once and turning it off ends it at once.
@@ -211,7 +211,7 @@
             } else if (!enabled && on) stop();
         }
 
-        // Enable Interaction: off, a right-click is the browser's again (a press under way is let go)
+        // Rockets on Right-click: off, a right-click is the browser's again (a press under way is let go)
         function interact(enabled) {
             interactive = enabled;
             if (!enabled) press = released = null;
