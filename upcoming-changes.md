@@ -3,16 +3,23 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: General Assessment** (new.md, 2026-11-09; see "Performance View: graphs' scales, readings kept
-   over a reload, General Assessment") — branch `perf-assessment`.
-2. **Performance View: the graphs' scales and legends, 10% taller** (same section) — branch `perf-graph-scales`.
-3. **Performance View: the graphs' readings kept over a reload** (same section) — branch `perf-history-reload`.
+1. **Performance View: the graphs' scales and legends, 10% taller** (new.md, 2026-11-09; see "Performance View:
+   graphs' scales, readings kept over a reload, General Assessment") — branch `perf-graph-scales`.
+2. **Performance View: the graphs' readings kept over a reload** (same section) — branch `perf-history-reload`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: General Assessment** (new.md, 2026-11-09) — branch `perf-assessment`: `performance_page.js`
+  (`lineHtml`; `tasksSummary` from the report's tasks: failed, of those out of memory, left photos out, a sentence of
+  its own for a single task; `assessmentHtml`: the card, its edge `text-<worst level>`; the trend moved out of
+  `tasksHtml`; `#tweakui-performance-recent` on Recent Processing's heading; `verdictsHtml` gone), `main.css`. Tests:
+  `performance_page.test.js` (2 new). Docs `performance.md` (General Assessment), README, CHANGELOG, screenshot
+  `performance`. Live on 4.0.0 (Solarized Dark: info edge, "Of the last 3 tasks on this server, 2 left photos out.")
+  and 3.3.2 (WebODM's light theme: green edge), desktop and phone, no sideways scroll, no console errors. No Python
+  changed, so Django wasn't run again.
 - **Performance View: Remove Photos From Task** (new.md, 2026-11-09) — branch `remove-photos`: `performance.py`
   (`left_out_names`; `remove_left_out`: a completed task without a pending action, names among those left out, the
   uuid cleared by a conditional update first, the files deleted, `images_count` updated, the node's `remove_task`
@@ -2490,7 +2497,7 @@ View's task actions (permission checks, CSRF).
 - General Assessment holds the verdicts, **the time-per-photo trend** (moved up from Recent Processing) and **a
   summary of recent tasks' problems**. No live warnings.
 
-### Phase 1: General Assessment (branch `perf-assessment`)
+### Phase 1: General Assessment (branch `perf-assessment`) — done
 Builds on `verdictsHtml` and `trendText` (`performance_page.js`) and `verdicts` and `task_entry` (`performance.py`).
 On the Performance page, the verdict lines that sit unlabelled at the top today go into a full-width card headed
 **General Assessment**, above Processing Nodes. The card has the theme's highlight background (`theme-background-highlight`)
