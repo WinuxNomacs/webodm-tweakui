@@ -347,7 +347,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 /* Diagnostic > Performance (templates/performance.html, performance_page.js): General Assessment, then cards (a processing node
    each, the server) that wrap to one column on a phone, and the recent tasks' table, which scrolls sideways there
    rather than the page. Bars are Bootstrap's progress bars, as WebODM's own Diagnostic page has. */
-/* The page's controls, above Recent Processing: Refresh and its status, then the sliders under it */
+/* The page's controls, above Recent Task History: Refresh and its status, then the sliders under it */
 .tweakui-performance .tweakui-performance-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
 .tweakui-performance .tweakui-performance-bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 /* General Assessment: a card in the theme's highlight, its left edge in its worst line's colour (text-success,
@@ -400,7 +400,7 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-graph-tip { position: absolute; bottom: calc(100% + 2px); z-index: 2; padding: 2px 6px; border-width: 1px; border-style: solid; border-radius: 3px; font-size: 11px; white-space: nowrap; pointer-events: none; }
 .tweakui-performance .tweakui-performance-accent { color: var(--tweakui-performance-accent, currentColor); }
 .tweakui-performance .tweakui-performance-swatch { display: inline-block; width: 12px; height: 3px; margin: 0 6px 3px 0; vertical-align: middle; background-color: currentColor; }
-/* Recent Processing: a task's Notes button opens the row below it (its notes, each with its line from the log, and the
+/* Recent Task History: a task's Notes button opens the row below it (its notes, each with its line from the log, and the
    log's other messages); at phone width the wide columns are hidden and their figures come under the task's name */
 .tweakui-performance .tweakui-performance-gpu, .tweakui-performance .tweakui-performance-node { white-space: nowrap; }
 .tweakui-performance .tweakui-performance-notes-button { margin-left: 6px; vertical-align: baseline; }

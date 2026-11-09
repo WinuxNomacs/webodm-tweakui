@@ -1,5 +1,5 @@
 """
-Diagnostic > Performance > Recent Processing: what a task's log (WebODM's data/console_output.txt, the processing
+Diagnostic > Performance > Recent Task History: what a task's log (WebODM's data/console_output.txt, the processing
 node's output) says the user should know. Each line is checked against a short list of ODX's known messages, each
 turned into a plain sentence (a note), and the log tells whether the GPU was used and how many separate
 reconstructions OpenSfM made before merging them (stats.json counts the merged one). Every other [WARNING] and [ERROR]

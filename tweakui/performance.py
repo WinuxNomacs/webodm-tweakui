@@ -44,7 +44,7 @@ MIN_DISK = 100 * GB
 # How long a node has to answer, and how many are asked at once
 NODE_TIMEOUT, NODE_WORKERS = 3, 8
 
-# Recent Processing: this many finished tasks, and a trend once there are at least TREND_MIN completed with a time per
+# Recent Task History: this many finished tasks, and a trend once there are at least TREND_MIN completed with a time per
 # photo
 RECENT, TREND_MIN, TREND_SAME = 10, 4, 0.1
 # Photos Left Out: the task folder's files of these kinds (not the GCP, geo or alignment file), at most LEFT_MAX listed
@@ -510,7 +510,7 @@ def task_entry(task, user):
 
 
 def tasks_of(user):
-    """The tasks Recent Processing and the largest task count: the user's own, an admin's every user's"""
+    """The tasks Recent Task History and the largest task count: the user's own, an admin's every user's"""
     tasks = Task.objects.all()
     return tasks if is_admin(user) else tasks.filter(project__owner=user)
 

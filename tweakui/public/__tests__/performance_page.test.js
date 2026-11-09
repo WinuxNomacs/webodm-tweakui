@@ -332,7 +332,7 @@ describe("the Performance page", () => {
         confirm.mockRestore();
     });
 
-    test("General Assessment holds the verdicts, Recent Processing's problems and the trend, its edge in the worst line's colour", async () => {
+    test("General Assessment holds the verdicts, Recent Task History's problems and the trend, its edge in the worst line's colour", async () => {
         const failed = reported("t1", {status: "failed", notes: [{key: "out_of_memory", level: "danger", text: "x", line: ""}]});
         const leftOut = reported("t2", {notes: [{key: "left_out", level: "warning", text: "y", line: "", photos: [], more: 0}]});
         const trend = {recent: 2, earlier: 4, change: -0.5, same: false};
@@ -342,15 +342,15 @@ describe("the Performance page", () => {
         expect(card.nextElementSibling.textContent).toBe("Processing Nodes");
         expect(Array.from(card.querySelectorAll("li")).map(li => li.dataset.level)).toEqual(["warning", "success", "warning", "info"]);
         expect(card.querySelector("[data-summary]").textContent.trim())
-            .toBe("Of your last 3 tasks, 1 failed (1 ran out of memory) and 1 left photos out. See their Notes in Recent Processing.");
+            .toBe("Of your last 3 tasks, 1 failed (1 ran out of memory) and 1 left photos out. See their Notes in Recent Task History.");
         expect(card.querySelector("[data-summary] a").getAttribute("href")).toBe("#tweakui-performance-recent");
-        expect(root.querySelector("#tweakui-performance-recent").textContent).toBe("Recent Processing");
+        expect(root.querySelector("#tweakui-performance-recent").textContent).toBe("Recent Task History");
         expect(card.querySelector("li.tweakui-performance-trend").textContent).toMatch(/50% less time per photo/);
         expect(root.querySelectorAll(".tweakui-performance-recent .tweakui-performance-trend")).toHaveLength(0);
         expect([card.dataset.level, card.querySelector(".tweakui-performance-assessment-edge").className]).toEqual(["warning", "tweakui-performance-assessment-edge text-warning"]);
     });
 
-    test("Recent Processing's problems are summed up only when there are some, and its edge is green when all is well", () => {
+    test("Recent Task History's problems are summed up only when there are some, and its edge is green when all is well", () => {
         const ok = report({tasks: [task("t1", {status: "completed", notes: []})], verdicts: [{level: "success", text: "fine"}]});
         expect(performancePage.tasksSummary(ok)).toBeNull();
         const div = document.createElement("div");
@@ -413,12 +413,12 @@ describe("the Performance page", () => {
         setItem.mockRestore();
     });
 
-    test("the page's controls sit between the server's cards and Recent Processing, and stay put as the page redraws", async () => {
+    test("the page's controls sit between the server's cards and Recent Task History, and stay put as the page redraws", async () => {
         const {root, view} = await started([json(report()), json(report())]);
         const parts = Array.from(root.children).map(c => c.className);
         expect(parts).toEqual(["tweakui-performance-body", "tweakui-performance-bar", "tweakui-performance-recent"]);
         expect(root.querySelector(".tweakui-performance-body [data-server]")).not.toBeNull();
-        expect(root.querySelector(".tweakui-performance-recent h4").textContent).toBe("Recent Processing");
+        expect(root.querySelector(".tweakui-performance-recent h4").textContent).toBe("Recent Task History");
         const slider = root.querySelector(".tweakui-performance-every-slider");
         await view.load();
         expect(root.querySelector(".tweakui-performance-every-slider")).toBe(slider);

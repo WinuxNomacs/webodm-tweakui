@@ -35,7 +35,7 @@
     // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
     var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
     var FT = 3.28083989501, FT2_ACRE = 43560;
-    // Recent Processing's columns (a notes row spans them all)
+    // Recent Task History's columns (a notes row spans them all)
     var TASK_COLUMNS = 11;
     // Photos Left Out: a name opens the photo this large (WebODM's thumbnail: its download is an attachment), and
     // hovering it shows it this large
@@ -305,7 +305,7 @@
             " fa-fw text-" + escapeHtml(level) + '"></i> ' + html + "</li>";
     }
 
-    // Recent Processing's problems in a sentence ({level, text}), from the tasks the report lists: those that failed
+    // Recent Task History's problems in a sentence ({level, text}), from the tasks the report lists: those that failed
     // (and how many ran out of memory) and those that left photos out; null when none did
     function tasksSummary(report) {
         var tasks = report.tasks || [], failed = 0, memory = 0, leftOut = 0;
@@ -331,13 +331,13 @@
         return {level: level, text: whose + parts.join(" and ") + "."};
     }
 
-    // General Assessment: a card of the verdicts, Recent Processing's problems (linking down to it) and the time-per-photo
+    // General Assessment: a card of the verdicts, Recent Task History's problems (linking down to it) and the time-per-photo
     // trend, its left edge in its worst line's colour; nothing without any of them
     function assessmentHtml(report) {
         var verdicts = report.verdicts || [], summary = tasksSummary(report), trend = trendText(report.trend);
         var lines = verdicts.map(function (v) { return lineHtml(v.level, escapeHtml(v.text)); });
         if (summary) {
-            lines.push(lineHtml(summary.level, escapeHtml(summary.text) + ' <a href="#tweakui-performance-recent">See their Notes in Recent Processing</a>.',
+            lines.push(lineHtml(summary.level, escapeHtml(summary.text) + ' <a href="#tweakui-performance-recent">See their Notes in Recent Task History</a>.',
                 " data-summary"));
         }
         if (trend) lines.push(lineHtml("info", escapeHtml(trend), ' class="tweakui-performance-trend"'));
@@ -634,7 +634,7 @@
     }
 
     function tasksHtml(report, system) {
-        var html = '<h4 id="tweakui-performance-recent">Recent Processing</h4>';
+        var html = '<h4 id="tweakui-performance-recent">Recent Task History</h4>';
         if (!report.tasks.length) return html + '<p class="text-muted">No finished tasks yet.</p>';
         var wide = ' class="tweakui-performance-wide ';
         return html + '<p class="text-muted">The last ' + report.tasks.length + " finished " + (report.tasks.length === 1 ? "task" : "tasks") +
@@ -655,7 +655,7 @@
     function render(page, report, load, system, diskRates, view) {
         page.querySelector(".tweakui-performance-body").innerHTML = assessmentHtml(report) + nodesHtml(report.nodes, view) +
             serverHtml(report.server, load, diskRates, view);
-        // Recent Processing goes below the page's controls, which stay put while the parts around them redraw
+        // Recent Task History goes below the page's controls, which stay put while the parts around them redraw
         page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
             '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +

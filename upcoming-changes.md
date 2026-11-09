@@ -3,11 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: "Recent Processing" becomes "Recent Task History"** (new.md, 2026-11-09) — branch
-   `perf-recent-history`; see "Performance View: Recent Task History, task actions and Process View".
-2. **Performance View: an Actions menu on each task** (Download Task Logs, Restart From Load Dataset, View Report,
-   Download Report) — branch `perf-task-actions`.
-3. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
+1. **Performance View: an Actions menu on each task** (Download Task Logs, Restart From Load Dataset, View Report,
+   Download Report) — branch `perf-task-actions`; see "Performance View: Recent Task History, task actions and
+   Process View".
+2. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
    branch `perf-process-view`.
 
 **Later**
@@ -15,6 +14,12 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: "Recent Processing" becomes "Recent Task History"** (new.md, 2026-11-09) — branch
+  `perf-recent-history`: the heading and General Assessment's link (`performance_page.js`), comments in
+  `performance.py`, `task_log.py`, `main.css`, `test_tweakui.py`, `dev/screenshots.js`. Tests:
+  `performance_page.test.js` (the texts). Docs `performance.md` (the section, `#recent-task-history`), CHANGELOG
+  (a line for the rename; the Unreleased bullets reworded), screenshots `performance`, `performance-tasks`. Django
+  136 on each stack, Jest 354. Live on 4.0.0 and 3.3.2: the heading and the link, no old name left.
 - **Administration: TweakUI Themes merged into Administration > TweakUI** (new.md, 2026-11-09) — branch
   `admin-merge`: `admin.html` (a Published Themes group under Available to Users, holding `#tweakui-published` as
   the old page had it, so `theme_editor.js` works unchanged; both scripts and the themes' colours), `published.html`
@@ -810,7 +815,7 @@ Decided (2026-11-09):
 - Process View is for superusers only (command lines can carry passwords, tokens, other users' work): others get no
   button and the API refuses them.
 
-### Phase 1: "Recent Processing" becomes "Recent Task History" (branch `perf-recent-history`)
+### Phase 1: "Recent Processing" becomes "Recent Task History" (branch `perf-recent-history`) — done
 
 The heading, its intro and anchor (`#tweakui-performance-recent` stays: an id, not shown), General Assessment's link
 ("See their Notes in Recent Task History"), every comment and docstring naming it (`performance.py`, `task_log.py`,
