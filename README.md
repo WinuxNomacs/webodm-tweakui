@@ -53,8 +53,8 @@ WebODM 3.3.2 or later (tested on 3.3.2 and 4.0.0, and on 4.0.0's native Windows 
 
 ## Installing
 
-Once released: in WebODM, Administration > Plugins, install TweakUI from the plugin directory, or upload
-`tweakui-X.Y.Z.zip` from this repository's releases.
+In WebODM, Administration > Plugins: install TweakUI from the plugin directory, or upload the latest release's
+`tweakui-<version>.zip` from this repository's [releases](https://github.com/WinuxNomacs/webodm-tweakui/releases).
 
 ## Outside services
 
