@@ -3,7 +3,12 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+1. **Performance View: "Recent Processing" becomes "Recent Task History"** (new.md, 2026-11-09) — branch
+   `perf-recent-history`; see "Performance View: Recent Task History, task actions and Process View".
+2. **Performance View: an Actions menu on each task** (Download Task Logs, Restart From Load Dataset, View Report,
+   Download Report) — branch `perf-task-actions`.
+3. **Performance View: Process View** (superusers; the top 10 processes by CPU and by memory, on Refresh Every) —
+   branch `perf-process-view`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -779,6 +784,92 @@ for a link). Plan, branch `admin-merge`:
 - Live on both stacks as a superuser: both sections work (publish, delete, import of a "Live check" theme, removed
   afterwards), the side menu shows one link and opens Administration, the old URL lands on the section; desktop and
   phone.
+
+## Performance View: Recent Task History, task actions and Process View (new.md, 2026-11-09)
+
+Requests (new.md, 2026-11-09):
+1. "Performance UI, rename "Recent Processing" to "Recent Task History""
+2. "Performance UI, is it possible to add an action button dropdown list for each Task providing the options to
+   Download Task Logs, Restart Task From Load Dataset(the beginning), View Report (if a task report is available),
+   Download Report (again if report available)."
+3. "Performance UI, below the Server cpu and disk io information, if possible add a button to enable Process View.
+   Enabling this view expands 2 tables of the Server's top 10 CPU and Memory consuming processes, CPU above Memory.
+   Sorted descending with their highest relative consumers at the top of their relative table. This information
+   refreshes at the same interval the page is configured for other stats like cpu/iops. Show important process
+   information such as PID, command, command line, and utilization"
+
+What they build on: Diagnostic > Performance (`performance_page.js`, `performance.py`, `api.py`'s `PerformanceView`
+and `PerformanceLiveView`, `templates/performance.html`). Recent Processing is `tasksHtml`/`taskHtml` (the heading
+`#tweakui-performance-recent`, which General Assessment links to); the live refresh is `performance.live`, asked every
+Refresh Every seconds. All three are within the plugin's extension points: no WebODM change.
+
+Decided (2026-11-09):
+- Process View lists only what WebODM's server can see, and says so: in WebODM's Docker install that is its own web
+  container (ODM's processing runs in the node's container, so it is not listed, though CPU and disk figures are
+  machine-wide); on the Windows app and native installs, every process. No WebODM (docker-compose `pid: host`) change.
+- Process View is for superusers only (command lines can carry passwords, tokens, other users' work): others get no
+  button and the API refuses them.
+
+### Phase 1: "Recent Processing" becomes "Recent Task History" (branch `perf-recent-history`)
+
+The heading, its intro and anchor (`#tweakui-performance-recent` stays: an id, not shown), General Assessment's link
+("See their Notes in Recent Task History"), every comment and docstring naming it (`performance.py`, `task_log.py`,
+`performance_page.js`, `test_tweakui.py`), `docs/performance.md` (the section and its links, `#recent-task-history`),
+`features.py`'s description if it names it, README, CHANGELOG (Unreleased: the earlier bullets naming Recent
+Processing are reworded, since they're unreleased; 1.0.0's stay). Jest tests that read it. Screenshots
+`performance` and `performance-tasks` retaken. Live on both stacks.
+
+### Phase 2: an Actions menu on each task (branch `perf-task-actions`)
+
+A dropdown button **Actions** on each row of Recent Task History (WebODM's Bootstrap 3 dropdown, `btn btn-default
+btn-xs dropdown-toggle`, as WebODM's own task buttons; at phone width it stays in the task's cell), with:
+- **Download Task Logs**: `/api/projects/<p>/tasks/<t>/output/?f=raw` (WebODM's own console download, on 3.3.2 and
+  4.0.0), saved as `<task name>.txt` through a link with `download`.
+- **Restart From Load Dataset**: what WebODM's Restart button does by default, `rerun-from` set to the second of the
+  task's `can_rerun_from` (`dataset`) through `PATCH /api/projects/<p>/tasks/<t>/` and then `POST .../restart/`,
+  after a confirm ("Restart this task from Load Dataset? Its results are replaced when it finishes."). Offered only
+  when WebODM's Dashboard offers Restart: a processing node, not imported, not compacted, and the user may change the
+  project (its owner, an editor, an admin). After it, the row says "Restarting..." and the page refreshes the list on
+  the next Refresh (a running task leaves the list, which holds finished tasks).
+- **View Report**: `.../download/report.pdf?inline=1` in a new tab (WebODM's own PDF dialog is part of its React
+  Dashboard and can't be reached from a plugin page).
+- **Download Report**: `.../download/report.pdf`.
+The report items are there only when the task's `available_assets` has `report.pdf`. `task_entry` gains
+`can_restart`, `rerun_from` and `report` (booleans and the value, worked out on the server with WebODM's own rules
+and `check_project_perms`' permission). Tests: Django (the new fields for an owner, a read-only share, an imported
+and a compacted task), Jest (the menu's items by those fields; the restart's two calls and its confirm). Docs
+`performance.md` (Recent Task History: Actions), README if its summary changes, CHANGELOG, screenshot
+`performance-tasks`. Live on both stacks: logs downloaded and the report opened and downloaded on a completed task;
+the restart checked on a task created for the check ("Live check restart", a few of the sample photos), deleted
+afterwards; the menu at phone width.
+
+### Phase 3: Process View (branch `perf-process-view`)
+
+Under the server's card and its Disk Activity, a **Process View** button (superusers only; `aria-pressed`, its state
+kept in the browser tab's session storage like the graphs, off at first). On, it opens two tables, **Top 10 by CPU**
+above **Top 10 by Memory**, each sorted highest first, with **PID**, **Command** (the program's name), **Command
+Line** (shortened to one line, whole in its title, with a copy button), **User**, **CPU** (% of one core, as top shows
+it, and of all cores in its title) and **Memory** (resident size and % of the machine's). They refresh with the CPU
+load, on Refresh Every: the live request asks `?processes=1` while Process View is on.
+- Server (`performance.py`): Linux reads `/proc/<pid>/stat` (utime+stime, rss), `/proc/<pid>/cmdline`, `status`'s
+  Uid (name through `pwd`); CPU is the difference of each process's time between two readings (kept in the
+  server's memory per worker process for 60 s, keyed by pid and start time, so a reused pid isn't confused), the first
+  reading showing memory only and CPU after the next refresh, as the CPU load does. Windows (the app) through ctypes
+  as `windows_times` already does: `CreateToolhelp32Snapshot` for the list, `GetProcessTimes` and
+  `GetProcessMemoryInfo`, the command line through `NtQueryInformationProcess` (class 60, Windows 8.1+), left blank
+  where a process can't be opened. A process that ends mid-read is skipped. No new Python module (psutil is not in
+  WebODM's requirements).
+- API: `PerformanceLiveView` adds `processes` only for a superuser (`is_superuser`), else ignores the parameter;
+  the page script gets an `admin`-like flag already in the report (`report.admin` is `is_admin`: checked to match
+  `is_superuser`, or a separate `superuser` flag).
+- A line above the tables says what is listed: "Processes WebODM's server can see. In Docker that is its own
+  container: the processing node's work runs in its own and isn't listed." (shown when the server runs in a container,
+  detected from `/.dockerenv` or `/proc/1/cgroup`).
+- Tests: Django (parsing a fake `/proc` tree: CPU from two readings, a reused pid, a vanished process, the sort and
+  the top 10; non-superusers get no processes), Jest (the button only for a superuser, the tables' order and contents,
+  the request's parameter while on). Docs `performance.md` (Process View), README, CHANGELOG, screenshot of the
+  tables (a new `performance-processes` shot). Live on both stacks (Docker: the container's processes) and, if the user
+  runs it, the Windows app through `dev/windows-relay.js` (every process, ODX's while a task runs).
 
 ## Requests (from new.md, 2026-11-06)
 
