@@ -1,15 +1,18 @@
 {% extends "app/plugins/templates/base.html" %}
 {% load i18n %}
 {% block content %}
-{% comment %}Diagnostic > Performance: the processing nodes, the server and the recent tasks, with verdicts on whether they
-suit each other (performance_page.js, performance.py through the plugin's API). Colours come only from WebODM's theme
+{% comment %}Diagnostic > Performance: the processing nodes and the server, then the page's controls (Refresh,
+Refresh Every, History Length), then the recent tasks, with verdicts on whether they suit each other (performance_page.js, performance.py through the plugin's API). Colours come only from WebODM's theme
 classes and Bootstrap's.{% endcomment %}
 <div id="tweakui-performance" class="tweakui-performance" data-api="{{ api }}">
     <h3>{% trans "Performance" %}</h3>
     {% if on %}
+    <div class="tweakui-performance-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Asking the processing nodes..." %}</p></div>
     <div class="tweakui-performance-bar">
-        <button type="button" class="btn btn-default btn-sm" data-act="refresh"><i class="fa fa-sync-alt"></i> {% trans "Refresh" %}</button>
-        <span class="tweakui-performance-status text-muted" role="status" aria-live="polite"></span>
+        <div class="tweakui-performance-bar-top">
+            <button type="button" class="btn btn-default btn-sm" data-act="refresh"><i class="fa fa-sync-alt"></i> {% trans "Refresh" %}</button>
+            <span class="tweakui-performance-status text-muted" role="status" aria-live="polite"></span>
+        </div>
         {% for c in controls %}
         <div class="tweakui-performance-every" data-control="{{ c.id }}">
             <label for="tweakui-performance-{{ c.id }}">{{ c.label }} <span class="tweakui-default text-muted">{% blocktrans with value=c.default %}(Default: {{ value }}){% endblocktrans %}</span></label>
@@ -22,7 +25,7 @@ classes and Bootstrap's.{% endcomment %}
         </div>
         {% endfor %}
     </div>
-    <div class="tweakui-performance-body"><p class="text-muted"><i class="fa fa-circle-notch fa-spin"></i> {% trans "Asking the processing nodes..." %}</p></div>
+    <div class="tweakui-performance-recent"></div>
     {% elif withheld %}
     <p class="text-muted"><i class="fa fa-lock fa-fw"></i> {% trans "Performance View is turned off by your administrator." %}</p>
     {% else %}

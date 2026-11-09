@@ -535,7 +535,9 @@
 
     function render(page, report, load, system, diskRates, view) {
         page.querySelector(".tweakui-performance-body").innerHTML = verdictsHtml(report.verdicts) + nodesHtml(report.nodes, view) +
-            serverHtml(report.server, load, diskRates, view) + tasksHtml(report, system) +
+            serverHtml(report.server, load, diskRates, view);
+        // Recent Processing goes below the page's controls, which stay put while the parts around them redraw
+        page.querySelector(".tweakui-performance-recent").innerHTML = tasksHtml(report, system) +
             '<p class="text-muted small tweakui-performance-note">Memory sizing follows <a href="' + REQUIREMENTS +
             '" target="_blank" rel="noopener noreferrer">WebODM\'s hardware requirements</a>, which are conservative. ' +
             "In Docker, a node has the memory Docker gives it.</p>";

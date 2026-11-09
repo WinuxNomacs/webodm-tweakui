@@ -3,13 +3,22 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+1. **Performance View: Remove Photos From Task** (new.md, 2026-11-09; see "Performance View: controls and removing
+   photos left out") — branch `remove-photos`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: the page's controls above Recent Processing** (new.md, 2026-11-09) — branch `perf-controls`:
+  `performance.html` (the body, then the bar with Refresh and its status on a line of their own, then
+  `.tweakui-performance-recent`), `performance_page.js` (`render` writes Recent Processing and the closing note into
+  that part), `main.css` (the bar a column; labels 15em wide and units 2.5em at 768 px and up, so the sliders line
+  up), `dev/screenshots.js`. Tests: `performance_page.test.js` (1 new: the order, the same slider after a reload),
+  `test_tweakui.py` (the order in the page). Docs `performance.md`, CHANGELOG (Unreleased), screenshots `performance`
+  and `performance-tasks`. Live on 4.0.0 and 3.3.2 at desktop and phone widths: the server's cards, Refresh, the two
+  sliders, then Recent Processing; no sideways scroll; no console errors but livereload.
 - **Release 1.0.0** (2026-11-09) — branch `release/1.0.0`: manifest 1.0.0 (still experimental), CHANGELOG `1.0.0
   (2026-11-09)`, README and Install page's installing steps (a manual upload sends no sha256: only the plugin
   directory does). `dist/tweakui-1.0.0.zip`, sha256 `14f9b3568d0c6b95dcd40d2e07fd676bd4b928c5651399824b944830ff474b4b`.
@@ -2412,3 +2421,39 @@ against what the feature shows now (retaken where stale), the links (`npm run do
 **Decided** (the user, 2026-11-08):
 1. The first release is **1.0.0** (the manifest said 0.1.0).
 2. It stays `"experimental": true`.
+
+## Performance View: controls and removing photos left out (new.md, 2026-11-09)
+
+### Requests
+- "Performance UI, Recent Processing regarding Photos Left Out. Is it possible to add a "Remove Photos From Task"
+  button next to "Copy Names", that when clicked removes the files in the Photos Left Out list from the task so they
+  won't cause problems in future executions of the task. If possible, also add a "Remove Photo" button next to each
+  photo link in the Photos Left Out list."
+- "Performance UI, move the refresh and history slider controls and the Refresh button above "Recent Processing".
+  Move the sliders under the refresh button."
+
+### Phase 1: the controls above Recent Processing (branch `perf-controls`) — done
+Builds on `performance.html` (the `.tweakui-performance-bar` above the body today) and `performance_page.js`
+(`render`). On the Performance page, the bar (Refresh, its status, then Refresh Every and History Length) moves from
+under the page's title to just above the **Recent Processing** heading, below the server's and drives' cards.
+Refresh and its status sit on the first line, with the two sliders stacked under it. The bar stays in place while the
+body redraws, so a slider being dragged is not replaced. The phone layout is checked, as are the docs
+(`performance.md`: "at the top of the Performance page") and the `performance` screenshot.
+
+### Phase 2: Remove Photos From Task (branch `remove-photos`)
+Builds on Photos Left Out (`task_log.py`, the `photos` of a note; `performance_page.js`'s Copy Names) and Storage
+View's task actions (permission checks, CSRF).
+- **Where:** in a completed task's Notes > Photos Left Out, a **Remove Photos From Task** button beside Copy Names
+  (all listed photos), and a **Remove Photo** button beside each name.
+- **Decided (2026-11-09):** removal **deletes the files permanently** from the task's folder (`task.task_path()`,
+  where `scan_images` finds them), after a confirmation dialog naming how many photos go. The user keeps their
+  originals.
+- **Decided (2026-11-09):** TweakUI also **drops the processing node's copy**. It asks the node to remove the task
+  and clears the task's `uuid`, as WebODM does when a node has purged a task. The next Restart then uploads only the
+  remaining photos and runs from the start (WebODM drops Rerun From itself). The task's current results stay until
+  then. This writes WebODM's task record and changes nothing in WebODM's code. `images_count` is updated.
+- To build: an API (POST, CSRF) that takes the task and the names. It needs `change_project` on the task's project
+  and a task that isn't queued or running. It accepts only names among the task's photos that its report leaves out
+  (checked on the server, through `get_image_path`'s traversal check). Afterwards the list redraws without them, and
+  a note says to Restart the task to process it without them. Tests on both stacks; docs `performance.md`, README,
+  CHANGELOG; the screenshot `performance-tasks` if it shows the buttons.
