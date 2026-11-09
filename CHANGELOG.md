@@ -1,5 +1,12 @@
 # Changelog
 
+## Unreleased
+
+### Diagnostic
+
+- Performance View: Refresh, Refresh Every and History Length moved from the top of the page to just above Recent
+  Processing, the two sliders under Refresh.
+
 ## 1.0.0 (2026-11-09)
 
 The first release. Every feature is off until a user turns it on in their own TweakUI settings (the **TweakUI** item

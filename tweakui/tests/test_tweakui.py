@@ -1758,6 +1758,10 @@ class TestPerformance(TweakUITestCase):
         self.assertIn('data-control="history"', on)
         self.assertIn('id="tweakui-performance-history" class="form-control input-sm theme-border" min="1" max="30" step="1" value="30"', on)
         self.assertLess(on.index('data-control="refresh"'), on.index('data-control="history"'))
+        # The controls come after the nodes' and server's part and before Recent Processing's
+        self.assertLess(on.index('class="tweakui-performance-body"'), on.index('data-act="refresh"'))
+        self.assertLess(on.index('data-act="refresh"'), on.index('data-control="refresh"'))
+        self.assertLess(on.index('data-control="history"'), on.index('class="tweakui-performance-recent"'))
 
     def test_the_page_says_where_to_turn_it_on_and_the_api_needs_a_login(self):
         self.patch({"performance_view": False})

@@ -30,6 +30,7 @@ function report(extra) {
 function page(every = 3, history = 5) {
     document.body.innerHTML = `
       <div id="tweakui-performance" data-api="/api/plugins/tweakui/">
+        <div class="tweakui-performance-body"></div>
         <div class="tweakui-performance-bar"><button data-act="refresh"></button><span class="tweakui-performance-status"></span>
           <div class="tweakui-performance-every" data-control="refresh">
             <input type="range" class="tweakui-performance-every-slider" min="1" max="10" step="1" value="${every}">
@@ -42,7 +43,7 @@ function page(every = 3, history = 5) {
             <span class="tweakui-performance-every-status"></span>
           </div>
         </div>
-        <div class="tweakui-performance-body"></div>
+        <div class="tweakui-performance-recent"></div>
       </div>`;
     return document.getElementById("tweakui-performance");
 }
@@ -148,7 +149,7 @@ describe("the Performance page", () => {
         expect(words(rows[1].querySelector("td a"))).toBe("Task of 2026-11-06");
         expect(words(rows[1].querySelector("td a + .text-muted"))).toBe("Flights of pat");
         expect(texts(rows[1], "td").slice(3, 6)).toEqual(["", "", ""]);
-        expect(texts(root, ".tweakui-performance-body > p.text-muted")[0])
+        expect(texts(root, ".tweakui-performance-recent > p.text-muted")[0])
             .toBe("The last 2 finished tasks of yours (completed, failed or canceled), newest first.");
     });
 
@@ -279,6 +280,18 @@ describe("the Performance page", () => {
             .toBe("Recent tasks took about as long per photo as earlier ones (2.1s against 2.0s).");
         const {root} = await started([json(report({trend: {recent: 2, earlier: 4, change: -0.5, same: false}}))]);
         expect(root.querySelector(".tweakui-performance-trend").textContent).toMatch(/50% less/);
+    });
+
+    test("the page's controls sit between the server's cards and Recent Processing, and stay put as the page redraws", async () => {
+        const {root, view} = await started([json(report()), json(report())]);
+        const parts = Array.from(root.children).map(c => c.className);
+        expect(parts).toEqual(["tweakui-performance-body", "tweakui-performance-bar", "tweakui-performance-recent"]);
+        expect(root.querySelector(".tweakui-performance-body [data-server]")).not.toBeNull();
+        expect(root.querySelector(".tweakui-performance-recent h4").textContent).toBe("Recent Processing");
+        const slider = root.querySelector(".tweakui-performance-every-slider");
+        await view.load();
+        expect(root.querySelector(".tweakui-performance-every-slider")).toBe(slider);
+        expect(root.querySelectorAll(".tweakui-performance-recent .tweakui-performance-table").length).toBe(1);
     });
 
     test("Refresh asks again, is disabled while it waits and keeps the page when it fails", async () => {

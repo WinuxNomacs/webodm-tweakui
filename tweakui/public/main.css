@@ -346,7 +346,9 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 /* Diagnostic > Performance (templates/performance.html, performance_page.js): verdicts, then cards (a processing node
    each, the server) that wrap to one column on a phone, and the recent tasks' table, which scrolls sideways there
    rather than the page. Bars are Bootstrap's progress bars, as WebODM's own Diagnostic page has. */
-.tweakui-performance .tweakui-performance-bar { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; margin-bottom: 12px; }
+/* The page's controls, above Recent Processing: Refresh and its status, then the sliders under it */
+.tweakui-performance .tweakui-performance-bar { display: flex; flex-direction: column; align-items: flex-start; gap: 8px; margin-bottom: 20px; }
+.tweakui-performance .tweakui-performance-bar-top { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .tweakui-performance .tweakui-performance-verdicts { margin-bottom: 20px; }
 .tweakui-performance .tweakui-performance-verdicts > li { padding: 3px 0; }
 .tweakui-performance .tweakui-performance-cards { display: flex; flex-wrap: wrap; gap: 12px; margin-bottom: 20px; }
@@ -360,12 +362,15 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-table td { vertical-align: middle; }
 .tweakui-performance .tweakui-performance-number { text-align: right; white-space: nowrap; }
 .tweakui-performance .tweakui-performance-date, .tweakui-performance .tweakui-performance-step { white-space: nowrap; }
-/* Refresh Every beside Refresh */
+/* Refresh Every and History Length, under Refresh */
 .tweakui-performance .tweakui-performance-every { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; }
 .tweakui-performance .tweakui-performance-every label { margin: 0; }
+/* The two sliders line up under each other where there is room for their labels on one line */
+@media (min-width: 768px) { .tweakui-performance .tweakui-performance-every label { min-width: 15em; } }
 .tweakui-performance .tweakui-performance-every .tweakui-number { display: flex; align-items: center; gap: 8px; width: 220px; }
 .tweakui-performance .tweakui-performance-every input[type=range] { flex: 1 1 auto; min-width: 0; margin: 0; }
 .tweakui-performance .tweakui-performance-every input[type=number] { flex: 0 0 64px; width: 64px; }
+.tweakui-performance .tweakui-performance-every .tweakui-number > span { flex: 0 0 2.5em; }
 .tweakui-performance .tweakui-performance-cpu-note { margin: 6px 0 2px; }
 /* A drive's card: its mount points wrap anywhere (long paths at phone width) */
 .tweakui-performance .tweakui-performance-drive td { overflow-wrap: anywhere; }

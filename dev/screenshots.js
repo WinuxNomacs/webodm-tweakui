@@ -408,7 +408,7 @@ const SHOTS = [
             if (photos) await photos.click();
             const box = await s.page.evaluate(() => {
                 const scroll = document.querySelector(".tweakui-performance-scroll");
-                const head = Array.from(document.querySelectorAll(".tweakui-performance-body h4")).find(h => h.textContent === "Recent Processing");
+                const head = Array.from(document.querySelectorAll(".tweakui-performance-recent h4")).find(h => h.textContent === "Recent Processing");
                 head.scrollIntoView();
                 const top = head.getBoundingClientRect(), bottom = scroll.getBoundingClientRect();
                 return {x: bottom.left, y: top.top, width: bottom.width, height: bottom.bottom - top.top};
