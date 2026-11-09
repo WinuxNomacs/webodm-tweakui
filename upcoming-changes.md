@@ -2516,8 +2516,7 @@ drive's Reads/Writes and Busy) gets:
   colours, as the lines) and its name with the unit ("Reads (/s)", "Writes (/s)"). A single-series graph is named by
   its row's label, so it needs no legend.
 The graphs are 10% taller: 42 px to 46 px (`GRAPH_H` 40 to 44). The labels stay readable in the light and dark
-themes,
-and nothing scrolls sideways at phone width. Tests: Jest (`graphHtml`'s labels, the legend, the window's start
+themes, and nothing scrolls sideways at phone width. Tests: Jest (`graphHtml`'s labels, the legend, the window's start
 following History Length). Docs `performance.md` (Graphs), CHANGELOG, screenshot `performance`.
 
 ### Phase 3: the graphs' readings kept over a reload (branch `perf-history-reload`)
