@@ -9,6 +9,9 @@
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
+**Not doing**
+- **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
+
 **Done**
 - **UX review: setting names** (user request, 2026-11-09) — branch `ux-setting-names`: every label in `features.py`
   as decided (see "Setting names"; the setting keys, element ids and preview files unchanged, so saved settings stay),
@@ -817,6 +820,23 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## Diagnostic: Logs View (dropped) (asked in chat, 2026-11-09)
+
+Asked: a Logs page with the last 10 server errors and system messages, each opening to the lines around it, and a
+Download Logs zip of the server's and application's logs for WebODM's support.
+
+Built on branch `logs-view` (commit 88655f2, not merged), then dropped by the user: WebODM's application logs can't be
+read by a plugin, and a log of only what the plugin sees isn't worth having. What was found:
+- Docker (4.0.0 and 3.3.2): Django logs to the console only (`settings.LOGGING`), which Docker keeps outside the
+  container; the worker's output goes to `/dev/null` (`worker.sh`), nginx's error log too; plugins load only in the
+  web process (`boot()` from `app/urls.py`), never in the Celery worker.
+- WebODM's Windows app: every service's output in `logs/app.log` (no times, overwritten at each start) and
+  `logs/pgsql.log`, readable.
+- The branch recorded the web process's messages itself (a logging handler started in `Plugin.register()`), with task
+  failures from the database and the Windows app's logs in the zip.
+- Not taken up: a pull request to WebODM writing its logs (web and worker) to files too, which would make the real
+  logs readable; it would need the user's approval.
 
 ## UX review of the plugin's pages (user request, 2026-11-09)
 
