@@ -381,13 +381,18 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 /* A drive's card: its mount points wrap anywhere (long paths at phone width) */
 .tweakui-performance .tweakui-performance-drive td { overflow-wrap: anywhere; }
 .tweakui-performance .tweakui-performance-disk-note { margin: -12px 0 20px; }
-/* Process View (superusers), under the server's cards: each command line on one line, cut short (whole in its title) */
+/* Process View (superusers), under the server's cards: outlined tables whose columns keep the widths given (fixed
+   layout; at phone width the table scrolls in its box), each cell's text wrapping at its width, and on each heading's
+   right edge a handle that resizes its column */
 .tweakui-performance .tweakui-performance-process-view { margin-bottom: 20px; }
 .tweakui-performance .tweakui-performance-processes { margin-top: 10px; }
-.tweakui-performance .tweakui-performance-process-table td { vertical-align: middle; }
-.tweakui-performance .tweakui-performance-command-cell { white-space: nowrap; }
-.tweakui-performance .tweakui-performance-command { display: inline-block; max-width: 36em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; vertical-align: middle; color: inherit; background: none; padding: 0; }
-@media (max-width: 767px) { .tweakui-performance .tweakui-performance-command { max-width: 14em; } }
+.tweakui-performance .tweakui-performance-process-table { table-layout: fixed; width: 100%; min-width: 760px; border-width: 1px; border-style: solid; }
+.tweakui-performance .tweakui-performance-process-table th { position: relative; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tweakui-performance .tweakui-performance-process-table td { vertical-align: top; overflow-wrap: anywhere; white-space: normal; }
+.tweakui-performance .tweakui-performance-command { white-space: normal; overflow-wrap: anywhere; color: inherit; background: none; padding: 0; }
+.tweakui-performance .tweakui-performance-resize { position: absolute; top: 0; right: 0; bottom: 0; width: 8px; cursor: col-resize; touch-action: none; }
+.tweakui-performance .tweakui-performance-resize:hover, .tweakui-performance .tweakui-performance-resize:focus,
+.tweakui-performance .tweakui-performance-resize.active { border-right: 3px solid currentColor; opacity: 0.5; outline: none; }
 /* The live figures' graphs (inline SVG stretched to the card's width): lines in currentColor, the first series in the
    theme's link colour (read by performance_page.js), the second in its text colour, a light fill under the first;
    hovering shows a cursor and the readings under it */

@@ -93,9 +93,14 @@ plugin's API gives them no processes: a command line can hold passwords, tokens 
 
 ![Process View in WebODM's Docker install: the web container's processes by CPU and by memory](../tweakui/public/previews/performance-processes.webp)
 
-Each process has its **PID**, its **Command** (the program's name, as top shows it), its **Command Line** (on one
-line, cut short; hover it to read it whole, or copy it with the button beside it), its **User**, its **CPU** and its
-**Memory**. CPU is the share of one core since the last refresh, as top shows it (a process using four cores reads
+Each process has its **PID**, its **Command** (the program's name, as top shows it), its **Command Line**, its
+**User**, its **CPU** and its **Memory**, in outlined tables. A command line wraps at its column's width and shows its
+first 512 characters, then "…" (hover a cut-short one to read it whole); the button beside it copies it whole, however
+long.
+
+Drag a column heading's right edge to resize the column; the column takes that width in both tables, and the browser
+tab keeps the widths over a reload. A focused edge moves with the Left and Right arrow keys, and double-clicking an
+edge puts every column back to its starting width. At phone width the tables scroll sideways in their box. CPU is the share of one core since the last refresh, as top shows it (a process using four cores reads
 400%); hover it for its share of all the cores. Memory is what the process holds in memory (its resident size, or
 working set on Windows) and its share of the machine's. A process whose command line can't be read (a kernel thread,
 or another user's protected process) says so.

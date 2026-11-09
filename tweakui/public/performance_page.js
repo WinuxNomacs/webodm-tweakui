@@ -45,6 +45,11 @@
     // Process View (superusers): on or off kept for the tab (sessionStorage, as the graphs' readings), and what it says
     // when WebODM's server runs in a container
     var PROCESSES_KEY = "tweakui.performance.processes";
+    // Its tables' columns: their names and starting widths (shares of the table's width). Dragging a column's edge gives
+    // every column a width in pixels, the same in both tables, kept for the tab: at least COLUMN_MIN, an arrow key moving
+    // an edge COLUMN_STEP. A command line shows this many characters, its copy button copies it whole
+    var PROCESS_COLUMNS = [["PID", 8], ["Command", 12], ["Command Line", 44], ["User", 10], ["CPU", 10], ["Memory", 16]];
+    var COLUMNS_KEY = "tweakui.performance.process-columns", COLUMN_MIN = 40, COLUMN_STEP = 16, COMMAND_SHOWN = 512;
     var CONTAINER_NOTE = "Processes WebODM's server can see. In Docker that is its own container: the processing node's " +
         "work runs in its own and isn't listed.";
 
@@ -473,7 +478,9 @@
         var cpu = p.cpu === null || p.cpu === undefined ? '<span class="text-muted">Measuring...</span>' :
             "<span" + (cores ? ' title="' + escapeHtml((p.cpu / cores).toFixed(1) + "% of all " + plural(cores, "core", "cores")) + '"' : "") +
             ">" + escapeHtml(p.cpu.toFixed(1)) + "%</span>";
-        var command = p.command ? '<code class="tweakui-performance-command" title="' + escapeHtml(p.command) + '">' + escapeHtml(p.command) +
+        var long = p.command && p.command.length > COMMAND_SHOWN;
+        var command = p.command ? '<code class="tweakui-performance-command"' + (long ? ' title="' + escapeHtml(p.command) + '"' : "") + ">" +
+            escapeHtml(long ? p.command.slice(0, COMMAND_SHOWN) + "\u2026" : p.command) +
             '</code> <button type="button" class="btn btn-default btn-xs" data-act="copy-command" data-copy="' + escapeHtml(p.command) +
             '" title="Copy Command Line" aria-label="Copy Command Line"><i class="far fa-clipboard"></i></button>' :
             '<span class="text-muted">Not readable</span>';
@@ -483,24 +490,38 @@
             '</td><td class="tweakui-performance-number">' + cpu + '</td><td class="tweakui-performance-number">' + memory + "</td></tr>";
     }
 
-    // One of Process View's tables (list: null while there is nothing to show, which `empty` says)
-    function processTableHtml(kind, title, list, cores, total, empty) {
+    // A Process View table's width and its columns' (widths: each column's in pixels, or null for the starting shares)
+    function tableStyle(widths) {
+        return widths ? "width: " + widths.reduce(function (a, b) { return a + b; }, 0) + "px; min-width: 0" : "";
+    }
+    function columnsHtml(widths) {
+        return "<colgroup>" + PROCESS_COLUMNS.map(function (c, i) {
+            return '<col style="width: ' + (widths ? widths[i] + "px" : c[1] + "%") + '">';
+        }).join("") + "</colgroup>";
+    }
+
+    // One of Process View's tables (list: null while there is nothing to show, which `empty` says): outlined, each
+    // column's right edge a handle that resizes it
+    function processTableHtml(kind, title, list, cores, total, empty, widths) {
         var html = "<h5>" + title + "</h5>";
         if (!list) return html + '<p class="text-muted small">' + empty + "</p>";
-        return html + '<div class="tweakui-performance-scroll"><table class="table table-condensed tweakui-performance-process-table" data-processes-by="' +
-            kind + '"><thead><tr><th class="tweakui-performance-number">PID</th><th>Command</th><th>Command Line</th><th>User</th>' +
-            '<th class="tweakui-performance-number">CPU</th><th class="tweakui-performance-number">Memory</th></tr></thead><tbody>' +
+        return html + '<div class="tweakui-performance-scroll"><table class="table table-condensed table-bordered theme-border tweakui-performance-process-table" data-processes-by="' +
+            kind + '" style="' + tableStyle(widths) + '">' + columnsHtml(widths) + "<thead><tr>" + PROCESS_COLUMNS.map(function (c, i) {
+                return "<th" + (i === 0 || i > 3 ? ' class="tweakui-performance-number"' : "") + ">" + c[0] +
+                    '<span class="tweakui-performance-resize" role="separator" aria-orientation="vertical" tabindex="0" data-column="' + i +
+                    '" aria-label="Resize ' + c[0] + '" title="Drag to resize; double-click for the starting widths"></span></th>';
+            }).join("") + "</tr></thead><tbody>" +
             list.map(function (p) { return processRowHtml(p, cores, total); }).join("") + "</tbody></table></div>";
     }
 
     // Process View's tables: Top 10 by CPU above Top 10 by Memory (processes: the live figures' processes, undefined
     // until they come, null where the server can't read them)
-    function processesHtml(processes, cores, total) {
+    function processesHtml(processes, cores, total, widths) {
         if (processes === undefined) return '<p class="text-muted">Loading...</p>';
         if (!processes) return '<p class="text-muted">The server\'s processes can\'t be read.</p>';
         return (processes.container ? '<p class="text-muted small">' + CONTAINER_NOTE + "</p>" : "") +
-            processTableHtml("cpu", "Top 10 by CPU", processes.cpu, cores, total, "Measuring: CPU use shows from the next refresh.") +
-            processTableHtml("memory", "Top 10 by Memory", processes.memory, cores, total, "None.");
+            processTableHtml("cpu", "Top 10 by CPU", processes.cpu, cores, total, "Measuring: CPU use shows from the next refresh.", widths) +
+            processTableHtml("memory", "Top 10 by Memory", processes.memory, cores, total, "None.", widths);
     }
 
     // The Process View button (on: pressed) and the place for its tables
@@ -800,11 +821,14 @@
         var status = page.querySelector(".tweakui-performance-status");
         var state = {report: null, cpu: null, load: null, io: null, diskRates: null, history: {}, hover: null,
             seconds: EVERY_DEFAULT, minutes: HISTORY_DEFAULT, diskAt: 0, timer: null, busy: false,
-            looping: false, stopped: false, processesOn: false, processes: undefined};
+            looping: false, stopped: false, processesOn: false, processes: undefined, columns: null};
         try {
             state.processesOn = win.sessionStorage.getItem(PROCESSES_KEY) === "1";
+            var columns = JSON.parse(win.sessionStorage.getItem(COLUMNS_KEY) || "null");
+            if (Array.isArray(columns) && columns.length === PROCESS_COLUMNS.length &&
+                columns.every(function (w) { return typeof w === "number" && w >= COLUMN_MIN; })) state.columns = columns;
         } catch (e) {
-            // Storage that can't be used: Process View starts off
+            // Storage that can't be used: Process View starts off, its columns at their starting widths
         }
 
         // The readings this tab kept before a reload (sessionStorage: a new tab starts fresh, closing it forgets them);
@@ -916,10 +940,78 @@
         function redrawProcesses() {
             var holder = page.querySelector("[data-processes]");
             if (!holder || !state.processesOn) return;
+            // Not while a column is dragged: once it is let go
+            if (drag) {
+                drag.redraw = true;
+                return;
+            }
             var server = state.report.server;
             holder.innerHTML = processesHtml(state.processes, server.cpu && server.cpu.cores,
-                server.memory && server.memory.total);
+                server.memory && server.memory.total, state.columns);
         }
+
+        // Process View's columns: a width each in pixels (null: the starting shares), set on both tables and kept for
+        // the tab
+        var drag = null;
+        function setColumns(widths) {
+            state.columns = widths && widths.map(function (w) { return Math.max(COLUMN_MIN, Math.round(w)); });
+            Array.prototype.forEach.call(page.querySelectorAll(".tweakui-performance-process-table"), function (table) {
+                table.setAttribute("style", tableStyle(state.columns));
+                var cols = table.querySelectorAll("col");
+                PROCESS_COLUMNS.forEach(function (c, i) {
+                    if (cols[i]) cols[i].style.width = state.columns ? state.columns[i] + "px" : c[1] + "%";
+                });
+            });
+            try {
+                if (state.columns) win.sessionStorage.setItem(COLUMNS_KEY, JSON.stringify(state.columns));
+                else win.sessionStorage.removeItem(COLUMNS_KEY);
+            } catch (e) {
+                // Not kept: the tables still take them
+            }
+        }
+        // The columns' widths as drawn, where none are set yet
+        function columnWidths(handle) {
+            if (state.columns) return state.columns.slice();
+            return Array.prototype.map.call(handle.closest("tr").children, function (th) { return th.getBoundingClientRect().width; });
+        }
+        page.addEventListener("pointerdown", ui.guard(NAME, function (e) {
+            var handle = e.target && e.target.closest ? e.target.closest(".tweakui-performance-resize") : null;
+            if (!handle) return;
+            e.preventDefault();
+            var widths = columnWidths(handle), i = Number(handle.getAttribute("data-column"));
+            drag = {handle: handle, column: i, x: e.clientX, start: widths[i], widths: widths, redraw: false};
+            if (handle.setPointerCapture && e.pointerId !== undefined) handle.setPointerCapture(e.pointerId);
+            handle.classList.add("active");
+            // No text selected while dragging (main.css)
+            doc.documentElement.classList.add("tweakui-dragging");
+        }));
+        page.addEventListener("pointermove", ui.guard(NAME, function (e) {
+            if (!drag) return;
+            var widths = drag.widths.slice();
+            widths[drag.column] = drag.start + e.clientX - drag.x;
+            setColumns(widths);
+        }));
+        function endDrag() {
+            if (!drag) return;
+            var again = drag.redraw;
+            drag.handle.classList.remove("active");
+            doc.documentElement.classList.remove("tweakui-dragging");
+            drag = null;
+            if (again) redrawProcesses();
+        }
+        page.addEventListener("pointerup", ui.guard(NAME, endDrag));
+        page.addEventListener("pointercancel", ui.guard(NAME, endDrag));
+        page.addEventListener("dblclick", ui.guard(NAME, function (e) {
+            if (e.target && e.target.closest && e.target.closest(".tweakui-performance-resize")) setColumns(null);
+        }));
+        page.addEventListener("keydown", ui.guard(NAME, function (e) {
+            var handle = e.target && e.target.closest ? e.target.closest(".tweakui-performance-resize") : null;
+            if (!handle || (e.key !== "ArrowLeft" && e.key !== "ArrowRight")) return;
+            e.preventDefault();
+            var widths = columnWidths(handle), i = Number(handle.getAttribute("data-column"));
+            widths[i] += e.key === "ArrowRight" ? COLUMN_STEP : -COLUMN_STEP;
+            setColumns(widths);
+        }));
 
         // The Process View button: its tables open (asked at once, then on every refresh) or close
         function toggleProcesses(btn) {

@@ -661,7 +661,7 @@ describe("the Performance page", () => {
         expect(words(cpuRowsShown[0])).toBe("12 celery /usr/bin/celery --serve odm 250.0% 2 GB \u00b7 3.1%");
         // CPU of one core, of all cores in its title; the command line whole in its title
         expect(cpuRowsShown[0].querySelector("td:nth-child(5) span").title).toBe("31.3% of all 8 cores");
-        expect(cpuRowsShown[0].querySelector("code").title).toBe("/usr/bin/celery --serve");
+        expect(cpuRowsShown[0].querySelector("code").title).toBe("");
         const writeText = jest.fn(() => Promise.resolve());
         Object.defineProperty(window.navigator, "clipboard", {value: {writeText}, configurable: true});
         cpuRowsShown[0].querySelector("[data-act=copy-command]").click();
@@ -674,6 +674,61 @@ describe("the Performance page", () => {
             .toEqual(["false", true, "0"]);
         await jest.advanceTimersByTimeAsync(3000);
         expect(fetchFn.mock.calls[4][0]).toBe(LIVE);
+    });
+
+    test("Process View's tables are outlined, and a command line wraps, shows 512 characters and is copied whole", async () => {
+        jest.useFakeTimers();
+        window.sessionStorage.setItem("tweakui.performance.processes", "1");
+        const long = "/usr/bin/java " + "-Dsetting=value ".repeat(60);
+        const processes = {container: false, cpu: [proc(3, "java", 99, GB, {command: long})], memory: [proc(3, "java", 99, GB, {command: long})]};
+        const {root} = await started([adminReport(), liveData({processes})]);
+        await jest.advanceTimersByTimeAsync(1000);
+        const table = root.querySelector("[data-processes-by=cpu]");
+        expect(["table-bordered", "theme-border"].every(c => table.classList.contains(c))).toBe(true);
+        expect(root.querySelector("[data-processes]").textContent).not.toContain("In Docker");
+        const code = table.querySelector("code");
+        expect(long.length).toBeGreaterThan(512);
+        expect([code.textContent, code.title]).toEqual([long.slice(0, 512) + "\u2026", long]);
+        const writeText = jest.fn(() => Promise.resolve());
+        Object.defineProperty(window.navigator, "clipboard", {value: {writeText}, configurable: true});
+        table.querySelector("[data-act=copy-command]").click();
+        await jest.advanceTimersByTimeAsync(0);
+        expect(writeText).toHaveBeenCalledWith(long);
+        delete window.navigator.clipboard;
+    });
+
+    test("dragging a column's edge resizes it in both tables, kept for the tab; arrow keys move it, a double-click resets it", async () => {
+        jest.useFakeTimers();
+        window.sessionStorage.setItem("tweakui.performance.processes", "1");
+        window.sessionStorage.setItem("tweakui.performance.process-columns", JSON.stringify([60, 100, 400, 80, 80, 120]));
+        const processes = {container: false, cpu: [proc(3, "java", 99, GB)], memory: [proc(3, "java", 99, GB)]};
+        const later = {container: false, cpu: [proc(4, "late", 5, GB)], memory: [proc(4, "late", 5, GB)]};
+        const {root} = await started([adminReport(), liveData({processes}), liveData({processes: later})]);
+        await jest.advanceTimersByTimeAsync(1000);
+        const widths = by => Array.from(root.querySelectorAll(`[data-processes-by=${by}] col`)).map(c => c.style.width);
+        const tableWidth = by => root.querySelector(`[data-processes-by=${by}]`).style.width;
+        // The tab's widths, from before the reload
+        expect([widths("cpu"), tableWidth("cpu")]).toEqual([["60px", "100px", "400px", "80px", "80px", "120px"], "840px"]);
+        const handle = root.querySelector("[data-processes-by=cpu] [data-column='2']");
+        expect([handle.getAttribute("role"), handle.getAttribute("aria-label")]).toEqual(["separator", "Resize Command Line"]);
+        handle.dispatchEvent(new MouseEvent("pointerdown", {bubbles: true, clientX: 500}));
+        handle.dispatchEvent(new MouseEvent("pointermove", {bubbles: true, clientX: 380}));
+        expect(widths("memory")[2]).toBe("280px");
+        // A refresh while dragging waits until the column is let go
+        await jest.advanceTimersByTimeAsync(3000);
+        expect(root.querySelector("[data-processes-by=cpu] tbody tr").getAttribute("data-pid")).toBe("3");
+        handle.dispatchEvent(new MouseEvent("pointermove", {bubbles: true, clientX: 0}));
+        handle.dispatchEvent(new MouseEvent("pointerup", {bubbles: true}));
+        expect(root.querySelector("[data-processes-by=cpu] tbody tr").getAttribute("data-pid")).toBe("4");
+        // No narrower than 40 pixels, and drawn again with the widths
+        expect([widths("cpu")[2], widths("memory")[2], tableWidth("memory")]).toEqual(["40px", "40px", "480px"]);
+        expect(JSON.parse(window.sessionStorage.getItem("tweakui.performance.process-columns"))).toEqual([60, 100, 40, 80, 80, 120]);
+        const user = root.querySelector("[data-processes-by=memory] [data-column='3']");
+        user.dispatchEvent(new KeyboardEvent("keydown", {bubbles: true, key: "ArrowRight"}));
+        expect(widths("cpu")[3]).toBe("96px");
+        user.dispatchEvent(new MouseEvent("dblclick", {bubbles: true}));
+        expect([widths("cpu"), tableWidth("cpu")]).toEqual([["8%", "12%", "44%", "10%", "10%", "16%"], ""]);
+        expect(window.sessionStorage.getItem("tweakui.performance.process-columns")).toBeNull();
     });
 
     test("Process View stays on for the tab over a reload, and says so where the server can't read its processes", async () => {

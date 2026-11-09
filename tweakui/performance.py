@@ -317,7 +317,9 @@ def disk_io_entry():
 # Process View: the top processes by CPU and by memory, at most this many each; CPU is the difference between two
 # readings, the last kept in this server process's memory (each of WebODM's worker processes keeps its own) for at most
 # PROCESS_KEEP seconds, keyed by pid and start time so a pid used again isn't taken for the old process
-PROCESS_TOP, PROCESS_KEEP, COMMAND_MAX = 10, 60, 2000
+# A command line is sent whole up to COMMAND_MAX characters (Windows' longest; Linux's are rarely longer), for the page's
+# copy button
+PROCESS_TOP, PROCESS_KEEP, COMMAND_MAX = 10, 60, 32768
 _process_last = {"at": None, "times": {}}
 _process_lock = threading.Lock()
 

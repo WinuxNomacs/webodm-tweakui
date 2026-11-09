@@ -10,6 +10,13 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: Process View's tables outlined, resizable, command lines wrapped** (user request, 2026-11-09)
+  — branch `perf-process-table`: `performance_page.js` (`table-bordered theme-border`, a `colgroup` and a resize
+  handle on each heading: drag, arrow keys, double-click to reset; widths in pixels shared by both tables, kept in
+  session storage; a redraw during a drag waits for it; a command line's first 512 characters, copied whole),
+  `main.css` (fixed layout, 760px at least, wrapping cells), `performance.py` (`COMMAND_MAX` 32768, Windows' longest).
+  Tests: `performance_page.test.js` (2). Docs `performance.md`, CHANGELOG, screenshot `performance-processes`. Live
+  on 4.0.0 and 3.3.2 (a mouse drag through a refresh, reload, keys, reset, phone width).
 - **Performance View: Process View** (new.md, 2026-11-09) — branch `perf-process-view`: `performance.py`
   (`linux_processes`/`linux_details` from `/proc`, `windows_processes`/`windows_details` through ctypes,
   `process_tops`: CPU from the last reading kept per server process for 60 s by pid and start time, details read only
