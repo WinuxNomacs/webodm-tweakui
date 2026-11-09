@@ -180,7 +180,7 @@ const SHOTS = [
         },
     },
     {
-        // Administration > TweakUI Themes with two sample published themes (Nord's and Gruvbox Dark's colours) and,
+        // Administration > TweakUI's Published Themes with two sample published themes (Nord's and Gruvbox Dark's colours) and,
         // without own themes, one of the account's own to publish: added for the shot (under names not used yet) and
         // deleted afterwards
         name: "theme-published", settings: {},
@@ -196,9 +196,9 @@ const SHOTS = [
             if (!(await s.api("GET", "/api/plugins/tweakui/themes")).length) {
                 s.ownAdded = (await s.api("POST", "/api/plugins/tweakui/themes", {name: "Survey Day", colors: colors["solarized-light"].colors})).id;
             }
-            await s.page.goto(s.base + "/plugins/tweakui/admin/themes/");
+            await s.page.goto(s.base + "/plugins/tweakui/admin/");
             await s.page.waitForTimeout(300);
-            return ".tweakui-published";
+            return 'section[aria-labelledby="published-themes"]';
         },
         async cleanup(s) {
             if (s.ownAdded) await s.api("DELETE", "/api/plugins/tweakui/themes/" + s.ownAdded);
@@ -209,12 +209,13 @@ const SHOTS = [
         },
     },
     {
-        // Administration > TweakUI as it is (superusers: the account must be one); nothing is changed
+        // Administration > TweakUI's Available to Users as it is (superusers: the account must be one); nothing is
+        // changed
         name: "admin", settings: {},
         async run(s) {
             await s.page.goto(s.base + "/plugins/tweakui/admin/");
             await s.page.waitForSelector(".tweakui-admin");
-            return ".tweakui-admin";
+            return ".tweakui-admin > div.tweakui-group";
         },
     },
     {

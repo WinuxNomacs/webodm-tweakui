@@ -6,8 +6,9 @@
 // Also: Copy JSON on every theme (the theme as {name, colors} on the clipboard, through task_details.js's copy), and
 // Import, a panel that takes a JSON file or text of one theme or a list (themes/import) and says what was added,
 // replaced or refused; Close then reloads the page to list them. Export is a plain download link (themes/export).
-// Administration > TweakUI Themes (templates/published.html) uses it too, without the editor: Copy JSON, Import
-// (into the published themes, the panel's data-import-path), Delete, and Publish a copy of one of your own themes.
+// Administration > TweakUI's Published Themes (#tweakui-published in templates/admin.html) uses it too, without the
+// editor: Copy JSON, Import (into the published themes, the panel's data-import-path), Delete, and Publish a copy of
+// one of your own themes.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
@@ -271,7 +272,7 @@
         });
     }
 
-    // Administration > TweakUI Themes: a failure of Delete or Publish
+    // Administration > TweakUI > Published Themes: a failure of Delete or Publish
     function publishedStatus(state, text) {
         var status = state.page.querySelector(".tweakui-published-status");
         if (!status) return;

@@ -1,5 +1,5 @@
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponseForbidden
+from django.http import HttpResponseForbidden, HttpResponseRedirect
 from django.shortcuts import render
 from django.utils.translation import gettext_lazy as _
 
@@ -69,16 +69,18 @@ class Plugin(PluginBase):
                 "withheld": access.is_withheld(request.user, "performance_view"),
             }, status=403 if access.is_withheld(request.user, "performance_view") else 200)
 
-        # Administration > TweakUI Themes: the published themes, for superusers only (main.js adds the link)
+        # Administration > TweakUI, for superusers only (main.js adds the link): which features users may have
+        # (access.py) and the published themes
         @login_required
-        def published_page(request):
+        def admin_page(request):
             if not request.user.is_superuser:
                 return HttpResponseForbidden()
             published = [dict(t, swatch=[t["colors"][f] for f in themes.SWATCH]) for t in custom_themes.published()]
-            return render(request, self.template_path("published.html"), {
-                "title": _("TweakUI Themes"),
+            return render(request, self.template_path("admin.html"), {
+                "title": _("TweakUI"),
                 "public": self.public_url(""),
                 "api": "/api/plugins/{}/".format(self.get_name()),
+                "features": access.page(),
                 "published": published,
                 "own": custom_themes.own(request.user),
                 "theme_colors": {custom_themes.PUBLISHED + t["id"]: {"name": t["name"], "colors": t["colors"]}
@@ -86,17 +88,9 @@ class Plugin(PluginBase):
                 "import_panel": self.template_path("import_panel.html"),
             })
 
-        # Administration > TweakUI: which features users may have (access.py), for superusers only
-        @login_required
-        def admin_page(request):
-            if not request.user.is_superuser:
-                return HttpResponseForbidden()
-            return render(request, self.template_path("admin.html"), {
-                "title": _("TweakUI"),
-                "public": self.public_url(""),
-                "api": "/api/plugins/{}/".format(self.get_name()),
-                "features": access.page(),
-            })
+        # Administration > TweakUI Themes was a page of its own until it became the Published Themes section
+        def published_page(request):
+            return HttpResponseRedirect("/plugins/{}/admin/#published-themes".format(self.get_name()))
 
         return [
             MountPoint("$", settings_page),

@@ -2,6 +2,11 @@
 
 ## Unreleased
 
+### Administration
+
+- Administration > TweakUI Themes is now the **Published Themes** section of Administration > TweakUI, under
+  Available to Users: one link in the side menu, and the old address opens the section.
+
 ### Diagnostic
 
 - Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or

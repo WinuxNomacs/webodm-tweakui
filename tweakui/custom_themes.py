@@ -1,7 +1,7 @@
 """
 Custom themes: each user's own themes (Settings > Themes > My Themes), a list of {id, name, colors} in their data
-store, and the published themes every user sees (Administration > TweakUI Themes, superusers only), a list alike in
-the plugin's global data store. Every theme written is checked here first: its colours go into CSS
+store, and the published themes every user sees (Administration > TweakUI > Published Themes, superusers only), a
+list alike in the plugin's global data store. Every theme written is checked here first: its colours go into CSS
 (themes.colors_css).
 """
 import re
