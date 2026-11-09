@@ -487,7 +487,7 @@
         var memory = escapeHtml(formatBytes(p.rss)) + (total ? ' <span class="text-muted">\u00b7 ' + escapeHtml((p.rss / total * 100).toFixed(1)) + "%</span>" : "");
         return '<tr data-pid="' + escapeHtml(p.pid) + '"><td class="tweakui-performance-number">' + escapeHtml(p.pid) + "</td><td>" + escapeHtml(p.name) +
             '</td><td class="tweakui-performance-command-cell">' + command + "</td><td>" + escapeHtml(p.user || "") +
-            '</td><td class="tweakui-performance-number">' + cpu + '</td><td class="tweakui-performance-number">' + memory + "</td></tr>";
+            "</td><td>" + cpu + "</td><td>" + memory + "</td></tr>";
     }
 
     // A Process View table's width and its columns' (widths: each column's in pixels, or null for the starting shares)
@@ -507,7 +507,7 @@
         if (!list) return html + '<p class="text-muted small">' + empty + "</p>";
         return html + '<div class="tweakui-performance-scroll"><table class="table table-condensed table-bordered theme-border tweakui-performance-process-table" data-processes-by="' +
             kind + '" style="' + tableStyle(widths) + '">' + columnsHtml(widths) + "<thead><tr>" + PROCESS_COLUMNS.map(function (c, i) {
-                return "<th" + (i === 0 || i > 3 ? ' class="tweakui-performance-number"' : "") + ">" + c[0] +
+                return "<th" + (i === 0 ? ' class="tweakui-performance-number"' : "") + ">" + c[0] +
                     '<span class="tweakui-performance-resize" role="separator" aria-orientation="vertical" tabindex="0" data-column="' + i +
                     '" aria-label="Resize ' + c[0] + '" title="Drag to resize; double-click for the starting widths"></span></th>';
             }).join("") + "</tr></thead><tbody>" +
