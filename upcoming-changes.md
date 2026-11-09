@@ -3,15 +3,22 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: the page's controls above Recent Processing** (new.md, 2026-11-09; see "Performance View:
-   controls and removing photos left out") — branch `perf-controls`.
-2. **Performance View: Remove Photos From Task** (new.md, 2026-11-09; same section) — branch `remove-photos`.
+1. **Performance View: Remove Photos From Task** (new.md, 2026-11-09; see "Performance View: controls and removing
+   photos left out") — branch `remove-photos`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: the page's controls above Recent Processing** (new.md, 2026-11-09) — branch `perf-controls`:
+  `performance.html` (the body, then the bar with Refresh and its status on a line of their own, then
+  `.tweakui-performance-recent`), `performance_page.js` (`render` writes Recent Processing and the closing note into
+  that part), `main.css` (the bar a column; labels 15em wide and units 2.5em at 768 px and up, so the sliders line
+  up), `dev/screenshots.js`. Tests: `performance_page.test.js` (1 new: the order, the same slider after a reload),
+  `test_tweakui.py` (the order in the page). Docs `performance.md`, CHANGELOG (Unreleased), screenshots `performance`
+  and `performance-tasks`. Live on 4.0.0 and 3.3.2 at desktop and phone widths: the server's cards, Refresh, the two
+  sliders, then Recent Processing; no sideways scroll; no console errors but livereload.
 - **Release 1.0.0** (2026-11-09) — branch `release/1.0.0`: manifest 1.0.0 (still experimental), CHANGELOG `1.0.0
   (2026-11-09)`, README and Install page's installing steps (a manual upload sends no sha256: only the plugin
   directory does). `dist/tweakui-1.0.0.zip`, sha256 `14f9b3568d0c6b95dcd40d2e07fd676bd4b928c5651399824b944830ff474b4b`.
@@ -2425,7 +2432,7 @@ against what the feature shows now (retaken where stale), the links (`npm run do
 - "Performance UI, move the refresh and history slider controls and the Refresh button above "Recent Processing".
   Move the sliders under the refresh button."
 
-### Phase 1: the controls above Recent Processing (branch `perf-controls`)
+### Phase 1: the controls above Recent Processing (branch `perf-controls`) — done
 Builds on `performance.html` (the `.tweakui-performance-bar` above the body today) and `performance_page.js`
 (`render`). On the Performance page, the bar (Refresh, its status, then Refresh Every and History Length) moves from
 under the page's title to just above the **Recent Processing** heading, below the server's and drives' cards.
