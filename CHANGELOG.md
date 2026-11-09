@@ -4,6 +4,8 @@
 
 ### Diagnostic
 
+- Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or
+  delete them." until something is selected.
 - Performance View: the graphs' readings survive a reload of the page (Ctrl+R or F5) in the same browser tab (its
   session storage); nothing is measured while the page isn't open.
 - Performance View: each graph has its scale inside it (its top, 0, a line at half height), a time line under it

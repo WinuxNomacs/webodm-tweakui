@@ -202,7 +202,7 @@
     function renderSelection(page, state) {
         var p = plan(state), n = p.projects.length + p.tasks.length;
         var text = page.querySelector(".tweakui-storage-selected");
-        if (!n) text.textContent = "Tick tasks or projects to back up or clean up several at once.";
+        if (!n) text.textContent = "Select one or multiple tasks or projects to back up, compact or delete them.";
         else {
             var parts = [];
             if (p.projects.length) parts.push(p.projects.length + (p.projects.length === 1 ? " project" : " projects"));
