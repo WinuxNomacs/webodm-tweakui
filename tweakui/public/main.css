@@ -404,6 +404,12 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
    log's other messages); at phone width the wide columns are hidden and their figures come under the task's name */
 .tweakui-performance .tweakui-performance-gpu, .tweakui-performance .tweakui-performance-node { white-space: nowrap; }
 .tweakui-performance .tweakui-performance-notes-button { margin-left: 6px; vertical-align: baseline; }
+/* A task's Actions menu: over the page where its script puts it (by its button), so the table's scrolling box doesn't cut it off */
+/* A task's Notes and Actions buttons beside its name, wrapping under it together */
+.tweakui-performance .tweakui-performance-task-buttons { display: inline-flex; align-items: center; gap: 4px; margin-left: 6px; vertical-align: middle; }
+.tweakui-performance .tweakui-performance-task-buttons .tweakui-performance-notes-button { margin-left: 0; }
+.tweakui-performance .tweakui-performance-actions > .dropdown-menu { position: fixed; }
+.tweakui-performance .tweakui-performance-action-status:empty { display: none; }
 .tweakui-performance .tweakui-performance-table > tbody > tr.tweakui-performance-notes-row > td { border-top: 0; padding-top: 0; }
 .tweakui-performance .tweakui-performance-notes { margin: 0 0 6px; }
 .tweakui-performance .tweakui-performance-notes > li { padding: 2px 0; }

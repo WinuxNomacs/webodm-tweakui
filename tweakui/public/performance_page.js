@@ -41,6 +41,7 @@
     // hovering it shows it this large
     var PHOTO_OPEN = 2048, PHOTO_HOVER = 256;
     var REASONS = {no_features: "No features", no_gps: "No GPS"};
+    var RESTART_QUESTION = "Restart this task from Load Dataset? Its results are replaced when it finishes.";
 
     function escapeHtml(s) {
         return String(s == null ? "" : s).replace(/[&<>"']/g, function (c) {
@@ -609,6 +610,37 @@
         return parts.length ? '<div class="text-muted small tweakui-performance-detail">' + escapeHtml(parts.join(" \u00b7 ")) + "</div>" : "";
     }
 
+    // A task's address in WebODM's API, with a path after it
+    function taskUrl(t, path) {
+        return "/api/projects/" + encodeURIComponent(t.project.id) + "/tasks/" + encodeURIComponent(t.id) + "/" + (path || "");
+    }
+
+    // A file name from a task's name, without the characters file systems refuse
+    function fileName(name) {
+        // eslint-disable-next-line no-control-regex
+        return String(name).replace(/[\\/:*?"<>|\u0000-\u001f]+/g, "_").trim() || "task";
+    }
+
+    var RESTARTING = "Restarting: it leaves this list while it runs.";
+
+    // A task's Actions menu (a Bootstrap dropdown, opened by the page's own script): its log as WebODM's console
+    // download, Restart From Load Dataset where WebODM's Dashboard offers Restart, and its report when it has one
+    function actionsHtml(t, name) {
+        // In alphabetical order
+        var items = [];
+        if (t.report) items.push('<li><a href="' + escapeHtml(taskUrl(t, "download/report.pdf")) + '" download><i class="fa fa-download fa-fw"></i> Download Report</a></li>');
+        items.push('<li><a href="' + escapeHtml(taskUrl(t, "output/?f=raw")) + '" download="' + escapeHtml(fileName(name) + ".txt") +
+            '"><i class="fa fa-file-alt fa-fw"></i> Download Task Logs</a></li>');
+        if (t.can_restart) items.push('<li><a href="#" role="button" data-act="restart"><i class="fa fa-redo-alt fa-fw"></i> Restart From Load Dataset</a></li>');
+        if (t.report) {
+            items.push('<li><a href="' + escapeHtml(taskUrl(t, "download/report.pdf?inline=1")) + '" target="_blank" rel="noopener noreferrer">' +
+                '<i class="fa fa-file-pdf fa-fw"></i> View Report</a></li>');
+        }
+        return ' <div class="btn-group tweakui-performance-actions"><button type="button" class="btn btn-default btn-xs dropdown-toggle" ' +
+            'data-act="actions" aria-haspopup="true" aria-expanded="false"' + (t.restarting ? " disabled" : "") +
+            '>Actions <span class="caret"></span></button><ul class="dropdown-menu">' + items.join("") + "</ul></div>";
+    }
+
     function taskHtml(t, system) {
         var name = t.name || "Task of " + (t.created_at ? t.created_at.slice(0, 10) : "?");
         var where = escapeHtml(t.project.name) + (t.owner ? " of " + escapeHtml(t.owner) : "");
@@ -616,8 +648,11 @@
         var notes = notesButtonHtml(t, open);
         var wide = "tweakui-performance-wide ";
         return '<tr data-task="' + escapeHtml(t.id) + '"' + (t.status ? ' data-status="' + escapeHtml(t.status) + '"' : "") + '><td><a href="/map/project/' +
-            escapeHtml(t.project.id) + "/task/" + escapeHtml(t.id) + '/">' + escapeHtml(name) + "</a>" + notes +
-            '<div class="text-muted small">' + where + "</div>" + statusHtml(t) + detailHtml(t, system) + "</td>" +
+            escapeHtml(t.project.id) + "/task/" + escapeHtml(t.id) + '/">' + escapeHtml(name) + "</a>" +
+            ' <span class="tweakui-performance-task-buttons">' + notes + actionsHtml(t, name) + "</span>" +
+            '<div class="text-muted small">' + where + "</div>" + statusHtml(t) +
+            '<div class="small text-muted tweakui-performance-action-status" aria-live="polite">' + (t.restarting ? RESTARTING : "") + "</div>" +
+            detailHtml(t, system) + "</td>" +
             '<td class="' + wide + 'tweakui-performance-date">' + escapeHtml(t.created_at ? new Date(t.created_at).toLocaleDateString() : "") + "</td>" +
             '<td class="tweakui-performance-number">' + photosHtml(t) + "</td>" +
             '<td class="tweakui-performance-number">' + escapeHtml(formatDuration(t.seconds)) + "</td>" +
@@ -868,6 +903,7 @@
                 var server = report.server || {};
                 reading(server.cpu, server.disk_io, server.memory, report.nodes);
                 state.diskAt = Date.now();
+                closeMenu();
                 render(page, report, state.load, unitSystem(win), state.diskRates, view());
                 showTip();
                 if (status) status.textContent = "Updated " + new Date().toLocaleTimeString();
@@ -914,6 +950,7 @@
         // The maps' unit system changed (in another tab, or Units in Header): the figures again in it
         var onUnits = ui.guard(NAME, function () {
             if (state.report) {
+                closeMenu();
                 render(page, state.report, state.load, unitSystem(win), state.diskRates, view());
                 showTip();
             }
@@ -927,6 +964,9 @@
             win.removeEventListener("pagehide", onLeave);
             doc.removeEventListener(UNIT_EVENT, onUnits);
             win.removeEventListener("scroll", hideThumb, true);
+            doc.removeEventListener("click", onAway);
+            win.removeEventListener("scroll", onMove, true);
+            win.removeEventListener("resize", onMove);
         }
 
         // Photos Left Out: hovering or focusing a photo's name shows its thumbnail to its right, from its top down (so the
@@ -958,6 +998,100 @@
             page.addEventListener(type, ui.guard(NAME, function (e) { if (photoLink(e)) hideThumb(); }));
         });
         win.addEventListener("scroll", hideThumb, true);
+
+        // A task's Actions menu: over the page (fixed, so the table's scrolling box doesn't cut it off), below its
+        // button, or above it where there is no room below, and kept there as the page scrolls or resizes; a click
+        // anywhere, Escape or its button leaving the window closes it
+        var openMenu = null;
+        function closeMenu(focus) {
+            if (!openMenu) return;
+            var group = openMenu, toggle = group.querySelector("[data-act=actions]");
+            openMenu = null;
+            group.classList.remove("open");
+            toggle.setAttribute("aria-expanded", "false");
+            if (focus) toggle.focus();
+        }
+        function openActions(toggle) {
+            var group = toggle.parentNode;
+            if (openMenu === group) return closeMenu();
+            closeMenu();
+            group.classList.add("open");
+            toggle.setAttribute("aria-expanded", "true");
+            openMenu = group;
+            placeMenu();
+            // Focused without scrolling the table's box to the menu
+            var first = group.querySelector(".dropdown-menu a");
+            if (first) first.focus({preventScroll: true});
+        }
+        var onAway = ui.guard(NAME, function (e) {
+            var toggle = e.target && e.target.closest ? e.target.closest("[data-act=actions]") : null;
+            if (openMenu && !(toggle && toggle.parentNode === openMenu)) closeMenu();
+        });
+        function placeMenu() {
+            var toggle = openMenu.querySelector("[data-act=actions]"), list = openMenu.querySelector(".dropdown-menu");
+            var box = toggle.getBoundingClientRect(), high = win.innerHeight || 0, wide = win.innerWidth || 0;
+            if (high && (box.bottom < 0 || box.top > high)) return closeMenu();
+            var top = box.bottom + 2;
+            if (high && top + list.offsetHeight > high - 8 && box.top - list.offsetHeight - 2 >= 8) top = box.top - list.offsetHeight - 2;
+            list.style.top = Math.round(top) + "px";
+            list.style.left = Math.round(Math.max(8, Math.min(box.left, wide - list.offsetWidth - 8))) + "px";
+        }
+        var onMove = ui.guard(NAME, function () { if (openMenu) placeMenu(); });
+        doc.addEventListener("click", onAway);
+        win.addEventListener("scroll", onMove, true);
+        win.addEventListener("resize", onMove);
+        page.addEventListener("keydown", ui.guard(NAME, function (e) {
+            if (!openMenu) return;
+            if (e.key === "Escape") {
+                closeMenu(true);
+                return;
+            }
+            if (e.key !== "ArrowDown" && e.key !== "ArrowUp") return;
+            var items = Array.prototype.slice.call(openMenu.querySelectorAll(".dropdown-menu a"));
+            var at = items.indexOf(doc.activeElement);
+            e.preventDefault();
+            items[(at + (e.key === "ArrowDown" ? 1 : items.length - 1)) % items.length].focus({preventScroll: true});
+        }));
+
+        // Restart From Load Dataset: asks first, then does what WebODM's Restart button does by default
+        // (TaskListItem.jsx): the task's options get rerun-from set to the node's second step (dataset), or lose it
+        // and the node's copy where the node has none, then the task is restarted; the row says so, and the next
+        // Refresh lists it no more while it runs
+        function restartTask(link) {
+            var row = link.closest("tr[data-task]");
+            var id = row && row.getAttribute("data-task");
+            var t = state.report && state.report.tasks.filter(function (x) { return String(x.id) === id; })[0];
+            if (!t || !win.confirm(RESTART_QUESTION)) return;
+            var toggle = row.querySelector("[data-act=actions]"), said = row.querySelector(".tweakui-performance-action-status");
+            toggle.disabled = true;
+            said.className = "small text-muted tweakui-performance-action-status";
+            said.textContent = "Restarting...";
+            function send(path, method, body) {
+                return fetchFn(taskUrl(t, path), {method: method, credentials: "same-origin",
+                    headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(doc)},
+                    body: body === undefined ? undefined : JSON.stringify(body)}).then(function (res) {
+                    if (!res.ok) throw new Error(res.status);
+                    return res.json();
+                });
+            }
+            send("", "GET").then(function (task) {
+                var from = (task.can_rerun_from || []).length > 1 ? task.can_rerun_from[1] : null;
+                var options = (task.options || []).filter(function (o) { return o.name !== "rerun-from"; });
+                if (from !== null) options.push({name: "rerun-from", value: from});
+                var data = {options: options};
+                if (from === null) data.uuid = "";
+                return send("", "PATCH", data);
+            }).then(function () {
+                return send("restart/", "POST");
+            }).then(function () {
+                t.restarting = true;
+                said.textContent = RESTARTING;
+            }).catch(function () {
+                toggle.disabled = false;
+                said.className = "small text-danger tweakui-performance-action-status";
+                said.textContent = "Could not restart the task.";
+            });
+        }
 
         // A graph: moving over it (or touching it) shows the readings under the pointer; leaving it, or touching
         // elsewhere, hides them
@@ -1021,6 +1155,17 @@
 
         // A task's Notes button opens and closes the row of its notes below it; Copy Names copies a list's names
         page.addEventListener("click", ui.guard(NAME, function (e) {
+            var actions = e.target && e.target.closest ? e.target.closest("[data-act=actions]") : null;
+            if (actions) {
+                openActions(actions);
+                return;
+            }
+            var restart = e.target && e.target.closest ? e.target.closest("[data-act=restart]") : null;
+            if (restart) {
+                e.preventDefault();
+                restartTask(restart);
+                return;
+            }
             var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names]") : null;
             if (copy) {
                 var icon = copy.querySelector("i");

@@ -218,12 +218,13 @@ CATEGORIES = [
                     _("Adds a Performance page under Diagnostic in the side menu (under TweakUI when the Diagnostic "
                       "plugin is off). It shows each processing node's cores, memory and queue, the server's CPU load, "
                       "disk space and activity and memory, your recent tasks (failed ones too) with their processing times and what their "
-                      "logs warn of (with a button to remove the photos a task left out), and whether the nodes have enough memory for your tasks, by WebODM's hardware "
+                      "logs warn of (with a button to remove the photos a task left out) and an Actions menu (its log, "
+                      "Restart, its report), and whether the nodes have enough memory for your tasks, by WebODM's hardware "
                       "requirements."),
                     preview="performance", admin_label=_("Performance View"),
                     admin_help=_("Users may turn on the Performance page: the processing nodes they may use, the "
                                  "server's CPU load, disk and memory, and their recent tasks with what their logs "
-                                 "warn of; they can remove photos left out from their own tasks."),
+                                 "warn of; they can remove photos left out from their own tasks and restart them."),
                     parts=[
                         Setting("performance_refresh", 3, _("Refresh Every"),
                                 _("How often the Performance page refreshes the CPU load, the disks' activity and "
