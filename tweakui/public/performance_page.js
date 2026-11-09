@@ -28,7 +28,7 @@
     var EVERY_DEFAULT = 3, HISTORY_DEFAULT = 5;
     // The graphs: the readings kept (History Length's longest), the drawing's size (stretched to the card's width), and
     // a line broken where readings stopped for this many refreshes (the tab hidden), or at least this long
-    var HISTORY_KEEP = 30 * 60000, GRAPH_W = 300, GRAPH_H = 40, GAP_REFRESHES = 3, GAP_MIN = 15000;
+    var HISTORY_KEEP = 30 * 60000, GRAPH_W = 300, GRAPH_H = 44, GAP_REFRESHES = 3, GAP_MIN = 15000;
     // WebODM's unit system (Units.js): where it keeps it and the event it fires when it changes
     var UNIT_KEY = "unit_system", UNIT_EVENT = "onUnitSystemChanged";
     var FT = 3.28083989501, FT2_ACRE = 43560;
@@ -153,10 +153,18 @@
         return kind === "rate" ? formatRate(v) : percent(v);
     }
 
+    // How far back a graph's window starts, as its time line says: "5 min ago"
+    function spanText(ms) {
+        var minutes = Math.round(ms / 60000);
+        return minutes >= 1 ? formatNumber(minutes) + " min ago" : Math.round(ms / 1000) + " s ago";
+    }
+
     // A graph of one or two series over the last view.span ms (view: {history, now, span, gap}; none draws an empty
-    // one): the newest at the right, a percent graph from 0 to 100%, a rate graph up to its highest reading in the window
-    // (at its top left, once it has readings). The first series is in the theme's link colour (the bars' colour, start's
-    // accent) with a light fill under it, the second in its text colour. Hovering it shows the readings under the pointer (start's hover)
+    // one): the newest at the right, a percent graph from 0 to 100%, a rate graph up to its highest reading in the window.
+    // Its scale is inside it: the top (100%, or the rate's top once it has readings) at top left, 0 at bottom left and a
+    // faint line at half height; under it, its time line (the window's start, Now) and, for two series, a legend. The
+    // first series is in the theme's link colour (the bars' colour, start's accent) with a light fill under it, the
+    // second in its text colour. Hovering it shows the readings under the pointer (start's hover)
     function graphHtml(view, id, series, kind) {
         var from = view ? view.now - view.span : 0, span = view ? view.span : 1, gap = view ? view.gap : 0;
         var lists = series.map(function (s) { return view ? runs(view.history[s.key] || [], from, gap) : []; });
@@ -177,8 +185,18 @@
         return '<div class="tweakui-performance-graph theme-border" data-graph="' + escapeHtml(id) + '" data-kind="' + kind +
             '" data-series="' + escapeHtml(series.map(function (s) { return s.key; }).join(" ")) + '" data-labels="' +
             escapeHtml(series.map(function (s) { return s.label || ""; }).join("|")) + '">' +
-            (kind === "rate" && any ? '<span class="tweakui-performance-graph-max text-muted">' + escapeHtml(formatRate(max)) + "</span>" : "") +
-            '<svg viewBox="0 0 ' + GRAPH_W + " " + GRAPH_H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' + paths + "</svg></div>";
+            (kind === "percent" || any ? '<span class="tweakui-performance-graph-max text-muted" aria-hidden="true">' +
+                escapeHtml(kind === "rate" ? formatRate(max) : "100%") + "</span>" : "") +
+            '<span class="tweakui-performance-graph-zero text-muted" aria-hidden="true">0</span>' +
+            '<svg viewBox="0 0 ' + GRAPH_W + " " + GRAPH_H + '" preserveAspectRatio="none" aria-hidden="true" focusable="false">' +
+            '<line class="tweakui-performance-graph-grid" x1="0" x2="' + GRAPH_W + '" y1="' + GRAPH_H / 2 + '" y2="' + GRAPH_H / 2 + '"></line>' +
+            paths + "</svg></div>" +
+            (view ? '<div class="tweakui-performance-graph-axis text-muted small" aria-hidden="true"><span>' + escapeHtml(spanText(span)) +
+                "</span><span>Now</span></div>" : "") +
+            (series.length > 1 ? '<div class="tweakui-performance-graph-legend small" aria-hidden="true">' + series.map(function (s, i) {
+                return '<span><i class="tweakui-performance-graph-swatch ' + (i === 0 ? "tweakui-performance-accent" : "theme-color-primary") +
+                    '" aria-hidden="true"></i> ' + escapeHtml((s.label || "") + (kind === "rate" ? " (/s)" : "")) + "</span>";
+            }).join("") + "</div>" : "");
     }
 
     // What a graph's hover says at time t: each series' reading nearest it (within view.gap), then the time; "" without
@@ -975,6 +993,6 @@
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, assessmentHtml: assessmentHtml, tasksSummary: tasksSummary, formatArea: formatArea, formatLength: formatLength,
         tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
-        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip,
+        diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip, spanText: spanText,
         record: record, niceCeil: niceCeil};
 });

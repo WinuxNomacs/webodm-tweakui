@@ -80,10 +80,14 @@ async function started(answers, every, history) {
 }
 
 const flush = () => new Promise(r => setTimeout(r, 0));
-// Each element's text nodes joined with spaces, as the page reads (jsdom has no innerText)
+// Each element's text nodes joined with spaces, as the page reads (jsdom has no innerText), without what is hidden
+// from screen readers (a graph's scale, time line and legend)
 function words(e) {
     const walker = document.createTreeWalker(e, NodeFilter.SHOW_TEXT), out = [];
-    while (walker.nextNode()) out.push(walker.currentNode.nodeValue);
+    while (walker.nextNode()) {
+        const parent = walker.currentNode.parentElement;
+        if (!(parent && parent.closest("[aria-hidden=true]"))) out.push(walker.currentNode.nodeValue);
+    }
     return out.join(" ").replace(/\s+/g, " ").trim();
 }
 const texts = (root, selector) => Array.from(root.querySelectorAll(selector)).map(words);
@@ -528,13 +532,36 @@ describe("the Performance page", () => {
         const div = document.createElement("div");
         div.innerHTML = performancePage.graphHtml(view, "cpu", [{key: "cpu"}], "percent");
         const paths = Array.from(div.querySelectorAll("path:not(.tweakui-performance-graph-area)")).map(p => p.getAttribute("d"));
-        // A percent graph from 0 (the bottom, 39) to 100% (the top, 1); the reading after a minute's gap is a run of its own
-        expect(paths).toEqual(["M0.0 39.0 L5.0 20.0 L10.0 1.0", "M300.0 29.5 h0"]);
+        // A percent graph from 0 (the bottom, 43) to 100% (the top, 1); the reading after a minute's gap is a run of its own
+        expect(paths).toEqual(["M0.0 43.0 L5.0 22.0 L10.0 1.0", "M300.0 32.5 h0"]);
         expect(div.querySelectorAll(".tweakui-performance-graph-area")).toHaveLength(1);
-        expect(div.querySelector(".tweakui-performance-graph-max")).toBeNull();
         expect(performancePage.niceCeil(0)).toBe(1);
         expect(performancePage.niceCeil(130)).toBe(200);
         expect(performancePage.niceCeil(4200)).toBe(5000);
+    });
+
+    test("a graph's scale is inside it, its time line under it follows History Length, and two lines get a legend", () => {
+        const div = document.createElement("div");
+        const percent = {history: {cpu: [[0, 0.2]]}, now: 300000, span: 300000, gap: 15000};
+        div.innerHTML = performancePage.graphHtml(percent, "cpu", [{key: "cpu"}], "percent");
+        expect([div.querySelector(".tweakui-performance-graph-max").textContent, div.querySelector(".tweakui-performance-graph-zero").textContent])
+            .toEqual(["100%", "0"]);
+        expect(div.querySelector("line.tweakui-performance-graph-grid").getAttribute("y1")).toBe("22");
+        expect(Array.from(div.querySelectorAll(".tweakui-performance-graph-axis span")).map(e => e.textContent)).toEqual(["5 min ago", "Now"]);
+        expect(div.querySelector(".tweakui-performance-graph-legend")).toBeNull();
+        div.innerHTML = performancePage.graphHtml(Object.assign({}, percent, {span: 30 * 60000}), "cpu", [{key: "cpu"}], "percent");
+        expect(div.querySelector(".tweakui-performance-graph-axis span").textContent).toBe("30 min ago");
+        // A rate graph shows its top only once it has readings; its two lines are named under it in their colours
+        const rate = {history: {r: [[0, 3]]}, now: 60000, span: 60000, gap: 15000};
+        div.innerHTML = performancePage.graphHtml({history: {}, now: 0, span: 60000, gap: 1}, "ops", [{key: "r", label: "Reads"}, {key: "w", label: "Writes"}], "rate");
+        expect(div.querySelector(".tweakui-performance-graph-max")).toBeNull();
+        div.innerHTML = performancePage.graphHtml(rate, "ops", [{key: "r", label: "Reads"}, {key: "w", label: "Writes"}], "rate");
+        expect(div.querySelector(".tweakui-performance-graph-max").textContent).toBe("5/s");
+        expect(Array.from(div.querySelectorAll(".tweakui-performance-graph-legend span")).map(e => [e.textContent.trim(), e.querySelector("i").className]))
+            .toEqual([["Reads (/s)", "tweakui-performance-graph-swatch tweakui-performance-accent"], ["Writes (/s)", "tweakui-performance-graph-swatch theme-color-primary"]]);
+        // Without a window yet (the page before its first reading), no time line
+        div.innerHTML = performancePage.graphHtml(null, "cpu", [{key: "cpu"}], "percent");
+        expect(div.querySelector(".tweakui-performance-graph-axis")).toBeNull();
     });
 
     test("a rate graph has two lines, the first in the theme's link colour and the second in its text colour, up to its highest reading", () => {
@@ -543,7 +570,7 @@ describe("the Performance page", () => {
         div.innerHTML = performancePage.graphHtml(view, "ops", [{key: "r", label: "Reads"}, {key: "w", label: "Writes"}], "rate");
         expect(Array.from(div.querySelectorAll("g")).map(g => g.getAttribute("class"))).toEqual(["tweakui-performance-accent", "theme-color-primary"]);
         expect(div.querySelector(".tweakui-performance-graph-max").textContent).toBe("200/s");
-        expect(div.querySelector("g:last-child path").getAttribute("d")).toBe("M150.0 37.1 L300.0 39.0");
+        expect(div.querySelector("g:last-child path").getAttribute("d")).toBe("M150.0 40.9 L300.0 43.0");
         expect(performancePage.graphTip(view, ["r", "w"], ["Reads", "Writes"], "rate", 2000))
             .toBe("Reads 130/s \u00b7 Writes 0/s \u00b7 " + new Date(3000).toLocaleTimeString());
         expect(performancePage.graphTip(view, ["r"], [""], "rate", 60000)).toBe("");

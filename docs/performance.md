@@ -72,7 +72,7 @@ marked **Tasks**. Since the last refresh, each shows:
 
 - **Reads** and **Writes**: operations per second, bytes per second, and the average size of one.
 - A graph of the reads (in the theme's link colour) and the writes (in its text colour) per second, scaled to the
-  highest in its window (shown at its top left).
+  highest in its window (shown at its top left), with a legend under it naming each line.
 - **Busy**: the share of time the disk was working, with its graph; the figure turns to a warning colour past 80% and
   to danger past 95%. A disk that is always busy holds the processing up.
 - **Wait**: the average time an operation took, waiting included.
@@ -87,10 +87,13 @@ counts too.
 
 ### Graphs
 
-Each live figure has a graph of its readings since the page opened, the newest at the right, over the last
-[History Length](#history-length): CPU Load, the server's memory, each node's memory, and each drive's reads and writes
-and Busy. Percentages are drawn from 0 to 100%. Moving the pointer over a graph (or touching it on a phone) shows the
-readings under it and their time. The line breaks where readings stopped, as while the browser tab was hidden.
+Each live figure has a graph of its readings since the page opened, the newest at the right, over the last [History
+Length](#history-length): CPU Load, the server's memory, each node's memory, and each drive's reads and writes and
+Busy. Percentages are drawn from 0 to 100%. Each graph's scale is inside it, faint: its top (100%, or a drive's
+highest rate) at the top left, 0 at the bottom left and a dotted line at half height. Under it, its time line runs
+from the window's start ("5 min ago", following History Length) at the left to Now at the right. Moving the pointer
+over a graph (or touching it on a phone) shows the readings under it and their time. The line breaks where readings
+stopped, as while the browser tab was hidden.
 
 The page keeps the readings while it is open, up to 30 minutes of them, and **Refresh** keeps them; reloading the page
 starts again. Nothing is kept on the server, so the graphs start empty each time the page opens. A memory figure
