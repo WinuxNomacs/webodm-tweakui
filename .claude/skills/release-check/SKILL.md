@@ -16,9 +16,13 @@ and committed.
    `LICENSE`; no `tests/`, `public/__tests__/`, `node_modules` or `__pycache__`. Note the sha256.
 3. **WebODM without the mounted plugin:** `TW_PLUGIN_DIR=<an empty folder in the scratchpad> dev/webodm.sh up
    --force-recreate webapp worker` (4.0.0), and wait for http://localhost:8005 to answer. TweakUI's changes are gone.
+   WebODM logs "Cleaned [tweakui] plugin from database": only its row in the plugin list, not its data stores
+   (users' settings and themes are kept). Ask the user first: this restarts their 4.0.0 stack.
 4. **Install the zip as a user would:** log in as the dev admin (the `live-check` skill), Administration >
    Plugins, upload the zip (only the plugin directory sends a sha256 for WebODM to check). Restart the webapp if WebODM asks to.
-5. **Live check on the installed copy** (the `live-check` skill): every feature in the README.
+5. **Live check on the installed copy** (the `live-check` skill): every feature in the README. Expected: a 404 for a
+   thermal task's thumbnail on the Dashboard (WebODM's own) and a POST to a task's `3d/scene` (WebODM's 3D view saves its
+   view when it changes).
 6. **Leave it as found:** remove the installed plugin in Administration > Plugins, then
    `dev/webodm.sh up --force-recreate webapp worker` without `TW_PLUGIN_DIR` to mount `tweakui/` again.
 

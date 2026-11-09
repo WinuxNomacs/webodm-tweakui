@@ -2,16 +2,22 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (order confirmed by the user, 2026-11-08; the two Performance changes put first, 2026-11-08)
-1. **Release 1.0.0** (see "Documentation review before the release") — `release/1.0.0`: manifest 1.0.0 (still
-   experimental), the CHANGELOG's heading, the README's and Install page's "Once released" and `tweakui-X.Y.Z.zip`,
-   `dev/package.sh`, the `release-check` skill (both stacks and WebODM's Windows app).
+**Up next**
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Release 1.0.0** (2026-11-09) — branch `release/1.0.0`: manifest 1.0.0 (still experimental), CHANGELOG `1.0.0
+  (2026-11-09)`, README and Install page's installing steps (a manual upload sends no sha256: only the plugin
+  directory does). `dist/tweakui-1.0.0.zip`, sha256 `14f9b3568d0c6b95dcd40d2e07fd676bd4b928c5651399824b944830ff474b4b`.
+  Checks: Django with WebODM's `test_plugins` (134 on 4.0.0 and 134 on 3.3.2), Jest 347, ESLint, Ruff, selector check
+  on both stacks (every selector found); installed from the zip through Administration > Plugins on 4.0.0 (without
+  the mounted folder) and every feature checked live, the graphs too; upgraded 0.1.0 to 1.0.0 on WebODM's Windows app
+  (the Performance page's drives C: and D: live there for the first time). The tag, the GitHub release and the
+  WebODM-Plugins `directory.json` entry are the user's.
 - **Documentation review before the release** (new.md, 2026-11-08) — branch `docs-review`: every docs page, the
   README, CONTRIBUTING and Adding a Tweak checked against `features.py`, the scripts' figures and `core.js`. Fixed:
   the home page's cards (side menu, preset menu, Zoom Sensitivity, search, backup and import, Performance's live
