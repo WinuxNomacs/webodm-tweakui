@@ -95,9 +95,13 @@ from the window's start ("5 min ago", following History Length) at the left to N
 over a graph (or touching it on a phone) shows the readings under it and their time. The line breaks where readings
 stopped, as while the browser tab was hidden.
 
-The page keeps the readings while it is open, up to 30 minutes of them, and **Refresh** keeps them; reloading the page
-starts again. Nothing is kept on the server, so the graphs start empty each time the page opens. A memory figure
-turns to a warning colour past 80% used and to danger past 95%.
+The page keeps up to 30 minutes of readings, and **Refresh** keeps them. So does reloading the page (Ctrl+R or F5)
+or coming back to it in the same browser tab: the browser keeps them for that tab only (its session storage), and the
+graphs carry on, with a gap for the time the page wasn't open. Nothing is measured while the page isn't open, and
+nothing is kept on the server. A new tab or window starts with empty graphs, and closing the tab forgets its readings.
+After a quick reload the CPU load and the disks' activity show at once; after longer away, they need a second
+reading first, as when the page opens. A memory figure turns to a warning colour past 80% used and to danger past
+95%.
 
 ### Refresh Every
 

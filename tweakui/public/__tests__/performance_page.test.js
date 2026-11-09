@@ -64,6 +64,7 @@ const json = (data, ok = true, status = 200) => Promise.resolve({ok, status, jso
 const views = [];
 afterEach(() => {
     views.splice(0).forEach(v => v && v.stop());
+    window.sessionStorage.clear();
     jest.useRealTimers();
 });
 
@@ -372,6 +373,44 @@ describe("the Performance page", () => {
             .toBe("Recent tasks took about as long per photo as earlier ones (2.1s against 2.0s).");
         const {root} = await started([json(report({trend: {recent: 2, earlier: 4, change: -0.5, same: false}}))]);
         expect(root.querySelector(".tweakui-performance-trend").textContent).toMatch(/50% less/);
+    });
+
+    test("the readings are kept for the tab over a reload, and the counters only when the reload was quick", async () => {
+        const first = await started([json(report({server: Object.assign(report().server, {cpu: {total: [100, 1000]}})}))]);
+        first.view.state.history = {cpu: [[Date.now() - 60000, 0.123456], [Date.now() - 31 * 60000, 0.5]], memory: [[Date.now() - 1000, 0.9]]};
+        window.dispatchEvent(new Event("pagehide"));
+        const saved = JSON.parse(window.sessionStorage.getItem("tweakui.performance.readings"));
+        expect(saved.history.cpu[0][1]).toBe(0.1235);
+        expect(saved.cpu).toEqual({total: [100, 1000]});
+        first.view.stop();
+        // The page again: the readings back (the one older than 30 minutes dropped), and the saved counters give a load at once
+        const again = await started([json(report({server: Object.assign(report().server, {cpu: {total: [400, 2000]}})}))]);
+        expect(again.view.state.history.cpu.map(p => p[1])).toEqual([0.1235, 0.3]);
+        expect(again.view.state.history.memory[0][1]).toBe(0.9);
+        expect(again.view.state.load).toEqual({total: 0.3});
+    });
+
+    test("saved readings are read back only as packed, old counters are dropped, and storage that fails starts empty", async () => {
+        const now = 10 * 60000;
+        expect(performancePage.unpackReadings(null, now, 15000)).toBeNull();
+        expect(performancePage.unpackReadings({at: "x", history: {}}, now, 15000)).toBeNull();
+        expect(performancePage.unpackReadings({at: now - 1000, history: {cpu: [[now - 5000, 0.5], ["bad", 1], [now + 60000, 0.2]], odd: "no"},
+            cpu: {total: [1, 2]}, io: {time: 1, drives: []}}, now, 15000))
+            .toEqual({history: {cpu: [[now - 5000, 0.5]]}, cpu: {total: [1, 2]}, io: {time: 1, drives: []}});
+        // Saved a minute ago: the readings, but no counters (a load would span the time away)
+        expect(performancePage.unpackReadings({at: now - 60000, history: {}, cpu: {total: [1, 2]}}, now, 15000))
+            .toEqual({history: {}, cpu: null, io: null});
+        window.sessionStorage.setItem("tweakui.performance.readings", "{not json");
+        const broken = await started([json(report())]);
+        expect(broken.view.state.history.cpu).toBeUndefined();
+        broken.view.stop();
+        const getItem = jest.spyOn(Storage.prototype, "getItem").mockImplementation(() => { throw new Error("blocked"); });
+        const setItem = jest.spyOn(Storage.prototype, "setItem").mockImplementation(() => { throw new Error("full"); });
+        const blocked = await started([json(report())]);
+        window.dispatchEvent(new Event("pagehide"));
+        expect(blocked.view.state.report).not.toBeNull();
+        getItem.mockRestore();
+        setItem.mockRestore();
     });
 
     test("the page's controls sit between the server's cards and Recent Processing, and stay put as the page redraws", async () => {

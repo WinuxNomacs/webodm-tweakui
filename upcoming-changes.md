@@ -3,14 +3,20 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: the graphs' readings kept over a reload** (new.md, 2026-11-09; see "Performance View: graphs'
-   scales, readings kept over a reload, General Assessment") — branch `perf-history-reload`.
+- Nothing planned: new requests arrive in `new.md`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: the graphs' readings kept over a reload** (new.md, 2026-11-09) — branch
+  `perf-history-reload`: `performance_page.js` (`packReadings`, values to 4 decimals; `unpackReadings`, readings
+  checked and those older than 30 minutes dropped, the counters only within the gap; `saveReadings` after a reading
+  at most every 5 s and on hidden or `pagehide`, `restoreReadings` once Refresh Every is known; every storage call
+  in try/catch). Tests: `performance_page.test.js` (2 new; sessionStorage cleared after each test). Docs
+  `performance.md` (Graphs), CHANGELOG. Live on 4.0.0: 20 s of readings, F5, the CPU load at once and one unbroken
+  line; a new tab empty; about 2 KB saved after 20 s.
 - **Performance View: the graphs' scales and legends, 10% taller** (new.md, 2026-11-09) — branch `perf-graph-scales`:
   `performance_page.js` (`graphHtml`: the top label for every percent graph and a rate graph with readings, a 0
   label, a dashed gridline at half height, the time line from `spanText(view.span)` to Now when there is a view, a
@@ -2533,7 +2539,7 @@ The graphs are 10% taller: 42 px to 46 px (`GRAPH_H` 40 to 44). The labels stay 
 themes, and nothing scrolls sideways at phone width. Tests: Jest (`graphHtml`'s labels, the legend, the window's start
 following History Length). Docs `performance.md` (Graphs), CHANGELOG, screenshot `performance`.
 
-### Phase 3: the graphs' readings kept over a reload (branch `perf-history-reload`)
+### Phase 3: the graphs' readings kept over a reload (branch `perf-history-reload`) — done
 Builds on `record` and `state.history`, which are kept in the page today and lost on a reload.
 - The page saves its readings (`state.history`, up to History Length's longest, 30 minutes) and the last CPU and disk
   counters to the browser's **session storage** under one key. It saves after each live refresh, no more often than
