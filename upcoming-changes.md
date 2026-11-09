@@ -3,7 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+1. **Performance View: General Assessment** (new.md, 2026-11-09; see "Performance View: graphs' scales, readings kept
+   over a reload, General Assessment") — branch `perf-assessment`.
+2. **Performance View: the graphs' scales and legends, 10% taller** (same section) — branch `perf-graph-scales`.
+3. **Performance View: the graphs' readings kept over a reload** (same section) — branch `perf-history-reload`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -2468,3 +2471,66 @@ View's task actions (permission checks, CSRF).
   (checked on the server, through `get_image_path`'s traversal check). Afterwards the list redraws without them, and
   a note says to Restart the task to process it without them. Tests on both stacks; docs `performance.md`, README,
   CHANGELOG; the screenshot `performance-tasks` if it shows the buttons.
+
+## Performance View: graphs' scales, readings kept over a reload, General Assessment (new.md, 2026-11-09)
+
+### Requests
+- "Performance UI, add scales and legends to the graphs so users can easily tell what the graph data means. Increase
+  the height of the graphs by 10% to make them a bit taller as well."
+- "Performance UI, if possible can the performance graph metrics survive a regular page refresh (ctrl-R or F5) so they
+  don't start over every time? I don't want something that runs in the background while off page though."
+- "Performance UI, create a section called General Assessment at the top that contains all of the performance
+  assessment bullets and messages (e.g. node-odx-1 has enough memory etc....). Help make the area standout more."
+
+### Decided (2026-11-09)
+- Scales: **labels inside the graph** (not a gutter), so a graph keeps its full width.
+- Readings over a reload: **this tab only** (the browser's session storage), not shared between tabs or kept after
+  the tab closes.
+- General Assessment: **a card with a coloured left edge** in the worst line's colour (not an alert box).
+- General Assessment holds the verdicts, **the time-per-photo trend** (moved up from Recent Processing) and **a
+  summary of recent tasks' problems**. No live warnings.
+
+### Phase 1: General Assessment (branch `perf-assessment`)
+Builds on `verdictsHtml` and `trendText` (`performance_page.js`) and `verdicts` and `task_entry` (`performance.py`).
+On the Performance page, the verdict lines that sit unlabelled at the top today go into a full-width card headed
+**General Assessment**, above Processing Nodes. The card has the theme's highlight background (`theme-background-highlight`)
+and a thick left edge coloured by its worst line: the theme's success, warning or danger colour, read from WebODM's
+classes, not hard-coded. It holds, in order:
+- The verdicts as today, the most pressing first.
+- A line summing up Recent Processing's problems, built from the tasks the page already has (status and notes). For
+  example "2 of your last 10 tasks failed (1 ran out of memory)" or "3 tasks left photos out: see their Notes in
+  Recent Processing", with a link down to Recent Processing. It is a warning when any task failed, else information,
+  and there is no line when nothing is wrong. An admin's line reads "on this server".
+- The time-per-photo trend sentence, moved up from under Recent Processing.
+Tests: Jest (the card, its edge by level, the summary's wording, the trend moved) and Django if `performance.py`
+gives the summary. Docs `performance.md` (a General Assessment section in place of "At the top are sentences..."),
+README, CHANGELOG, screenshot `performance`.
+
+### Phase 2: the graphs' scales and legends, 10% taller (branch `perf-graph-scales`)
+Builds on `graphHtml`, `graphTip` and the graph CSS. Each graph (CPU Load, the server's and each node's Memory, a
+drive's Reads/Writes and Busy) gets:
+- Small muted labels inside the graph: its top value at top left (100% for a percent graph, the rate graph's top as
+  today, "20/s") and 0 at bottom left, with a faint gridline at half height.
+- A line under it with the window's start at left ("5 min ago", following History Length) and "Now" at right.
+- A legend under a two-series graph (Reads and Writes): a swatch in each series' colour (the theme's link and text
+  colours, as the lines) and its name with the unit ("Reads (/s)", "Writes (/s)"). A single-series graph is named by
+  its row's label, so it needs no legend.
+The graphs are 10% taller: 42 px to 46 px (`GRAPH_H` 40 to 44). The labels stay readable in the light and dark
+themes,
+and nothing scrolls sideways at phone width. Tests: Jest (`graphHtml`'s labels, the legend, the window's start
+following History Length). Docs `performance.md` (Graphs), CHANGELOG, screenshot `performance`.
+
+### Phase 3: the graphs' readings kept over a reload (branch `perf-history-reload`)
+Builds on `record` and `state.history`, which are kept in the page today and lost on a reload.
+- The page saves its readings (`state.history`, up to History Length's longest, 30 minutes) and the last CPU and disk
+  counters to the browser's **session storage** under one key. It saves after each live refresh, no more often than
+  every few seconds, and when the page is hidden or unloaded.
+- On opening, the page reads them back and drops readings older than 30 minutes. If the last counters are recent
+  (within the gap a line breaks at), the first live reading after a reload gives a load at once, with no second
+  wait. After a longer absence the line shows a gap, as it does today while the tab is hidden.
+- Nothing runs while the page isn't open. Session storage belongs to the tab: a new tab starts fresh, and closing the
+  tab forgets the readings. Every read and write is in a try/catch, so a private window or blocked storage just
+  starts empty. The data are numbers only: 30 minutes at a 1-second refresh for about 10 series is a few hundred KB,
+  well under the browser's limit, and a failed write (quota) only skips that save.
+Tests: Jest (saved and read back, old readings dropped, broken or missing storage starts fresh, counters kept).
+Docs `performance.md` (Graphs: "reloading the page starts again" changes), CHANGELOG.
