@@ -18,8 +18,8 @@ other files. Projects shared with you are not listed: they count toward their ow
 
 ## Cleaning up
 
-Use a row's own **Compact** or **Delete**, or tick several tasks and projects and use the bar's **Compact** or
-**Delete** (ticking a project includes all its tasks). Before anything is done, a confirmation lists what will be
+Use a row's own **Compact** or **Delete**, or select one or multiple tasks and projects with their checkboxes and use
+the bar's **Compact** or **Delete** (selecting a project includes all its tasks). Before anything is done, a confirmation lists what will be
 removed and how much space it frees. Compact deletes a completed task's photos and keeps its maps and models (the task
 can no longer be restarted). The work is done by WebODM itself, as from the Dashboard, with its own permissions and
 quota.
@@ -27,8 +27,8 @@ quota.
 ## Backup and Import
 
 A completed task's **Backup** downloads the whole task as a zip: WebODM's own backup, the same file as the
-**Backup** item of the task's **Download** menu, with its photos, results, options and name. Tick several tasks or
-projects and use the bar's **Backup All** to download one zip for each completed task among them, one after another
+**Backup** item of the task's **Download** menu, with its photos, results, options and name. Select one or
+multiple tasks or projects and use the bar's **Backup All** to download one zip for each completed task among them, one after another
 (the browser may ask once to allow several downloads); tasks that are not completed are skipped, and the status line
 says how many.
 

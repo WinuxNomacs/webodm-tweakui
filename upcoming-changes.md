@@ -3,14 +3,19 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Storage View: the selection bar's message** — see "Storage View: the selection bar's message".
-2. **Administration: TweakUI Themes merged into Administration > TweakUI** — see "Administration: one page".
+1. **Administration: TweakUI Themes merged into Administration > TweakUI** — see "Administration: one page".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Storage View: the selection bar's message** (new.md, 2026-11-09) — branch `storage-message`: `storage.html` and
+  `storage_page.js` (`renderSelection`) say "Select one or multiple tasks or projects to back up, compact or delete
+  them." Tests: `storage_page.test.js` (the whole text after a Delete, where it matched "Tick" before). Docs
+  `storage.md` ("select" for "tick"), CHANGELOG, screenshot `storage`. Live on 4.0.0 (desktop and phone: it wraps
+  above the buttons) and 3.3.2 (Storage View turned on for the check and back off). Django not run: no Python changed
+  and no Django test reads the text.
 - **Performance View: the graphs' readings kept over a reload** (new.md, 2026-11-09) — branch
   `perf-history-reload`: `performance_page.js` (`packReadings`, values to 4 decimals; `unpackReadings`, readings
   checked and those older than 30 minutes dropped, the counters only within the gap; `saveReadings` after a reading

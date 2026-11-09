@@ -152,7 +152,7 @@ test("Delete asks first, naming each project and task and what it frees, and onl
     expect(fetchFn.mock.calls.find(c => c[0] === "/api/projects/10/")[1].headers["X-CSRFToken"]).toBe("tok");
     expect(fetchFn.calls.filter(c => c[1] === "/api/plugins/tweakui/storage").length).toBe(2);
     expect(root.querySelector(".tweakui-storage-status").textContent).toBe("Deleted.");
-    expect(root.querySelector(".tweakui-storage-selected").textContent).toMatch(/^Tick/);
+    expect(root.querySelector(".tweakui-storage-selected").textContent).toBe("Select one or multiple tasks or projects to back up, compact or delete them.");
 });
 
 test("Cancel leaves everything as it is", async () => {
