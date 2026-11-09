@@ -244,6 +244,28 @@ class PerformanceLiveView(APIView):
         return Response(performance.live(request.user, disk=request.query_params.get("disk") == "1"))
 
 
+class RemovePhotosView(APIView):
+    """POST /api/plugins/tweakui/performance/<project>/<task>/remove-photos {names}: Remove Photos From Task
+    (performance.remove_left_out), for those who may change the task's project (its owner, admins)"""
+    permission_classes = (Available,)
+    feature = "performance_view"
+
+    def post(self, request, project_pk=None, pk=None):
+        try:
+            task = Task.objects.select_related("project", "processing_node").get(pk=pk, project_id=project_pk)
+        except (Task.DoesNotExist, ValidationError, ValueError, TypeError):
+            raise exceptions.NotFound() from None
+        if not request.user.has_perm("view_project", task.project):
+            raise exceptions.NotFound()
+        if not request.user.has_perm("change_project", task.project):
+            raise exceptions.PermissionDenied()
+        names = request.data.get("names") if isinstance(request.data, dict) else None
+        try:
+            return Response(performance.remove_left_out(task, names))
+        except performance.RemoveError as e:
+            return Response({"detail": str(e)}, status=e.code)
+
+
 class StorageTaskView(APIView):
     """GET /api/plugins/tweakui/storage/<project>/<task>: a task's files by kind, for its project's owner and
     admins"""

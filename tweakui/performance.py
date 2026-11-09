@@ -4,9 +4,11 @@ them. Each processing node the user may use is asked for its own info (NodeODX's
 a time), which WebODM doesn't keep; the server's disk and memory are WebODM's Diagnostic page's; the recent finished
 tasks (completed, failed or canceled; an admin's: everyone's, as on the Storage page) come with their photos,
 processing time, OpenSfM's steps and figures (odm_report/stats.json) and what their log says (task_log.py). Verdicts, sentences at the top, compare them with WebODM's hardware requirements. The server's
-CPU load (no node reports its own), memory and the nodes' memory are refreshed through `live`. Read only.
+CPU load (no node reports its own), memory and the nodes' memory are refreshed through `live`. Read only, but for
+`remove_left_out` (Remove Photos From Task), which deletes photos a completed task left out.
 """
 import json
+import logging
 import os
 import shutil
 import statistics
@@ -15,6 +17,7 @@ import time
 from concurrent.futures import ThreadPoolExecutor
 
 from django.conf import settings as django_settings
+from django.core.exceptions import SuspiciousFileOperation
 from django.db.models import Max
 from django.utils.translation import gettext as _
 from guardian.shortcuts import get_objects_for_user
@@ -26,6 +29,8 @@ from nodeodm.models import ProcessingNode
 
 from . import task_log
 from .storage import is_admin
+
+logger = logging.getLogger("app.logger")
 
 GB = 1024 ** 3
 
@@ -381,15 +386,80 @@ def placed_photos(task):
         return None
 
 
-def left_out_photos(task, reasons):
-    """The task's photos (WebODM keeps them in its folder) the report's shots don't name: ([{name, reason}] by name, at
-    most LEFT_MAX, how many more), the reason the log's (no_features, no_gps) or None; None without a shots.geojson"""
+def left_out_names(task):
+    """The task's photos (WebODM keeps them in its folder) the report's shots don't name, sorted; None without a
+    shots.geojson"""
     placed = placed_photos(task)
     if placed is None:
         return None
-    left = sorted(name for name in task.scan_images()
+    return sorted(name for name in task.scan_images()
                   if name.lower().endswith(PHOTO_EXTENSIONS) and name.lower() not in NOT_PHOTOS and name not in placed)
+
+
+def left_out_photos(task, reasons):
+    """left_out_names as ([{name, reason}] by name, at most LEFT_MAX, how many more), the reason the log's
+    (no_features, no_gps) or None; None without a shots.geojson"""
+    left = left_out_names(task)
+    if left is None:
+        return None
     return [{"name": n, "reason": reasons.get(n)} for n in left[:LEFT_MAX]], max(len(left) - LEFT_MAX, 0)
+
+
+class RemoveError(Exception):
+    """Why photos can't be removed: the message for the user, and the HTTP status (400 or 409)"""
+
+    def __init__(self, message, code=400):
+        super().__init__(message)
+        self.code = code
+
+
+# Remove Photos From Task: at most this many names in one request
+REMOVE_MAX = 10000
+
+
+def remove_left_out(task, names):
+    """Remove Photos From Task: deletes the named photos from a completed task's folder, each one the task's report
+    left out (left_out_names), so its next Restart goes without them. The processing node keeps its own copy of the
+    task (its photos too) until it purges it, and a Restart would reuse that copy: so the task's link to it (uuid) is
+    cleared first, as WebODM does when a node has purged a task, and the node is asked to remove its copy (unless a
+    duplicate of the task still points to it). The next
+    Restart then uploads the photos left and runs from the start (WebODM drops Rerun From). Answers {removed: [names],
+    failed: [names], images: photos left}; raises RemoveError"""
+    if (not isinstance(names, list) or not names or len(names) > REMOVE_MAX
+            or not all(isinstance(n, str) and n for n in names)):
+        raise RemoveError(_("Expected the names of the photos to remove."))
+    names = sorted(set(names))
+    if task.status != status_codes.COMPLETED or task.pending_action is not None:
+        raise RemoveError(_("Only a completed task that WebODM isn't working on can have photos removed."), 409)
+    left = left_out_names(task)
+    unknown = [n for n in names if n not in set(left or ())]
+    if unknown:
+        raise RemoveError(_("Not among the task's photos left out: %(names)s.") % {"names": ", ".join(unknown[:5])})
+    # The link to the node's copy cleared only if nothing has started on the task meanwhile (a Restart, a removal)
+    uuid = task.uuid
+    claimed = Task.objects.filter(pk=task.pk, status=status_codes.COMPLETED, pending_action__isnull=True).update(uuid="")
+    if not claimed:
+        raise RemoveError(_("Only a completed task that WebODM isn't working on can have photos removed."), 409)
+    removed, failed = [], []
+    for name in names:
+        try:
+            os.remove(task.get_image_path(name))
+            removed.append(name)
+        except (OSError, SuspiciousFileOperation):
+            # A file that can't be deleted (the names are the folder's own, so none leaves it)
+            failed.append(name)
+    images = len(task.scan_images())
+    Task.objects.filter(pk=task.pk).update(images_count=images)
+    # WebODM's Duplicate copies the link: a copy another task still points to is left for the node to purge
+    shared = bool(uuid) and Task.objects.filter(uuid=uuid, processing_node=task.processing_node).exclude(pk=task.pk).exists()
+    if uuid and task.processing_node is not None and not shared:
+        try:
+            task.processing_node.remove_task(uuid)
+        except (odx_exceptions.GenericError, OSError, ValueError) as e:
+            # The node purges its tasks itself after a while; the task no longer points to this one either way
+            logger.warning("TweakUI could not remove %s's copy on %s: %s", task, task.processing_node, e)
+    logger.info("TweakUI removed %s photos left out from %s", len(removed), task)
+    return {"removed": removed, "failed": failed, "images": images}
 
 
 def photos_left_out(stats, task=None, reasons=None):

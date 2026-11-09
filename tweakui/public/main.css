@@ -401,7 +401,12 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 .tweakui-performance .tweakui-performance-other ul { margin: 4px 0 0 1.5em; }
 /* Photos Left Out under its note: Copy Names, then the names; a name's thumbnail shows over the page on hover */
 .tweakui-performance .tweakui-performance-photos { margin-top: 4px; }
-.tweakui-performance .tweakui-performance-photos .btn { margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-photos > .btn { margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-photos > .btn + .btn { margin-left: 6px; }
+.tweakui-performance .tweakui-performance-photos > p { margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-remove-status:not(:empty) { display: block; margin: 4px 0 0 1.5em; }
+.tweakui-performance .tweakui-performance-photos li { padding: 1px 0; }
+.tweakui-performance .tweakui-performance-remove-photo { margin-left: 6px; padding: 0 5px; font-size: 11px; }
 .tweakui-performance .tweakui-performance-thumb { position: fixed; z-index: 1050; padding: 4px; border-width: 1px; border-style: solid; border-radius: 4px; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.35); pointer-events: none; }
 .tweakui-performance .tweakui-performance-thumb img { display: block; max-width: 256px; max-height: 256px; }
 .tweakui-performance .tweakui-performance-detail { display: none; }
@@ -409,6 +414,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
     .tweakui-performance .tweakui-performance-card { flex-basis: 100%; }
     .tweakui-performance .tweakui-performance-wide { display: none; }
     .tweakui-performance .tweakui-performance-detail { display: block; }
+    /* The table can be wider than a phone (it scrolls sideways): a task's notes stay the screen's width, in view */
+    .tweakui-performance .tweakui-performance-notes-row td > * { position: sticky; left: 8px; max-width: calc(100vw - 46px); }
 }
 
 /* General > Just for Fun > Surprise Me: fireworks-js's canvas over the whole page, above dialogs and the maps'

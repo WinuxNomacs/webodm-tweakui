@@ -150,6 +150,27 @@ pixels on its longest side, through WebODM's thumbnail of it), and hovering or f
 thumbnail. **Copy Names** puts the names on the clipboard, one per line, to find them among your files. Up to 500 are
 listed, the rest counted.
 
+### Remove Photos From Task
+
+Photos left out can hold a task back: one without GPS, or of water or sky, gives the reconstruction nothing to use
+and can split it into separate reconstructions. **Remove Photos From Task**, beside Copy Names, deletes every listed
+photo from the task, and **Remove Photo**, beside a name, deletes that one. You're asked first. Then:
+
+- The photos are deleted from the task's folder in WebODM for good. Your own copies, wherever you uploaded them
+  from, are not touched. The task's photo count goes down to match.
+- The processing node keeps its own copy of a task, its photos too, for a while after it finishes (NodeODX: 2 days
+  by default), and a Restart would use that copy, removed photos and all. So the task stops using it, and the node
+  is asked to delete it. If you made a duplicate of the task in WebODM, the duplicate still uses that copy, so it is
+  left for the node to purge.
+- The task's results stay as they are until you **Restart** it on the Dashboard. The next Restart uploads the photos
+  left to the node and processes the task from the start: Rerun From is not available that once.
+
+The list says how many photos were removed, and what to do next. Only the task's photos that its report left out can
+be removed, only from a completed task that WebODM isn't working on (not queued, restarting or being removed), and
+only by a user who can change the task's project (its owner, or someone it is shared with for editing, or an
+administrator). The figures in Recent Processing (Photos, the note's count) are the last run's until the task runs
+again.
+
 Below them, **Other Messages** opens every other warning and error line in the log, once each with how many times it
 came (GDAL's `CPLE_AppDefined` warnings, one per texture, are left out). A huge log is read only at its start and end
 (its first and last 8 MB), and a finished task's log only once.
@@ -158,5 +179,5 @@ With 4 or more completed tasks to compare, a line says whether the newer half to
 older half (by their medians), or about the same (within 10%). Photos and options differ from task to task, so take it
 as a hint, not a measurement.
 
-TweakUI only reads: it asks each node for its info, reads the server's CPU and disk counters and each task's report and log,
-and changes nothing.
+TweakUI only reads, except for [Remove Photos From Task](#remove-photos-from-task): it asks each node for its info,
+and reads the server's CPU and disk counters and each task's report and log.

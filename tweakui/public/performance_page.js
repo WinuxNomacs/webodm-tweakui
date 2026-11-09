@@ -432,19 +432,48 @@
             encodeURIComponent(name) + "?size=" + size;
     }
 
-    // The photos a note names (Photos Left Out), collapsed: each a link opening it, its thumbnail on hover, and the
-    // log's reason; Copy Names puts their names on the clipboard, a line each
-    function photosListHtml(t, n) {
-        var count = n.photos.length + (n.more || 0);
-        return '<details class="tweakui-performance-other tweakui-performance-photos"><summary>Photos Left Out (' + escapeHtml(formatNumber(count)) + ")</summary>" +
-            '<button type="button" class="btn btn-default btn-xs" data-act="copy-names" data-names="' +
-            escapeHtml(n.photos.map(function (p) { return p.name; }).join("\n")) + '"><i class="far fa-clipboard"></i> Copy Names</button>' +
-            '<ul class="list-unstyled small">' + n.photos.map(function (p) {
+    // The photos a note names (Photos Left Out), collapsed (open when asked): each a link opening it, its thumbnail on
+    // hover, the log's reason and a Remove Photo button; Copy Names puts their names on the clipboard, a line each, and
+    // Remove Photos From Task deletes them all from the task. After a removal (n.removed, n.failed) it says what to do next.
+    function photosListHtml(t, n, open) {
+        var photos = n.photos || [], count = photos.length + (n.more || 0);
+        var names = photos.map(function (p) { return p.name; });
+        var html = '<details class="tweakui-performance-other tweakui-performance-photos" data-task="' + escapeHtml(t.id) + '"' +
+            (open ? " open" : "") + "><summary>Photos Left Out (" + escapeHtml(formatNumber(count)) + ")</summary>";
+        if (n.removed) {
+            html += '<p class="text-success small tweakui-performance-removed"><i class="fa fa-check"></i> ' +
+                escapeHtml(plural(n.removed, "photo", "photos")) + " removed from the task. Restart the task to process it without " +
+                (n.removed === 1 ? "it" : "them") + "." + (n.more ? " Refresh to list the rest." : "") + "</p>";
+        }
+        if (n.failed && n.failed.length) {
+            html += '<p class="text-danger small">Could not delete ' + escapeHtml(n.failed.join(", ")) + ".</p>";
+        }
+        if (photos.length) {
+            html += '<button type="button" class="btn btn-default btn-xs" data-act="copy-names" data-names="' +
+                escapeHtml(names.join("\n")) + '"><i class="far fa-clipboard"></i> Copy Names</button>' +
+                '<button type="button" class="btn btn-danger btn-xs" data-act="remove-photos"><i class="fa fa-trash"></i> Remove Photos From Task</button>';
+        }
+        html += '<span class="tweakui-performance-remove-status text-danger small" role="status" aria-live="polite"></span>';
+        if (photos.length || n.more) {
+            html += '<ul class="list-unstyled small">' + photos.map(function (p) {
                 return '<li><a href="' + escapeHtml(photoUrl(t, p.name, PHOTO_OPEN)) + '" target="_blank" rel="noopener" data-photo="' +
                     escapeHtml(photoUrl(t, p.name, PHOTO_HOVER)) + '">' + escapeHtml(p.name) + "</a>" +
-                    (REASONS[p.reason] ? ' <span class="text-muted">' + REASONS[p.reason] + "</span>" : "") + "</li>";
+                    (REASONS[p.reason] ? ' <span class="text-muted">' + REASONS[p.reason] + "</span>" : "") +
+                    ' <button type="button" class="btn btn-default btn-xs tweakui-performance-remove-photo" data-act="remove-photo" data-name="' +
+                    escapeHtml(p.name) + '"><i class="fa fa-trash"></i> Remove Photo</button></li>';
             }).join("") + (n.more ? '<li class="text-muted">' + escapeHtml(plural(n.more, "more photo", "more photos")) + " not shown.</li>" : "") +
-            "</ul></details>";
+                "</ul>";
+        }
+        return html + "</details>";
+    }
+
+    // What Remove Photos From Task asks before it deletes
+    function removeQuestion(t, names) {
+        var task = t.name ? '"' + t.name + '"' : "this task";
+        return (names.length === 1 ? "Remove " + names[0] + " from " + task + "?" : "Remove these " + formatNumber(names.length) +
+            " photos from " + task + "?") + "\n\n" + (names.length === 1 ? "It is" : "They are") + " deleted from the task for good " +
+            "(your own copies are not touched). The task stops using the processing node's copy of it, so its next Restart " +
+            "uploads the photos left and processes it from the start.";
     }
 
     function notesHtml(t) {
@@ -453,7 +482,7 @@
             var icon = n.level === "info" ? "fa-info-circle" : ICONS[n.level] || ICONS.warning;
             return '<li data-note="' + escapeHtml(n.key) + '"><i class="fa ' + icon + " fa-fw text-" + escapeHtml(n.level) + '"></i> ' +
                 escapeHtml(n.text) + (n.line ? '<div class="text-muted small tweakui-performance-line"><code>' + escapeHtml(n.line) + "</code></div>" : "") +
-                (n.photos && n.photos.length ? photosListHtml(t, n) : "") + "</li>";
+                ((n.photos && n.photos.length) || n.removed ? photosListHtml(t, n) : "") + "</li>";
         }).join("") + "</ul>" : "";
         if (other.length) {
             var count = other.length + (t.more || 0);
@@ -826,6 +855,43 @@
             showTip();
         }));
 
+        // Remove Photos From Task (or Remove Photo, one): asks first, then deletes them through the plugin's API and
+        // draws the list again without them, open, with what to do next (the report is changed to match)
+        function removePhotos(btn) {
+            var details = btn.closest(".tweakui-performance-photos");
+            var id = details && details.getAttribute("data-task");
+            var t = state.report && state.report.tasks.filter(function (x) { return String(x.id) === id; })[0];
+            var n = t && (t.notes || []).filter(function (x) { return x.key === "left_out"; })[0];
+            if (!n) return;
+            var names = btn.getAttribute("data-act") === "remove-photo" ? [btn.getAttribute("data-name")] :
+                n.photos.map(function (p) { return p.name; });
+            if (!names.length || !win.confirm(removeQuestion(t, names))) return;
+            var buttons = details.querySelectorAll("button");
+            Array.prototype.forEach.call(buttons, function (b) { b.disabled = true; });
+            var said = details.querySelector(".tweakui-performance-remove-status");
+            said.textContent = "";
+            fetchFn(api + "performance/" + encodeURIComponent(t.project.id) + "/" + encodeURIComponent(t.id) + "/remove-photos", {
+                method: "POST", credentials: "same-origin",
+                headers: {"Content-Type": "application/json", "X-CSRFToken": ui.csrfToken(doc)},
+                body: JSON.stringify({names: names})
+            }).then(function (res) {
+                return res.json().then(function (data) { return {ok: res.ok, data: data}; }, function () { return {ok: false, data: {}}; });
+            }).then(function (answer) {
+                if (!answer.ok) throw new Error(answer.data.detail || "");
+                var gone = {};
+                answer.data.removed.forEach(function (name) { gone[name] = true; });
+                n.photos = n.photos.filter(function (p) { return !gone[p.name]; });
+                n.removed = (n.removed || 0) + answer.data.removed.length;
+                n.failed = answer.data.failed;
+                var holder = ui.el(doc, "div");
+                holder.innerHTML = photosListHtml(t, n, true);
+                details.parentNode.replaceChild(holder.firstChild, details);
+            }).catch(function (err) {
+                Array.prototype.forEach.call(buttons, function (b) { b.disabled = false; });
+                said.textContent = (err && err.message) || "Could not remove the photos.";
+            });
+        }
+
         // A task's Notes button opens and closes the row of its notes below it; Copy Names copies a list's names
         page.addEventListener("click", ui.guard(NAME, function (e) {
             var copy = e.target && e.target.closest ? e.target.closest("[data-act=copy-names]") : null;
@@ -835,6 +901,11 @@
                     function () { icon.className = "fa fa-times"; }).then(function () {
                     win.setTimeout(function () { icon.className = "far fa-clipboard"; }, 2000);
                 });
+                return;
+            }
+            var remove = e.target && e.target.closest ? e.target.closest("[data-act=remove-photos], [data-act=remove-photo]") : null;
+            if (remove) {
+                removePhotos(remove);
                 return;
             }
             var toggle = e.target && e.target.closest ? e.target.closest("[data-act=notes]") : null;
@@ -862,7 +933,7 @@
 
     return {start: start, formatBytes: formatBytes, formatDuration: formatDuration, formatNumber: formatNumber,
         trendText: trendText, verdictsHtml: verdictsHtml, formatArea: formatArea, formatLength: formatLength,
-        tasksHtml: tasksHtml, notesHtml: notesHtml, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
+        tasksHtml: tasksHtml, notesHtml: notesHtml, removeQuestion: removeQuestion, nodeHtml: nodeHtml, barHtml: barHtml, cpuShares: cpuShares, cpuRows: cpuRows,
         diskShares: diskShares, driveCardHtml: driveCardHtml, serverHtml: serverHtml, graphHtml: graphHtml, graphTip: graphTip,
         record: record, niceCeil: niceCeil};
 });

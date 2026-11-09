@@ -7,7 +7,7 @@ from app.plugins import Menu, MountPoint, PluginBase
 
 from . import access, custom_themes, features, settings, themes
 from .api import (AccessView, FramesView, PerformanceLiveView, PerformanceView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
-                  SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
+                  RemovePhotosView, SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
                   ThemesView, ThemeView, settings_script)
 
 
@@ -124,6 +124,7 @@ class Plugin(PluginBase):
             MountPoint("storage$", StorageView.as_view()),
             MountPoint("performance$", PerformanceView.as_view()),
             MountPoint(r"performance/live$", PerformanceLiveView.as_view()),
+            MountPoint(r"performance/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)/remove-photos$", RemovePhotosView.as_view()),
             MountPoint(r"storage/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", StorageTaskView.as_view()),
             MountPoint(r"frames/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)$", FramesView.as_view()),
         ]
