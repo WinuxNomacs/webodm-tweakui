@@ -3,15 +3,22 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Performance View: the graphs' scales and legends, 10% taller** (new.md, 2026-11-09; see "Performance View:
-   graphs' scales, readings kept over a reload, General Assessment") — branch `perf-graph-scales`.
-2. **Performance View: the graphs' readings kept over a reload** (same section) — branch `perf-history-reload`.
+1. **Performance View: the graphs' readings kept over a reload** (new.md, 2026-11-09; see "Performance View: graphs'
+   scales, readings kept over a reload, General Assessment") — branch `perf-history-reload`.
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **Performance View: the graphs' scales and legends, 10% taller** (new.md, 2026-11-09) — branch `perf-graph-scales`:
+  `performance_page.js` (`graphHtml`: the top label for every percent graph and a rate graph with readings, a 0
+  label, a dashed gridline at half height, the time line from `spanText(view.span)` to Now when there is a view, a
+  legend for two series; all `aria-hidden`; `GRAPH_H` 44), `main.css` (46 px, the labels, the axis, the legend's
+  swatches in the lines' colour classes). Tests: `performance_page.test.js` (1 new; `words` skips `aria-hidden` text;
+  two paths' coordinates for the new height). Docs `performance.md` (Graphs, Disk Activity), CHANGELOG, screenshot
+  `performance`. Live on 4.0.0 (Solarized Dark) and 3.3.2 (light), desktop and phone: labels readable, no sideways
+  scroll, no console errors.
 - **Performance View: General Assessment** (new.md, 2026-11-09) — branch `perf-assessment`: `performance_page.js`
   (`lineHtml`; `tasksSummary` from the report's tasks: failed, of those out of memory, left photos out, a sentence of
   its own for a single task; `assessmentHtml`: the card, its edge `text-<worst level>`; the trend moved out of
@@ -2513,7 +2520,7 @@ Tests: Jest (the card, its edge by level, the summary's wording, the trend moved
 gives the summary. Docs `performance.md` (a General Assessment section in place of "At the top are sentences..."),
 README, CHANGELOG, screenshot `performance`.
 
-### Phase 2: the graphs' scales and legends, 10% taller (branch `perf-graph-scales`)
+### Phase 2: the graphs' scales and legends, 10% taller (branch `perf-graph-scales`) — done
 Builds on `graphHtml`, `graphTip` and the graph CSS. Each graph (CPU Load, the server's and each node's Memory, a
 drive's Reads/Writes and Busy) gets:
 - Small muted labels inside the graph: its top value at top left (100% for a percent graph, the rate graph's top as
