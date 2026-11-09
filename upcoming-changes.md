@@ -4,10 +4,11 @@
 
 **Up next**
 1. **UX review, Phase B: Performance page layout** (controls at the top, notes behind ⓘ, Process View as a section,
-   graph labels, fewer table columns, row actions in one place) — open decisions below.
+   graph labels, fewer table columns, row actions in one place) — decided, branch `ux-performance-layout`.
 2. **UX review, Phase C: Settings page readability** (one-line descriptions with More, enlargeable previews, a
    Navigation Pane group) — open decisions below.
-3. **UX review: setting names** — waits for the user's decision (a rename across docs, previews and CHANGELOG).
+3. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
+   CHANGELOG).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -817,8 +818,15 @@ Built as planned; item 1 stacks the row's buttons at phone width (the table fits
 - Recent Task History: Task, Created, Photos, Time, Per Photo and Node in the table; Slowest SfM Step, Area,
   Reconstructions, Position Error and GPU in the row Notes opens (or a column chooser).
 - Row actions in one place: WebODM's "•••" at the row's end, on Performance and Storage alike.
-Open decisions: the popover or a plain bar; the columns moved or a chooser; "•••" at the row's end replacing
-"Actions ▾" beside the name.
+Decided (2026-11-09):
+- The controls: a bar beside the "Performance" heading, "Updated 11:48 · Refresh · ⚙", the ⚙ opening a popover with
+  Refresh Every and History Length (the sliders as now, saved as now).
+- Recent Task History keeps Task, Created, Photos, Time, Per Photo and Node; Slowest SfM Step, Area, Reconstructions,
+  Position Error and GPU move into the row below the task, which every task then has: its button becomes **Details**
+  (with the notes' count and icon when there are notes), opening the five figures above the notes. The colour-and-icon
+  warnings (several reconstructions) go with their figure.
+- Row actions: a "•••" button at the end of each row, as on WebODM's Dashboard: Performance's Actions menu moves
+  there (same items), and Storage's per-row Import and Delete become a "•••" menu (Import, Delete) at its row's end.
 
 ### Phase C: Settings page readability (to plan)
 
@@ -826,9 +834,14 @@ Open decisions: the popover or a plain bar; the columns moved or a chooser; "•
   behind a More toggle.
 - Previews enlarge on click; at phone width hidden behind a Preview link.
 - A "Navigation Pane" group: Hide, Auto-hide (with Hide Delay) and Resize together.
-Open decisions: whether to rewrite the descriptions as one line plus More; previews hidden on phones.
+Proposed, to confirm when the phase is planned: every description rewritten as one line plus More; previews hidden
+on phones behind a Preview link.
 
-### Setting names (waits for the user)
+### Setting names
+
+Decided (2026-11-09): rename all, each after what you get, without "Show" or "Add"; Settings and Administration use the
+same name. Old docs anchors keep working where VitePress allows (an alias heading id). The list of new names is
+proposed to the user before the rename.
 
 Settings are named in mixed styles ("Show Configured Option Count", "Add Search Button", "Units in Header", "Show
 Storage View", which Administration calls "Storage View"). Proposed: each named after what you get, without "Show" or
