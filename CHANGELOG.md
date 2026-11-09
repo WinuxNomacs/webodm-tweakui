@@ -12,7 +12,9 @@
 - Performance View: Recent Processing is now **Recent Task History**.
 - Performance View: **Process View**, for superusers, under the server's cards: the top 10 processes WebODM's server
   can see by CPU and by memory (PID, command, command line with a copy button, user, CPU and memory), refreshed with
-  CPU Load. In Docker that is the web container's own processes.
+  CPU Load. In Docker that is the web container's own processes. The tables are outlined, their columns resizable
+  (kept for the browser tab), and a command line wraps at its column's width, showing its first 512 characters; its
+  copy button copies it whole.
 - Performance View > Recent Task History: an **Actions** menu on each task, in alphabetical order: Download Report
   and View Report (for a task with a report), Download Task Logs, and Restart From Load Dataset (as WebODM's
   Restart, where the Dashboard offers it).
