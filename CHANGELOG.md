@@ -4,6 +4,9 @@
 
 ### Diagnostic
 
+- Performance View: each graph has its scale inside it (its top, 0, a line at half height), a time line under it
+  (from "5 min ago", following History Length, to Now) and, for a drive's reads and writes, a legend; the graphs are
+  10% taller.
 - Performance View: a **General Assessment** card at the top, its left edge in its most pressing line's colour, with
   the verdicts on memory and the nodes, a line summing up Recent Processing's failed tasks and photos left out, and
   the time-per-photo trend (moved up from Recent Processing).
