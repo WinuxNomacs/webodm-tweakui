@@ -18,7 +18,8 @@ It is committed and public: nothing private, nothing true only on one machine. K
   - **No changes to WebODM itself.** A feature that needs a hook WebODM lacks is reported to the user first;
     a pull request to WebODM is made only after the user approves that specific change.
   - No hard-coded colours: WebODM's theme variables (`app/templates/app/theme.css`). Look like the rest of
-    WebODM, work on mobile, vanilla code over libraries (Python modules only from WebODM's `requirements.txt`),
+    WebODM, work on mobile, vanilla code over libraries (Python modules only from WebODM's `requirements.txt`;
+    psutil isn't one, so `performance.py` reads `/proc` on Linux and the Windows API through ctypes),
     async work through `run_function_async` (`app/plugins/worker.py`).
   - The manifest says `"experimental": true` until the user decides otherwise; licence AGPL-3.0.
   - The guide's "no tests unless asked" does not apply: the user's rules ask for tests.
@@ -43,7 +44,9 @@ It is committed and public: nothing private, nothing true only on one machine. K
   its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),
   on the same branch.
 - **Names in the UI are in Title Case**: headings, buttons, menu items and setting names ("My Themes", "New Theme",
-  "Show Configured Option Count"); descriptions and messages are sentences.
+  "Show Configured Option Count"); descriptions and messages are sentences. Renaming one is a `grep` across
+  `tweakui/` (scripts, CSS and Python comments), `__tests__/`, `docs/` (its heading's anchor and every link to it),
+  `dev/screenshots.js` and `CHANGELOG.md`'s Unreleased lines; keep element ids the scripts link to unchanged.
 - Planned in `upcoming-changes.md`; new requests arrive in `new.md` (untracked).
 
 ## Dev environment
@@ -61,6 +64,14 @@ It is committed and public: nothing private, nothing true only on one machine. K
   pinned by digest in `dev/webodm.sh`. Both stacks' processing node uses the GPU when the machine has one Docker can
   use (`TW_GPU=auto`, the default: WebODM's `nodeodx:gpu` image with the GPU reserved, `dev/compose.gpu.yml`);
   `TW_GPU=0` runs it on the CPU.
+- **`tweakui/` is mounted live**, and both servers reload on every save. A Python file saved with an error, even
+  for seconds, makes 3.3.2 (Django 2.2) drop the plugin: `/plugins/tweakui/` answers 404 until that stack is
+  restarted, which only the user does. An undefined name 500s the pages that use it. So check a Python change
+  with Ruff on a scratch copy before it lands in `tweakui/`, and have a scripted edit assert that every
+  replacement matched before writing anything (or use an editor's exact replace).
+- In Docker the web container sees only its own processes (`tw-webapp` lists about a dozen); the processing
+  node's work runs in `tw-node-odx-1`. CPU, memory and disk counters are the machine's (Docker's VM on Windows and
+  macOS).
 - The first start runs WebODM's dev setup (npm install, webpack, migrations) for several minutes before the server
   answers. The startup log then shows `Registered [coreplugins.tweakui.plugin]`.
 - **WebODM's native Windows app** (4.0.0), when the user runs it: `node dev/windows-relay.js` makes it
