@@ -1,6 +1,8 @@
 # 2D Map
 
-## Controls > Movable Controls
+<div id="controls-movable-controls"></div>
+
+## Controls > Movable Panels
 
 Off by default.
 
@@ -9,7 +11,9 @@ Off by default.
 Drag the map's panels (Layers, Base Maps, Measure, Contours, Object Detection, Other Tasks) by their title, with
 the mouse or a finger, anywhere within the map. A panel that closes reopens in its usual place.
 
-## Controls > Compare Orthophotos from Other Tasks
+<div id="controls-compare-orthophotos-from-other-tasks"></div>
+
+## Controls > Other Tasks' Orthophotos
 
 Off by default.
 
@@ -44,7 +48,9 @@ them in its Cameras layer) and the ground's height (the task's DSM; without one,
 spot counts as shown when it falls inside the photo's frame, even if something (a roof, a tree) hides it in the
 photo. Only tasks with camera shots have the button.
 
-## Controls > Zoom Override
+<div id="controls-zoom-override"></div>
+
+## Controls > Deeper Zoom
 
 Off by default.
 
@@ -55,7 +61,7 @@ wheel, the + button and a pinch. Past the orthophoto's own detail, its pixels ar
 
 ### Zoom Sensitivity
 
-A part of Zoom Override, at 100% unless you change it. Its label says "(Default: 100%)", on the settings page
+A part of Deeper Zoom, at 100% unless you change it. Its label says "(Default: 100%)", on the settings page
 and in the panel on the map, as a reminder that 100% is WebODM's own.
 
 ![The Zoom Sensitivity panel open beside its button at the bottom left of the map](../tweakui/public/previews/zoom-sensitivity-2d.webp)
@@ -70,7 +76,9 @@ itself: the gauge button at the bottom left, with the zoom buttons, opens the sa
 them at once, so you can try a value while zooming, and it is saved when you let go of the slider or leave the box.
 Escape or a click elsewhere closes it.
 
-## Controls > Add Search Button
+<div id="controls-add-search-button"></div>
+
+## Controls > Map Search
 
 Off by default.
 

@@ -72,7 +72,9 @@ and the content of Administration, which keeps WebODM's own theme. Light presets
 colour, as WebODM's logo is white. Dropdown menus show their items in the preset's text colour (WebODM fixes them
 to near-black, which a dark preset's menu background would hide).
 
-## Theme Menu > Show Theme Menu
+<div id="theme-menu-show-theme-menu"></div>
+
+## Theme Menu
 
 On by default.
 

@@ -125,7 +125,7 @@ test("over nothing, in another navigation mode, or with the setting off, the whe
     expect(off.view.position.z).toBe(100);
 });
 
-test("with Zoom Override on, the 2D map hook lifts the limit and the 3D view gets the wheel and the Zoom Sensitivity button, before Share", () => {
+test("with Deeper Zoom and Zoom to Pointer on, the 2D map hook lifts the limit and the 3D view gets the wheel and the Zoom Sensitivity button, before Share", () => {
     const mapHook = jest.fn();
     const v = view3d([0, 0, 0]);
     const row = document.createElement("div");

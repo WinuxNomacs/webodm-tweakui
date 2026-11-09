@@ -1,6 +1,8 @@
 # General
 
-## Global Controls > Units in Header
+<div id="global-controls-units-in-header"></div>
+
+## Global Controls > Units Menu
 
 Off by default.
 
@@ -18,7 +20,9 @@ the user icon. That plugin follows WebODM's units, so choosing Imperial here sho
 shows Metric here. On a phone with more menus than fit beside WebODM's name, the menus get narrower, and if that
 isn't enough the name is left out (the logo still leads to the Dashboard).
 
-## Navigation Pane > Hide Navigation Pane
+<div id="global-controls-hide-navigation-pane"></div>
+
+## Navigation Pane > Collapsible Navigation Pane
 
 Off by default.
 
@@ -28,7 +32,7 @@ A small tab sits on the divider between the side menu and the page, just below t
 menu one step:
 
 1. **Icons only:** the side menu narrows to its icons, and each icon's name shows when you point at it. This is the
-   same view as Resize Navigation Pane's narrowest, and it works without that setting.
+   same view as Resizable Navigation Pane's narrowest, and it works without that setting.
 2. **Hidden:** the page takes the whole width, which gives a map or the 3D view more room, and only the tab stays, at
    the left edge.
 3. **Shown:** the side menu comes back at WebODM's usual width, even if you had dragged it to another width.
@@ -37,9 +41,11 @@ The tab's tooltip names the next step. The choice is kept in this browser, so th
 way. On a phone the side menu is already behind the header's menu button, so there's no tab. On WebODM's Windows app
 the tab sits near the top of the window.
 
-### Auto-hide Navigation Pane
+<div id="auto-hide-navigation-pane"></div>
 
-Off by default, and only with Hide Navigation Pane on.
+### Auto-hide
+
+Off by default, and only with Collapsible Navigation Pane on.
 
 ![A task's map with the auto-hidden side menu shown over it](../tweakui/public/previews/auto-hide-navigation-pane.webp)
 
@@ -48,7 +54,7 @@ side menu then shows over the page, which keeps its size, so a map or the 3D vie
 once the pointer has been off it for the Hide Delay, or at once with Esc. Moving back onto it in time keeps it shown.
 Tabbing into the side menu with the keyboard shows it too.
 
-It shows at the width you last dragged it to with Resize Navigation Pane, or WebODM's usual width otherwise.
+It shows at the width you last dragged it to with Resizable Navigation Pane, or WebODM's usual width otherwise.
 
 While auto-hide is on, the tab doesn't cycle through the three steps. Instead it pins the side menu open beside the
 page, as without auto-hide, and a second click unpins it. The pin is kept in this browser. On a phone the side menu
@@ -57,7 +63,9 @@ stays behind the header's menu button.
 **Hide Delay** sets how long the side menu waits after the pointer leaves it: from 200 to 3000 milliseconds, 500 by
 default. The slider moves in steps of 100, and the box beside it takes any whole number in that range.
 
-## Navigation Pane > Resize Navigation Pane
+<div id="global-controls-resize-navigation-pane"></div>
+
+## Navigation Pane > Resizable Navigation Pane
 
 Off by default.
 
@@ -69,10 +77,12 @@ narrower than about 120 px and it snaps to the icons alone, where each icon's na
 Double-click the divider to put back WebODM's usual width. The divider also works from the keyboard: Tab to it, then
 the arrow keys narrow and widen the side menu, Home gives the icons alone and End the usual width.
 
-The width is kept in this browser. With Hide Navigation Pane on too, the tab sits on the divider wherever it is.
+The width is kept in this browser. With Collapsible Navigation Pane on too, the tab sits on the divider wherever it is.
 On a phone there's no divider to drag.
 
-## Task Options > Show Configured Option Count
+<div id="task-options-show-configured-option-count"></div>
+
+## Task Options > Configured Option Counts
 
 Off by default.
 
@@ -84,7 +94,9 @@ enabled. The count follows your changes, including "Reset to default". Options a
 preset sets auto-boundary and dsm). It works in the grouped view only, and "Other Options" is counted only while it
 is open.
 
-## Task Options > Expand Configured Options
+<div id="task-options-expand-configured-options"></div>
+
+## Task Options > Configured Options When Collapsed
 
 Off by default.
 
@@ -93,15 +105,17 @@ Off by default.
 In the Task Options dialog, a collapsed group still shows its configured options (those not at ODM's default),
 under its heading: "Structure From Motion" shows feature-quality when it is set to ultra. They're WebODM's own
 controls, so you can change one there; reset it to its default and it leaves the list. Opening a group shows all its
-options as usual, and closing it shows only the configured ones again. It works with or without Show Configured
-Option Count, which counts the same options. It works in the grouped view only, and "Other Options" shows nothing while it is closed.
+options as usual, and closing it shows only the configured ones again. It works with or without Configured
+Option Counts, which counts the same options. It works in the grouped view only, and "Other Options" shows nothing while it is closed.
 
 The Expand/Collapse button (beside Search and the view switch) then cycles three steps: **Expand All**,
 **Collapse All** (the configured options hidden too) and **Collapse All but Configured**, which is how the dialog
 opens. Its tooltip names the next step. When no option is configured, the button is WebODM's usual Expand All and
 Collapse All.
 
-## Task Options > Replace Preset Options Menu
+<div id="task-options-replace-preset-options-menu"></div>
+
+## Task Options > Preset Menu with Filter
 
 Off by default.
 
@@ -133,8 +147,8 @@ Off by default.
 
 When a task is expanded on the Dashboard, its details show when it started and finished, its current step while
 it runs, and three rows in place of WebODM's one-line Options. Each part has its own setting under Enhanced Task
-Details (Task Start and End Time, Show Configured Task Preset, Options as Bubbles, Show ODX Command, Show Current
-Processing Stage), all on by default and greyed out while Enhanced Task Details is off. With Options as Bubbles off,
+Details (Start and End Times, Matching Preset, Option Bubbles, ODX Command, Current Processing
+Stage), all on by default and greyed out while Enhanced Task Details is off. With Option Bubbles off,
 WebODM's own Options line stays.
 
 - **Started** and **Finished**, after "Created on", in your local time. WebODM keeps no start or end time, so
@@ -159,7 +173,9 @@ WebODM's own Options line stays.
   WebODM's install folder, e.g. `C:\WebODM\resources\app\apps\ODX`). Replace `C:\datasets` with the folder that
   holds your dataset and `project` with the dataset's folder in it, which holds the photos in `images\`.
 
-## Task Details > Expand Task Controls
+<div id="task-details-expand-task-controls"></div>
+
+## Task Details > Task Buttons When Minimized
 
 Off by default.
 
@@ -193,7 +209,7 @@ browser's menu. Text fields keep
 their menu, and **Shift + right-click** opens it anywhere. Dragging with the right button (the 3D view's pan) sends
 none.
 
-**Enable Interaction**, under Surprise Me and on by default, is what makes a right-click send a rocket. Turn it off to
+**Rockets on Right-click**, under Surprise Me and on by default, is what makes a right-click send a rocket. Turn it off to
 leave the mouse to the browser and the page, its menu and any other right-click use included, while the fireworks
 still go off. Turned off or on in the settings page, it takes effect at once.
 

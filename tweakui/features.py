@@ -66,14 +66,14 @@ class Category:
 CATEGORIES = [
     Category("general", _("General"), "fa fa-cog fa-fw", groups=[
         Group(_("Global Controls"), [
-            Setting("units_in_header", False, _("Units in Header"),
+            Setting("units_in_header", False, _("Units Menu"),
                     _("A units menu in the header: Metric, Imperial or Imperial (US)."),
                     more=_("The same choice as the units selector on the 2D and 3D maps, kept in step with it. It sits "
                            "left of the paintbrush, or in the side menu on WebODM's Windows app, which has no header."),
                     preview="units-in-header", scripts=["units_menu.js"]),
         ]),
         Group(_("Navigation Pane"), [
-            Setting("hide_nav_pane", False, _("Hide Navigation Pane"),
+            Setting("hide_nav_pane", False, _("Collapsible Navigation Pane"),
                     _("A tab on the side menu's edge shrinks it to its icons, hides it or brings it back."),
                     more=_("The tab sits on the divider between the side menu and the page, near the top. Each click "
                            "takes the side menu one step: its icons alone (each one's name shows when you point at "
@@ -81,7 +81,7 @@ CATEGORIES = [
                            "Remembered in this browser. Not on a phone, where the side menu is already the header's "
                            "menu button."),
                     preview="hide-navigation-pane", scripts=["nav_pane.js"], parts=[
-                        Setting("auto_hide_nav_pane", False, _("Auto-hide Navigation Pane"),
+                        Setting("auto_hide_nav_pane", False, _("Auto-hide"),
                                 _("The side menu stays hidden until the pointer nears the window's left edge."),
                                 more=_("Then it shows over the page (which keeps its size), and hides again once the "
                                        "pointer leaves it. The tab pins it open, and a second click unpins it."),
@@ -92,7 +92,7 @@ CATEGORIES = [
                                             number=(200, 3000, 100), unit=_("ms")),
                                 ]),
                     ]),
-            Setting("resize_nav_pane", False, _("Resize Navigation Pane"),
+            Setting("resize_nav_pane", False, _("Resizable Navigation Pane"),
                     _("Drag the side menu's edge to make it wider or narrower."),
                     more=_("The divider between the side menu and the page is the handle, down to the side menu's "
                            "icons alone (each one's name shows when you point at it). A double click on the divider "
@@ -100,16 +100,16 @@ CATEGORIES = [
                     preview="resize-navigation-pane", scripts=["nav_pane.js"]),
         ]),
         Group(_("Task Options"), [
-            Setting("show_configured_option_count", False, _("Show Configured Option Count"),
+            Setting("show_configured_option_count", False, _("Configured Option Counts"),
                     _("In the Task Options dialog, each group's heading counts its configured options."),
                     more=_("An option is configured when it isn't at its default; the count reads e.g. (1/13)."),
                     preview="show-configured-option-count", scripts=["task_options.js"]),
-            Setting("expand_configured_options", False, _("Expand Configured Options"),
+            Setting("expand_configured_options", False, _("Configured Options When Collapsed"),
                     _("In the Task Options dialog, a collapsed group still shows its configured options."),
                     more=_("Those not at their default, so you can change them there. The Expand/Collapse button "
                            "cycles Expand All, Collapse All and Collapse All but Configured."),
                     preview="expand-configured-options", scripts=["task_options.js"]),
-            Setting("replace_preset_menu", False, _("Replace Preset Options Menu"),
+            Setting("replace_preset_menu", False, _("Preset Menu with Filter"),
                     _("A task's Options dropdown becomes a menu of its presets A-Z, with a filter box."),
                     more=_("For a new or edited task: the presets in two submenus, User Presets (your own saved "
                            "presets) and System Presets (WebODM's, Default among them), below (Custom), and a box at "
@@ -120,18 +120,18 @@ CATEGORIES = [
             Setting("enhanced_task_details", False, _("Enhanced Task Details"),
                     _("Adds the parts turned on below to a task's details on the Dashboard."),
                     preview="enhanced-task-details", scripts=["task_details.js"], parts=[
-                        Setting("task_details_times", True, _("Task Start and End Time"),
+                        Setting("task_details_times", True, _("Start and End Times"),
                                 _("When the task started and finished, after Created on.")),
-                        Setting("task_details_preset", True, _("Show Configured Task Preset"),
+                        Setting("task_details_preset", True, _("Matching Preset"),
                                 _("The preset the task's options match, or Custom.")),
-                        Setting("task_details_options", True, _("Options as Bubbles"),
+                        Setting("task_details_options", True, _("Option Bubbles"),
                                 _("Each option in its own bubble, in place of WebODM's one-line Options.")),
-                        Setting("task_details_command", True, _("Show ODX Command"),
+                        Setting("task_details_command", True, _("ODX Command"),
                                 _("The command to run the task yourself, with a copy button.")),
-                        Setting("task_details_step", True, _("Show Current Processing Stage"),
+                        Setting("task_details_step", True, _("Current Processing Stage"),
                                 _("While the task runs, the ODM stage it is in, e.g. Current Step (8/13): Texturing.")),
                     ]),
-            Setting("expand_task_controls", False, _("Expand Task Controls"),
+            Setting("expand_task_controls", False, _("Task Buttons When Minimized"),
                     _("On the Dashboard, a minimized task still shows its buttons (Download, Map, Report…)."),
                     more=_("The +/- beside its name cycles buttons only, expanded and fully minimized."),
                     preview="expand-task-controls", scripts=["task_controls.js"]),
@@ -139,10 +139,10 @@ CATEGORIES = [
         Group(_("Just for Fun"), [
             Setting("surprise_me", False, _("Surprise Me"),
                     _("Fireworks go off over every page every few seconds until you turn this off."),
-                    more=_("With Enable Interaction a right-click (Ctrl+click on a Mac) sends one to the pointer "
+                    more=_("With Rockets on Right-click, a right-click (Ctrl+click on a Mac) sends one to the pointer "
                            "(Shift + right-click for the browser's menu). They're silent and clicks go through them."),
                     preview="surprise-me", scripts=["surprise_me.js"], parts=[
-                        Setting("surprise_me_interaction", True, _("Enable Interaction"),
+                        Setting("surprise_me_interaction", True, _("Rockets on Right-click"),
                                 _("A right-click (Ctrl+click on a Mac) sends a rocket."),
                                 more=_("Turn this off to leave the mouse to the browser and the page: the fireworks "
                                        "still go off.")),
@@ -151,7 +151,7 @@ CATEGORIES = [
     ]),
     Category("themes", _("Themes"), "fa fa-palette fa-fw", groups=[
         Group(_("Theme Menu"), [
-            Setting("show_theme_menu", True, _("Show Theme Menu"),
+            Setting("show_theme_menu", True, _("Theme Menu"),
                     _("A paintbrush in the header to change the theme from any page."),
                     more=_("It sits left of your user icon, or in the side menu on WebODM's Windows app, which has no "
                            "header."),
@@ -164,11 +164,11 @@ CATEGORIES = [
     ], template="settings_themes.html"),
     Category("map2d", _("2D Map"), "fa fa-map fa-fw", groups=[
         Group(_("Controls"), [
-            Setting("movable_controls", False, _("Movable Controls"),
+            Setting("movable_controls", False, _("Movable Panels"),
                     _("Drag the map's panels (Layers, Base Maps, Measure, Contours…) anywhere within the map."),
                     more=_("A panel is dragged by its title. A panel that closes reopens in its usual place."),
                     preview="movable-controls", scripts=["movable_controls.js"]),
-            Setting("other_tasks", False, _("Compare Orthophotos from Other Tasks"),
+            Setting("other_tasks", False, _("Other Tasks' Orthophotos"),
                     _("On a task's map, show another task's orthophoto over this one's."),
                     more=_("A button below Layers lists the project's other tasks that have an orthophoto. Check one "
                            "to show it over this task's, with its own opacity slider."),
@@ -178,7 +178,7 @@ CATEGORIES = [
                     more=_("A button beside Share turns it on. A window lists the photos best first, with each "
                            "photo's details, a full-frame view and a download."),
                     preview="source-frames-2d", scripts=["pick3d.js", "source_frames.js"]),
-            Setting("zoom_override_2d", False, _("Zoom Override"),
+            Setting("zoom_override_2d", False, _("Deeper Zoom"),
                     _("The map zooms in 3 steps further than WebODM lets it."),
                     more=_("Each step twice as close, with the wheel, the + button and a pinch."),
                     preview="zoom-override-2d", scripts=["pick3d.js", "zoom_override.js"], parts=[
@@ -189,7 +189,7 @@ CATEGORIES = [
                                "button on the map changes it too, as you zoom."),
                         preview="zoom-sensitivity-2d", number=(10, 200, 10), unit="%"),
             ]),
-            Setting("map_search", False, _("Add Search Button"),
+            Setting("map_search", False, _("Map Search"),
                     _("A search button on the map: go to an address, a place or coordinates."),
                     more=_("The button above the zoom buttons opens a search box. Type an address or place and press "
                            "Enter (OpenStreetMap's Nominatim looks it up), or coordinates such as 46.84, -91.99 or "
@@ -204,7 +204,7 @@ CATEGORIES = [
                     more=_("A button beside Share turns it on. A window lists the photos best first, with each "
                            "photo's details, a full-frame view and a download."),
                     preview="source-frames-3d", scripts=["pick3d.js", "source_frames.js"]),
-            Setting("zoom_override_3d", False, _("Zoom Override"),
+            Setting("zoom_override_3d", False, _("Zoom to Pointer"),
                     _("The mouse wheel zooms toward what is under the pointer, not the middle of the view."),
                     more=_("So you can get close to any surface (the points or the model), and a trackpad's "
                            "two-finger scroll zooms at a gentle pace. Over empty space it zooms as before."),
@@ -220,7 +220,7 @@ CATEGORIES = [
     Category("diagnostic", _("Diagnostic"), "fa fa-chart-pie fa-fw", groups=[
         Group(_("Storage View"), [
             # main.js adds the side-menu item; the page is the plugin's own (storage.html)
-            Setting("storage_view", False, _("Show Storage View"),
+            Setting("storage_view", False, _("Storage View"),
                     _("A Storage page: how much of your quota each project and task uses."),
                     more=_("Under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It "
                            "also shows each task's files by kind, and lets you compact tasks (delete their photos, "
@@ -232,7 +232,7 @@ CATEGORIES = [
         ]),
         Group(_("Performance View"), [
             # main.js adds the side-menu item; the page is the plugin's own (performance.html)
-            Setting("performance_view", False, _("Show Performance View"),
+            Setting("performance_view", False, _("Performance View"),
                     _("A Performance page: the processing nodes, the server's load and your recent tasks."),
                     more=_("Under Diagnostic in the side menu (under TweakUI when the Diagnostic plugin is off). It "
                            "shows each processing node's cores, memory and queue, the server's CPU load, disk space "

@@ -44,7 +44,7 @@ It is committed and public: nothing private, nothing true only on one machine. K
   its docs page, the README's one-line summary if it changes, and retakes its screenshot (`npm run screenshots`),
   on the same branch.
 - **Names in the UI are in Title Case**: headings, buttons, menu items and setting names ("My Themes", "New Theme",
-  "Show Configured Option Count"); descriptions and messages are sentences. Renaming one is a `grep` across
+  "Configured Option Counts"); descriptions and messages are sentences. Renaming one is a `grep` across
   `tweakui/` (scripts, CSS and Python comments), `__tests__/`, `docs/` (its heading's anchor and every link to it),
   `dev/screenshots.js` and `CHANGELOG.md`'s Unreleased lines; keep element ids the scripts link to unchanged.
 - Planned in `upcoming-changes.md`; new requests arrive in `new.md` (untracked).

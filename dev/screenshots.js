@@ -13,7 +13,7 @@ const OUT = path.join(__dirname, "..", "tweakui", "public", "previews");
 const WIDTH = 1280, HEIGHT = 800, MAX_WIDTH = 1280;
 
 // Every shot: its name (the image's), the settings it turns on (on top of WebODM's theme, the rest as they are;
-// a Dashboard shot turns Expand Task Controls off, which expands every task of the project),
+// a Dashboard shot turns Task Buttons When Minimized off, which expands every task of the project),
 // and what it does to show the feature, returning what to capture: an element's selector, "page" for the
 // viewport, or {pair: [[label, png], ...]} for images side by side (two or three). A pair turns its setting on itself.
 // An optional cleanup(s) runs after the shot, also when it failed.
@@ -313,7 +313,7 @@ const SHOTS = [
                     await s.page.waitForTimeout(350);
                 }
                 await s.page.waitForTimeout(2500);
-                shots.push([on ? "Zoom Override on: 3 steps further" : "Off: WebODM's limit", await s.page.screenshot({clip: await s.middle(".leaflet-container")})]);
+                shots.push([on ? "Deeper Zoom on: 3 steps further" : "Off: WebODM's limit", await s.page.screenshot({clip: await s.middle(".leaflet-container")})]);
             }
             return {pair: shots};
         },

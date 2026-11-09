@@ -1,4 +1,4 @@
-// WebODM's 3D view, for Source Frames and Zoom Override (loaded before them, as window.TweakUI.pick3d): the point
+// WebODM's 3D view, for Source Frames and Zoom to Pointer (loaded before them, as window.TweakUI.pick3d): the point
 // under the pointer, on the point cloud (Potree's pick) or on a mesh shown (the textured model), whichever is nearer
 // (not on the photos' frustums, Potree's measurements or TweakUI's own marks); and the viewer once the page has it.
 // UMD, so Jest can load it.

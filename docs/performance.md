@@ -1,8 +1,10 @@
 # Performance
 
-## Performance View > Show Performance View
+<div id="performance-view-show-performance-view"></div>
 
-Off by default. Found in TweakUI's settings under **Diagnostic**, beside Show Storage View. A superuser can
+## Performance View
+
+Off by default. Found in TweakUI's settings under **Diagnostic**, beside Storage View. A superuser can
 withhold it from users in [Administration > TweakUI](administration).
 
 ![The Performance page with a processing node, the server and recent tasks](../tweakui/public/previews/performance.webp)
@@ -143,7 +145,7 @@ reading first, as when the page opens. A memory figure turns to a warning colour
 
 ### Refresh Every
 
-A part of Show Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the disks'
+A part of Performance View, 3 seconds unless you change it. How often the page refreshes the CPU load, the disks'
 activity, the server's memory and each node's memory, from 1 to 10 seconds. It is on the settings page and on the
 Performance page, behind the gear button beside **Refresh** (a slider and a box, as for the other number settings); a
 change there applies at once and is saved when you let go of the slider or leave the box. The free disk space
@@ -152,10 +154,12 @@ be answered.
 
 ### History Length
 
-A part of Show Performance View, 5 minutes unless you change it. How much time the graphs show, from 1 to 30
+A part of Performance View, 5 minutes unless you change it. How much time the graphs show, from 1 to 30
 minutes, newest at the right. Like Refresh Every, it is on the settings page and on the Performance page, beside it,
 where a change redraws the graphs at once (with the readings the page has kept: a longer window shows more once the
 page has been open that long).
+
+<div id="recent-processing"></div>
 
 ## Recent Task History
 
@@ -186,7 +190,7 @@ notes, the button counts them, with the icon of the most pressing one:
 - **GPU**: whether the node used a GPU, from the log (**No** when it found none).
 
 Area and Position Error are in WebODM's unit system, the one the maps' unit selector and
-[Units in Header](general#global-controls-units-in-header) set: square metres or hectares and centimetres or metres in metric, square
+[Units Menu](general#global-controls-units-menu) set: square metres or hectares and centimetres or metres in metric, square
 feet or acres and inches or feet in imperial. They change with it. At phone width the date and the node fold into a
 line under the task's name.
 

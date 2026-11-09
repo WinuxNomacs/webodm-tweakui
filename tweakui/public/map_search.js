@@ -1,4 +1,4 @@
-// 2D Map > Add Search Button: a magnifier button above the map's zoom buttons (bottom left) opens a search box.
+// 2D Map > Map Search: a magnifier button above the map's zoom buttons (bottom left) opens a search box.
 // Coordinates (decimal degrees or degrees, minutes and seconds, with or without N/S/E/W) go straight there, with no
 // request; anything else is asked of OpenStreetMap's Nominatim (which WebODM already asks for a photo's place name)
 // when Enter is pressed, never as one types, and at most once a second, as its usage policy asks. Up to five results

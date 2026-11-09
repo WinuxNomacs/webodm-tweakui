@@ -67,7 +67,7 @@ test("turned on, a tab on the divider below the header cycles the pane: icons on
     expect(t.getAttribute("aria-expanded")).toBe("true");
 });
 
-test("icons only from the tab is the narrow view, without Resize Navigation Pane: each link's name as its tooltip", () => {
+test("icons only from the tab is the narrow view, without Resizable Navigation Pane: each link's name as its tooltip", () => {
     start({hide_nav_pane: true, resize_nav_pane: false});
     tab().click();
     expect(html.classList.contains("tweakui-nav-sized")).toBe(true);
@@ -177,7 +177,7 @@ test("a browser that blocks storage still hides and shows the pane, without reme
     expect(hidden()).toBe(true);
 });
 
-describe("Resize Navigation Pane", () => {
+describe("Resizable Navigation Pane", () => {
     const handle = () => document.querySelector(".tweakui-nav-handle");
     // jsdom has no PointerEvent: a MouseEvent of that type carries button and clientX
     const pointer = (type, x) => handle().dispatchEvent(new MouseEvent(type, {bubbles: true, cancelable: true, button: 0, clientX: x}));
@@ -298,7 +298,7 @@ describe("Resize Navigation Pane", () => {
     });
 });
 
-describe("Auto-hide Navigation Pane", () => {
+describe("Auto-hide", () => {
     const peeking = () => html.classList.contains("tweakui-nav-peek");
     const move = (x, y) => document.dispatchEvent(new MouseEvent("mousemove", {clientX: x, clientY: y, bubbles: true}));
     const pane = () => document.querySelector(".sidebar");
@@ -389,7 +389,7 @@ describe("Auto-hide Navigation Pane", () => {
         expect(hidden()).toBe(false);
     });
 
-    test("the tab no longer gives the icons alone, and the remembered width is Resize Navigation Pane's", () => {
+    test("the tab no longer gives the icons alone, and the remembered width is Resizable Navigation Pane's", () => {
         localStorage.setItem(navPane.WIDTH_KEY, "50");
         start({hide_nav_pane: true, auto_hide_nav_pane: true});
         expect(icons()).toBe(false);
@@ -398,7 +398,7 @@ describe("Auto-hide Navigation Pane", () => {
         expect(width()).toBe("320px");
     });
 
-    test("turned on and off from the settings page, it follows at once; without Hide Navigation Pane it does nothing", () => {
+    test("turned on and off from the settings page, it follows at once; without Collapsible Navigation Pane it does nothing", () => {
         start({hide_nav_pane: true});
         expect(hidden()).toBe(false);
         document.dispatchEvent(new CustomEvent("tweakuiSettingsChanged", {detail: {hide_nav_pane: true, auto_hide_nav_pane: true}}));

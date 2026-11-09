@@ -1,4 +1,4 @@
-// 2D Map > Movable Controls: the 2D map's popup panels (Layers, Base Maps, Measure, Contours, Object Detection,
+// 2D Map > Movable Panels: the 2D map's popup panels (Layers, Base Maps, Measure, Contours, Object Detection,
 // TweakUI's Other Tasks, ...) can be dragged by their title, with the mouse or a finger, within the map. A panel that
 // closes has its position cleared, so it reopens where WebODM puts it. Each panel is a Leaflet control in a corner of
 // the map: the whole control is moved (a CSS transform, which leaves the other controls in place). Leaflet stops
