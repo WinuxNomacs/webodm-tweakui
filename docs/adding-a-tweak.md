@@ -25,7 +25,7 @@ own:
 
 | What | Where |
 | --- | --- |
-| The setting: name, default, label, description, preview, scripts | `tweakui/features.py` |
+| The setting: name, default, label, summary and more, preview, scripts | `tweakui/features.py` |
 | The script | `tweakui/public/<name>.js` |
 | Its styles, if any | its own section of `tweakui/public/main.css` |
 | Its tests | `tweakui/public/__tests__/<name>.test.js` (Jest); `tweakui/tests/test_tweakui.py` for Python |
@@ -46,11 +46,14 @@ In `tweakui/features.py`, add it to its category and group, here 2D Map > Contro
 
 ```python
 Setting("scale_bar", False, _("Scale Bar"),
-        _("A scale bar in the bottom left corner of the map, in metres and in feet."),
+        _("A scale bar in the bottom left corner of the map."),
+        more=_("In metres and in feet, and it follows the map's zoom."),
         preview="scale-bar", scripts=["scale_bar.js"]),
 ```
 
-The default is `False` (off). `preview` names the screenshot shown beside the setting; leave it out until the
+The default is `False` (off). The line after the label is the summary: one line on the settings page saying what you
+get. `more` is the rest of the description (how it works, what differs on a phone or in WebODM's Windows app, what is
+remembered), shown when the summary's **More** is pressed; leave it out when the summary says it all. `preview` names the screenshot shown beside the setting; leave it out until the
 screenshot exists, because a test checks that the file is there. `scripts` lists the files in `tweakui/public/`
 that the setting needs, in load order. A script that several settings share loads once.
 

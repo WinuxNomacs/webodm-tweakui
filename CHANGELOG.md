@@ -2,6 +2,14 @@
 
 ## Unreleased
 
+### Settings Page
+
+- Each setting's description is one line saying what you get, with **More** after it for the rest (how it works,
+  what differs on a phone or in WebODM's Windows app); **Less** hides it again.
+- On a phone, a setting's screenshot is a **Preview** link under its description, which opens it full size.
+- General: Hide Navigation Pane (with Auto-hide Navigation Pane and Hide Delay) and Resize Navigation Pane are in a
+  **Navigation Pane** group of their own, after Global Controls.
+
 ### Administration
 
 - Administration > TweakUI Themes is now the **Published Themes** section of Administration > TweakUI, under

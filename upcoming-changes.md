@@ -3,9 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **UX review, Phase C: Settings page readability** (one-line descriptions with More, enlargeable previews, a
-   Navigation Pane group) — open decisions below.
-2. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
+1. **UX review: setting names** — rename all, the new names proposed first (a rename across docs, previews and
    CHANGELOG).
 
 **Later**
@@ -13,6 +11,17 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Done**
+- **UX review, Phase C: Settings page readability** (user request, 2026-11-09) — branch `ux-settings-readability`:
+  `features.py` (a setting's `summary`, one line, and `more`, the rest of its description, in place of `help`; every
+  description rewritten so; a Navigation Pane group in General after Global Controls with Hide, Auto-hide, Hide Delay
+  and Resize), `settings_setting.html` (the summary with a More link acting as a button, the rest hidden under it),
+  `settings_page.js` (`addMore`: More and Less; `pressed`: a link acting as a button, click, Enter or Space, the
+  address left alone; the preview thumbnail such a link, with a Preview text), `main.css` (on a phone the thumbnail is
+  the Preview link: links take the theme's colour, which WebODM gives only to `a`). Tests: `settings_page.test.js` (2),
+  `test_tweakui.py` (2: the group and its order; the summary, More and the hidden rest). Docs `index.md` (how the
+  settings page reads), `general.md` (the two headings), `adding-a-tweak.md` (`summary` and `more`), CHANGELOG. No
+  screenshot shows the descriptions. Live on 4.0.0 and 3.3.2 at desktop and phone width (summaries one line on
+  desktop, More and Preview leave the address alone, 390px fits). Enlarging a preview on a click was already built.
 - **UX review, Phase B: Performance page layout** (user request, 2026-11-09) — branch `ux-performance-layout`:
   `performance.html` (the controls in a bar beside the heading, Refresh Every and History Length in the gear's
   popover), `performance_page.js` (`headingHtml`: a section's notes behind an info button, kept open over a redraw;
@@ -842,14 +851,11 @@ Decided (2026-11-09):
 - Row actions: a "•••" button at the end of each row, as on WebODM's Dashboard: Performance's Actions menu moves
   there (same items), and Storage's per-row Import and Delete become a "•••" menu (Import, Delete) at its row's end.
 
-### Phase C: Settings page readability (to plan)
+### Phase C: Settings page readability (built, see Done)
 
-- Each description's first line says what you get; the caveats (Windows app, phone, remembered in this browser)
-  behind a More toggle.
-- Previews enlarge on click; at phone width hidden behind a Preview link.
-- A "Navigation Pane" group: Hide, Auto-hide (with Hide Delay) and Resize together.
-Proposed, to confirm when the phase is planned: every description rewritten as one line plus More; previews hidden
-on phones behind a Preview link.
+Decided (2026-11-09): every description becomes one line saying what you get plus More for the rest; on a phone a
+Preview link in place of the thumbnail; a Navigation Pane group after Global Controls. Previews already enlarged on
+a click.
 
 ### Setting names
 

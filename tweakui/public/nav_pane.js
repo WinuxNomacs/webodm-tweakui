@@ -1,15 +1,15 @@
-// General > Global Controls > Hide Navigation Pane: a small tab on the divider between the side menu (WebODM's
+// General > Navigation Pane > Hide Navigation Pane: a small tab on the divider between the side menu (WebODM's
 // navigation pane) and the page, near the top. A click hides the pane, the page takes the whole width and only the
 // tab stays, at the left edge. The tab cycles: the pane at WebODM's width -> its icons alone (the same view as Resize
 // Navigation Pane's narrowest) -> hidden -> WebODM's width again. Remembered in this browser (localStorage), so the
 // next page opens the same way. Only where WebODM shows the pane beside the page (768 px wide and more, main.css); narrower,
 // the pane is the header's hamburger menu, left as it is. The settings page announces each saved change
 // ("tweakuiSettingsChanged"), so turning it on or off there shows or removes the tab at once.
-// General > Global Controls > Resize Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
+// General > Navigation Pane > Resize Navigation Pane: the divider is a handle; dragging it sets the side menu's width,
 // from its icons' column to half the window, and a double click puts back WebODM's 250 px. Narrower than SNAP, it
 // snaps to the icons alone: labels and submenu arrows hidden, each link's name as its tooltip, submenu items unindented
 // so their icons line up. Remembered in this browser too.
-// General > Global Controls > Hide Navigation Pane > Auto-hide Navigation Pane: the pane stays hidden until the
+// General > Navigation Pane > Hide Navigation Pane > Auto-hide Navigation Pane: the pane stays hidden until the
 // pointer nears the window's left edge (or the keyboard's focus goes into it), then shows over the page, which keeps
 // its size (no resize: the maps don't redraw), at its remembered width (Resize Navigation Pane's, else WebODM's); it
 // hides again Hide Delay after the pointer leaves it and the tab (or at once with Escape). The tab then pins the pane
