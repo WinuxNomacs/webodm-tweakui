@@ -3,7 +3,13 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+- **Bug: map tiles sometimes never drawn with the Speed settings** (reported 2026-11-10). On the thermal task's map,
+  with Tile Cache, Reuse Browser Copies, Fewer Tile Requests, Load Ahead 25%, Keep More Tiles 50% and Fade-in Speed
+  0, some tiles, or sometimes the whole layer, aren't drawn; the tiles that do draw come quickly. Not reproduced
+  headless yet, and the server logs no errors. Tried at DPR 1.5: one zoom at a time; 4- and 8-notch wheel bursts; a
+  persistent profile over two visits; the + and − buttons; a double-click; Orthophoto ↔ Thermal; pans. Every tile
+  arrives within 7 s. Waiting on the user to narrow it down (which setting, which action, whether it fills in later,
+  and the state of the tiles at that moment).
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
