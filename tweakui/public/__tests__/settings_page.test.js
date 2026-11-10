@@ -516,3 +516,85 @@ test("More shows the rest of a setting's description and reads Less, which hides
     expect(toggle.getAttribute("aria-expanded")).toBe("false");
     expect(toggle.textContent).toBe("More");
 });
+
+test("Load Ahead's estimate counts the tiles beyond the view as Leaflet does, 512-pixel tiles at half size on a high-resolution screen", () => {
+    // 1400 x 900 at DPR 2 (256-pixel tiles): 7 x 5 tiles in view; at 100%, 18 x 12 with those beyond
+    expect(settingsPage.loadAheadTiles(1400, 900, 2, 1)).toBe(18 * 12 - 7 * 5);
+    // the same window at DPR 1 (512-pixel tiles): 4 x 3 in view, 10 x 7 at 100%
+    expect(settingsPage.loadAheadTiles(1400, 900, 1, 1)).toBe(10 * 7 - 4 * 3);
+    expect(settingsPage.loadAheadTiles(1400, 900, 2, 2)).toBeGreaterThan(settingsPage.loadAheadTiles(1400, 900, 2, 1));
+});
+
+test("Keep More's estimate counts its columns and rows beyond WebODM's 2, around what Load Ahead loads", () => {
+    // 7 x 5 loaded; at 100%, 2 + 6 columns and 2 + 4 rows each side, where WebODM keeps 2
+    expect(settingsPage.keepMoreTiles(1400, 900, 2, 1, 0)).toBe(23 * 17 - 11 * 9);
+    expect(settingsPage.keepMoreTiles(1400, 900, 2, 1, 1)).toBeGreaterThan(settingsPage.keepMoreTiles(1400, 900, 2, 1, 0));
+});
+
+test("the estimates say approximately how many MB per layer, Keep More's at most, and Load Ahead's share counts for Keep More only while ticked", () => {
+    const values = {load_ahead_on: false, load_ahead: 100, keep_more_tiles: 100};
+    expect(settingsPage.estimateText("load_ahead", values, 1400, 900, 2))
+        .toBe("Approximately 65 MB more memory per layer, in a window of this size.");
+    expect(settingsPage.estimateText("keep_more", values, 1400, 900, 2))
+        .toBe("Approximately 100 MB more memory per layer at most, in a window of this size.");
+    expect(settingsPage.estimateText("keep_more", Object.assign({}, values, {load_ahead_on: true}), 1400, 900, 2))
+        .toBe("Approximately 160 MB more memory per layer at most, in a window of this size.");
+    // never less than the first step
+    expect(settingsPage.estimateText("load_ahead", {load_ahead: 25}, 400, 300, 1)).toMatch(/^Approximately 5 MB/);
+});
+
+test("the device's memory is said only where the browser gives it, 8 GB as 8 or more", () => {
+    expect(settingsPage.deviceMemoryText({deviceMemory: 4})).toBe("This device has approximately 4 GB of memory.");
+    expect(settingsPage.deviceMemoryText({deviceMemory: 8})).toBe("This device has approximately 8 GB of memory or more.");
+    expect(settingsPage.deviceMemoryText({deviceMemory: 32})).toBe("This device has approximately 32 GB of memory.");
+    expect(settingsPage.deviceMemoryText({})).toBeNull();
+});
+
+function speedGroup() {
+    document.body.innerHTML = `
+      <div id="tweakui-settings"><div class="tweakui-group">
+        <div class="tweakui-setting"><input type="checkbox" data-setting="load_ahead_on"></div>
+        <div class="tweakui-setting tweakui-number-setting">
+          <input type="range" data-slider-of="load_ahead" min="25" max="200" step="25" value="100">
+          <input type="number" data-setting="load_ahead" min="25" max="200" value="100" data-saved="100">
+          <p class="text-muted tweakui-estimate" data-estimate="load_ahead" hidden></p></div>
+        <div class="tweakui-setting tweakui-number-setting">
+          <input type="number" data-setting="keep_more_tiles" min="25" max="100" value="100" data-saved="100">
+          <p class="text-muted tweakui-estimate" data-estimate="keep_more" hidden></p></div>
+      </div></div>`;
+    return document.getElementById("tweakui-settings");
+}
+
+test("the estimates follow the sliders, Load Ahead's checkbox and the window's size, and the device's memory ends their group", () => {
+    const root = speedGroup(), win = new EventTarget();
+    Object.assign(win, {innerWidth: 1400, innerHeight: 900, devicePixelRatio: 2, navigator: {deviceMemory: 8}});
+    settingsPage.addEstimates(root, win);
+    const [ahead, keep] = root.querySelectorAll("[data-estimate]");
+    expect(ahead.hidden).toBe(false);
+    expect(ahead.textContent).toMatch(/^Approximately 65 MB/);
+    expect(keep.textContent).toMatch(/^Approximately 100 MB/);
+    root.querySelector("input[data-setting='load_ahead']").value = "50";
+    root.querySelector("input[data-setting='load_ahead']").dispatchEvent(new Event("input", {bubbles: true}));
+    expect(ahead.textContent).toMatch(/^Approximately 25 MB/);
+    const tick = root.querySelector("input[data-setting='load_ahead_on']");
+    tick.checked = true;
+    tick.dispatchEvent(new Event("change", {bubbles: true}));
+    expect(keep.textContent).toMatch(/^Approximately 130 MB/);
+    // a box out of range counts as its saved value
+    root.querySelector("input[data-setting='load_ahead']").value = "999";
+    root.querySelector("input[data-setting='load_ahead']").dispatchEvent(new Event("input", {bubbles: true}));
+    expect(ahead.textContent).toMatch(/^Approximately 65 MB/);
+    win.innerWidth = 700;
+    win.dispatchEvent(new Event("resize"));
+    expect(ahead.textContent).not.toMatch(/^Approximately 65 MB/);
+    expect(root.querySelector(".tweakui-group > p.tweakui-device-memory").textContent)
+        .toBe("This device has approximately 8 GB of memory or more.");
+});
+
+test("a browser that doesn't give the device's memory shows only the estimates", () => {
+    const root = speedGroup(), win = new EventTarget();
+    Object.assign(win, {innerWidth: 1400, innerHeight: 900, devicePixelRatio: 1, navigator: {}});
+    settingsPage.addEstimates(root, win);
+    expect(root.querySelector(".tweakui-device-memory")).toBeNull();
+    expect(root.querySelector("[data-estimate]").hidden).toBe(false);
+});

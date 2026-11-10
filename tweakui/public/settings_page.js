@@ -10,6 +10,7 @@
 // data-preview gets a thumbnail of its screenshot (public/previews/<name>.webp), which a click shows full size in an
 // overlay (Esc, a click or its x closes it); a screenshot that doesn't load hides its thumbnail. On a phone the thumbnail
 // is a Preview link (main.css). A setting's More button shows the rest of its description, and Less hides it again.
+// 2D Map > Speed's Distance and Amount show the memory their tiles may take, updated as they change.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
@@ -241,6 +242,93 @@
         });
     }
 
+    // Memory estimates under 2D Map > Speed's Distance (Load Ahead) and Amount (Keep More Tiles), for a map filling a
+    // window of this size on this screen: the extra tiles one layer holds, at the memory a tile took in Chromium
+    // (0.35 MB, measured on a 4.0.0 dev server: a 512-pixel image, kept compressed while off screen). The tiles are
+    // counted as map_tiles.js and Leaflet do: 512-pixel tiles drawn at half size on a high-resolution screen (Leaflet's
+    // detectRetina), a range of tiles covering the view (plus Load Ahead's share each side), and Keep More's columns
+    // and rows beyond it in place of WebODM's 2
+    var TILE_MB = 0.35, TILE_PX = 512, WEBODM_KEEP = 2;
+
+    function tileSide(dpr) { return dpr > 1 ? TILE_PX / 2 : TILE_PX; }
+
+    // The tiles a range covering px pixels may take along one side
+    function span(px, side) { return Math.ceil(px / side) + 1; }
+
+    // The tiles Load Ahead loads beyond those in view, for a share of the view each side
+    function loadAheadTiles(width, height, dpr, ahead) {
+        var side = tileSide(dpr), grow = 1 + 2 * ahead;
+        return span(width * grow, side) * span(height * grow, side) - span(width, side) * span(height, side);
+    }
+
+    // The most tiles Keep More Tiles keeps beyond WebODM's own, around what is loaded (with Load Ahead's share)
+    function keepMoreTiles(width, height, dpr, keep, ahead) {
+        var side = tileSide(dpr), grow = 1 + 2 * ahead;
+        var cols = span(width * grow, side), rows = span(height * grow, side);
+        var kx = WEBODM_KEEP + Math.ceil(width * keep / side), ky = WEBODM_KEEP + Math.ceil(height * keep / side);
+        return (cols + 2 * kx) * (rows + 2 * ky) - (cols + 2 * WEBODM_KEEP) * (rows + 2 * WEBODM_KEEP);
+    }
+
+    // Megabytes as said: to 5 MB below 100, to 10 above
+    function megabytes(tiles) {
+        var mb = tiles * TILE_MB, step = mb < 100 ? 5 : 10;
+        return Math.max(step, Math.round(mb / step) * step);
+    }
+
+    // The text under each slider, from the page's own boxes (a percentage; Load Ahead counts only while ticked)
+    function estimateText(kind, values, width, height, dpr) {
+        var ahead = values.load_ahead_on ? values.load_ahead / 100 : 0;
+        if (kind === "load_ahead") {
+            return "Approximately " + megabytes(loadAheadTiles(width, height, dpr, values.load_ahead / 100)) +
+                " MB more memory per layer, in a window of this size.";
+        }
+        return "Approximately " + megabytes(keepMoreTiles(width, height, dpr, values.keep_more_tiles / 100, ahead)) +
+            " MB more memory per layer at most, in a window of this size.";
+    }
+
+    // The device's memory, which Chrome and Edge give rounded (and usually no more than 8 GB, so 8 may be more); null
+    // elsewhere
+    function deviceMemoryText(nav) {
+        var gb = nav && nav.deviceMemory;
+        if (!(gb > 0)) return null;
+        return "This device has approximately " + gb + " GB of memory" + (gb === 8 ? " or more" : "") + ".";
+    }
+
+    // Fills the estimates and keeps them up to date as a slider moves, a box or Load Ahead's checkbox changes, or the
+    // window is resized; the device's memory goes at the end of their group
+    function addEstimates(page, win) {
+        var lines = page.querySelectorAll("[data-estimate]");
+        if (!lines.length) return;
+        function value(name) {
+            var input = page.querySelector("input[data-setting='" + name + "']");
+            if (!input) return 0;
+            if (input.type === "checkbox") return input.checked;
+            var n = Number(input.value);
+            if (!(n >= Number(input.min) && n <= Number(input.max))) n = Number(input.getAttribute("data-saved"));
+            return n || 0;
+        }
+        function update() {
+            var values = {load_ahead_on: value("load_ahead_on"), load_ahead: value("load_ahead"),
+                keep_more_tiles: value("keep_more_tiles")};
+            var dpr = win.devicePixelRatio || 1;
+            each(lines, function (line) {
+                line.textContent = estimateText(line.getAttribute("data-estimate"), values, win.innerWidth, win.innerHeight, dpr);
+                line.hidden = false;
+            });
+        }
+        update();
+        page.addEventListener("input", update);
+        page.addEventListener("change", update);
+        win.addEventListener("resize", update);
+        var device = deviceMemoryText(win.navigator), group = lines[0].closest(".tweakui-group");
+        if (device && group) {
+            var p = group.ownerDocument.createElement("p");
+            p.className = "text-muted tweakui-device-memory";
+            p.textContent = device;
+            group.appendChild(p);
+        }
+    }
+
     // Themes > Sample does nothing: Enter in its text field doesn't submit, and its links don't change the page's hash
     // (which picks the category). Its dropdown and tooltip are Bootstrap's, when the page has them.
     function inertSample(page, win) {
@@ -268,6 +356,7 @@
         applyDepends(page);
         addPreviews(page, doc);
         addMore(page);
+        addEstimates(page, win);
         inertSample(page, win);
         // A save that reloaded the page
         var store = storage(win);
@@ -316,5 +405,6 @@
     }
 
     return {start: start, showSection: showSection, save: save, applyDepends: applyDepends,
-        addPreviews: addPreviews, addMore: addMore, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
+        addPreviews: addPreviews, addMore: addMore, addEstimates: addEstimates, estimateText: estimateText,
+        loadAheadTiles: loadAheadTiles, keepMoreTiles: keepMoreTiles, deviceMemoryText: deviceMemoryText, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
 });
