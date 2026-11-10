@@ -850,7 +850,7 @@ Proposed, each one a setting (all off by default):
      query minus `cache`, the raster's size and mtime, the task's crop, and whether the browser accepts webp.
    - It answers with a private Cache-Control and an ETag, so both the server and the browser reuse tiles.
    - In the browser, the Map hook overrides each layer's `getTileUrl`, which still holds when WebODM calls `setUrl`.
-2. **Standard-resolution tiles on HiDPI screens:** turn `detectRetina` off. That needs about 40% of the tiles, at
+2. **Standard-resolution tiles on HiDPI screens:** turn `detectRetina` off. That needs about a third of the tiles (6 instead of 20 on opening, 12 instead of 35 per zoom step), at
    the cost of a softer image.
 3. **Leaflet tweaks:** `updateWhenZooming: false` (no tiles requested in the middle of a zoom) and a larger
    `keepBuffer` (tiles kept when panning back).
