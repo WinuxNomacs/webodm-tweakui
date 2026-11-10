@@ -39,15 +39,17 @@
     var WEBODM = {keepBuffer: 2, fadeMs: 200, loadAhead: 0, keepMore: 0};
     var MARK = "__tweakuiMapTiles";
 
-    // The settings as this script uses them; null when all are WebODM's own
+    // The settings as this script uses them (Load Ahead, Keep More Tiles and Fade-in Speed each a checkbox with its number
+    // beneath; off is WebODM's own); null when all are WebODM's own
     function optionsOf(settings) {
         var o = {
             cache: !!settings.tile_cache,
             reuse: !!settings.tile_cache && !!settings.reuse_browser_copies,
             fewer: !!settings.fewer_tile_requests,
-            loadAhead: share(settings.load_ahead),
-            keepMore: share(settings.keep_more_tiles),
-            fadeMs: typeof settings.fade_in_speed === "number" && settings.fade_in_speed >= 0 ? settings.fade_in_speed : WEBODM.fadeMs
+            loadAhead: settings.load_ahead_on ? share(settings.load_ahead) : 0,
+            keepMore: settings.keep_more_tiles_on ? share(settings.keep_more_tiles) : 0,
+            fadeMs: settings.fade_in_speed_on && typeof settings.fade_in_speed === "number" && settings.fade_in_speed >= 0 ?
+                settings.fade_in_speed : WEBODM.fadeMs
         };
         var changed = o.cache || o.fewer || o.loadAhead > 0 || o.keepMore > 0 || o.fadeMs !== WEBODM.fadeMs;
         return changed ? o : null;
