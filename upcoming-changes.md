@@ -16,6 +16,14 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Checkboxes for Load Ahead, Keep More Tiles and Fade-in Speed** (asked in chat, 2026-11-10) — branch
+  `speed-checkboxes`. The user chose: like Deeper Zoom (a checkbox, its slider beneath and greyed while off); the
+  sliders start at the first step that changes something; a first tick gives 25%, 50% and 0 ms. `features.py`:
+  `load_ahead_on`, `keep_more_tiles_on`, `fade_in_speed_on` (off), each with its number as a part (Distance 25–100%,
+  Amount 25–200%, Duration 0–400 ms); a stored value outside the new range falls back to the default.
+  `map_tiles.optionsOf` reads the checkboxes. Tests `test_tweakui.py`, `map_tiles.test.js`; docs `map-2d.md`,
+  `adding-a-tweak.md`, CHANGELOG. Live on both stacks: the checkboxes are off with their sliders disabled, and ticking
+  one enables its slider and saves. On 4.0.0's map, Load Ahead at 50% keeps 35 tiles ticked and 15 unticked.
 - **Fade-in Speed up to 400 ms** (asked in chat, 2026-11-10) — branch `fade-in-400`: `features.py` values
   `(0, 50, 100, 200, 300, 400)`, so WebODM's 200 ms stays at the 4th stop and saved values keep their place. Tests
   `test_tweakui.py`; docs `map-2d.md`, `adding-a-tweak.md`, CHANGELOG. Live on both stacks: the slider's right end is

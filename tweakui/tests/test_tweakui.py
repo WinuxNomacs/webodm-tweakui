@@ -35,7 +35,8 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "reuse_browser_copies": False, "fewer_tile_requests": False, "load_ahead": 0, "keep_more_tiles": 0, "fade_in_speed": 200,
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "reuse_browser_copies": False, "fewer_tile_requests": False,
+                 "load_ahead_on": False, "load_ahead": 25, "keep_more_tiles_on": False, "keep_more_tiles": 50, "fade_in_speed_on": False, "fade_in_speed": 0,
                  "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
@@ -329,28 +330,38 @@ class TestSettingsPage(TweakUITestCase):
             self.assertEqual(self.patch({"zoom_sensitivity_3d": value}).status_code, 400)
         self.assertIn("zoom_sensitivity_2d takes 10 to 200", self.patch({"zoom_sensitivity_2d": 300}).json()["detail"])
 
-    def test_the_speed_sliders_start_at_webodm_s_own_and_fade_in_speed_takes_only_its_values(self):
+    def test_load_ahead_keep_more_tiles_and_fade_in_speed_are_checkboxes_off_with_their_numbers_beneath(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         section = page[page.index('<section id="tweakui-map2d"'):]
         section = section[:section.index("</section>")]
         self.assertLess(section.index('data-depends="tile_cache"'), section.index('data-setting="reuse_browser_copies"'))
-        order = [section.index('data-setting="%s"' % n) for n in
-                 ("tile_cache", "reuse_browser_copies", "fewer_tile_requests", "load_ahead", "keep_more_tiles", "fade_in_speed")]
+        names = ("tile_cache", "reuse_browser_copies", "fewer_tile_requests", "load_ahead_on", "load_ahead",
+                 "keep_more_tiles_on", "keep_more_tiles", "fade_in_speed_on", "fade_in_speed")
+        order = [section.index('data-setting="%s"' % n) for n in names]
         self.assertEqual(order, sorted(order))
-        self.assertIn('data-slider-of="load_ahead" min="0" max="100" step="25" value="0"', section)
-        self.assertIn('data-slider-of="keep_more_tiles" min="0" max="200" step="25" value="0"', section)
-        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="3"', section)
-        self.assertIn('Fade-in Speed <span class="tweakui-default text-muted">(Default: 200 ms)</span>', section)
-        self.assertEqual(self.patch({"fade_in_speed": 50, "load_ahead": 75}).json(),
-                         defaults(fade_in_speed=50, load_ahead=75))
+        for name in ("load_ahead", "keep_more_tiles", "fade_in_speed"):
+            self.assertIn('<input type="checkbox" data-setting="%s_on">' % name, section)
+            self.assertLess(section.index('data-setting="%s_on"' % name), section.index('data-depends="%s_on"' % name))
+            self.assertLess(section.index('data-depends="%s_on"' % name), section.index('data-slider-of="%s"' % name))
+        # Each slider starts at the first step that changes something, and at the value a first tick gives
+        self.assertIn('data-slider-of="load_ahead" min="25" max="100" step="25" value="25"', section)
+        self.assertIn('data-slider-of="keep_more_tiles" min="25" max="200" step="25" value="50"', section)
+        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="0"', section)
+        self.assertIn('Distance <span class="tweakui-default text-muted">(Default: 25%)</span>', section)
+        self.assertIn('Duration <span class="tweakui-default text-muted">(Default: 0 ms)</span>', section)
+        for name, value in (("load_ahead", 0), ("keep_more_tiles", 0), ("load_ahead", 125)):
+            self.assertEqual(self.patch({name: value}).status_code, 400, (name, value))
+        self.assertEqual(self.patch({"load_ahead_on": True, "fade_in_speed_on": True, "fade_in_speed": 50, "load_ahead": 75}).json(),
+                         defaults(load_ahead_on=True, fade_in_speed_on=True, fade_in_speed=50, load_ahead=75))
         page = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertIn('<input type="checkbox" data-setting="load_ahead_on" checked>', page)
         self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="1"', page)
         self.assertIn('data-setting="fade_in_speed" min="0" max="400" step="1" value="50" data-saved="50" data-values="0,50,100,200,300,400"', page)
         for value in (150, 25, 350, 500, 50.0):
             self.assertEqual(self.patch({"fade_in_speed": value}).status_code, 400, value)
         self.assertIn("fade_in_speed takes 0, 50, 100, 200, 300 or 400", self.patch({"fade_in_speed": 150}).json()["detail"])
         self.assertEqual(self.script_settings(self.client)["fade_in_speed"], 50)
-        self.assertEqual(self.patch({"fade_in_speed": 400}).json(), defaults(fade_in_speed=400, load_ahead=75))
+        self.assertTrue(self.script_settings(self.client)["fade_in_speed_on"])
 
     def test_a_number_setting_refuses_a_number_out_of_its_range_or_not_whole(self):
         for value in (199, 3001, 500.0, "500", True):

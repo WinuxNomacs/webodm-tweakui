@@ -1,8 +1,16 @@
 const mapTiles = require("../map_tiles");
 
 const TILES = "/api/projects/3/tasks/ab-12/orthophoto/tiles/{z}/{x}/{y}?rescale=0%2C255&size=512&cache=123456&crop=1";
-const OFF = {tile_cache: false, reuse_browser_copies: false, fewer_tile_requests: false, load_ahead: 0, keep_more_tiles: 0, fade_in_speed: 200};
-const opts = changes => mapTiles.optionsOf(Object.assign({}, OFF, changes));
+const OFF = {tile_cache: false, reuse_browser_copies: false, fewer_tile_requests: false, load_ahead_on: false, load_ahead: 25,
+             keep_more_tiles_on: false, keep_more_tiles: 50, fade_in_speed_on: false, fade_in_speed: 0};
+// The settings with these changes; a number given ticks its checkbox, unless its checkbox is given too
+const ON = {load_ahead: "load_ahead_on", keep_more_tiles: "keep_more_tiles_on", fade_in_speed: "fade_in_speed_on"};
+const settingsWith = changes => {
+    const s = Object.assign({}, OFF, changes);
+    Object.keys(ON).forEach(n => { if (n in changes && !(ON[n] in changes)) s[ON[n]] = true; });
+    return s;
+};
+const opts = changes => mapTiles.optionsOf(settingsWith(changes));
 const flush = () => new Promise(r => setTimeout(r, 0));
 
 // Leaflet's Point and Bounds as far as Load Ahead uses them
@@ -41,8 +49,12 @@ function fakeMap(layers) {
 }
 const at = {z: 18, x: 64084, y: 92370};
 
-test("all at WebODM's own (the sliders at their left end) changes nothing", () => {
+test("all at WebODM's own (each checkbox off, whatever its number) changes nothing", () => {
     expect(opts({})).toBeNull();
+    expect(opts({load_ahead_on: false, load_ahead: 100, keep_more_tiles_on: false, keep_more_tiles: 200,
+                 fade_in_speed_on: false, fade_in_speed: 400})).toBeNull();
+    expect(opts({load_ahead_on: true, keep_more_tiles_on: true, fade_in_speed_on: true}))
+        .toMatchObject({loadAhead: 0.25, keepMore: 0.5, fadeMs: 0});
     expect(opts({reuse_browser_copies: true})).toBeNull();
     expect(opts({fade_in_speed: 200, load_ahead: 0})).toBeNull();
     expect(opts({fade_in_speed: 0})).toMatchObject({fadeMs: 0});
@@ -260,7 +272,7 @@ describe("Fade-in Speed", () => {
 test("the map hook is used only when a setting differs from WebODM's own, and asks the map's tasks' versions", async () => {
     const hook = jest.fn();
     const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({version: "v1"})}));
-    const win = settings => ({TweakUI: {settings: Object.assign({}, OFF, settings)}, PluginsAPI: {Map: {didAddControls: hook}}, document: {}, fetch});
+    const win = settings => ({TweakUI: {settings: settingsWith(settings)}, PluginsAPI: {Map: {didAddControls: hook}}, document: {}, fetch});
     mapTiles.start({}, win({}));
     mapTiles.start({}, win({reuse_browser_copies: true}));
     expect(hook).not.toHaveBeenCalled();

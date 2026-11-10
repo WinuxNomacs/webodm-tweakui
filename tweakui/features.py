@@ -223,25 +223,37 @@ CATEGORIES = [
                            "zoom level it passes. Fewer tiles to draw makes the map quicker to settle, above all on "
                            "a phone or a high-resolution screen."),
                     scripts=["map_tiles.js"]),
-            Setting("load_ahead", 0, _("Load Ahead"),
-                    _("How far beyond the edges of the view the map loads tiles, so they are there before you pan "
-                      "to them."),
-                    more=_("A share of the view's width and height beyond each edge. 0% is WebODM's own: only the "
-                           "tiles in view are loaded, so the edges fill in as you pan. Each step loads more tiles "
-                           "(100% loads up to 9 times as many), which Tile Cache makes cheaper. The tiles in view "
-                           "always load first: those beyond wait until they have, and the map is still."),
-                    scripts=["map_tiles.js"], number=(0, 100, 25), unit="%"),
-            Setting("keep_more_tiles", 0, _("Keep More Tiles"),
-                    _("How many tiles the map keeps after they leave the view, so panning back shows them at once."),
-                    more=_("A share of the view's size, kept beyond the tiles loaded. 0% is WebODM's own: 2 rows of "
-                           "tiles, which on a high-resolution screen is only a few hundred pixels. Kept tiles use "
-                           "the browser's memory."),
-                    scripts=["map_tiles.js"], number=(0, 200, 25), unit="%"),
-            Setting("fade_in_speed", 200, _("Fade-in Speed"),
-                    _("How long a tile takes to fade in once it arrives: 0 shows it at once."),
-                    more=_("200 ms is WebODM's own. Shorter shows each tile sooner, longer fades it in more gently; "
-                           "it doesn't load any faster."),
-                    scripts=["map_tiles.js"], values=(0, 50, 100, 200, 300, 400), unit=_("ms")),
+            # Each a checkbox (off: WebODM's own) with its number beneath
+            Setting("load_ahead_on", False, _("Load Ahead"),
+                    _("The map loads tiles beyond the edges of the view, so they are there before you pan to them."),
+                    more=_("Without it, as in WebODM, only the tiles in view are loaded, so the edges fill in as you "
+                           "pan. The tiles in view always load first: those beyond wait until they have, and the map "
+                           "is still. More tiles are loaded (up to 9 times as many at 100%), which Tile Cache makes "
+                           "cheaper."),
+                    scripts=["map_tiles.js"], parts=[
+                Setting("load_ahead", 25, _("Distance"),
+                        _("How far beyond each edge, as a share of the view's width and height."),
+                        number=(25, 100, 25), unit="%"),
+            ]),
+            Setting("keep_more_tiles_on", False, _("Keep More Tiles"),
+                    _("The map keeps more tiles after they leave the view, so panning back shows them at once."),
+                    more=_("Without it, as in WebODM, the map keeps 2 rows of tiles beyond those loaded, which on a "
+                           "high-resolution screen is only a few hundred pixels. Kept tiles use the browser's "
+                           "memory."),
+                    scripts=["map_tiles.js"], parts=[
+                Setting("keep_more_tiles", 50, _("Amount"),
+                        _("How much more it keeps, as a share of the view's size."),
+                        number=(25, 200, 25), unit="%"),
+            ]),
+            Setting("fade_in_speed_on", False, _("Fade-in Speed"),
+                    _("Changes how long a tile takes to fade in once it arrives."),
+                    more=_("Without it, as in WebODM, a tile fades in over 200 ms. Shorter shows each tile sooner, "
+                           "longer fades it in more gently; it doesn't load any faster."),
+                    scripts=["map_tiles.js"], parts=[
+                Setting("fade_in_speed", 0, _("Duration"),
+                        _("How long a tile takes to fade in: 0 shows it at once, 200 ms is WebODM's own."),
+                        values=(0, 50, 100, 200, 300, 400), unit=_("ms")),
+            ]),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
