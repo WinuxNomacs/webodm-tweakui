@@ -164,5 +164,6 @@ the extra tiles cheaper for the server.
   few hundred pixels, so panning back shows blank tiles while they load again. Keep More Tiles adds rows to cover
   that share of the view's larger side: on a 1400 px wide view with 512 px tiles, 100% keeps 5 rows and 200% keeps
   8. Kept tiles use your browser's memory.
-- **Fade-in Speed** (0, 50, 100 or 200 ms). How long a tile takes to fade in once it arrives. 200 ms is WebODM's
-  own; 0 shows each tile the moment it arrives. It doesn't load anything faster, but tiles appear sooner.
+- **Fade-in Speed** (0, 50, 100, 200, 300 or 400 ms). How long a tile takes to fade in once it arrives. 200 ms is
+  WebODM's own; 0 shows each tile the moment it arrives, and 300 or 400 fade it in more gently. It doesn't load
+  anything faster or slower, only changes how soon a tile appears.

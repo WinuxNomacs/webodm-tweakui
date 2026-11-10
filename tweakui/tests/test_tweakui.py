@@ -339,17 +339,18 @@ class TestSettingsPage(TweakUITestCase):
         self.assertEqual(order, sorted(order))
         self.assertIn('data-slider-of="load_ahead" min="0" max="100" step="25" value="0"', section)
         self.assertIn('data-slider-of="keep_more_tiles" min="0" max="200" step="25" value="0"', section)
-        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200" min="0" max="3" step="1" value="3"', section)
+        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="3"', section)
         self.assertIn('Fade-in Speed <span class="tweakui-default text-muted">(Default: 200 ms)</span>', section)
         self.assertEqual(self.patch({"fade_in_speed": 50, "load_ahead": 75}).json(),
                          defaults(fade_in_speed=50, load_ahead=75))
         page = self.client.get("/plugins/tweakui/").content.decode()
-        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200" min="0" max="3" step="1" value="1"', page)
-        self.assertIn('data-setting="fade_in_speed" min="0" max="200" step="1" value="50" data-saved="50" data-values="0,50,100,200"', page)
-        for value in (150, 25, 300, 50.0):
+        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="1"', page)
+        self.assertIn('data-setting="fade_in_speed" min="0" max="400" step="1" value="50" data-saved="50" data-values="0,50,100,200,300,400"', page)
+        for value in (150, 25, 350, 500, 50.0):
             self.assertEqual(self.patch({"fade_in_speed": value}).status_code, 400, value)
-        self.assertIn("fade_in_speed takes 0, 50, 100 or 200", self.patch({"fade_in_speed": 150}).json()["detail"])
+        self.assertIn("fade_in_speed takes 0, 50, 100, 200, 300 or 400", self.patch({"fade_in_speed": 150}).json()["detail"])
         self.assertEqual(self.script_settings(self.client)["fade_in_speed"], 50)
+        self.assertEqual(self.patch({"fade_in_speed": 400}).json(), defaults(fade_in_speed=400, load_ahead=75))
 
     def test_a_number_setting_refuses_a_number_out_of_its_range_or_not_whole(self):
         for value in (199, 3001, 500.0, "500", True):

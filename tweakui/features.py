@@ -239,8 +239,9 @@ CATEGORIES = [
                     scripts=["map_tiles.js"], number=(0, 200, 25), unit="%"),
             Setting("fade_in_speed", 200, _("Fade-in Speed"),
                     _("How long a tile takes to fade in once it arrives: 0 shows it at once."),
-                    more=_("200 ms is WebODM's own. Shorter shows each tile sooner; it doesn't load any faster."),
-                    scripts=["map_tiles.js"], values=(0, 50, 100, 200), unit=_("ms")),
+                    more=_("200 ms is WebODM's own. Shorter shows each tile sooner, longer fades it in more gently; "
+                           "it doesn't load any faster."),
+                    scripts=["map_tiles.js"], values=(0, 50, 100, 200, 300, 400), unit=_("ms")),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
