@@ -3,17 +3,19 @@ import os
 
 from django.conf import settings as django_settings
 from django.core.exceptions import ValidationError
-from django.http import HttpResponse
+from django.http import HttpResponse, HttpResponseNotModified
+from django.utils.cache import patch_vary_headers
 from django.utils.text import slugify
 from rest_framework import exceptions, permissions, status
 from rest_framework.response import Response
 from rest_framework.views import APIView
 
+from app.api.tiler import Tiles, get_raster_path
 from app.plugins.views import TaskView
 
 from app.models import Task
 
-from . import access, custom_themes, frames, performance, settings, storage, themes
+from . import access, custom_themes, frames, performance, settings, storage, themes, tile_cache
 
 
 class SettingsView(APIView):
@@ -245,6 +247,49 @@ class PerformanceLiveView(APIView):
         query = request.query_params
         return Response(performance.live(request.user, disk=query.get("disk") == "1",
                                          processes=query.get("processes") == "1" and request.user.is_superuser))
+
+
+class CachedTiles(Tiles):
+    """GET /api/plugins/tweakui/tiles/<project>/<task>/<type>/<z>/<x>/<y>[@<n>x][.<ext>]: WebODM's tile
+    (app/api/tiler.py, Tiles: its permissions, a public task's to anyone, and its parameters), kept by
+    tile_cache.py for 2D Map > Tile Cache. The key is the ETag; a request that has it gets a 304"""
+
+    def get(self, request, pk=None, project_pk=None, tile_type="", z="", x="", y="", scale=None, ext=None):
+        if access.is_withheld(request.user, "tile_cache"):
+            raise exceptions.PermissionDenied(Available.message)
+        task = self.get_and_check_task(request, pk)
+        if str(task.project_id) != str(project_pk):
+            raise exceptions.NotFound()
+        raster = get_raster_path(task, tile_type)
+        if not os.path.isfile(raster):
+            raise exceptions.NotFound()
+        query = [(k, v) for k, values in request.query_params.lists() for v in values]
+        tile_key = tile_cache.key(task, raster, tile_type, z, x, y, scale, ext, query,
+                                  "image/webp" in request.headers.get("Accept", ""))
+        etag = '"{}"'.format(tile_key)
+        if etag in request.headers.get("If-None-Match", ""):
+            return self._cache_headers(HttpResponseNotModified(), etag, "hit")
+        kept = tile_cache.get(task.id, tile_key)
+        if kept is not None:
+            content, kept_ext = kept
+            return self._cache_headers(HttpResponse(content, content_type=tile_cache.CONTENT_TYPES[kept_ext]), etag, "hit")
+        # Django 2.2 passes a group that didn't match as None; WebODM's view has defaults of its own
+        extra = {k: v for k, v in (("scale", scale), ("ext", ext)) if v is not None}
+        response = super().get(request, pk=pk, project_pk=project_pk, tile_type=tile_type, z=z, x=x, y=y, **extra)
+        if response.status_code != 200 or getattr(response, "streaming", False):
+            return response
+        rendered = response.get("Content-Type", "").split("/")[-1].split(";")[0]
+        tile_cache.put(task.id, tile_key, rendered, response.content)
+        return self._cache_headers(response, etag, "miss")
+
+    @staticmethod
+    def _cache_headers(response, etag, outcome):
+        # Private (a task may not be public) and checked again each time (304 when unchanged)
+        response["ETag"] = etag
+        response["Cache-Control"] = "private, no-cache"
+        patch_vary_headers(response, ("Accept",))
+        response["X-TweakUI-Cache"] = outcome
+        return response
 
 
 class RemovePhotosView(APIView):
