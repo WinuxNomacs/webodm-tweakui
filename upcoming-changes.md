@@ -3,15 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Keep More Tiles: rows per axis, capped at 100%** (asked in chat, 2026-11-10). Leaflet's `keepBuffer` is one
-   number for all four sides, so today's rows come from the view's longer side and a wide view keeps far more rows
-   above and below than it needs (200% on a 1920×1080 high-resolution view: up to ~1.5 GB per layer). The user
-   decided: Amount 25% to 100% (a stored 200% falls back to the 50% default); and if the waste can be cut, cut it.
-   Design: columns from the view's width, rows from its height. `keepBuffer` returns the larger one (Leaflet's own
-   margin), and after each `_update` the layer marks tiles beyond the shorter axis's margin not current, so
-   Leaflet's `_pruneTiles` drops them. At 100% on that view: 10 columns and 7 rows (ceiling ~450 MB, not ~600).
-   Load Ahead already pads each axis by its own size.
-2. **Memory estimates under the Speed sliders** (asked in chat, 2026-11-10; the user agreed both steps). First,
+1. **Memory estimates under the Speed sliders** (asked in chat, 2026-11-10; the user agreed both steps). First,
    measure the browser's memory per kept tile: headless Chromium on a real map, with the renderer and GPU processes'
    RSS from `/proc` at each Load Ahead and Keep More Tiles step, giving the real MB per 512×512 tile (between its
    ~100 KB compressed and ~1 MB decoded). Then the Settings page shows, under Distance and Amount, the estimate for
@@ -29,6 +21,14 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Keep More Tiles per axis, capped at 100%** (asked in chat, 2026-11-10) — branch `keep-more-per-axis`. The user
+  decided: Amount 25% to 100% (a stored 125% to 200% falls back to the 50% default), and cut the waste. Leaflet's
+  `keepBuffer` is one number for all four sides; `map_tiles.keepMore` now works out columns from the view's width and
+  rows from its height (`keepMargins`), gives Leaflet the larger, and after each `_update` marks the tiles beyond the
+  other axis's margin not current, so Leaflet's own pruning drops them. At 100% on a 1920×1080 high-resolution view:
+  10 columns and 7 rows (ceiling ~450 MB per layer, not ~600; 200% was ~1.5 GB). Tests `map_tiles.test.js` (15),
+  `test_tweakui.py`; docs `map-2d.md`, CHANGELOG. Live on 4.0.0 (1400×900, DPR 2, 256 px tiles, 100%): margins 8
+  columns and 6 rows; after panning down then sideways the kept rows settle at 6 where the old rule kept 8.
 - **Fewer Tile Requests last in Speed, for slow connections** (asked in chat, 2026-11-10) — same branch,
   `speed-checkboxes`: moved after Fade-in Speed in `features.py` and in `docs/map-2d.md`. Its summary says it can
   help on a slow or unreliable connection to the server (the levels a zoom passes through are never asked for).

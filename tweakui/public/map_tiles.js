@@ -11,9 +11,11 @@
 //   it are asked for only once the map is at rest and every tile in view has loaded, and when the map moves or zooms
 //   the ones still loading are cancelled. Chrome asks a server for 6 tiles at a time and WebODM renders a cancelled
 //   tile to the end, so tiles in view that waited behind hundreds beyond it could stay missing for a long time.
-// - Keep More Tiles: a layer keeps that share of the view's size beyond what it loads, in rows of its tiles, besides
-//   Leaflet's 2 (its keepBuffer, worked out each time Leaflet reads it, so it follows the view's size and the tiles'
-//   size on screen).
+// - Keep More Tiles: a layer keeps that share of the view's size beyond what it loads, besides Leaflet's 2 rows:
+//   columns of its tiles from the view's width, rows from its height. Leaflet keeps one number on every side (its
+//   keepBuffer, worked out each time Leaflet reads it, so it follows the view's size and the tiles' size on screen):
+//   it takes the larger, and after each _update the tiles beyond the other axis's own margin stop being current, so
+//   Leaflet drops them as it would. A wide view so keeps fewer rows above and below than columns at the sides.
 // - Fade-in Speed: Leaflet fades a tile in over 200 ms, a number in its _updateOpacity; the layer's own copy of that
 //   method takes the setting's.
 // The map hook comes before WebODM adds its layers (once its tiles.json requests return), so the map's addLayer is
@@ -181,10 +183,19 @@
         if (layer._map) layer._map.on(events);
     }
 
-    // Leaflet's 2 rows, plus as many as the share of the view's larger side takes in tiles as they are on screen
+    // Leaflet's 2 rows, plus as many as the share of the view's side (its width for columns, height for rows) takes in
+    // tiles as they are on screen
     function keepRows(viewPx, tilePx, amount) {
         if (!(amount > 0) || !(viewPx > 0) || !(tilePx > 0)) return WEBODM.keepBuffer;
         return WEBODM.keepBuffer + Math.ceil(viewPx * amount / tilePx);
+    }
+
+    // The columns and rows kept beyond what the layer loads, for the view and tiles as they are now
+    function keepMargins(layer, amount) {
+        var map = layer._map;
+        if (!map || typeof map.getSize !== "function") return null;
+        var size = map.getSize(), tile = typeof layer.getTileSize === "function" ? layer.getTileSize() : null;
+        return {x: keepRows(size.x, tile ? tile.x : 0, amount), y: keepRows(size.y, tile ? tile.y : 0, amount)};
     }
 
     function keepMore(layer, amount) {
@@ -193,13 +204,25 @@
             configurable: true,
             enumerable: true,
             get: function () {
-                var map = layer._map;
-                if (!map || typeof map.getSize !== "function") return WEBODM.keepBuffer;
-                var size = map.getSize(), tile = typeof layer.getTileSize === "function" ? layer.getTileSize() : null;
-                return keepRows(Math.max(size.x, size.y), tile ? tile.x : 0, amount);
+                var keep = keepMargins(layer, amount);
+                return keep ? Math.max(keep.x, keep.y) : WEBODM.keepBuffer;
             },
             set: function () { /* the setting's */ }
         });
+        var update = layer._update;
+        if (typeof update !== "function" || typeof layer._getTiledPixelBounds !== "function" ||
+            typeof layer._pxBoundsToTileRange !== "function") return;
+        layer._update = function (center) {
+            var result = update.apply(this, arguments), map = this._map, keep = keepMargins(this, amount);
+            if (!map || !keep || keep.x === keep.y || this._tileZoom === undefined) return result;
+            var range = this._pxBoundsToTileRange(this._getTiledPixelBounds(center === undefined ? map.getCenter() : center));
+            for (var key in this._tiles) {
+                var c = this._tiles[key].coords;
+                if (c.z === this._tileZoom && (c.x < range.min.x - keep.x || c.x > range.max.x + keep.x ||
+                    c.y < range.min.y - keep.y || c.y > range.max.y + keep.y)) this._tiles[key].current = false;
+            }
+            return result;
+        };
     }
 
     // Leaflet 1.3.1's _updateOpacity (GridLayer), fading a tile in over `ms` (its own 200) or, at 0, showing it at once
@@ -281,6 +304,6 @@
     }
 
     return {start: start, attach: attach, tweak: tweak, optionsOf: optionsOf, cachedUrl: cachedUrl, taskOf: taskOf,
-            withoutCacheParam: withoutCacheParam, isWebODMTiles: isWebODMTiles, keepRows: keepRows, versions: versions,
+            withoutCacheParam: withoutCacheParam, isWebODMTiles: isWebODMTiles, keepRows: keepRows, keepMargins: keepMargins, versions: versions,
             SELECTORS: SELECTORS};
 });

@@ -32,8 +32,8 @@
   task processed again gets new ones.
 - **Load Ahead**, **Keep More Tiles** and **Fade-in Speed** (Speed): checkboxes, each with a slider beneath, for
   loading tiles beyond the view's edges (Distance, 25% to 100%), keeping more of them after they leave it (Amount,
-  25% to 200%), and how long a tile takes to fade in (Duration, 0 to 400 ms). Load Ahead loads the tiles in view
-  first, so the extra tiles never hold them up.
+  25% to 100%, columns from the view's width and rows from its height), and how long a tile takes to fade in
+  (Duration, 0 to 400 ms). Load Ahead loads the tiles in view first, so the extra tiles never hold them up.
 - **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends; it can help on a slow
   or unreliable connection to the server.
 

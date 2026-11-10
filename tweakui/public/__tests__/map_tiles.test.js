@@ -217,18 +217,40 @@ test("Load Ahead: the tiles in view load first, those beyond once they have, and
     expect(layer.removed).toHaveLength(16);
 });
 
-test("Keep More Tiles: WebODM's 2 rows plus that share of the view's larger side in tiles, as the view and tiles are now", () => {
+test("Keep More Tiles: WebODM's 2 rows plus that share of the view in tiles, columns from its width and rows from its height", () => {
     expect(mapTiles.keepRows(1400, 512, 0)).toBe(2);
     expect(mapTiles.keepRows(1400, 512, 0.25)).toBe(3);
     expect(mapTiles.keepRows(1400, 256, 1)).toBe(2 + 6);
     const map = fakeMap(), layer = fakeLayer(TILES);
     mapTiles.attach(map, opts({keep_more_tiles: 100}));
     map.addLayer(layer);
+    // the 1400 x 900 view: Leaflet's one margin is the columns', the larger
+    expect(mapTiles.keepMargins(layer, 1)).toEqual({x: 2 + 3, y: 2 + 2});
     expect(layer.options.keepBuffer).toBe(2 + 3);
     layer.getTileSize = () => new Point(256, 256);
+    expect(mapTiles.keepMargins(layer, 1)).toEqual({x: 2 + 6, y: 2 + 4});
     expect(layer.options.keepBuffer).toBe(2 + 6);
     layer.options.keepBuffer = 9;
     expect(layer.options.keepBuffer).toBe(2 + 6);
+});
+
+test("Keep More Tiles: after Leaflet's update, tiles beyond the rows above and below stop being current, the columns' stay", () => {
+    const map = fakeMap(), layer = fakeLayer(TILES);
+    map.getCenter = () => new Point(0, 0);
+    layer._tileZoom = 20;
+    layer._pxBoundsToTileRange = b => new Bounds(new Point(Math.floor(b.min.x / 512), Math.floor(b.min.y / 512)),
+        new Point(Math.ceil(b.max.x / 512) - 1, Math.ceil(b.max.y / 512) - 1));
+    const tile = (x, y, z) => ({coords: {x, y, z: z || 20}, current: true});
+    // the view's tiles are x -2..1, y -1..0; the margins 5 columns and 4 rows
+    layer._tiles = {a: tile(1 + 5, 0), b: tile(1 + 6, 0), c: tile(0, 0 + 4), d: tile(0, 0 + 5), e: tile(0, -1 - 5),
+        f: tile(0, 0 + 5, 19)};
+    layer._update = jest.fn(() => "updated");
+    mapTiles.attach(map, opts({keep_more_tiles: 100}));
+    map.addLayer(layer);
+    expect(layer._update()).toBe("updated");
+    const current = Object.keys(layer._tiles).filter(k => layer._tiles[k].current);
+    // b is beyond Leaflet's own margin too, which Leaflet itself would mark; f is another zoom's, left to Leaflet
+    expect(current).toEqual(["a", "c", "f"]);
 });
 
 describe("Fade-in Speed", () => {
