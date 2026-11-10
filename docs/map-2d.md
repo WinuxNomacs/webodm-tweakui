@@ -156,7 +156,9 @@ the extra tiles cheaper for the server.
 - **Load Ahead** (0% to 100%, in steps of 25%). WebODM loads only the tiles in view, so when you pan, the edges fill
   in as they come into view. Load Ahead also loads the tiles within that share of the view's width and height beyond
   each edge, so they are there before you pan to them. At 50%, opening a task's map on a dev server loaded 51 tiles
-  instead of 29. At 100% it loads up to 9 times as many as WebODM.
+  instead of 29. At 100% it loads up to 9 times as many as WebODM. The tiles in view always come first: those beyond
+  are asked for only once every tile in view has loaded and the map is still, and when you pan or zoom, those still
+  loading are cancelled. So the extra tiles never hold up the ones you are looking at.
 - **Keep More Tiles** (0% to 200%, in steps of 25%). WebODM keeps 2 rows of tiles beyond what it has loaded, and
   drops the rest as they leave. On a high-resolution screen, where WebODM uses tiles half the size, that is only a
   few hundred pixels, so panning back shows blank tiles while they load again. Keep More Tiles adds rows to cover

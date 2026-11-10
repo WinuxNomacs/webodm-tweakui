@@ -7,7 +7,10 @@
 //   .../<p>/<t>/version once per task), and the server lets the browser keep such a tile without asking again.
 // - Fewer Tile Requests: a layer asks for tiles once a zoom ends, not at each level on the way (updateWhenZooming).
 // - Load Ahead: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
-//   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much).
+//   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much). The tiles in view come first: those beyond
+//   it are asked for only once the map is at rest and every tile in view has loaded, and when the map moves or zooms
+//   the ones still loading are cancelled. Chrome asks a server for 6 tiles at a time and WebODM renders a cancelled
+//   tile to the end, so tiles in view that waited behind hundreds beyond it could stay missing for a long time.
 // - Keep More Tiles: a layer keeps that share of the view's size beyond what it loads, in rows of its tiles, besides
 //   Leaflet's 2 (its keepBuffer, worked out each time Leaflet reads it, so it follows the view's size and the tiles'
 //   size on screen).
@@ -104,9 +107,10 @@
 
     // The view's size in the layer's tile pixels, grown by a share each side (Leaflet's own, plus Load Ahead). A
     // Bounds of Leaflet's prototype (its constructor isn't on it); Leaflet's own bounds should anything fail
-    function loadAhead(layer, amount) {
+    function loadAhead(layer, amount, win) {
         var original = layer._getTiledPixelBounds;
         if (typeof original !== "function") return;
+        viewFirst(layer, original, win);
         layer._getTiledPixelBounds = function (center) {
             var bounds = original.call(this, center), map = this._map;
             try {
@@ -122,6 +126,57 @@
                 return bounds;
             }
         };
+    }
+
+    // Load Ahead's tiles after those in view: while the map moves, or a tile is still loading, the layer creates no tile
+    // beyond the view's own range (its _isValidTile, which Leaflet's _update asks only of tiles it would create; tiles
+    // it has stay). Once Leaflet says every tile has loaded (its load event, or a move's end with none left to load) the
+    // layer updates with the tiles beyond. When the map starts moving or zooming, the tiles beyond the view still loading
+    // are removed, which cancels their requests (Leaflet's _removeTile). Leaflet's own way, should its methods differ
+    function viewFirst(layer, viewBounds, win) {
+        var isValid = layer._isValidTile, update = layer._update;
+        if (typeof isValid !== "function" || typeof update !== "function" || typeof layer.on !== "function" ||
+            typeof layer._noTilesToLoad !== "function" || typeof layer._pxBoundsToTileRange !== "function") return;
+        var ahead = false, moving = false, view = null;
+        layer._update = function (center) {
+            var map = this._map;
+            try {
+                view = map && this._tileZoom !== undefined ?
+                    this._pxBoundsToTileRange(viewBounds.call(this, center === undefined ? map.getCenter() : center)) : null;
+            } catch (e) {
+                view = null;
+            }
+            return update.apply(this, arguments);
+        };
+        layer._isValidTile = function (coords) {
+            if (!isValid.call(this, coords)) return false;
+            return ahead || !view || view.contains(coords) || !!this._tiles[this._tileCoordsToKey(coords)];
+        };
+        var go = ui.guard(NAME, function () {
+            if (ahead || moving || !layer._map || !layer._noTilesToLoad()) return;
+            ahead = true;
+            layer._update();
+        });
+        var events = {
+            movestart: ui.guard(NAME, function () {
+                moving = true;
+                ahead = false;
+                if (!view) return;
+                for (var key in layer._tiles) {
+                    var tile = layer._tiles[key];
+                    if (!tile.loaded && tile.coords.z === layer._tileZoom && !view.contains(tile.coords)) layer._removeTile(key);
+                }
+            }),
+            moveend: function () {
+                moving = false;
+                (win || window).setTimeout(go, 0);
+            }
+        };
+        events.zoomstart = events.movestart;
+        layer.on("load", go);
+        layer.on("add", function () { layer._map.on(events); });
+        layer.on("remove", function () { layer._map.off(events); });
+        if (layer._map) layer._map.on(events);
     }
 
     // Leaflet's 2 rows, plus as many as the share of the view's larger side takes in tiles as they are on screen
@@ -185,9 +240,10 @@
             };
         }
         if (options.fewer && layer.options) layer.options.updateWhenZooming = false;
-        if (options.loadAhead > 0) loadAhead(layer, options.loadAhead);
+        win = win || (typeof window !== "undefined" ? window : null);
+        if (options.loadAhead > 0) loadAhead(layer, options.loadAhead, win);
         if (options.keepMore > 0 && layer.options) keepMore(layer, options.keepMore);
-        if (options.fadeMs !== WEBODM.fadeMs) fadeIn(layer, options.fadeMs, win || (typeof window !== "undefined" ? window : null));
+        if (options.fadeMs !== WEBODM.fadeMs) fadeIn(layer, options.fadeMs, win);
         return true;
     }
 

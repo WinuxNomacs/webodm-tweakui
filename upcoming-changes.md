@@ -3,13 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- **Bug: map tiles sometimes never drawn with the Speed settings** (reported 2026-11-10). On the thermal task's map,
-  with Tile Cache, Reuse Browser Copies, Fewer Tile Requests, Load Ahead 25%, Keep More Tiles 50% and Fade-in Speed
-  0, some tiles, or sometimes the whole layer, aren't drawn; the tiles that do draw come quickly. Not reproduced
-  headless yet, and the server logs no errors. Tried at DPR 1.5: one zoom at a time; 4- and 8-notch wheel bursts; a
-  persistent profile over two visits; the + and − buttons; a double-click; Orthophoto ↔ Thermal; pans. Every tile
-  arrives within 7 s. Waiting on the user to narrow it down (which setting, which action, whether it fills in later,
-  and the state of the tiles at that moment).
+- Nothing yet: the next phase is planned from `new.md` or "Then".
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -22,6 +16,18 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Bug: map tiles sometimes never drawn with the Speed settings** (reported 2026-11-10) — branch
+  `bug-missing-tiles-fix`. The cause was Load Ahead: the tiles beyond the view were asked for together with those in
+  view (at 100%, a wheel zoom into z23 created 270 to 410 tiles and sent 300 to 590 requests). Chrome asks a server
+  for 6 at a time and WebODM renders a cancelled tile to the end, so after a zoom the tiles in view waited behind the
+  ones beyond. The user's console showed 6 tiles in view sent and awaiting the server. The server and WSL's localhost
+  relay are quick (a z21 tile in about 40 ms; 70 ms from Windows). Fix in `map_tiles.js` (`viewFirst`): the layer's
+  `_isValidTile` turns away a new tile beyond the view while the map moves or a tile is loading. Leaflet's `load`
+  event, or a move's end with nothing left to load, then lets them in. A map's `movestart`/`zoomstart` cancels the
+  ones beyond still loading (`_removeTile`). Test `map_tiles.test.js` (14). Live on 4.0.0 with the user's settings
+  (Load Ahead 100%, Fade-in 0) at 1920×1080, DPR 1.5: within a second of each wheel zoom no tile in view is missing,
+  where before it queued 200 to 350 tiles at once. 3.3.2 has the same Leaflet 1.3.1, but no task with an orthophoto
+  to check on.
 - **Map speed: Load Ahead, Keep More Tiles, Fade-in Speed and Reuse Browser Copies** (asked in chat, 2026-11-10)
   — branch `map-tile-loading`: `tile_cache.js` renamed `map_tiles.js` (`optionsOf`; `loadAhead`, which grows
   Leaflet's `_getTiledPixelBounds`; `keepMore`/`keepRows`, a `keepBuffer` getter; `fadeIn`, Leaflet 1.3.1's

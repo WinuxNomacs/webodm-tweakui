@@ -228,7 +228,8 @@ CATEGORIES = [
                       "to them."),
                     more=_("A share of the view's width and height beyond each edge. 0% is WebODM's own: only the "
                            "tiles in view are loaded, so the edges fill in as you pan. Each step loads more tiles "
-                           "(100% loads up to 9 times as many), which Tile Cache makes cheaper."),
+                           "(100% loads up to 9 times as many), which Tile Cache makes cheaper. The tiles in view "
+                           "always load first: those beyond wait until they have, and the map is still."),
                     scripts=["map_tiles.js"], number=(0, 100, 25), unit="%"),
             Setting("keep_more_tiles", 0, _("Keep More Tiles"),
                     _("How many tiles the map keeps after they leave the view, so panning back shows them at once."),
