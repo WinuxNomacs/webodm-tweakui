@@ -330,13 +330,13 @@ class TestSettingsPage(TweakUITestCase):
             self.assertEqual(self.patch({"zoom_sensitivity_3d": value}).status_code, 400)
         self.assertIn("zoom_sensitivity_2d takes 10 to 200", self.patch({"zoom_sensitivity_2d": 300}).json()["detail"])
 
-    def test_load_ahead_keep_more_tiles_and_fade_in_speed_are_checkboxes_off_with_their_numbers_beneath(self):
+    def test_the_speed_checkboxes_have_their_numbers_beneath_and_fewer_tile_requests_comes_last(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         section = page[page.index('<section id="tweakui-map2d"'):]
         section = section[:section.index("</section>")]
         self.assertLess(section.index('data-depends="tile_cache"'), section.index('data-setting="reuse_browser_copies"'))
-        names = ("tile_cache", "reuse_browser_copies", "fewer_tile_requests", "load_ahead_on", "load_ahead",
-                 "keep_more_tiles_on", "keep_more_tiles", "fade_in_speed_on", "fade_in_speed")
+        names = ("tile_cache", "reuse_browser_copies", "load_ahead_on", "load_ahead", "keep_more_tiles_on",
+                 "keep_more_tiles", "fade_in_speed_on", "fade_in_speed", "fewer_tile_requests")
         order = [section.index('data-setting="%s"' % n) for n in names]
         self.assertEqual(order, sorted(order))
         for name in ("load_ahead", "keep_more_tiles", "fade_in_speed"):

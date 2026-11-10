@@ -139,6 +139,28 @@ version of the task's tiles, and puts it in each tile's address. Your browser th
 that version at once, without asking. A task processed again has a new version, so its tiles are fetched anew the
 next time the map opens.
 
+## Speed > Load Ahead, Keep More Tiles and Fade-in Speed
+
+Three checkboxes for how the map's orthophoto, DSM and DTM layers load and show their tiles, each with a slider
+beneath it. Off, each is WebODM's own behaviour; the slider, greyed out until you tick it, says how far it goes. They
+work with or without Tile Cache, which makes the extra tiles cheaper for the server.
+
+- **Load Ahead**, with **Distance** (25% to 100%, in steps of 25%; 25% when first ticked). WebODM loads only the
+  tiles in view, so when you pan, the edges fill in as they come into view. Load Ahead also loads the tiles within
+  that share of the view's width and height beyond each edge, so they are there before you pan to them. At 50%,
+  opening a task's map on a dev server loaded 51 tiles instead of 29. At 100% it loads up to 9 times as many as
+  WebODM. The tiles in view always come first: those beyond are asked for only once every tile in view has loaded
+  and the map is still, and when you pan or zoom, those still loading are cancelled. So the extra tiles never hold
+  up the ones you are looking at.
+- **Keep More Tiles**, with **Amount** (25% to 200%, in steps of 25%; 50% when first ticked). WebODM keeps 2 rows of
+  tiles beyond what it has loaded, and drops the rest as they leave. On a high-resolution screen, where WebODM uses
+  tiles half the size, that is only a few hundred pixels, so panning back shows blank tiles while they load again.
+  Keep More Tiles adds rows to cover that share of the view's larger side: on a 1400 px wide view with 512 px tiles,
+  100% keeps 5 rows and 200% keeps 8. Kept tiles use your browser's memory.
+- **Fade-in Speed**, with **Duration** (0, 50, 100, 200, 300 or 400 ms; 0 when first ticked). How long a tile takes
+  to fade in once it arrives. 200 ms is WebODM's own; 0 shows each tile the moment it arrives, and 300 or 400 fade it
+  in more gently. It doesn't load anything faster or slower, only changes how soon a tile appears.
+
 ## Speed > Fewer Tile Requests
 
 Off by default.
@@ -147,23 +169,5 @@ While zooming (a pinch, the wheel, or the map flying to a place), the map's orth
 tiles once the zoom ends, not for each zoom level they pass on the way. The server draws fewer tiles, which helps
 most on a phone or a high-resolution screen, where every view needs about three times as many.
 
-## Speed > Load Ahead, Keep More Tiles and Fade-in Speed
-
-Three sliders for how the map's orthophoto, DSM and DTM layers load and show their tiles. Each slider's left end is
-WebODM's own behaviour, and each step to the right goes further. They work with or without Tile Cache, which makes
-the extra tiles cheaper for the server.
-
-- **Load Ahead** (0% to 100%, in steps of 25%). WebODM loads only the tiles in view, so when you pan, the edges fill
-  in as they come into view. Load Ahead also loads the tiles within that share of the view's width and height beyond
-  each edge, so they are there before you pan to them. At 50%, opening a task's map on a dev server loaded 51 tiles
-  instead of 29. At 100% it loads up to 9 times as many as WebODM. The tiles in view always come first: those beyond
-  are asked for only once every tile in view has loaded and the map is still, and when you pan or zoom, those still
-  loading are cancelled. So the extra tiles never hold up the ones you are looking at.
-- **Keep More Tiles** (0% to 200%, in steps of 25%). WebODM keeps 2 rows of tiles beyond what it has loaded, and
-  drops the rest as they leave. On a high-resolution screen, where WebODM uses tiles half the size, that is only a
-  few hundred pixels, so panning back shows blank tiles while they load again. Keep More Tiles adds rows to cover
-  that share of the view's larger side: on a 1400 px wide view with 512 px tiles, 100% keeps 5 rows and 200% keeps
-  8. Kept tiles use your browser's memory.
-- **Fade-in Speed** (0, 50, 100, 200, 300 or 400 ms). How long a tile takes to fade in once it arrives. 200 ms is
-  WebODM's own; 0 shows each tile the moment it arrives, and 300 or 400 fade it in more gently. It doesn't load
-  anything faster or slower, only changes how soon a tile appears.
+It can also help on a slow or unreliable connection to the server: the tiles of the levels a zoom passes through are
+never asked for, so the connection carries only the tiles of the view you stop at.

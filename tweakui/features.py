@@ -217,12 +217,6 @@ CATEGORIES = [
                                "before showing it (a short answer, but a trip to the server per tile). With it, the "
                                "map asks once per task when it opens; a task processed since gets new tiles.")),
             ]),
-            Setting("fewer_tile_requests", False, _("Fewer Tile Requests"),
-                    _("While zooming, the map waits for the zoom to end before asking for tiles."),
-                    more=_("Without it, a pinch, the wheel or the map flying to a place asks for the tiles of each "
-                           "zoom level it passes. Fewer tiles to draw makes the map quicker to settle, above all on "
-                           "a phone or a high-resolution screen."),
-                    scripts=["map_tiles.js"]),
             # Each a checkbox (off: WebODM's own) with its number beneath
             Setting("load_ahead_on", False, _("Load Ahead"),
                     _("The map loads tiles beyond the edges of the view, so they are there before you pan to them."),
@@ -254,6 +248,14 @@ CATEGORIES = [
                         _("How long a tile takes to fade in: 0 shows it at once, 200 ms is WebODM's own."),
                         values=(0, 50, 100, 200, 300, 400), unit=_("ms")),
             ]),
+            Setting("fewer_tile_requests", False, _("Fewer Tile Requests"),
+                    _("While zooming, the map waits for the zoom to end before asking for tiles. Can help on a slow "
+                      "or unreliable connection to the server."),
+                    more=_("Without it, a pinch, the wheel or the map flying to a place asks for the tiles of each "
+                           "zoom level it passes. Fewer tiles to draw makes the map quicker to settle, above all on "
+                           "a phone or a high-resolution screen, and fewer requests leave more of a slow connection "
+                           "for the tiles you stop at."),
+                    scripts=["map_tiles.js"]),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
