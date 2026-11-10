@@ -3,7 +3,26 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Memory estimates under the Speed sliders** (asked in chat, 2026-11-10; the user agreed both steps). First,
+1. **Tile Cache: one checkbox, Reuse Browser Copies always on** (asked in chat, 2026-11-10). The user decided: one
+   checkbox. With Tile Cache on, the browser still asks the server about every tile it has (`no-cache`, a 304 each),
+   and Chrome's 6 requests at a time per server make that a wait on a slow connection; reuse (the task's version in
+   each tile's URL, kept a year, `immutable`) removes it. Keeping it off helped only in narrow cases (a task
+   reprocessed while its map is open shows old tiles until a reload; tiles already seen stay in a browser after
+   access is taken away or on a shared computer), none for an ordinary user to judge. Plan:
+   - `features.py`: drop the `reuse_browser_copies` part; Tile Cache's summary/`more` say the browser shows the
+     tiles it has kept without asking, and that a task processed again gets new ones at the next map opening.
+     A stored `reuse_browser_copies` is ignored (`settings.load` skips names not in `DEFAULTS`); both are
+     unreleased, so no migration.
+   - `map_tiles.js`: `optionsOf` gives `reuse` from `tile_cache` alone; comments say so. `api.py`, `tile_cache.py`
+     docstrings: "Tile Cache" instead of "Tile Cache > Reuse Browser Copies". The server side is unchanged.
+   - Tests: `test_tweakui.py` (defaults, the Speed group's order and the part's check), `map_tiles.test.js`
+     (`OFF`, `optionsOf`, the version test, `start`).
+   - Docs: `docs/map-2d.md` folds "Reuse Browser Copies" into Tile Cache's list (its anchor goes; no other page
+     links it); README's one line and CHANGELOG's Tile Cache line.
+   - Live on both stacks: the settings page shows Tile Cache with no part; on 4.0.0's map, with Tile Cache on, a
+     reload shows the tiles from the browser's cache with no request to the server (Playwright's network log),
+     and the version is asked once per task. Settings restored.
+2. **Memory estimates under the Speed sliders** (asked in chat, 2026-11-10; the user agreed both steps). First,
    measure the browser's memory per kept tile: headless Chromium on a real map, with the renderer and GPU processes'
    RSS from `/proc` at each Load Ahead and Keep More Tiles step, giving the real MB per 512×512 tile (between its
    ~100 KB compressed and ~1 MB decoded). Then the Settings page shows, under Distance and Amount, the estimate for
