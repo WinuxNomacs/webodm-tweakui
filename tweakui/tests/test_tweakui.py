@@ -35,7 +35,7 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "fewer_tile_requests": False,
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "reuse_browser_copies": False, "fewer_tile_requests": False, "load_ahead": 0, "keep_more_tiles": 0, "fade_in_speed": 200,
                  "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
@@ -329,6 +329,28 @@ class TestSettingsPage(TweakUITestCase):
             self.assertEqual(self.patch({"zoom_sensitivity_3d": value}).status_code, 400)
         self.assertIn("zoom_sensitivity_2d takes 10 to 200", self.patch({"zoom_sensitivity_2d": 300}).json()["detail"])
 
+    def test_the_speed_sliders_start_at_webodm_s_own_and_fade_in_speed_takes_only_its_values(self):
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        section = page[page.index('<section id="tweakui-map2d"'):]
+        section = section[:section.index("</section>")]
+        self.assertLess(section.index('data-depends="tile_cache"'), section.index('data-setting="reuse_browser_copies"'))
+        order = [section.index('data-setting="%s"' % n) for n in
+                 ("tile_cache", "reuse_browser_copies", "fewer_tile_requests", "load_ahead", "keep_more_tiles", "fade_in_speed")]
+        self.assertEqual(order, sorted(order))
+        self.assertIn('data-slider-of="load_ahead" min="0" max="100" step="25" value="0"', section)
+        self.assertIn('data-slider-of="keep_more_tiles" min="0" max="200" step="25" value="0"', section)
+        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200" min="0" max="3" step="1" value="3"', section)
+        self.assertIn('Fade-in Speed <span class="tweakui-default text-muted">(Default: 200 ms)</span>', section)
+        self.assertEqual(self.patch({"fade_in_speed": 50, "load_ahead": 75}).json(),
+                         defaults(fade_in_speed=50, load_ahead=75))
+        page = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200" min="0" max="3" step="1" value="1"', page)
+        self.assertIn('data-setting="fade_in_speed" min="0" max="200" step="1" value="50" data-saved="50" data-values="0,50,100,200"', page)
+        for value in (150, 25, 300, 50.0):
+            self.assertEqual(self.patch({"fade_in_speed": value}).status_code, 400, value)
+        self.assertIn("fade_in_speed takes 0, 50, 100 or 200", self.patch({"fade_in_speed": 150}).json()["detail"])
+        self.assertEqual(self.script_settings(self.client)["fade_in_speed"], 50)
+
     def test_a_number_setting_refuses_a_number_out_of_its_range_or_not_whole(self):
         for value in (199, 3001, 500.0, "500", True):
             res = self.patch({"auto_hide_delay": value})
@@ -444,7 +466,10 @@ class TestFeatures(TweakUITestCase):
             if s.number:
                 low, high, step = s.number
                 self.assertIs(type(s.default), int, s.name)
-                self.assertTrue(low <= s.default <= high and (s.default - low) % step == 0, s.name)
+                if s.values:
+                    self.assertIn(s.default, s.values, s.name)
+                else:
+                    self.assertTrue(low <= s.default <= high and (s.default - low) % step == 0, s.name)
                 self.assertIn('type="number" id="tweakui-%s"' % s.name, page)
             else:
                 self.assertIsInstance(s.default, bool, s.name)
@@ -2208,6 +2233,28 @@ class TestTileCache(TweakUITestCase):
         self.assertEqual(res.status_code, status.HTTP_200_OK, res.content)
         self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
         self.assertEqual(admin.get(self.url).status_code, status.HTTP_200_OK)
+
+    def test_with_the_task_s_version_the_browser_keeps_a_tile_for_good_and_a_stale_one_is_checked(self):
+        res = self.client.get("/api/plugins/tweakui/tiles/%s/%s/version" % (self.project.id, self.task.id))
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        version = res.json()["version"]
+        self.assertEqual(len(version), 16)
+        plain = self.client.get(self.url, HTTP_ACCEPT="image/webp,*/*")
+        lasting = self.client.get(self.url + "?v=" + version, HTTP_ACCEPT="image/webp,*/*")
+        self.assertEqual(lasting["Cache-Control"], "private, max-age=31536000, immutable")
+        self.assertEqual(lasting["X-TweakUI-Cache"], "hit")
+        self.assertEqual(lasting["ETag"], plain["ETag"])
+        stale = self.client.get(self.url + "?v=0123456789abcdef", HTTP_ACCEPT="image/webp,*/*")
+        self.assertEqual(stale["Cache-Control"], "private, no-cache")
+        # Processed again: another version
+        stat = os.stat(self.raster)
+        os.utime(self.raster, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10 ** 9))
+        again = self.client.get("/api/plugins/tweakui/tiles/%s/%s/version" % (self.project.id, self.task.id)).json()["version"]
+        self.assertNotEqual(again, version)
+        self.assertEqual(self.client.get(self.url + "?v=" + version)["Cache-Control"], "private, no-cache")
+        User.objects.create_user(username="versionother", password="test1234")
+        other = self.login("versionother").get("/api/plugins/tweakui/tiles/%s/%s/version" % (self.project.id, self.task.id))
+        self.assertIn(other.status_code, (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND))
 
     def test_a_prune_drops_the_least_recently_used_tiles_and_deleted_tasks_folders(self):
         def tile(task, name, size, age):

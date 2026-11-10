@@ -16,6 +16,21 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Map speed: Load Ahead, Keep More Tiles, Fade-in Speed and Reuse Browser Copies** (asked in chat, 2026-11-10)
+  — branch `map-tile-loading`: `tile_cache.js` renamed `map_tiles.js` (`optionsOf`; `loadAhead`, which grows
+  Leaflet's `_getTiledPixelBounds`; `keepMore`/`keepRows`, a `keepBuffer` getter; `fadeIn`, Leaflet 1.3.1's
+  `_updateOpacity` with the setting's duration; `versions`, one request per task), `tile_cache.version`,
+  `api.TileVersionView`, and `CachedTiles` answering `immutable` for the current `v`. `features.py`: a setting's
+  `values` (a slider through a list; `settings.VALUES`, the template, `settings_page.js`), and Fewer Tile Requests
+  now only `updateWhenZooming`. Tests: `test_tweakui.py` (2), `map_tiles.test.js` (13), `settings_page.test.js` (2).
+  Docs `map-2d.md`, `adding-a-tweak.md`, `index.md`, README, CHANGELOG. Live on 4.0.0:
+  - Load Ahead at 50% loads 51 tiles on opening instead of 29.
+  - Fade-in Speed at 0 shows a tile 28 ms after it loads, against 226 ms.
+  - Reuse Browser Copies serves all 33 tiles of a second visit from the browser's cache.
+  - Keep More Tiles' `keepBuffer` is 2, 5 and 8 rows at 0%, 100% and 200%. The test orthophoto is too small to
+    show tiles being dropped.
+  - On both stacks, the Settings page's slider and box keep to Fade-in Speed's values.
+  See "Map speed: loading and showing tiles".
 - **Map speed: Tile Cache and Fewer Tile Requests** (asked in chat, 2026-11-09) — branch `tile-cache`:
   `tile_cache.py` (the key, get and put, prune), `api.py` (`CachedTiles`, a subclass of WebODM's `Tiles`),
   `plugin.py` (its mount point, first), `features.py` (2D Map > Speed: `tile_cache`, which can be withheld, and
@@ -839,6 +854,25 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## Map speed: loading and showing tiles (asked in chat, 2026-11-10)
+
+The user still saw tiles pop in at the edges with Tile Cache on, and asked whether that came from WebODM's map
+loading only what is on screen. It does: Leaflet 1.3.1 asks for a tile only once it is in view, and drops tiles more
+than 2 rows beyond (`keepBuffer`; half-size tiles on a high-resolution screen, so a few hundred pixels). Each tile
+still makes a trip to the server, even when kept, and then fades in over 200 ms, hard-coded in `_updateOpacity`.
+
+Decided by the user: all four options. Load Ahead and Keep More Tiles are sliders whose left end is WebODM's own, each
+step going further within a range TweakUI sets. Fade-in Speed is a slider of 0, 50, 100 and 200 ms (WebODM's).
+
+The design: everything goes in Settings > 2D Map > Speed.
+- **Load Ahead:** 0–100% of the view's size beyond each edge, in steps of 25%.
+- **Keep More Tiles:** 0–200% of the view's larger side, in steps of 25%, in rows on top of Leaflet's 2.
+- **Fade-in Speed:** a new kind of number setting, `values`.
+- **Reuse Browser Copies:** a part of Tile Cache. A version per task (`/api/plugins/tweakui/tiles/<p>/<t>/version`)
+  goes in the tile URL as `v=`; it's left out of the key, and when it is current the tile is `immutable` for a year.
+- **Fewer Tile Requests:** gives its `keepBuffer` half to Keep More Tiles. It is still unreleased, so no one's
+  setting changes meaning.
 
 ## Map speed (asked in chat, 2026-11-09)
 

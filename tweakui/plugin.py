@@ -8,7 +8,7 @@ from app.plugins import Menu, MountPoint, PluginBase
 from . import access, custom_themes, features, settings, themes
 from .api import (AccessView, CachedTiles, FramesView, PerformanceLiveView, PerformanceView, PublishedExportView, PublishedImportView, PublishedThemeView, PublishedView,
                   RemovePhotosView, SettingsView, StorageTaskView, StorageView, ThemePreviewView, ThemesExportView, ThemesImportView,
-                  ThemesView, ThemeView, settings_script)
+                  ThemesView, ThemeView, TileVersionView, settings_script)
 
 
 class Plugin(PluginBase):
@@ -107,6 +107,7 @@ class Plugin(PluginBase):
         return [
             MountPoint(r"tiles/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)/(?P<tile_type>orthophoto|dsm|dtm)/(?P<z>\d+)/(?P<x>\d+)/(?P<y>\d+)"
                        r"(?:@(?P<scale>\d+)x)?\.?(?P<ext>png|jpg|webp)?$", CachedTiles.as_view()),
+            MountPoint(r"tiles/(?P<project_pk>[^/.]+)/(?P<pk>[^/.]+)/version$", TileVersionView.as_view()),
             MountPoint("settings$", SettingsView.as_view()),
             MountPoint("access$", AccessView.as_view()),
             MountPoint("themes$", ThemesView.as_view()),

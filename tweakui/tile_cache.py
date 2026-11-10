@@ -26,8 +26,9 @@ KEEP = 0.9
 PRUNE_EVERY = 50 * 1024 ** 2
 # A tile served from the cache is marked used (its mtime) at most this often, to spare the disk a write per tile
 TOUCH_SECONDS = 3600
-# Query parameters that don't change the tile: WebODM's cache buster
-IGNORED_PARAMS = ("cache",)
+# Query parameters that don't change the tile: WebODM's cache buster, and Reuse Browser Copies' task version
+IGNORED_PARAMS = ("cache", "v")
+TILE_TYPES = ("orthophoto", "dsm", "dtm")
 EXTENSIONS = ("jpg", "webp", "png")
 CONTENT_TYPES = {"jpg": "image/jpg", "webp": "image/webp", "png": "image/png"}
 
@@ -52,6 +53,21 @@ def key(task, raster, tile_type, z, x, y, scale, ext, query, accepts_webp):
         "webp" if accepts_webp else "",
     ]
     return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()
+
+
+def version(task, raster_path):
+    """2D Map > Tile Cache > Reuse Browser Copies: a short hash of all that a task's tiles depend on but their URL
+    (its rasters, their size and mtime; its crop; WebODM's version). raster_path(task, type): WebODM's
+    get_raster_path. A tile URL that carries the current one may stay in the browser for good: a task processed
+    again has another"""
+    parts = [getattr(django_settings, "VERSION", ""), str(task.id), str(task.crop) if task.crop is not None else ""]
+    for tile_type in TILE_TYPES:
+        try:
+            stat = os.stat(raster_path(task, tile_type))
+            parts += [tile_type, str(stat.st_size), str(stat.st_mtime_ns)]
+        except OSError:
+            pass
+    return hashlib.sha256("\n".join(parts).encode("utf-8")).hexdigest()[:16]
 
 
 def get(task_id, tile_key):

@@ -115,7 +115,7 @@ serves it again from there. Measured on a dev server, a kept tile comes back in 
 about 60 ms when the server is idle and several hundred ms under load.
 
 - **Your browser keeps its own copy** and asks the server only whether it has changed (an ETag). After a reload,
-  each tile is a short "not modified" answer.
+  each tile is a short "not modified" answer. With [Reuse Browser Copies](#reuse-browser-copies) it doesn't ask.
 - **A tile is kept per look:** the task, the layer (orthophoto, DSM, DTM, plant health), its colour map, hillshade
   and range, the crop, and whether your browser takes WebP images. Changing any of these on the map gives new tiles,
   and going back gives the kept ones. When a task is processed again, its files change and its tiles are drawn anew.
@@ -129,15 +129,38 @@ about 60 ms when the server is idle and several hundred ms under load.
 
 The first look at a part of the map is no faster: WebODM still draws each tile once.
 
+### Reuse Browser Copies
+
+A part of Tile Cache, off by default.
+
+Without it, your browser asks the server about every tile it already has before showing it. The answer is short,
+but it is still a trip to the server per tile. With it, the map asks the server once per task, when it opens, for a
+version of the task's tiles, and puts it in each tile's address. Your browser then shows the tiles it has kept for
+that version at once, without asking. A task processed again has a new version, so its tiles are fetched anew the
+next time the map opens.
+
 ## Speed > Fewer Tile Requests
 
 Off by default.
 
-Two changes to how the map's orthophoto, DSM and DTM layers load their tiles:
+While zooming (a pinch, the wheel, or the map flying to a place), the map's orthophoto, DSM and DTM layers ask for
+tiles once the zoom ends, not for each zoom level they pass on the way. The server draws fewer tiles, which helps
+most on a phone or a high-resolution screen, where every view needs about three times as many.
 
-- **While zooming** (a pinch, the wheel, or the map flying to a place), the map asks for tiles once the zoom ends,
-  not for each zoom level it passes on the way.
-- **When panning**, it keeps 4 rows of tiles beyond the view rather than 2, so panning back shows them at once.
+## Speed > Load Ahead, Keep More Tiles and Fade-in Speed
 
-The server draws fewer tiles, which helps most on a phone or a high-resolution screen, where every view needs about
-three times as many. It works with or without Tile Cache.
+Three sliders for how the map's orthophoto, DSM and DTM layers load and show their tiles. Each slider's left end is
+WebODM's own behaviour, and each step to the right goes further. They work with or without Tile Cache, which makes
+the extra tiles cheaper for the server.
+
+- **Load Ahead** (0% to 100%, in steps of 25%). WebODM loads only the tiles in view, so when you pan, the edges fill
+  in as they come into view. Load Ahead also loads the tiles within that share of the view's width and height beyond
+  each edge, so they are there before you pan to them. At 50%, opening a task's map on a dev server loaded 51 tiles
+  instead of 29. At 100% it loads up to 9 times as many as WebODM.
+- **Keep More Tiles** (0% to 200%, in steps of 25%). WebODM keeps 2 rows of tiles beyond what it has loaded, and
+  drops the rest as they leave. On a high-resolution screen, where WebODM uses tiles half the size, that is only a
+  few hundred pixels, so panning back shows blank tiles while they load again. Keep More Tiles adds rows to cover
+  that share of the view's larger side: on a 1400 px wide view with 512 px tiles, 100% keeps 5 rows and 200% keeps
+  8. Kept tiles use your browser's memory.
+- **Fade-in Speed** (0, 50, 100 or 200 ms). How long a tile takes to fade in once it arrives. 200 ms is WebODM's
+  own; 0 shows each tile the moment it arrives. It doesn't load anything faster, but tiles appear sooner.
