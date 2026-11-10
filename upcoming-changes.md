@@ -3,7 +3,10 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- **Map speed** (asked in chat, 2026-11-09) — investigated; waiting on the user's decisions. See "Map speed".
+- Nothing planned: new requests arrive in `new.md`.
+
+**Then**
+- **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -13,6 +16,14 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Map speed: Tile Cache and Fewer Tile Requests** (asked in chat, 2026-11-09) — branch `tile-cache`:
+  `tile_cache.py` (the key, get and put, prune), `api.py` (`CachedTiles`, a subclass of WebODM's `Tiles`),
+  `plugin.py` (its mount point, first), `features.py` (2D Map > Speed: `tile_cache`, which can be withheld, and
+  `fewer_tile_requests`), `public/tile_cache.js`. Tests: `test_tweakui.py` `TestTileCache` (6, on WebODM's orthophoto
+  fixture), `tile_cache.test.js` (5). Docs `map-2d.md`, `administration.md`, `index.md`, README, CHANGELOG.
+  Screenshot `admin`. Live on 4.0.0 (DPR 1 and 2), where a reload revalidates every tile with a 304, and a kept tile
+  takes 16 ms against 57 ms to render on an idle server. 3.3.2 has no task with an orthophoto, so it was checked by the
+  Django tests and on the Settings page. See "Map speed".
 - **Performance View: the server's OS and CPU** (asked in chat, 2026-11-09) — branch `perf-server-system`:
   `performance.py` (`system_entry`, read once per process: `linux_os`/`windows_os` and `kernel_host`, `os_release`,
   `linux_cpu` from `/proc/cpuinfo` and cpufreq's maximum, `windows_cpu` from the registry and
@@ -856,11 +867,32 @@ Proposed, each one a setting (all off by default):
    `keepBuffer` (tiles kept when panning back).
 4. **3D Point Budget:** a number setting under 3D Map that replaces Potree's budget.
 
-Open decisions (the user's):
-1. Which of 1–4 to build.
-2. The tile cache: a per-user setting under Settings > 2D Map, or a server-wide one for superusers in
-   Administration > TweakUI with a disk limit (1 GB suggested; the server-wide one is recommended, since the cache
-   is shared).
+Decided by the user (2026-11-09): build the Tile Cache (1) and the Leaflet tweaks (3) now, and perhaps the 3D Point
+Budget (4) as a later phase. Not the HiDPI option (2). The Tile Cache is a per-user setting.
+
+The design:
+- **Settings > 2D Map, a Speed group, two per-user settings, both off by default.** Tile Cache can be withheld on
+  Administration > TweakUI, since it uses the server's disk.
+  - **Tile Cache:** this user's map asks TweakUI for its orthophoto, DSM and DTM tiles.
+  - **Fewer Tile Requests:** the Leaflet tweaks: `updateWhenZooming: false`, and `keepBuffer` 4 in place of 2.
+- **Server:** `tile_cache.py`, with `CachedTiles` (`api.py`), a subclass of WebODM's `Tiles` view, mounted at
+  `/api/plugins/tweakui/tiles/<project>/<task>/<type>/<z>/<x>/<y>[@<n>x][.<ext>]`.
+  - WebODM's task permission check runs on every request, cached tile or not.
+  - The key covers the task, the type, z/x/y, the scale and ext, the query minus `cache`, the raster's size and
+    mtime, the task's crop, whether the browser accepts webp, and WebODM's version.
+  - A tile WebODM answers with something other than 200 isn't kept.
+  - Every answer carries the key as its ETag, with `private, no-cache` and `Vary: Accept`. A matching
+    If-None-Match gets a 304 without rendering, since the key fixes the content.
+- **Where the tiles are kept:** in `media/plugins/tweakui/tile-cache/<task>/`, shared by all users. The cache is a
+  per-user setting, so no one sets its size: TweakUI keeps it under **1 GB** (`tile_cache.LIMIT`).
+  - Each tile is written to a temporary file, then moved into place.
+  - After every 50 MB written, a process prunes: the least recently used tiles go until the cache is under 90% of
+    the limit, along with the folders of deleted tasks.
+- **Browser:** `tile_cache.js`, through `Map.didAddControls`, before WebODM adds its layers.
+  - It wraps the map's `addLayer`. Each tile layer whose URL is WebODM's (`/api/projects/<p>/tasks/<t>/<type>/
+    tiles/`) gets a `getTileUrl` that rewrites the URL to TweakUI's and drops `cache`. This holds when WebODM calls
+    `setUrl`, and covers Other Tasks' Orthophotos.
+  - Layers already on the map get the same `getTileUrl`, then a redraw.
 
 ## Performance View: the server's OS and CPU (asked in chat, 2026-11-09)
 

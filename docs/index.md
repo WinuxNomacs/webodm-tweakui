@@ -19,7 +19,7 @@ features:
     details: Your own colours for WebODM, from 11 presets, your own themes (imported and exported as JSON) or themes an administrator publishes, with a theme menu in the header.
     link: /themes
   - title: 2D Map
-    details: Movable panels, other tasks' orthophotos over the task's own, the photos that show a spot, 3 more zoom steps with the wheel's sensitivity, and a search box for an address or coordinates.
+    details: Movable panels, other tasks' orthophotos over the task's own, the photos that show a spot, 3 more zoom steps with the wheel's sensitivity, a search box for an address or coordinates, and a faster map, with tiles kept once drawn and fewer tile requests.
     link: /map-2d
   - title: 3D Map
     details: The photos that show a spot on the model, and a wheel that zooms toward what is under the pointer, as far a notch as you choose.

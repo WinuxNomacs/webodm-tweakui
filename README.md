@@ -32,8 +32,9 @@ Every feature is off until you turn it on, except the theme menu.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
   (Movable Panels), the project's other tasks' orthophotos over the task's own (Other Tasks'
   Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
-  sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), and a search box for an address
-  or coordinates (Map Search).
+  sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), a search box for an address
+  or coordinates (Map Search), and a faster map: tiles kept on the server once drawn (Tile Cache) and fewer tile
+  requests while zooming and panning (Fewer Tile Requests).
 - [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel
   that zooms toward what is under the pointer (Zoom to Pointer), as far a notch as you choose (Zoom Sensitivity).
 - [**Storage**](https://winuxnomacs.github.io/webodm-tweakui/storage): how much of your quota each project and task

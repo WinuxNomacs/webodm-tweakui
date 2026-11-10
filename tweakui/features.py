@@ -196,6 +196,25 @@ CATEGORIES = [
                            "46°50'24\"N 91°59'24\"W, and the map goes there."),
                     preview="map-search", scripts=["map_search.js"]),
         ]),
+        Group(_("Speed"), [
+            # tile_cache.js rewrites the map's tile URLs to api.CachedTiles (tile_cache.py)
+            Setting("tile_cache", False, _("Tile Cache"),
+                    _("The map's orthophoto, DSM and DTM tiles are kept once drawn, so they come back at once."),
+                    more=_("WebODM draws every tile each time it is asked for, even one you have just seen. With "
+                           "this on, TweakUI keeps the tiles it draws for you and serves them again, to you and to "
+                           "anyone else with this on, and your browser reuses its own copy while the tile is "
+                           "unchanged. A task processed again gets new tiles. The server keeps up to 1 GB of tiles, "
+                           "the least recently used going first."),
+                    scripts=["tile_cache.js"], admin_label=_("Tile Cache"),
+                    admin_help=_("Users may have the map's tiles kept on the server once drawn (up to 1 GB in all, "
+                                 "shared by everyone with it on).")),
+            Setting("fewer_tile_requests", False, _("Fewer Tile Requests"),
+                    _("While zooming, the map waits for the zoom to end before asking for tiles."),
+                    more=_("It also keeps more of the tiles around the view, so panning back shows them at once. "
+                           "Fewer tiles to draw makes the map quicker to settle, above all on a phone or a "
+                           "high-resolution screen."),
+                    scripts=["tile_cache.js"]),
+        ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
         Group(_("Controls"), [

@@ -21,6 +21,15 @@
   Search**; the 3D Map's Zoom Override is **Zoom to Pointer**; Show Storage View and Show Performance View are
   **Storage View** and **Performance View**. The documentation's old links still lead to them.
 
+### 2D Map
+
+- **Tile Cache** (Speed): the map's orthophoto, DSM and DTM tiles are kept on the server once WebODM has drawn them
+  (up to 1 GB, shared by everyone with it on), and your browser reuses its own copy while a tile is unchanged. A
+  reload or another user's look at the same place no longer has each tile drawn again. An administrator can
+  withhold it on Administration > TweakUI.
+- **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends, and it keeps more of
+  the tiles around the view for panning back.
+
 ### Administration
 
 - Administration > TweakUI Themes is now the **Published Themes** section of Administration > TweakUI, under

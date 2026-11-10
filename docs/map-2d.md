@@ -103,3 +103,41 @@ What is sent: only the text of an address search, from your browser to `nominati
 press Enter, never as you type, and at most once a second, as
 [Nominatim's usage policy](https://operations.osmfoundation.org/policies/nominatim/) asks. A search repeated in the
 same visit is answered from memory. A server with no internet access can still go to coordinates.
+
+## Speed > Tile Cache
+
+Off by default.
+
+WebODM draws the map's orthophoto, DSM and DTM tiles from the task's files each time they are asked for. That
+includes a tile you saw a moment ago, after a reload, or one another user has just looked at. With Tile Cache on,
+your map asks TweakUI for its tiles instead. TweakUI has WebODM draw each tile once, keeps it on the server, and
+serves it again from there. Measured on a dev server, a kept tile comes back in about 16 ms, where drawing it takes
+about 60 ms when the server is idle and several hundred ms under load.
+
+- **Your browser keeps its own copy** and asks the server only whether it has changed (an ETag). After a reload,
+  each tile is a short "not modified" answer.
+- **A tile is kept per look:** the task, the layer (orthophoto, DSM, DTM, plant health), its colour map, hillshade
+  and range, the crop, and whether your browser takes WebP images. Changing any of these on the map gives new tiles,
+  and going back gives the kept ones. When a task is processed again, its files change and its tiles are drawn anew.
+- **Who may see a tile** is WebODM's rule as always: it's checked on every request, kept tile or not. A public
+  task's tiles are anyone's.
+- **The tiles are shared** by everyone with Tile Cache on. The server keeps up to 1 GB of them, in WebODM's media
+  folder (`plugins/tweakui/tile-cache`). Past that, the tiles used least recently go first, and so do the tiles of
+  deleted tasks.
+- An administrator can withhold it from users on
+  [Administration > TweakUI](administration#available-to-users).
+
+The first look at a part of the map is no faster: WebODM still draws each tile once.
+
+## Speed > Fewer Tile Requests
+
+Off by default.
+
+Two changes to how the map's orthophoto, DSM and DTM layers load their tiles:
+
+- **While zooming** (a pinch, the wheel, or the map flying to a place), the map asks for tiles once the zoom ends,
+  not for each zoom level it passes on the way.
+- **When panning**, it keeps 4 rows of tiles beyond the view rather than 2, so panning back shows them at once.
+
+The server draws fewer tiles, which helps most on a phone or a high-resolution screen, where every view needs about
+three times as many. It works with or without Tile Cache.

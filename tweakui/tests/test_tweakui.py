@@ -20,7 +20,7 @@ from app.plugins import disable_plugin, enable_plugin, get_plugin_by_name
 from app.models import Project, Task
 from app.plugins.data_store import UserDataStore
 from app.tests.classes import BootTestCase
-from coreplugins.tweakui import features, frames
+from coreplugins.tweakui import features, frames, tile_cache
 
 API = "/api/plugins/tweakui/settings"
 
@@ -35,7 +35,7 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False,
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "fewer_tile_requests": False,
                  "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
 
@@ -2114,11 +2114,123 @@ class TestPerformance(TweakUITestCase):
 
 
 ACCESS = "/api/plugins/tweakui/access"
+def tile_of(lon, lat, z):
+    """The web map tile (z, x, y) at a place"""
+    n = 2 ** z
+    return z, int((lon + 180) / 360 * n), int((1 - math.asinh(math.tan(math.radians(lat))) / math.pi) / 2 * n)
+
+
+class TestTileCache(TweakUITestCase):
+    """2D Map > Tile Cache: TweakUI's tile URL answers WebODM's tile, rendered once and then kept (tile_cache.py), on
+    WebODM's orthophoto fixture (about 100 m across, at 0.5 m)"""
+    CENTER = (-91.99381, 46.84265)
+
+    def setUp(self):
+        super().setUp()
+        self.folder = tempfile.mkdtemp()
+        patcher = mock.patch.object(tile_cache, "folder", lambda *paths: os.path.join(self.folder, *paths))
+        patcher.start()
+        self.addCleanup(patcher.stop)
+        self.user = User.objects.get(username="testuser")
+        self.project = Project.objects.create(owner=self.user, name="Tile Cache test")
+        self.task = Task.objects.create(project=self.project, name="Ortho", available_assets=["orthophoto.tif"])
+        self.raster = self.task.assets_path("odm_orthophoto", "odm_orthophoto.tif")
+        os.makedirs(os.path.dirname(self.raster), exist_ok=True)
+        shutil.copy(os.path.join("app", "fixtures", "orthophoto.tif"), self.raster)
+        z, x, y = tile_of(*self.CENTER, 18)
+        self.url = "/api/plugins/tweakui/tiles/%s/%s/orthophoto/%d/%d/%d" % (self.project.id, self.task.id, z, x, y)
+
+    def tearDown(self):
+        path = self.task.task_path()
+        if os.path.isdir(path) and str(self.task.id) in path:
+            shutil.rmtree(path)
+        shutil.rmtree(self.folder, ignore_errors=True)
+        super().tearDown()
+
+    def kept(self):
+        return [name for _root, _dirs, names in os.walk(self.folder) for name in names]
+
+    def test_a_tile_is_rendered_once_then_served_from_the_cache_and_a_304_for_its_etag(self):
+        first = self.client.get(self.url + "?cache=1", HTTP_ACCEPT="image/webp,*/*")
+        self.assertEqual(first.status_code, status.HTTP_200_OK, first.content[:200])
+        self.assertEqual(first["X-TweakUI-Cache"], "miss")
+        self.assertEqual(first["Cache-Control"], "private, no-cache")
+        self.assertIn("Accept", [v.strip() for v in first["Vary"].split(",")])
+        self.assertTrue(first["Content-Type"].startswith("image/"))
+        self.assertEqual(len(self.kept()), 1)
+        with mock.patch("app.api.tiler.Tiles.get", side_effect=AssertionError("rendered again")):
+            # WebODM's cache buster changes nothing
+            again = self.client.get(self.url + "?cache=2", HTTP_ACCEPT="image/webp,*/*")
+            self.assertEqual(again.status_code, status.HTTP_200_OK)
+            self.assertEqual(again["X-TweakUI-Cache"], "hit")
+            self.assertEqual(again.content, first.content)
+            self.assertEqual(again["Content-Type"], first["Content-Type"])
+            self.assertEqual(again["ETag"], first["ETag"])
+            unchanged = self.client.get(self.url, HTTP_ACCEPT="image/webp,*/*", HTTP_IF_NONE_MATCH=first["ETag"])
+            self.assertEqual(unchanged.status_code, status.HTTP_304_NOT_MODIFIED)
+            self.assertEqual(unchanged["ETag"], first["ETag"])
+
+    def test_another_query_browser_or_raster_is_another_tile(self):
+        etag = self.client.get(self.url, HTTP_ACCEPT="image/webp,*/*")["ETag"]
+        rescaled = self.client.get(self.url + "?rescale=0,128", HTTP_ACCEPT="image/webp,*/*")
+        self.assertEqual(rescaled["X-TweakUI-Cache"], "miss")
+        self.assertNotEqual(rescaled["ETag"], etag)
+        self.assertNotEqual(self.client.get(self.url, HTTP_ACCEPT="image/png,*/*")["ETag"], etag)
+        # The task processed again: a new raster
+        stat = os.stat(self.raster)
+        os.utime(self.raster, ns=(stat.st_atime_ns, stat.st_mtime_ns + 10 ** 9))
+        reprocessed = self.client.get(self.url, HTTP_ACCEPT="image/webp,*/*", HTTP_IF_NONE_MATCH=etag)
+        self.assertEqual(reprocessed.status_code, status.HTTP_200_OK)
+        self.assertNotEqual(reprocessed["ETag"], etag)
+
+    def test_webodm_s_permissions_apply_to_a_kept_tile_too(self):
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_200_OK)
+        User.objects.create_user(username="tileother", password="test1234")
+        for client in (self.login("tileother"), Client()):
+            self.assertIn(client.get(self.url).status_code, (status.HTTP_403_FORBIDDEN, status.HTTP_404_NOT_FOUND))
+        self.task.public = True
+        self.task.save()
+        self.assertEqual(Client().get(self.url)["X-TweakUI-Cache"], "hit")
+        # The task under another project's number
+        wrong = self.url.replace("/tiles/%s/" % self.project.id, "/tiles/%s/" % (self.project.id + 1000))
+        self.assertEqual(self.client.get(wrong).status_code, status.HTTP_404_NOT_FOUND)
+
+    def test_a_tile_webodm_doesn_t_answer_isn_t_kept(self):
+        z, x, y = tile_of(self.CENTER[0] + 1, self.CENTER[1], 18)
+        url = "/api/plugins/tweakui/tiles/%s/%s/orthophoto/%d/%d/%d" % (self.project.id, self.task.id, z, x, y)
+        self.assertEqual(self.client.get(url).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.client.get(self.url.replace("/orthophoto/", "/dsm/")).status_code, status.HTTP_404_NOT_FOUND)
+        self.assertEqual(self.kept(), [])
+
+    def test_a_withheld_tile_cache_answers_403_to_users_but_not_superusers(self):
+        admin = self.login("testsuperuser")
+        res = admin.patch(ACCESS, json.dumps({"tile_cache": False}), content_type="application/json")
+        self.assertEqual(res.status_code, status.HTTP_200_OK, res.content)
+        self.assertEqual(self.client.get(self.url).status_code, status.HTTP_403_FORBIDDEN)
+        self.assertEqual(admin.get(self.url).status_code, status.HTTP_200_OK)
+
+    def test_a_prune_drops_the_least_recently_used_tiles_and_deleted_tasks_folders(self):
+        def tile(task, name, size, age):
+            os.makedirs(os.path.join(self.folder, task), exist_ok=True)
+            path = os.path.join(self.folder, task, name)
+            with open(path, "wb") as f:
+                f.write(b"x" * size)
+            os.utime(path, (1000 - age, 1000 - age))
+        tile("a", "old.jpg", 400, 30)
+        tile("a", "mid.jpg", 400, 20)
+        tile("a", "new.jpg", 400, 10)
+        tile("gone", "any.jpg", 400, 0)
+        self.assertEqual(tile_cache.prune(limit=1000, task_ids={"a"}), 400 * 2)
+        self.assertEqual(sorted(self.kept()), ["mid.jpg", "new.jpg"])
+        self.assertFalse(os.path.exists(os.path.join(self.folder, "gone")))
+        self.assertEqual(tile_cache.prune(limit=1000, task_ids={"a"}), 800)
+
+
 ACCESS_PAGE = "/plugins/tweakui/admin/"
 
 
 class TestAccess(TweakUITestCase):
-    """Administration > TweakUI: superusers withhold Storage View and Performance View from users (access.py)"""
+    """Administration > TweakUI: superusers withhold Tile Cache, Storage View and Performance View from users (access.py)"""
 
     def setUp(self):
         super().setUp()
@@ -2148,14 +2260,14 @@ class TestAccess(TweakUITestCase):
         strict.login(username="testsuperuser", password="test1234")
         res = strict.patch(ACCESS, json.dumps({"storage_view": False}), content_type="application/json")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(self.admin.get(ACCESS).json(), {"storage_view": True, "performance_view": True})
+        self.assertEqual(self.admin.get(ACCESS).json(), {"tile_cache": True, "storage_view": True, "performance_view": True})
 
     def test_both_are_available_until_withheld_and_only_known_features_take_a_bool(self):
-        self.assertEqual(self.withhold(storage_view=False), {"storage_view": False, "performance_view": True})
+        self.assertEqual(self.withhold(storage_view=False), {"tile_cache": True, "storage_view": False, "performance_view": True})
         for bad in ({"theme": False}, {"performance_view": "no"}, ["storage_view"]):
             res = self.admin.patch(ACCESS, json.dumps(bad), content_type="application/json")
             self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, bad)
-        self.assertEqual(self.withhold(storage_view=True), {"storage_view": True, "performance_view": True})
+        self.assertEqual(self.withhold(storage_view=True), {"tile_cache": True, "storage_view": True, "performance_view": True})
         body = self.admin.get(ACCESS_PAGE).content.decode()
         self.assertRegex(body, r'data-access="storage_view" checked')
 
