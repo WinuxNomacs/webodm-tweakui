@@ -3,30 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-1. **Memory estimates under the Speed sliders** (asked in chat, 2026-11-10; the user agreed both steps). First,
-   measure the browser's memory per kept tile: headless Chromium on a real map, with the renderer and GPU processes'
-   RSS from `/proc` at each Load Ahead and Keep More Tiles step, giving the real MB per 512×512 tile (between its
-   ~100 KB compressed and ~1 MB decoded). Then the Settings page shows, under Distance and Amount, the estimate for
-   this screen (its map area and `devicePixelRatio`, per map layer), updated as the slider moves. Load Ahead:
-   "about N MB more" (its tiles are loaded). Keep More Tiles: "up to N MB more" (kept only where you have panned).
-
-   **Measured (2026-11-10)**, headless Chromium on 4.0.0, task 94b094c9, 1400×900, Tile Cache on, settings swapped in
-   `settings.js`'s response only (`scratchpad/mem_tiles.js`); PSS of every Chromium process from `/proc`:
-   - A tile costs about **0.3 MB**, not the ~1 MB of a decoded 512×512 image: at DPR 2, Load Ahead 100% held 308
-     tiles against 60 off, for +77 MB in the renderer and +10 MB in the network process (≈0.35 MB a tile). Tiles
-     there were 35 KB median (p90 59 KB) as sent. At DPR 1, 15 → 56 tiles was +32 MB (≈0.8 MB, few tiles, noisy).
-   - Chrome seems to keep tiles off screen compressed and decode only what it draws, so kept tiles cost no more than
-     loaded ones: Keep More 100% after a panned loop (120 tiles against 52, many near-empty at the orthophoto's edge)
-     added nothing measurable.
-   - So the earlier ceilings were ~3× too high: Keep More 100% on 1920×1080 at DPR 2 is ~130 MB per layer, not ~450.
-     Headless renders in software; a GPU browser adds textures only for tiles on screen. Firefox may differ.
-
-   **Proposed design** (to agree before building): under Distance and Amount on Settings > 2D Map > Speed, a line
-   such as "About 80 MB more per map layer on this screen", computed in the page from the window's size and
-   `devicePixelRatio`, with the tile ranges Leaflet would use (512-pixel tiles at the screen's resolution) and
-   0.3 MB a tile, updated as the slider moves; Keep More's says "Up to" (only where you have panned). Open
-   decisions: whether to build it at all now the figures are small (Load Ahead 100% ≈ 80 MB, Keep More 100% ≈
-   100 MB on 1400×900 at DPR 2), the wording, and whether to give one layer's figure or allow for DSM and DTM.
+- Nothing planned: new requests go in `new.md`.
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -39,6 +16,28 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Memory estimates under the Speed sliders, Load Ahead to 200%** (asked in chat, 2026-11-10) — branch
+  `memory-estimates`. The user decided: build it as proposed; "Approximately"; per layer; Load Ahead's Distance back
+  up to 200% (Keep More's Amount stays at 100%); the device's memory set against them (a page can't read its own:
+  `measureUserAgentSpecificMemory` needs cross-origin isolation, which WebODM lacks, and `performance.memory` is
+  Chromium's rounded JavaScript heap, 19 MB on a map holding 250+ MB). `features.py`: `Setting(estimate=)` on
+  Distance and Amount, `load_ahead` number (25, 200, 25); `settings_setting.html` adds a hidden
+  `p.tweakui-estimate`; `settings_page.addEstimates` fills it from the window's size and `devicePixelRatio`
+  (tiles counted as Leaflet does, 0.35 MB a tile), on every input, change and resize, and adds "This device has
+  approximately N GB of memory" (8: "or more") at the end of the group where `navigator.deviceMemory` exists. Tests
+  `settings_page.test.js` (6), `test_tweakui.py`; docs `map-2d.md`, CHANGELOG. Live on both stacks at 1400×900
+  DPR 2 and a phone: the lines fill in and follow the slider (Load Ahead 200%: approximately 180 MB per layer on
+  the desktop window), no console errors.
+  **Measured (2026-11-10)**, headless Chromium on 4.0.0, task 94b094c9, 1400×900, Tile Cache on, settings swapped in
+  `settings.js`'s response only (`scratchpad/mem_tiles.js`); PSS of every Chromium process from `/proc`:
+  - A tile costs about **0.3 MB**, not the ~1 MB of a decoded 512×512 image: at DPR 2, Load Ahead 100% held 308
+    tiles against 60 off, for +77 MB in the renderer and +10 MB in the network process (≈0.35 MB a tile). Tiles
+    there were 35 KB median (p90 59 KB) as sent. At DPR 1, 15 → 56 tiles was +32 MB (≈0.8 MB, few tiles, noisy).
+  - Chrome seems to keep tiles off screen compressed and decode only what it draws, so kept tiles cost no more than
+    loaded ones: Keep More 100% after a panned loop (120 tiles against 52, many near-empty at the orthophoto's edge)
+    added nothing measurable.
+  - So the earlier ceilings were ~3× too high: Keep More 100% on 1920×1080 at DPR 2 is ~160 MB per layer by the estimate's count, not ~450.
+    Headless renders in software; a GPU browser adds textures only for tiles on screen. Firefox may differ.
 - **Tile Cache: one checkbox, Reuse Browser Copies always on** (asked in chat, 2026-11-10) — branch
   `tile-cache-one-checkbox`. The user decided: one checkbox. The `reuse_browser_copies` part is gone from
   `features.py` (a stored one is ignored; both unreleased); `map_tiles.optionsOf` puts the task's version in tile

@@ -23,10 +23,11 @@ class Setting:
     public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
     summary: one line under the label saying what you get; more: the rest (how it works, the Windows app, a phone,
     what is remembered), behind the summary's More button. admin_label and admin_help: a superuser may withhold the
-    setting from users on Administration > TweakUI (access.py), where these name and describe it."""
+    setting from users on Administration > TweakUI (access.py), where these name and describe it. estimate: for a 2D
+    map Speed number, which of settings_page.js's memory estimates goes under it ("load_ahead" or "keep_more")."""
 
     def __init__(self, name, default, label=None, summary=None, more=None, preview=None, scripts=(), parts=(),
-                 admin_label=None, admin_help=None, number=None, unit=None, values=None):
+                 admin_label=None, admin_help=None, number=None, unit=None, values=None, estimate=None):
         self.name = name
         self.default = default
         self.label = label
@@ -41,6 +42,7 @@ class Setting:
         self.values = tuple(values) if values else None
         self.number = (self.values[0], self.values[-1], None) if self.values else (tuple(number) if number else None)
         self.unit = unit
+        self.estimate = estimate
 
 
 class Group:
@@ -216,23 +218,24 @@ CATEGORIES = [
                     _("The map loads tiles beyond the edges of the view, so they are there before you pan to them."),
                     more=_("Without it, as in WebODM, only the tiles in view are loaded, so the edges fill in as you "
                            "pan. The tiles in view always load first: those beyond wait until they have, and the map "
-                           "is still. More tiles are loaded (up to 9 times as many at 100%), which Tile Cache makes "
-                           "cheaper."),
+                           "is still. More tiles are loaded (up to 9 times as many at 100%, 25 times at 200%), which "
+                           "Tile Cache makes cheaper. Each uses some of the browser's memory: the estimate under "
+                           "Distance is for a window of this size."),
                     scripts=["map_tiles.js"], parts=[
                 Setting("load_ahead", 25, _("Distance"),
                         _("How far beyond each edge, as a share of the view's width and height."),
-                        number=(25, 100, 25), unit="%"),
+                        number=(25, 200, 25), unit="%", estimate="load_ahead"),
             ]),
             Setting("keep_more_tiles_on", False, _("Keep More Tiles"),
                     _("The map keeps more tiles after they leave the view, so panning back shows them at once."),
                     more=_("Without it, as in WebODM, the map keeps 2 rows of tiles beyond those loaded, which on a "
                            "high-resolution screen is only a few hundred pixels. It keeps columns at the sides from "
                            "the view's width and rows above and below from its height. Kept tiles use the browser's "
-                           "memory."),
+                           "memory: the estimate under Amount is the most for a window of this size."),
                     scripts=["map_tiles.js"], parts=[
                 Setting("keep_more_tiles", 50, _("Amount"),
                         _("How much more it keeps, as a share of the view's width and height."),
-                        number=(25, 100, 25), unit="%"),
+                        number=(25, 100, 25), unit="%", estimate="keep_more"),
             ]),
             Setting("fade_in_speed_on", False, _("Fade-in Speed"),
                     _("Changes how long a tile takes to fade in once it arrives."),
@@ -379,7 +382,7 @@ def page(values, withheld=()):
                                       else 0)}
                            if setting.number else None),
                 "default": with_unit(setting.default, setting.unit) if setting.number else None,
-                "unit": setting.unit, "parts": [control(p) for p in setting.parts]}
+                "unit": setting.unit, "estimate": setting.estimate, "parts": [control(p) for p in setting.parts]}
 
     return [{"id": c.id, "label": c.label, "icon": c.icon, "template": c.template,
              "groups": [{"title": g.title, "settings": [control(s) for s in g.settings if s.label]} for g in c.groups]}

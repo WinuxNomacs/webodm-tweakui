@@ -330,7 +330,7 @@ class TestSettingsPage(TweakUITestCase):
             self.assertEqual(self.patch({"zoom_sensitivity_3d": value}).status_code, 400)
         self.assertIn("zoom_sensitivity_2d takes 10 to 200", self.patch({"zoom_sensitivity_2d": 300}).json()["detail"])
 
-    def test_the_speed_checkboxes_have_their_numbers_beneath_and_fewer_tile_requests_comes_last(self):
+    def test_the_speed_checkboxes_have_their_numbers_and_estimates_beneath_and_fewer_tile_requests_comes_last(self):
         page = self.client.get("/plugins/tweakui/").content.decode()
         section = page[page.index('<section id="tweakui-map2d"'):]
         section = section[:section.index("</section>")]
@@ -345,15 +345,20 @@ class TestSettingsPage(TweakUITestCase):
             self.assertLess(section.index('data-setting="%s_on"' % name), section.index('data-depends="%s_on"' % name))
             self.assertLess(section.index('data-depends="%s_on"' % name), section.index('data-slider-of="%s"' % name))
         # Each slider starts at the first step that changes something, and at the value a first tick gives
-        self.assertIn('data-slider-of="load_ahead" min="25" max="100" step="25" value="25"', section)
+        self.assertIn('data-slider-of="load_ahead" min="25" max="200" step="25" value="25"', section)
         self.assertIn('data-slider-of="keep_more_tiles" min="25" max="100" step="25" value="50"', section)
         self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="0"', section)
         self.assertIn('Distance <span class="tweakui-default text-muted">(Default: 25%)</span>', section)
         self.assertIn('Duration <span class="tweakui-default text-muted">(Default: 0 ms)</span>', section)
-        for name, value in (("load_ahead", 0), ("keep_more_tiles", 0), ("load_ahead", 125), ("keep_more_tiles", 125)):
+        # Distance and Amount each have a line for settings_page.js's memory estimate, after the slider
+        for name, kind in (("load_ahead", "load_ahead"), ("keep_more_tiles", "keep_more")):
+            self.assertLess(section.index('data-slider-of="%s"' % name),
+                            section.index('<p class="text-muted tweakui-estimate" data-estimate="%s" hidden></p>' % kind))
+        self.assertEqual(section.count("data-estimate="), 2)
+        for name, value in (("load_ahead", 0), ("keep_more_tiles", 0), ("load_ahead", 225), ("keep_more_tiles", 125)):
             self.assertEqual(self.patch({name: value}).status_code, 400, (name, value))
-        self.assertEqual(self.patch({"load_ahead_on": True, "fade_in_speed_on": True, "fade_in_speed": 50, "load_ahead": 75}).json(),
-                         defaults(load_ahead_on=True, fade_in_speed_on=True, fade_in_speed=50, load_ahead=75))
+        self.assertEqual(self.patch({"load_ahead_on": True, "fade_in_speed_on": True, "fade_in_speed": 50, "load_ahead": 200}).json(),
+                         defaults(load_ahead_on=True, fade_in_speed_on=True, fade_in_speed=50, load_ahead=200))
         page = self.client.get("/plugins/tweakui/").content.decode()
         self.assertIn('<input type="checkbox" data-setting="load_ahead_on" checked>', page)
         self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="1"', page)
