@@ -1,7 +1,7 @@
 const mapTiles = require("../map_tiles");
 
 const TILES = "/api/projects/3/tasks/ab-12/orthophoto/tiles/{z}/{x}/{y}?rescale=0%2C255&size=512&cache=123456&crop=1";
-const OFF = {tile_cache: false, reuse_browser_copies: false, fewer_tile_requests: false, load_ahead_on: false, load_ahead: 25,
+const OFF = {tile_cache: false, fewer_tile_requests: false, load_ahead_on: false, load_ahead: 25,
              keep_more_tiles_on: false, keep_more_tiles: 50, fade_in_speed_on: false, fade_in_speed: 0};
 // The settings with these changes; a number given ticks its checkbox, unless its checkbox is given too
 const ON = {load_ahead: "load_ahead_on", keep_more_tiles: "keep_more_tiles_on", fade_in_speed: "fade_in_speed_on"};
@@ -55,11 +55,11 @@ test("all at WebODM's own (each checkbox off, whatever its number) changes nothi
                  fade_in_speed_on: false, fade_in_speed: 400})).toBeNull();
     expect(opts({load_ahead_on: true, keep_more_tiles_on: true, fade_in_speed_on: true}))
         .toMatchObject({loadAhead: 0.25, keepMore: 0.5, fadeMs: 0});
-    expect(opts({reuse_browser_copies: true})).toBeNull();
+    expect(opts({reuse_browser_copies: true})).toBeNull();  // no longer a setting
     expect(opts({fade_in_speed: 200, load_ahead: 0})).toBeNull();
     expect(opts({fade_in_speed: 0})).toMatchObject({fadeMs: 0});
     expect(opts({load_ahead: 25})).toMatchObject({loadAhead: 0.25, keepMore: 0, cache: false});
-    expect(opts({tile_cache: true, reuse_browser_copies: true})).toMatchObject({cache: true, reuse: true});
+    expect(opts({tile_cache: true})).toMatchObject({cache: true, reuse: true});
 });
 
 test("a WebODM tile URL becomes TweakUI's, with its parameters but the cache buster, and the task's version when given", () => {
@@ -91,10 +91,10 @@ test("Tile Cache: a layer WebODM adds asks TweakUI for its tiles, also after Web
     expect(layer.options.keepBuffer).toBe(2);
 });
 
-test("Reuse Browser Copies: the task's version is asked once, and the tiles asked for once it comes carry it", async () => {
+test("Tile Cache: the task's version is asked once, and the tiles asked for once it comes carry it", async () => {
     const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({version: "0123abcd"})}));
     const known = mapTiles.versions(fetch), map = fakeMap(), layer = fakeLayer(TILES), again = fakeLayer(TILES);
-    mapTiles.attach(map, opts({tile_cache: true, reuse_browser_copies: true}), known);
+    mapTiles.attach(map, opts({tile_cache: true}), known);
     map.addLayer(layer);
     expect(layer.getTileUrl(at)).not.toMatch(/v=/);
     await flush();
@@ -299,7 +299,7 @@ test("the map hook is used only when a setting differs from WebODM's own, and as
     mapTiles.start({}, win({reuse_browser_copies: true}));
     expect(hook).not.toHaveBeenCalled();
     mapTiles.start({}, win({fade_in_speed: 50}));
-    mapTiles.start({}, win({tile_cache: true, reuse_browser_copies: true}));
+    mapTiles.start({}, win({tile_cache: true}));
     expect(hook).toHaveBeenCalledTimes(2);
     const map = fakeMap(), layer = fakeLayer(TILES);
     hook.mock.calls[1][0]({map, tiles: [{meta: {task: {id: "ab-12", project: 3}}}]});

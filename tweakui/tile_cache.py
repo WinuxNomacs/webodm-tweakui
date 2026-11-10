@@ -26,7 +26,7 @@ KEEP = 0.9
 PRUNE_EVERY = 50 * 1024 ** 2
 # A tile served from the cache is marked used (its mtime) at most this often, to spare the disk a write per tile
 TOUCH_SECONDS = 3600
-# Query parameters that don't change the tile: WebODM's cache buster, and Reuse Browser Copies' task version
+# Query parameters that don't change the tile: WebODM's cache buster, and the task version the map adds
 IGNORED_PARAMS = ("cache", "v")
 TILE_TYPES = ("orthophoto", "dsm", "dtm")
 EXTENSIONS = ("jpg", "webp", "png")
@@ -56,7 +56,7 @@ def key(task, raster, tile_type, z, x, y, scale, ext, query, accepts_webp):
 
 
 def version(task, raster_path):
-    """2D Map > Tile Cache > Reuse Browser Copies: a short hash of all that a task's tiles depend on but their URL
+    """2D Map > Tile Cache, in its tiles' URLs: a short hash of all that a task's tiles depend on but their URL
     (its rasters, their size and mtime; its crop; WebODM's version). raster_path(task, type): WebODM's
     get_raster_path. A tile URL that carries the current one may stay in the browser for good: a task processed
     again has another"""

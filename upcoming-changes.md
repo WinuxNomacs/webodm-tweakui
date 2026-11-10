@@ -21,6 +21,14 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Tile Cache: one checkbox, Reuse Browser Copies always on** (asked in chat, 2026-11-10) — branch
+  `tile-cache-one-checkbox`. The user decided: one checkbox. The `reuse_browser_copies` part is gone from
+  `features.py` (a stored one is ignored; both unreleased); `map_tiles.optionsOf` puts the task's version in tile
+  URLs whenever Tile Cache is on. Server unchanged (docstrings in `api.py`, `tile_cache.py`). Tests
+  `test_tweakui.py`, `map_tiles.test.js`; docs `map-2d.md` (the section folded into Tile Cache's list), README,
+  CHANGELOG. Live: both stacks' settings pages show Tile Cache with no part; on 4.0.0's map the version is asked
+  once per load, tiles come with `private, max-age=31536000, immutable`, and a reload or a later visit shows them
+  from the browser's cache with no request to the server.
 - **Keep More Tiles per axis, capped at 100%** (asked in chat, 2026-11-10) — branch `keep-more-per-axis`. The user
   decided: Amount 25% to 100% (a stored 125% to 200% falls back to the 50% default), and cut the waste. Leaflet's
   `keepBuffer` is one number for all four sides; `map_tiles.keepMore` now works out columns from the view's width and

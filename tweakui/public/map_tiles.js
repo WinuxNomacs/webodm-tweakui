@@ -3,8 +3,8 @@
 //   `cache` parameter, and the server renders each one every time. Each such layer asks TweakUI's
 //   /api/plugins/tweakui/tiles/<p>/<t>/<type>/... instead (the same parameters, less `cache`), which keeps what WebODM
 //   renders (tile_cache.py). The layer's getTileUrl is replaced, not its URL, so it holds when WebODM calls setUrl (a
-//   new colour map or hillshade). Reuse Browser Copies: the URL also carries the task's version (asked of
-//   .../<p>/<t>/version once per task), and the server lets the browser keep such a tile without asking again.
+//   new colour map or hillshade). The URL also carries the task's version (asked of .../<p>/<t>/version once per
+//   task), and the server lets the browser keep such a tile without asking again.
 // - Fewer Tile Requests: a layer asks for tiles once a zoom ends, not at each level on the way (updateWhenZooming).
 // - Load Ahead: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
 //   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much). The tiles in view come first: those beyond
@@ -46,7 +46,7 @@
     function optionsOf(settings) {
         var o = {
             cache: !!settings.tile_cache,
-            reuse: !!settings.tile_cache && !!settings.reuse_browser_copies,
+            reuse: !!settings.tile_cache,
             fewer: !!settings.fewer_tile_requests,
             loadAhead: settings.load_ahead_on ? share(settings.load_ahead) : 0,
             keepMore: settings.keep_more_tiles_on ? share(settings.keep_more_tiles) : 0,
@@ -90,7 +90,7 @@
             WEBODM_TILES.test(layer._url);
     }
 
-    // Each task's tile version (Reuse Browser Copies), asked once per page; tiles asked for before it comes are
+    // Each task's tile version (Tile Cache), asked once per page; tiles asked for before it comes are
     // checked with the server as without it
     function versions(fetchFn) {
         var known = {}, asked = {};
