@@ -1,13 +1,17 @@
 {% comment %}A setting on the settings page (features.py): a checkbox with its label and its summary (with a More
-button showing the rest of its description, when it has more), or for a number setting its label with its default, a slider in its steps and a box for any whole number in its range; and its preview's name for
+button showing the rest of its description, when it has more), or for a number setting its label with its default, a slider in its steps and a box for any whole number in its range (or, for one with a list of values, a slider through them and a box that takes only them); and its preview's name for
 settings_page.js; one an admin withholds from the user (access.py) greyed, with the reason{% endcomment %}
 {% load i18n %}
 <div class="tweakui-setting{% if setting.number %} tweakui-number-setting{% endif %}{% if setting.withheld %} tweakui-withheld{% endif %}"{% if setting.preview %} data-preview="{{ setting.preview }}"{% endif %}>
     {% if setting.number %}
     <label for="tweakui-{{ setting.name }}">{{ setting.label }} <span class="tweakui-default text-muted">{% blocktrans with value=setting.default %}(Default: {{ value }}){% endblocktrans %}</span></label>
     <div class="tweakui-number">
+        {% if setting.number.values %}
+        <input type="range" data-slider-of="{{ setting.name }}" data-values="{{ setting.number.values }}" min="0" max="{{ setting.number.last }}" step="1" value="{{ setting.number.index }}" aria-label="{{ setting.label }}"{% if setting.withheld %} disabled{% endif %}>
+        {% else %}
         <input type="range" data-slider-of="{{ setting.name }}" min="{{ setting.number.min }}" max="{{ setting.number.max }}" step="{{ setting.number.step }}" value="{{ setting.value }}" aria-label="{{ setting.label }}"{% if setting.withheld %} disabled{% endif %}>
-        <input type="number" id="tweakui-{{ setting.name }}" class="form-control input-sm theme-border" data-setting="{{ setting.name }}" min="{{ setting.number.min }}" max="{{ setting.number.max }}" step="1" value="{{ setting.value }}" data-saved="{{ setting.value }}"{% if setting.withheld %} disabled{% endif %}>
+        {% endif %}
+        <input type="number" id="tweakui-{{ setting.name }}" class="form-control input-sm theme-border" data-setting="{{ setting.name }}" min="{{ setting.number.min }}" max="{{ setting.number.max }}" step="1" value="{{ setting.value }}" data-saved="{{ setting.value }}"{% if setting.number.values %} data-values="{{ setting.number.values }}"{% endif %}{% if setting.withheld %} disabled{% endif %}>
         {% if setting.unit %}<span>{{ setting.unit }}</span>{% endif %}
     </div>
     {% else %}

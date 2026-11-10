@@ -12,11 +12,15 @@ KEY = "settings"
 DEFAULTS = features.defaults()
 # A number setting's range: {name: (minimum, maximum)}
 RANGES = {s.name: s.number[:2] for s in features.all_settings() if s.number}
+# A number setting that takes only some values: {name: (values)}
+VALUES = {s.name: s.values for s in features.all_settings() if s.values}
 
 
 def allowed(name, value, user=None):
     """Whether a value of the right type is one the setting takes (a setting with a list of choices); an own or a
-    published theme only while it is there; a number within its range"""
+    published theme only while it is there; a number within its range, or one of its values"""
+    if name in VALUES:
+        return value in VALUES[name]
     if name in RANGES:
         return RANGES[name][0] <= value <= RANGES[name][1]
     if name == "theme":
@@ -72,6 +76,8 @@ def update(user, changes):
             errors.append("Unknown setting: %s" % name)
         elif type(value) is not type(DEFAULTS[name]):
             errors.append("%s takes a %s" % (name, type(DEFAULTS[name]).__name__))
+        elif not allowed(name, value, user) and name in VALUES:
+            errors.append("%s takes %s or %s" % (name, ", ".join(str(v) for v in VALUES[name][:-1]), VALUES[name][-1]))
         elif not allowed(name, value, user) and name in RANGES:
             errors.append("%s takes %s to %s" % ((name,) + RANGES[name]))
         elif not allowed(name, value, user):

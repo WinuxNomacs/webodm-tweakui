@@ -7,6 +7,7 @@
 - Each setting's description is one line saying what you get, with **More** after it for the rest (how it works,
   what differs on a phone or in WebODM's Windows app); **Less** hides it again.
 - On a phone, a setting's screenshot is a **Preview** link under its description, which opens it full size.
+- A number setting can take a list of values, its slider stopping at just those (Fade-in Speed).
 - General: Collapsible Navigation Pane (with Auto-hide and Hide Delay) and Resizable Navigation Pane are in a
   **Navigation Pane** group of their own, after Global Controls.
 - Settings are named after what you get, without "Show" or "Add", and Administration uses the same names; what
@@ -27,8 +28,12 @@
   (up to 1 GB, shared by everyone with it on), and your browser reuses its own copy while a tile is unchanged. A
   reload or another user's look at the same place no longer has each tile drawn again. An administrator can
   withhold it on Administration > TweakUI.
-- **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends, and it keeps more of
-  the tiles around the view for panning back.
+  **Reuse Browser Copies**, a part of it: the browser shows the tiles it has without asking the server first; a
+  task processed again gets new ones.
+- **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends.
+- **Load Ahead**, **Keep More Tiles** and **Fade-in Speed** (Speed): sliders for loading tiles beyond the view's
+  edges, keeping more of them after they leave it, and how long a tile takes to fade in (0, 50, 100 or 200 ms). Each
+  starts at WebODM's own.
 
 ### Administration
 

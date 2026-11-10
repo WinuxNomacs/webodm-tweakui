@@ -1,7 +1,8 @@
 // The TweakUI settings page (templates/settings.html): the navigation pane shows one category at a time (from the
 // address's #hash, General by default), and each setting is saved as soon as it is changed: a checkbox as true or
-// false, a radio button (Themes) as its value, a number setting's box as its whole number (its slider, in steps, sets
-// the box as it moves and saves when let go; a number out of range or not whole is put back, saying why). A new theme, or the theme menu, the Storage or the Performance view
+// false, a radio button (Themes) as its value, a number setting's box as its whole number (its slider, in steps or
+// through its list of values, sets the box as it moves and saves when let go; a number out of range, not whole or
+// not one of its values is put back, saying why). A new theme, or the theme menu, the Storage or the Performance view
 // turned on or off, reloads the page to show it (the header, the side menu). A save shows a green "Saved" banner at
 // the top of the category for 3 seconds (after the reload too); a refused one, a red banner saying why, until the next change.
 // Settings in a data-depends box are greyed out and disabled while the setting it names is off (or itself disabled,
@@ -81,16 +82,34 @@
         }
     }
 
+    // A number setting's list of values (data-values="0,50,100,200"), or null when it takes any in its range
+    function valuesOf(input) {
+        var list = input.getAttribute("data-values");
+        return list ? list.split(",").map(Number) : null;
+    }
+
     // A number setting's box: its whole number, or why it isn't one the setting takes
     function numberOf(input) {
-        return ui.wholeNumber(input.value, Number(input.min), Number(input.max));
+        var values = valuesOf(input), number = ui.wholeNumber(input.value, Number(input.min), Number(input.max));
+        if (values && values.indexOf(number) === -1) {
+            return "one of " + values.slice(0, -1).join(", ") + " or " + values[values.length - 1];
+        }
+        return number;
+    }
+
+    // The value a number setting's slider stands at (its position, for one with a list of values)
+    function sliderValue(slider) {
+        var values = valuesOf(slider);
+        return values ? String(values[Number(slider.value)]) : slider.value;
     }
 
     // A number setting back to its saved value, its slider too
     function putBack(page, input) {
         input.value = input.getAttribute("data-saved");
         var slider = page.querySelector("input[data-slider-of='" + input.getAttribute("data-setting") + "']");
-        if (slider) slider.value = input.value;
+        if (!slider) return;
+        var values = valuesOf(slider);
+        slider.value = values ? String(Math.max(0, values.indexOf(Number(input.value)))) : input.value;
     }
 
     // PATCHes one setting; a failure puts the control back as it was and says why
@@ -288,9 +307,9 @@
         each(page.querySelectorAll("input[data-slider-of]"), function (slider) {
             var box = page.querySelector("input[data-setting='" + slider.getAttribute("data-slider-of") + "']");
             if (!box) return;
-            slider.addEventListener("input", function () { box.value = slider.value; });
+            slider.addEventListener("input", function () { box.value = sliderValue(slider); });
             slider.addEventListener("change", function () {
-                box.value = slider.value;
+                box.value = sliderValue(slider);
                 changed(box);
             });
         });

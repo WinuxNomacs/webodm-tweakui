@@ -355,6 +355,49 @@ test("turning the Storage or the Performance view on or off reloads the page to 
     }
 });
 
+describe("a number setting with a list of values", () => {
+    function valuesPage() {
+        document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/"><section data-section="map2d">
+            <input type="range" data-slider-of="fade_in_speed" data-values="0,50,100,200" min="0" max="3" step="1" value="3">
+            <input type="number" data-setting="fade_in_speed" min="0" max="200" step="1" value="200" data-saved="200" data-values="0,50,100,200">
+            </section><p class="tweakui-status"></p></div>`;
+        const fetch = jest.fn((url, init) => Promise.resolve({ok: true, json: () => Promise.resolve(JSON.parse(init.body))}));
+        settingsPage.start(document, {location: {hash: ""}, addEventListener() {}, fetch});
+        return {fetch, slider: document.querySelector("[data-slider-of]"), box: document.querySelector("[data-setting=fade_in_speed]"),
+            status: () => document.querySelector(".tweakui-status").textContent};
+    }
+
+    test("the slider steps through the values, the box showing each, and saves the value when let go", async () => {
+        const {fetch, slider, box} = valuesPage();
+        slider.value = "1";
+        slider.dispatchEvent(new Event("input"));
+        expect(box.value).toBe("50");
+        slider.value = "0";
+        slider.dispatchEvent(new Event("change"));
+        await new Promise(r => setTimeout(r, 0));
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({fade_in_speed: 0});
+        expect(box.getAttribute("data-saved")).toBe("0");
+        expect(slider.value).toBe("0");
+    });
+
+    test("the box takes only the values, and puts back anything else with the slider, saying why", async () => {
+        const {fetch, slider, box, status} = valuesPage();
+        box.value = "100";
+        box.dispatchEvent(new Event("change"));
+        await new Promise(r => setTimeout(r, 0));
+        expect(JSON.parse(fetch.mock.calls[0][1].body)).toEqual({fade_in_speed: 100});
+        expect(slider.value).toBe("2");
+        for (const bad of ["150", "25", "300", ""]) {
+            box.value = bad;
+            box.dispatchEvent(new Event("change"));
+            expect(box.value).toBe("100");
+            expect(slider.value).toBe("2");
+            expect(status()).toBe("Not saved: one of 0, 50, 100 or 200");
+        }
+        expect(fetch).toHaveBeenCalledTimes(1);
+    });
+});
+
 describe("a number setting", () => {
     function numberPage() {
         document.body.innerHTML = `<div id="tweakui-settings" data-api="/api/plugins/tweakui/">

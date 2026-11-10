@@ -17,7 +17,8 @@ CORE_SCRIPTS = ["settings.js", "core.js", "main.js"]
 class Setting:
     """A setting. A boolean one is a checkbox on the settings page; a number one (number=(minimum, maximum, step), a
     whole-number default) a slider moving in steps with a box beside it that takes any whole number in the range, and
-    unit the word after the box; one without a label has no control there (its category's template draws it). parts:
+    unit the word after the box; values=(a, b, ...) in place of number: a slider through just those values, in that
+    order, and a box that takes only them; one without a label has no control there (its category's template draws it). parts:
     settings shown under this one, greyed out while it is off (a part may have parts of its own). scripts: in
     public/, the ones it needs, in the order they load (a script shared by several settings is loaded once).
     summary: one line under the label saying what you get; more: the rest (how it works, the Windows app, a phone,
@@ -25,7 +26,7 @@ class Setting:
     setting from users on Administration > TweakUI (access.py), where these name and describe it."""
 
     def __init__(self, name, default, label=None, summary=None, more=None, preview=None, scripts=(), parts=(),
-                 admin_label=None, admin_help=None, number=None, unit=None):
+                 admin_label=None, admin_help=None, number=None, unit=None, values=None):
         self.name = name
         self.default = default
         self.label = label
@@ -37,7 +38,8 @@ class Setting:
         self.admin_label = admin_label
         self.admin_help = admin_help
         self.admin_control = admin_label is not None
-        self.number = tuple(number) if number else None
+        self.values = tuple(values) if values else None
+        self.number = (self.values[0], self.values[-1], None) if self.values else (tuple(number) if number else None)
         self.unit = unit
 
 
@@ -197,7 +199,8 @@ CATEGORIES = [
                     preview="map-search", scripts=["map_search.js"]),
         ]),
         Group(_("Speed"), [
-            # tile_cache.js rewrites the map's tile URLs to api.CachedTiles (tile_cache.py)
+            # map_tiles.js changes WebODM's orthophoto, DSM and DTM layers (Leaflet 1.3.1's tile layers); with Tile
+            # Cache their tiles come from api.CachedTiles (tile_cache.py)
             Setting("tile_cache", False, _("Tile Cache"),
                     _("The map's orthophoto, DSM and DTM tiles are kept once drawn, so they come back at once."),
                     more=_("WebODM draws every tile each time it is asked for, even one you have just seen. With "
@@ -205,15 +208,38 @@ CATEGORIES = [
                            "anyone else with this on, and your browser reuses its own copy while the tile is "
                            "unchanged. A task processed again gets new tiles. The server keeps up to 1 GB of tiles, "
                            "the least recently used going first."),
-                    scripts=["tile_cache.js"], admin_label=_("Tile Cache"),
+                    scripts=["map_tiles.js"], admin_label=_("Tile Cache"),
                     admin_help=_("Users may have the map's tiles kept on the server once drawn (up to 1 GB in all, "
-                                 "shared by everyone with it on).")),
+                                 "shared by everyone with it on)."), parts=[
+                Setting("reuse_browser_copies", False, _("Reuse Browser Copies"),
+                        _("Tiles your browser already has show at once, without asking the server first."),
+                        more=_("Without it, your browser asks the server whether each tile it has kept has changed "
+                               "before showing it (a short answer, but a trip to the server per tile). With it, the "
+                               "map asks once per task when it opens; a task processed since gets new tiles.")),
+            ]),
             Setting("fewer_tile_requests", False, _("Fewer Tile Requests"),
                     _("While zooming, the map waits for the zoom to end before asking for tiles."),
-                    more=_("It also keeps more of the tiles around the view, so panning back shows them at once. "
-                           "Fewer tiles to draw makes the map quicker to settle, above all on a phone or a "
-                           "high-resolution screen."),
-                    scripts=["tile_cache.js"]),
+                    more=_("Without it, a pinch, the wheel or the map flying to a place asks for the tiles of each "
+                           "zoom level it passes. Fewer tiles to draw makes the map quicker to settle, above all on "
+                           "a phone or a high-resolution screen."),
+                    scripts=["map_tiles.js"]),
+            Setting("load_ahead", 0, _("Load Ahead"),
+                    _("How far beyond the edges of the view the map loads tiles, so they are there before you pan "
+                      "to them."),
+                    more=_("A share of the view's width and height beyond each edge. 0% is WebODM's own: only the "
+                           "tiles in view are loaded, so the edges fill in as you pan. Each step loads more tiles "
+                           "(100% loads up to 9 times as many), which Tile Cache makes cheaper."),
+                    scripts=["map_tiles.js"], number=(0, 100, 25), unit="%"),
+            Setting("keep_more_tiles", 0, _("Keep More Tiles"),
+                    _("How many tiles the map keeps after they leave the view, so panning back shows them at once."),
+                    more=_("A share of the view's size, kept beyond the tiles loaded. 0% is WebODM's own: 2 rows of "
+                           "tiles, which on a high-resolution screen is only a few hundred pixels. Kept tiles use "
+                           "the browser's memory."),
+                    scripts=["map_tiles.js"], number=(0, 200, 25), unit="%"),
+            Setting("fade_in_speed", 200, _("Fade-in Speed"),
+                    _("How long a tile takes to fade in once it arrives: 0 shows it at once."),
+                    more=_("200 ms is WebODM's own. Shorter shows each tile sooner; it doesn't load any faster."),
+                    scripts=["map_tiles.js"], values=(0, 50, 100, 200), unit=_("ms")),
         ]),
     ]),
     Category("map3d", _("3D Map"), "fa fa-cube fa-fw", groups=[
@@ -334,7 +360,12 @@ def page(values, withheld=()):
         return {"name": setting.name, "label": setting.label, "summary": setting.summary, "more": setting.more,
                 "preview": setting.preview,
                 "value": values.get(setting.name, setting.default), "withheld": setting.name in withheld,
-                "number": ({"min": setting.number[0], "max": setting.number[1], "step": setting.number[2]}
+                "number": ({"min": setting.number[0], "max": setting.number[1], "step": setting.number[2],
+                            "values": ",".join(str(v) for v in setting.values) if setting.values else None,
+                            "last": len(setting.values) - 1 if setting.values else None,
+                            "index": (setting.values.index(values.get(setting.name, setting.default))
+                                      if setting.values and values.get(setting.name, setting.default) in setting.values
+                                      else 0)}
                            if setting.number else None),
                 "default": with_unit(setting.default, setting.unit) if setting.number else None,
                 "unit": setting.unit, "parts": [control(p) for p in setting.parts]}

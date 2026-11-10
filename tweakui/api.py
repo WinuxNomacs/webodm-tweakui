@@ -252,7 +252,8 @@ class PerformanceLiveView(APIView):
 class CachedTiles(Tiles):
     """GET /api/plugins/tweakui/tiles/<project>/<task>/<type>/<z>/<x>/<y>[@<n>x][.<ext>]: WebODM's tile
     (app/api/tiler.py, Tiles: its permissions, a public task's to anyone, and its parameters), kept by
-    tile_cache.py for 2D Map > Tile Cache. The key is the ETag; a request that has it gets a 304"""
+    tile_cache.py for 2D Map > Tile Cache. The key is the ETag; a request that has it gets a 304. With the task's
+    current version (?v=, Reuse Browser Copies) the browser may keep the tile for good"""
 
     def get(self, request, pk=None, project_pk=None, tile_type="", z="", x="", y="", scale=None, ext=None):
         if access.is_withheld(request.user, "tile_cache"):
@@ -267,12 +268,14 @@ class CachedTiles(Tiles):
         tile_key = tile_cache.key(task, raster, tile_type, z, x, y, scale, ext, query,
                                   "image/webp" in request.headers.get("Accept", ""))
         etag = '"{}"'.format(tile_key)
+        lasting = bool(request.query_params.get("v")) and request.query_params.get("v") == tile_cache.version(task, get_raster_path)
         if etag in request.headers.get("If-None-Match", ""):
-            return self._cache_headers(HttpResponseNotModified(), etag, "hit")
+            return self._cache_headers(HttpResponseNotModified(), etag, "hit", lasting)
         kept = tile_cache.get(task.id, tile_key)
         if kept is not None:
             content, kept_ext = kept
-            return self._cache_headers(HttpResponse(content, content_type=tile_cache.CONTENT_TYPES[kept_ext]), etag, "hit")
+            return self._cache_headers(HttpResponse(content, content_type=tile_cache.CONTENT_TYPES[kept_ext]), etag, "hit",
+                                       lasting)
         # Django 2.2 passes a group that didn't match as None; WebODM's view has defaults of its own
         extra = {k: v for k, v in (("scale", scale), ("ext", ext)) if v is not None}
         response = super().get(request, pk=pk, project_pk=project_pk, tile_type=tile_type, z=z, x=x, y=y, **extra)
@@ -280,15 +283,31 @@ class CachedTiles(Tiles):
             return response
         rendered = response.get("Content-Type", "").split("/")[-1].split(";")[0]
         tile_cache.put(task.id, tile_key, rendered, response.content)
-        return self._cache_headers(response, etag, "miss")
+        return self._cache_headers(response, etag, "miss", lasting)
 
     @staticmethod
-    def _cache_headers(response, etag, outcome):
-        # Private (a task may not be public) and checked again each time (304 when unchanged)
+    def _cache_headers(response, etag, outcome, lasting=False):
+        # Private (a task may not be public) and checked again each time (304 when unchanged), unless its URL has the
+        # task's current version: then a year, never checked
         response["ETag"] = etag
-        response["Cache-Control"] = "private, no-cache"
+        response["Cache-Control"] = "private, max-age=31536000, immutable" if lasting else "private, no-cache"
         patch_vary_headers(response, ("Accept",))
         response["X-TweakUI-Cache"] = outcome
+        return response
+
+
+class TileVersionView(TaskView):
+    """GET /api/plugins/tweakui/tiles/<project>/<task>/version: {version} of the task's tiles (tile_cache.version),
+    which 2D Map > Tile Cache > Reuse Browser Copies puts in their URLs; WebODM's task permissions"""
+
+    def get(self, request, project_pk=None, pk=None):
+        if access.is_withheld(request.user, "tile_cache"):
+            raise exceptions.PermissionDenied(Available.message)
+        task = self.get_and_check_task(request, pk)
+        if str(task.project_id) != str(project_pk):
+            raise exceptions.NotFound()
+        response = Response({"version": tile_cache.version(task, get_raster_path)})
+        response["Cache-Control"] = "no-store"
         return response
 
 
