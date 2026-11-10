@@ -12,7 +12,10 @@ Point.prototype.subtract = function (p) { return new Point(this.x - p.x, this.y 
 Point.prototype.multiplyBy = function (n) { return new Point(this.x * n, this.y * n); };
 // Leaflet's Bounds: its prototype an object of its own, so its constructor isn't Bounds
 function Bounds(min, max) { this.min = min; this.max = max; }
-Bounds.prototype = {getCenter() { return new Point((this.min.x + this.max.x) / 2, (this.min.y + this.max.y) / 2); }};
+Bounds.prototype = {
+    getCenter() { return new Point((this.min.x + this.max.x) / 2, (this.min.y + this.max.y) / 2); },
+    contains(p) { return p.x >= this.min.x && p.x <= this.max.x && p.y >= this.min.y && p.y <= this.max.y; }
+};
 
 // A Leaflet tile layer as far as the script uses it: getTileUrl fills the template
 function fakeLayer(url, options) {
@@ -131,6 +134,75 @@ test("Load Ahead: a layer loads the tiles within that share of the view beyond e
     expect(layer._getTiledPixelBounds(new Point(0, 0)).max.x).toBe(700);
     expect(error).toHaveBeenCalled();
     error.mockRestore();
+});
+
+// Events as Leaflet's layers and map have them
+function events(obj) {
+    const on = {};
+    obj.on = function (type, fn) {
+        if (typeof type === "object") Object.keys(type).forEach(t => this.on(t, type[t]));
+        else (on[type] = on[type] || []).push(fn);
+        return this;
+    };
+    obj.off = function (type) {
+        if (typeof type === "object") Object.keys(type).forEach(t => { on[t] = (on[t] || []).filter(f => f !== type[t]); });
+        return this;
+    };
+    obj.fire = function (type) { (on[type] || []).slice().forEach(fn => fn.call(this)); return this; };
+    return obj;
+}
+
+test("Load Ahead: the tiles in view load first, those beyond once they have, and a move cancels those beyond still loading", () => {
+    // A layer whose _update creates tiles as Leaflet 1.3.1's does: those in its _getTiledPixelBounds' range that
+    // _isValidTile allows and that it doesn't have yet
+    const layer = events(Object.assign(fakeLayer(TILES), {
+        _tiles: {}, _tileZoom: 18, removed: [],
+        _tileCoordsToKey(c) { return c.x + ":" + c.y + ":" + c.z; },
+        _pxBoundsToTileRange(b) {
+            return new Bounds(new Point(Math.floor(b.min.x / 512), Math.floor(b.min.y / 512)),
+                              new Point(Math.ceil(b.max.x / 512) - 1, Math.ceil(b.max.y / 512) - 1));
+        },
+        _isValidTile() { return true; },
+        _noTilesToLoad() { return Object.values(this._tiles).every(t => t.loaded); },
+        _removeTile(key) { this.removed.push(key); delete this._tiles[key]; },
+        _update(center) {
+            const r = this._pxBoundsToTileRange(this._getTiledPixelBounds(center || this._map.getCenter()));
+            for (let y = r.min.y; y <= r.max.y; y++) {
+                for (let x = r.min.x; x <= r.max.x; x++) {
+                    const c = new Point(x, y); c.z = this._tileZoom;
+                    if (this._isValidTile(c) && !this._tiles[this._tileCoordsToKey(c)]) this._tiles[this._tileCoordsToKey(c)] = {coords: c, loaded: 0};
+                }
+            }
+        }
+    }));
+    const map = events(fakeMap());
+    map.getCenter = () => new Point(5120, 5120);
+    const loadAll = () => { Object.values(layer._tiles).forEach(t => { t.loaded = 1; }); layer.fire("load"); };
+    mapTiles.attach(map, opts({load_ahead: 50}), null, {setTimeout: fn => fn()});
+    map.addLayer(layer);
+    layer.fire("add");
+    // In view: tiles 8 to 11 across, 9 and 10 down; beyond, half the view more each side: 7 to 12 and 8 to 11
+    layer._update();
+    expect(Object.keys(layer._tiles)).toHaveLength(4 * 2);
+    loadAll();
+    expect(Object.keys(layer._tiles)).toHaveLength(6 * 4);
+    // A move: the 16 beyond still loading are cancelled, and none beyond is asked for while it lasts
+    map.fire("movestart");
+    expect(layer.removed).toHaveLength(16);
+    layer._update();
+    expect(Object.keys(layer._tiles)).toHaveLength(8);
+    // Once it ends with nothing left to load, those beyond again; loaded ones beyond stay through the next move
+    map.fire("moveend");
+    expect(Object.keys(layer._tiles)).toHaveLength(24);
+    loadAll();
+    map.fire("movestart");
+    expect(layer.removed).toHaveLength(16);
+    expect(Object.keys(layer._tiles)).toHaveLength(24);
+    // Off the map, the map's moves are none of its business
+    layer.fire("remove");
+    map.fire("moveend");
+    map.fire("movestart");
+    expect(layer.removed).toHaveLength(16);
 });
 
 test("Keep More Tiles: WebODM's 2 rows plus that share of the view's larger side in tiles, as the view and tiles are now", () => {
