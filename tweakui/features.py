@@ -232,12 +232,13 @@ CATEGORIES = [
             Setting("keep_more_tiles_on", False, _("Keep More Tiles"),
                     _("The map keeps more tiles after they leave the view, so panning back shows them at once."),
                     more=_("Without it, as in WebODM, the map keeps 2 rows of tiles beyond those loaded, which on a "
-                           "high-resolution screen is only a few hundred pixels. Kept tiles use the browser's "
+                           "high-resolution screen is only a few hundred pixels. It keeps columns at the sides from "
+                           "the view's width and rows above and below from its height. Kept tiles use the browser's "
                            "memory."),
                     scripts=["map_tiles.js"], parts=[
                 Setting("keep_more_tiles", 50, _("Amount"),
-                        _("How much more it keeps, as a share of the view's size."),
-                        number=(25, 200, 25), unit="%"),
+                        _("How much more it keeps, as a share of the view's width and height."),
+                        number=(25, 100, 25), unit="%"),
             ]),
             Setting("fade_in_speed_on", False, _("Fade-in Speed"),
                     _("Changes how long a tile takes to fade in once it arrives."),

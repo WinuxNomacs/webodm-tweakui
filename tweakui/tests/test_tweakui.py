@@ -345,11 +345,11 @@ class TestSettingsPage(TweakUITestCase):
             self.assertLess(section.index('data-depends="%s_on"' % name), section.index('data-slider-of="%s"' % name))
         # Each slider starts at the first step that changes something, and at the value a first tick gives
         self.assertIn('data-slider-of="load_ahead" min="25" max="100" step="25" value="25"', section)
-        self.assertIn('data-slider-of="keep_more_tiles" min="25" max="200" step="25" value="50"', section)
+        self.assertIn('data-slider-of="keep_more_tiles" min="25" max="100" step="25" value="50"', section)
         self.assertIn('data-slider-of="fade_in_speed" data-values="0,50,100,200,300,400" min="0" max="5" step="1" value="0"', section)
         self.assertIn('Distance <span class="tweakui-default text-muted">(Default: 25%)</span>', section)
         self.assertIn('Duration <span class="tweakui-default text-muted">(Default: 0 ms)</span>', section)
-        for name, value in (("load_ahead", 0), ("keep_more_tiles", 0), ("load_ahead", 125)):
+        for name, value in (("load_ahead", 0), ("keep_more_tiles", 0), ("load_ahead", 125), ("keep_more_tiles", 125)):
             self.assertEqual(self.patch({name: value}).status_code, 400, (name, value))
         self.assertEqual(self.patch({"load_ahead_on": True, "fade_in_speed_on": True, "fade_in_speed": 50, "load_ahead": 75}).json(),
                          defaults(load_ahead_on=True, fade_in_speed_on=True, fade_in_speed=50, load_ahead=75))
