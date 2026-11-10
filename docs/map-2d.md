@@ -122,6 +122,9 @@ about 60 ms when the server is idle and several hundred ms under load.
 - **A tile is kept per look:** the task, the layer (orthophoto, DSM, DTM, plant health), its colour map, hillshade
   and range, the crop, and whether your browser takes WebP images. Changing any of these on the map gives new tiles,
   and going back gives the kept ones. When a task is processed again, its files change and its tiles are drawn anew.
+- **Other plugins' layers are left as they are.** Only the tile images the map makes itself come through Tile
+  Cache. A plugin that draws a layer its own way, such as DJI Thermal's Thermal Inspector, still gets WebODM's
+  tile addresses and draws as it would without Tile Cache.
 - **Who may see a tile** is WebODM's rule as always: it's checked on every request, kept tile or not. A public
   task's tiles are anyone's.
 - **The tiles are shared** by everyone with Tile Cache on. The server keeps up to 1 GB of them, in WebODM's media
