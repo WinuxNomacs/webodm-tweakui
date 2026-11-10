@@ -16,6 +16,16 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Fix: Tile Cache hid DJI Thermal's thermal layer** (reported in chat, 2026-11-10, with Load Ahead just ticked) —
+  branch `fix-tile-cache-thermal`. The map of a thermal task (TestThermal) showed the basemap but no thermal layer
+  with Tile Cache on, whatever Load Ahead, Keep More or Fade-in were. DJI Thermal's Thermal Inspector replaces the
+  WebODM layer's `createTile` with canvases drawn from value tiles, whose URLs it makes from `layer.getTileUrl()`;
+  Tile Cache's getTileUrl gave TweakUI's URL, which DJI Thermal can't read, so no value tile was asked for.
+  `map_tiles.tweak` now wraps Leaflet's own `createTile` and gives TweakUI's URL only while it makes an image; any
+  other caller gets WebODM's, and a layer whose `createTile` a script has already replaced is left alone. Tests
+  `map_tiles.test.js` (2 new; the Tile Cache ones ask through `createTile`); docs `map-2d.md`. Live on 4.0.0 with
+  the user's own settings: TestThermal draws its thermal layer (value tiles from DJI Thermal) and TestRGB's tiles
+  still all come through Tile Cache. 3.3.2 has no thermal task to check.
 - **Memory estimates under the Speed sliders, Load Ahead to 200%** (asked in chat, 2026-11-10) — branch
   `memory-estimates`. The user decided: build it as proposed; "Approximately"; per layer; Load Ahead's Distance back
   up to 200% (Keep More's Amount stays at 100%); the device's memory set against them (a page can't read its own:

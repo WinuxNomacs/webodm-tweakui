@@ -3,7 +3,10 @@
 //   `cache` parameter, and the server renders each one every time. Each such layer asks TweakUI's
 //   /api/plugins/tweakui/tiles/<p>/<t>/<type>/... instead (the same parameters, less `cache`), which keeps what WebODM
 //   renders (tile_cache.py). The layer's getTileUrl is replaced, not its URL, so it holds when WebODM calls setUrl (a
-//   new colour map or hillshade). The URL also carries the task's version (asked of .../<p>/<t>/version once per
+//   new colour map or hillshade). It gives TweakUI's URL only while Leaflet's own createTile makes a tile (an image):
+//   a script asking the layer for its tiles' URLs, or drawing them its own way (DJI Thermal's Thermal Inspector
+//   replaces createTile and reads the task from them), still gets WebODM's, and a layer whose createTile a script has
+//   already replaced is left as it is. The URL also carries the task's version (asked of .../<p>/<t>/version once per
 //   task), and the server lets the browser keep such a tile without asking again.
 // - Fewer Tile Requests: a layer asks for tiles once a zoom ends, not at each level on the way (updateWhenZooming).
 // - Load Ahead: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
@@ -255,12 +258,25 @@
     function tweak(layer, options, known, win) {
         if (layer[MARK]) return false;
         layer[MARK] = true;
-        if (options.cache) {
-            var original = layer.getTileUrl;
+        if (options.cache && typeof layer.createTile === "function" &&
+            !Object.prototype.hasOwnProperty.call(layer, "createTile")) {
+            var original = layer.getTileUrl, create = layer.createTile, creating = 0;
             var from = taskOf(layer._url);
             if (options.reuse && known && from) known.ask(from.project, from.task);
+            // Leaflet's createTile, which asks getTileUrl for the image's URL; replaced in turn by a script that draws
+            // the tiles its own way, whose getTileUrl calls then get WebODM's URL
+            layer.createTile = function () {
+                creating++;
+                try {
+                    return create.apply(this, arguments);
+                } finally {
+                    creating--;
+                }
+            };
             layer.getTileUrl = function (coords) {
-                var url = original.call(this, coords), at = options.reuse && known ? taskOf(url) : null;
+                var url = original.call(this, coords);
+                if (!creating) return url;
+                var at = options.reuse && known ? taskOf(url) : null;
                 return cachedUrl(url, at ? known.get(at.task) : null) || url;
             };
         }

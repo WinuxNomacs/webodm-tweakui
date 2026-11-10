@@ -25,9 +25,11 @@ Bounds.prototype = {
     contains(p) { return p.x >= this.min.x && p.x <= this.max.x && p.y >= this.min.y && p.y <= this.max.y; }
 };
 
-// A Leaflet tile layer as far as the script uses it: getTileUrl fills the template
+// A Leaflet tile layer as far as the script uses it: getTileUrl fills the template, and createTile (Leaflet's, on its
+// prototype) makes an image of the URL getTileUrl gives
+const LEAFLET_TILE_LAYER = {createTile(c) { return {src: this.getTileUrl(c)}; }};
 function fakeLayer(url, options) {
-    return {
+    return Object.assign(Object.create(LEAFLET_TILE_LAYER), {
         _url: url,
         options: Object.assign({updateWhenZooming: true, keepBuffer: 2, opacity: 1}, options),
         redraw: jest.fn(),
@@ -35,8 +37,10 @@ function fakeLayer(url, options) {
         setUrl(u) { this._url = u; },
         getTileSize() { return new Point(512, 512); },
         _getTiledPixelBounds(center) { return new Bounds(new Point(center.x - 700, center.y - 450), new Point(center.x + 700, center.y + 450)); }
-    };
+    });
 }
+// The URL of the image Leaflet makes for the tile at `at`
+const tileSrc = layer => layer.createTile(at).src;
 function fakeMap(layers) {
     return {
         added: [],
@@ -83,12 +87,35 @@ test("Tile Cache: a layer WebODM adds asks TweakUI for its tiles, also after Web
     map.addLayer(layer);
     map.addLayer(basemap);
     expect(map.added).toEqual([layer, basemap]);
-    expect(layer.getTileUrl(at)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?rescale=0%2C255&size=512&crop=1");
-    expect(basemap.getTileUrl(at)).toBe("https://tile.openstreetmap.org/18/64084/92370.png");
+    expect(tileSrc(layer)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?rescale=0%2C255&size=512&crop=1");
+    expect(tileSrc(basemap)).toBe("https://tile.openstreetmap.org/18/64084/92370.png");
     layer.setUrl("/api/projects/3/tasks/ab-12/orthophoto/tiles/{z}/{x}/{y}?color_map=viridis&cache=5");
-    expect(layer.getTileUrl(at)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?color_map=viridis");
+    expect(tileSrc(layer)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?color_map=viridis");
     expect(layer.options.updateWhenZooming).toBe(true);
     expect(layer.options.keepBuffer).toBe(2);
+});
+
+test("Tile Cache: only Leaflet's own images ask TweakUI; a script asking for the tiles' URLs gets WebODM's", () => {
+    const map = fakeMap(), layer = fakeLayer(TILES);
+    mapTiles.attach(map, opts({tile_cache: true}));
+    map.addLayer(layer);
+    expect(tileSrc(layer)).toMatch(/^\/api\/plugins\/tweakui\/tiles\//);
+    expect(layer.getTileUrl(at)).toBe("/api/projects/3/tasks/ab-12/orthophoto/tiles/18/64084/92370?rescale=0%2C255&size=512&cache=123456&crop=1");
+});
+
+test("Tile Cache: a script that draws the tiles its own way, as DJI Thermal's Thermal Inspector, gets WebODM's URLs", () => {
+    const map = fakeMap(), after = fakeLayer(TILES), before = fakeLayer(TILES);
+    const ownWay = function (c) { return {canvas: true, from: this.getTileUrl(c)}; };
+    // replaced once TweakUI has changed the layer
+    mapTiles.attach(map, opts({tile_cache: true}));
+    map.addLayer(after);
+    after.createTile = ownWay;
+    expect(after.createTile(at).from).toMatch(/^\/api\/projects\/3\//);
+    // replaced before: the layer is left as it is
+    before.createTile = ownWay;
+    map.addLayer(before);
+    expect(before.createTile).toBe(ownWay);
+    expect(before.createTile(at).from).toMatch(/^\/api\/projects\/3\//);
 });
 
 test("Tile Cache: the task's version is asked once, and the tiles asked for once it comes carry it", async () => {
@@ -96,12 +123,12 @@ test("Tile Cache: the task's version is asked once, and the tiles asked for once
     const known = mapTiles.versions(fetch), map = fakeMap(), layer = fakeLayer(TILES), again = fakeLayer(TILES);
     mapTiles.attach(map, opts({tile_cache: true}), known);
     map.addLayer(layer);
-    expect(layer.getTileUrl(at)).not.toMatch(/v=/);
+    expect(tileSrc(layer)).not.toMatch(/v=/);
     await flush();
     map.addLayer(again);
     expect(fetch).toHaveBeenCalledTimes(1);
     expect(fetch.mock.calls[0][0]).toBe("/api/plugins/tweakui/tiles/3/ab-12/version");
-    expect(layer.getTileUrl(at)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?rescale=0%2C255&size=512&crop=1&v=0123abcd");
+    expect(tileSrc(layer)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?rescale=0%2C255&size=512&crop=1&v=0123abcd");
 });
 
 test("a version that can't be had leaves the tiles as with Tile Cache alone", async () => {
@@ -117,7 +144,7 @@ test("a layer already on the map is changed and redrawn, once, and a map is wrap
     mapTiles.attach(map, opts({tile_cache: true}));
     expect(layer.redraw).toHaveBeenCalledTimes(1);
     map.addLayer(layer);
-    expect(layer.getTileUrl(at)).toMatch(/^\/api\/plugins\/tweakui\/tiles\/3\/ab-12\/orthophoto\/18\/64084\/92370\?/);
+    expect(tileSrc(layer)).toMatch(/^\/api\/plugins\/tweakui\/tiles\/3\/ab-12\/orthophoto\/18\/64084\/92370\?/);
 });
 
 test("Fewer Tile Requests: a layer waits for a zoom to end, its URL and kept tiles WebODM's", () => {
@@ -126,7 +153,7 @@ test("Fewer Tile Requests: a layer waits for a zoom to end, its URL and kept til
     map.addLayer(layer);
     expect(layer.options.updateWhenZooming).toBe(false);
     expect(layer.options.keepBuffer).toBe(2);
-    expect(layer.getTileUrl(at)).toMatch(/^\/api\/projects\/3\//);
+    expect(tileSrc(layer)).toMatch(/^\/api\/projects\/3\//);
 });
 
 test("Load Ahead: a layer loads the tiles within that share of the view beyond each edge", () => {
@@ -306,6 +333,6 @@ test("the map hook is used only when a setting differs from WebODM's own, and as
     expect(fetch).toHaveBeenCalledWith("/api/plugins/tweakui/tiles/3/ab-12/version", {credentials: "same-origin"});
     await flush();
     map.addLayer(layer);
-    expect(layer.getTileUrl(at)).toMatch(/&v=v1$/);
+    expect(tileSrc(layer)).toMatch(/&v=v1$/);
     expect(fetch).toHaveBeenCalledTimes(1);
 });
