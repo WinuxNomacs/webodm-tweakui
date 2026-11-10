@@ -3,7 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- Nothing planned: new requests arrive in `new.md`.
+- **Map speed** (asked in chat, 2026-11-09) — investigated; waiting on the user's decisions. See "Map speed".
 
 **Later**
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
@@ -828,6 +828,39 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## Map speed (asked in chat, 2026-11-09)
+
+Request: find speed-ups a plugin can make to the UI, above all to how fast the map draws and updates.
+
+What was found (WebODM 4.0.0, measured on the dev stack under test load):
+- **The map** is Leaflet 1.3.1. The orthophoto, DSM and DTM layers (`Map.jsx`) use 512 px tiles with
+  `detectRetina: true` and put `cache=Math.random()` in the tile URL on every load, so the browser never reuses one.
+- **Each tile is rendered on request** by rio-tiler (`app/api/tiler.py`, `Tiles`), with no Cache-Control header. The
+  format is picked per tile: jpg when it's fully opaque, otherwise webp when the browser accepts it, otherwise png.
+- **Timings:** at a device pixel ratio of 1, opening the map loads 6 tiles at about 200 ms each, one zoom step
+  loads 12 at about 280 ms, and a reload renders all 6 again. At a ratio of 2 (HiDPI and most phones), opening loads
+  20 tiles at about 390 ms each (600 ms at worst), and one zoom step 35 at about 480 ms (890 ms at worst).
+- **The 3D view** (Potree) has a point budget set in `ModelView.jsx`: 1M points on iOS, 2M on other phones, 10M on a
+  desktop. `window.viewer` exposes it.
+
+Proposed, each one a setting (all off by default):
+1. **Tile cache.** A TweakUI API endpoint wraps WebODM's `Tiles` view, so WebODM's permission check still applies.
+   - It keeps rendered tiles in a disk cache with a size limit. The key is the task, the tile type, z/x/y, the
+     query minus `cache`, the raster's size and mtime, the task's crop, and whether the browser accepts webp.
+   - It answers with a private Cache-Control and an ETag, so both the server and the browser reuse tiles.
+   - In the browser, the Map hook overrides each layer's `getTileUrl`, which still holds when WebODM calls `setUrl`.
+2. **Standard-resolution tiles on HiDPI screens:** turn `detectRetina` off. That needs about 40% of the tiles, at
+   the cost of a softer image.
+3. **Leaflet tweaks:** `updateWhenZooming: false` (no tiles requested in the middle of a zoom) and a larger
+   `keepBuffer` (tiles kept when panning back).
+4. **3D Point Budget:** a number setting under 3D Map that replaces Potree's budget.
+
+Open decisions (the user's):
+1. Which of 1–4 to build.
+2. The tile cache: a per-user setting under Settings > 2D Map, or a server-wide one for superusers in
+   Administration > TweakUI with a disk limit (1 GB suggested; the server-wide one is recommended, since the cache
+   is shared).
 
 ## Performance View: the server's OS and CPU (asked in chat, 2026-11-09)
 
