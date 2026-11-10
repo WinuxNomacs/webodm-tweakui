@@ -66,7 +66,7 @@ setting can also be a whole number: give it a whole-number default and `number=(
 unit=_("ms"))`). The settings page shows the label with the default after it ("Hide Delay (Default: 500 ms)"), a
 slider moving in those steps and a box beside it that takes any whole number in the range, and the API refuses a value outside it.
 A number that takes only some values gets `values=(a, b, ...)` in place of `number`, in slider order (Fade-in Speed:
-`Setting("fade_in_speed", 200, ..., values=(0, 50, 100, 200), unit=_("ms"))`): the slider stops at just those, and
+`Setting("fade_in_speed", 200, ..., values=(0, 50, 100, 200, 300, 400), unit=_("ms"))`): the slider stops at just those, and
 the box and the API take only them.
 
 A setting that superusers should be able to withhold from users also gets `admin_label` and `admin_help`: its

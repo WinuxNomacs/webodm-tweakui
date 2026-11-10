@@ -82,7 +82,7 @@
         }
     }
 
-    // A number setting's list of values (data-values="0,50,100,200"), or null when it takes any in its range
+    // A number setting's list of values (data-values="0,50,100,200,300,400"), or null when it takes any in its range
     function valuesOf(input) {
         var list = input.getAttribute("data-values");
         return list ? list.split(",").map(Number) : null;

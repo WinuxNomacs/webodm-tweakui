@@ -16,6 +16,10 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Fade-in Speed up to 400 ms** (asked in chat, 2026-11-10) — branch `fade-in-400`: `features.py` values
+  `(0, 50, 100, 200, 300, 400)`, so WebODM's 200 ms stays at the 4th stop and saved values keep their place. Tests
+  `test_tweakui.py`; docs `map-2d.md`, `adding-a-tweak.md`, CHANGELOG. Live on both stacks: the slider's right end is
+  400 ms and saves it, and 150 is refused with "one of 0, 50, 100, 200, 300 or 400".
 - **Bug: map tiles sometimes never drawn with the Speed settings** (reported 2026-11-10) — branch
   `bug-missing-tiles-fix`. The cause was Load Ahead: the tiles beyond the view were asked for together with those in
   view (at 100%, a wheel zoom into z23 created 270 to 410 tiles and sent 300 to 590 requests). Chrome asks a server

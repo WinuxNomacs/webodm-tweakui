@@ -32,7 +32,7 @@
   task processed again gets new ones.
 - **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends.
 - **Load Ahead**, **Keep More Tiles** and **Fade-in Speed** (Speed): sliders for loading tiles beyond the view's
-  edges, keeping more of them after they leave it, and how long a tile takes to fade in (0, 50, 100 or 200 ms). Each
+  edges, keeping more of them after they leave it, and how long a tile takes to fade in (0 to 400 ms). Each
   starts at WebODM's own. Load Ahead loads the tiles in view first, so the extra tiles never hold them up.
 
 ### Administration
