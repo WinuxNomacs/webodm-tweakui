@@ -2230,7 +2230,7 @@ ACCESS_PAGE = "/plugins/tweakui/admin/"
 
 
 class TestAccess(TweakUITestCase):
-    """Administration > TweakUI: superusers withhold Storage View and Performance View from users (access.py)"""
+    """Administration > TweakUI: superusers withhold Tile Cache, Storage View and Performance View from users (access.py)"""
 
     def setUp(self):
         super().setUp()
