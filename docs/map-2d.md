@@ -147,7 +147,9 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
   opening a task's map on a dev server loaded 51 tiles instead of 29. At 100% it loads up to 9 times as many as
   WebODM, and at 200% up to 25 times. The tiles in view always come first: those beyond are asked for only once every tile in view has loaded
   and the map is still, and when you pan or zoom, those still loading are cancelled. So the extra tiles never hold
-  up the ones you are looking at.
+  up the ones you are looking at. They come in rings a quarter of the view wide, nearest first, each once the one
+  before has loaded, so only a few wait at any time and the server isn't kept busy with far tiles when you move. That
+  matters most for a layer whose tiles are slow to draw, such as DJI Thermal's thermal layer.
 - **Keep More Tiles**, with **Amount** (25% to 100%, in steps of 25%; 50% when first ticked). WebODM keeps 2 rows of
   tiles beyond what it has loaded, on every side, and drops the rest as they leave. On a high-resolution screen,
   where WebODM uses tiles half the size, that is only a few hundred pixels, so panning back shows blank tiles while
