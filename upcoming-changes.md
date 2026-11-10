@@ -10,6 +10,24 @@
    this screen (its map area and `devicePixelRatio`, per map layer), updated as the slider moves. Load Ahead:
    "about N MB more" (its tiles are loaded). Keep More Tiles: "up to N MB more" (kept only where you have panned).
 
+   **Measured (2026-11-10)**, headless Chromium on 4.0.0, task 94b094c9, 1400×900, Tile Cache on, settings swapped in
+   `settings.js`'s response only (`scratchpad/mem_tiles.js`); PSS of every Chromium process from `/proc`:
+   - A tile costs about **0.3 MB**, not the ~1 MB of a decoded 512×512 image: at DPR 2, Load Ahead 100% held 308
+     tiles against 60 off, for +77 MB in the renderer and +10 MB in the network process (≈0.35 MB a tile). Tiles
+     there were 35 KB median (p90 59 KB) as sent. At DPR 1, 15 → 56 tiles was +32 MB (≈0.8 MB, few tiles, noisy).
+   - Chrome seems to keep tiles off screen compressed and decode only what it draws, so kept tiles cost no more than
+     loaded ones: Keep More 100% after a panned loop (120 tiles against 52, many near-empty at the orthophoto's edge)
+     added nothing measurable.
+   - So the earlier ceilings were ~3× too high: Keep More 100% on 1920×1080 at DPR 2 is ~130 MB per layer, not ~450.
+     Headless renders in software; a GPU browser adds textures only for tiles on screen. Firefox may differ.
+
+   **Proposed design** (to agree before building): under Distance and Amount on Settings > 2D Map > Speed, a line
+   such as "About 80 MB more per map layer on this screen", computed in the page from the window's size and
+   `devicePixelRatio`, with the tile ranges Leaflet would use (512-pixel tiles at the screen's resolution) and
+   0.3 MB a tile, updated as the slider moves; Keep More's says "Up to" (only where you have panned). Open
+   decisions: whether to build it at all now the figures are small (Load Ahead 100% ≈ 80 MB, Keep More 100% ≈
+   100 MB on 1400×900 at DPR 2), the wording, and whether to give one layer's figure or allow for DSM and DTM.
+
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
 
