@@ -191,10 +191,10 @@ function events(obj) {
     return obj;
 }
 
-test("Load Ahead: the tiles in view load first, those beyond once they have, and a move cancels those beyond still loading", () => {
-    // A layer whose _update creates tiles as Leaflet 1.3.1's does: those in its _getTiledPixelBounds' range that
-    // _isValidTile allows and that it doesn't have yet
-    const layer = events(Object.assign(fakeLayer(TILES), {
+// A layer whose _update creates tiles as Leaflet 1.3.1's does: those in its _getTiledPixelBounds' range that
+// _isValidTile allows and that it doesn't have yet
+function updatingLayer() {
+    return events(Object.assign(fakeLayer(TILES), {
         _tiles: {}, _tileZoom: 18, removed: [],
         _tileCoordsToKey(c) { return c.x + ":" + c.y + ":" + c.z; },
         _pxBoundsToTileRange(b) {
@@ -214,6 +214,10 @@ test("Load Ahead: the tiles in view load first, those beyond once they have, and
             }
         }
     }));
+}
+
+test("Load Ahead: the tiles in view load first, those beyond once they have, and a move cancels those beyond still loading", () => {
+    const layer = updatingLayer();
     const map = events(fakeMap());
     map.getCenter = () => new Point(5120, 5120);
     const loadAll = () => { Object.values(layer._tiles).forEach(t => { t.loaded = 1; }); layer.fire("load"); };
@@ -242,6 +246,33 @@ test("Load Ahead: the tiles in view load first, those beyond once they have, and
     map.fire("moveend");
     map.fire("movestart");
     expect(layer.removed).toHaveLength(16);
+});
+
+test("Load Ahead: those beyond come a ring of a quarter of the view at a time, each once the last has loaded, a ring with none to load passed", () => {
+    const layer = updatingLayer();
+    const map = events(fakeMap());
+    map.getCenter = () => new Point(5120, 5120);
+    const count = () => Object.keys(layer._tiles).length;
+    const loadAll = () => { Object.values(layer._tiles).forEach(t => { t.loaded = 1; }); layer.fire("load"); };
+    mapTiles.attach(map, opts({load_ahead: 100}), null, {setTimeout: fn => fn()});
+    map.addLayer(layer);
+    layer.fire("add");
+    // In view 4 x 2; at 25% 6 x 4; 50% adds no tile, so 75% (8 x 6) follows at once; then 100% (10 x 6)
+    layer._update();
+    expect(count()).toBe(8);
+    loadAll();
+    expect(count()).toBe(24);
+    loadAll();
+    expect(count()).toBe(48);
+    // A move cancels only the ring still loading, and starts again from the view
+    map.fire("movestart");
+    expect(layer.removed).toHaveLength(24);
+    map.fire("moveend");
+    expect(count()).toBe(48);
+    loadAll();
+    expect(count()).toBe(60);
+    loadAll();
+    expect(count()).toBe(60);
 });
 
 test("Keep More Tiles: WebODM's 2 rows plus that share of the view in tiles, columns from its width and rows from its height", () => {

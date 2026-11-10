@@ -13,7 +13,10 @@
 //   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much). The tiles in view come first: those beyond
 //   it are asked for only once the map is at rest and every tile in view has loaded, and when the map moves or zooms
 //   the ones still loading are cancelled. Chrome asks a server for 6 tiles at a time and WebODM renders a cancelled
-//   tile to the end, so tiles in view that waited behind hundreds beyond it could stay missing for a long time.
+//   tile to the end, so tiles in view that waited behind hundreds beyond it could stay missing for a long time. Those
+//   beyond come in rings of a quarter of the view, nearest first, each once the last has loaded: few wait at any
+//   time, so a move cancels little and the server isn't busy with far tiles (a layer another plugin draws, as DJI
+//   Thermal's, may take most of a second a tile).
 // - Keep More Tiles: a layer keeps that share of the view's size beyond what it loads, besides Leaflet's 2 rows:
 //   columns of its tiles from the view's width, rows from its height. Leaflet keeps one number on every side (its
 //   keepBuffer, worked out each time Leaflet reads it, so it follows the view's size and the tiles' size on screen):
@@ -112,22 +115,32 @@
         };
     }
 
-    // The view's size in the layer's tile pixels, grown by a share each side (Leaflet's own, plus Load Ahead). A
-    // Bounds of Leaflet's prototype (its constructor isn't on it); Leaflet's own bounds should anything fail
+    // Load Ahead's rings beyond the view, each a share of its size
+    var RING = 0.25;
+
+    // Bounds in the layer's tile pixels grown by a share of the view's size each side: a Bounds of Leaflet's prototype
+    // (its constructor isn't on it); the bounds as they were with no share
+    function grow(layer, bounds, share) {
+        var map = layer._map;
+        if (!(share > 0) || !map || !bounds || !bounds.min || !bounds.max) return bounds;
+        var zoom = map._animatingZoom ? Math.max(map._animateToZoom, map.getZoom()) : map.getZoom();
+        var pad = map.getSize().multiplyBy(share / map.getZoomScale(zoom, layer._tileZoom));
+        var grown = Object.create(Object.getPrototypeOf(bounds));
+        grown.min = bounds.min.subtract(pad);
+        grown.max = bounds.max.add(pad);
+        return grown;
+    }
+
+    // The view's size in the layer's tile pixels, grown by a share each side (Leaflet's own, plus Load Ahead);
+    // Leaflet's own bounds should anything fail
     function loadAhead(layer, amount, win) {
         var original = layer._getTiledPixelBounds;
         if (typeof original !== "function") return;
-        viewFirst(layer, original, win);
+        viewFirst(layer, original, amount, win);
         layer._getTiledPixelBounds = function (center) {
-            var bounds = original.call(this, center), map = this._map;
+            var bounds = original.call(this, center);
             try {
-                if (!map || !bounds || !bounds.min || !bounds.max) return bounds;
-                var zoom = map._animatingZoom ? Math.max(map._animateToZoom, map.getZoom()) : map.getZoom();
-                var pad = map.getSize().multiplyBy(amount / map.getZoomScale(zoom, this._tileZoom));
-                var grown = Object.create(Object.getPrototypeOf(bounds));
-                grown.min = bounds.min.subtract(pad);
-                grown.max = bounds.max.add(pad);
-                return grown;
+                return grow(this, bounds, amount);
             } catch (e) {
                 ui.guard(NAME, function () { throw e; })();
                 return bounds;
@@ -136,38 +149,43 @@
     }
 
     // Load Ahead's tiles after those in view: while the map moves, or a tile is still loading, the layer creates no tile
-    // beyond the view's own range (its _isValidTile, which Leaflet's _update asks only of tiles it would create; tiles
-    // it has stay). Once Leaflet says every tile has loaded (its load event, or a move's end with none left to load) the
-    // layer updates with the tiles beyond. When the map starts moving or zooming, the tiles beyond the view still loading
-    // are removed, which cancels their requests (Leaflet's _removeTile). Leaflet's own way, should its methods differ
-    function viewFirst(layer, viewBounds, win) {
+    // beyond the range it has reached (its _isValidTile, which Leaflet's _update asks only of tiles it would create;
+    // tiles it has stay), at first the view's own. Once Leaflet says every tile has loaded (its load event, or a move's
+    // end with none left to load) the layer reaches a ring further and updates, until it has the whole share (a ring
+    // with no tile to load, off the layer's bounds, is passed at once). When the map starts moving or zooming, it is
+    // back to the view, and the tiles beyond it still loading are removed, which cancels their requests (Leaflet's
+    // _removeTile). Leaflet's own way, should its methods differ
+    function viewFirst(layer, viewBounds, amount, win) {
         var isValid = layer._isValidTile, update = layer._update;
         if (typeof isValid !== "function" || typeof update !== "function" || typeof layer.on !== "function" ||
             typeof layer._noTilesToLoad !== "function" || typeof layer._pxBoundsToTileRange !== "function") return;
-        var ahead = false, moving = false, view = null;
+        var rings = Math.ceil(amount / RING - 1e-9), ring = 0, moving = false, view = null, reached = null;
         layer._update = function (center) {
             var map = this._map;
             try {
-                view = map && this._tileZoom !== undefined ?
-                    this._pxBoundsToTileRange(viewBounds.call(this, center === undefined ? map.getCenter() : center)) : null;
+                var bounds = map && this._tileZoom !== undefined ?
+                    viewBounds.call(this, center === undefined ? map.getCenter() : center) : null;
+                view = bounds ? this._pxBoundsToTileRange(bounds) : null;
+                reached = bounds ? this._pxBoundsToTileRange(grow(this, bounds, Math.min(amount, ring * RING))) : null;
             } catch (e) {
-                view = null;
+                view = reached = null;
             }
             return update.apply(this, arguments);
         };
         layer._isValidTile = function (coords) {
             if (!isValid.call(this, coords)) return false;
-            return ahead || !view || view.contains(coords) || !!this._tiles[this._tileCoordsToKey(coords)];
+            return !reached || reached.contains(coords) || !!this._tiles[this._tileCoordsToKey(coords)];
         };
         var go = ui.guard(NAME, function () {
-            if (ahead || moving || !layer._map || !layer._noTilesToLoad()) return;
-            ahead = true;
-            layer._update();
+            while (ring < rings && !moving && layer._map && layer._noTilesToLoad()) {
+                ring++;
+                layer._update();
+            }
         });
         var events = {
             movestart: ui.guard(NAME, function () {
                 moving = true;
-                ahead = false;
+                ring = 0;
                 if (!view) return;
                 for (var key in layer._tiles) {
                     var tile = layer._tiles[key];

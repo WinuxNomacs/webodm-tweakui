@@ -16,6 +16,15 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Load Ahead in rings** (reported in chat, 2026-11-10: the thermal layer "still getting stuck but eventually pops
+  in") — branch `load-ahead-rings`. Not reproduced as a stall: DJI Thermal's value tiles aren't Tile Cache's and take
+  ~0.7 s each, so a new zoom level fills in over 2-3 s with Load Ahead on or off; but at 200% each rest asked for
+  ~300 of them, and those the server had started when you moved finished first. The user chose rings for every
+  layer: `map_tiles.viewFirst` lets tiles beyond the view come a ring of 25% at a time, nearest first, each once the
+  last has loaded (a ring with none to load passed at once), back to the view on every move. Tests
+  `map_tiles.test.js` (1 new); docs `map-2d.md`, CHANGELOG. Live on 4.0.0 at 125% with the user's settings
+  (TestThermal): value tiles waiting at once went from ~300 to tens, and after a zoom out 30 of 35 tiles in view
+  were drawn at 2 s (as with Load Ahead off); TestRGB still loads ahead to the orthophoto's edge, through Tile Cache.
 - **Fix: Tile Cache hid DJI Thermal's thermal layer** (reported in chat, 2026-11-10, with Load Ahead just ticked) —
   branch `fix-tile-cache-thermal`. The map of a thermal task (TestThermal) showed the basemap but no thermal layer
   with Tile Cache on, whatever Load Ahead, Keep More or Fade-in were. DJI Thermal's Thermal Inspector replaces the
