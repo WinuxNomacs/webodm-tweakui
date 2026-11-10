@@ -25,11 +25,10 @@
 ### 2D Map
 
 - **Tile Cache** (Speed): the map's orthophoto, DSM and DTM tiles are kept on the server once WebODM has drawn them
-  (up to 1 GB, shared by everyone with it on), and your browser reuses its own copy while a tile is unchanged. A
-  reload or another user's look at the same place no longer has each tile drawn again. An administrator can
-  withhold it on Administration > TweakUI.
-  **Reuse Browser Copies**, a part of it: the browser shows the tiles it has without asking the server first; a
-  task processed again gets new ones.
+  (up to 1 GB, shared by everyone with it on), and your browser shows the copies it has kept without asking the
+  server first; a task processed again gets new tiles the next time its map opens. A reload or another user's look
+  at the same place no longer has each tile drawn again. An administrator can withhold it on Administration >
+  TweakUI.
 - **Load Ahead**, **Keep More Tiles** and **Fade-in Speed** (Speed): checkboxes, each with a slider beneath, for
   loading tiles beyond the view's edges (Distance, 25% to 100%), keeping more of them after they leave it (Amount,
   25% to 100%, columns from the view's width and rows from its height), and how long a tile takes to fade in

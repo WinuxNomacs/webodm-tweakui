@@ -114,8 +114,11 @@ your map asks TweakUI for its tiles instead. TweakUI has WebODM draw each tile o
 serves it again from there. Measured on a dev server, a kept tile comes back in about 16 ms, where drawing it takes
 about 60 ms when the server is idle and several hundred ms under load.
 
-- **Your browser keeps its own copy** and asks the server only whether it has changed (an ETag). After a reload,
-  each tile is a short "not modified" answer. With [Reuse Browser Copies](#reuse-browser-copies) it doesn't ask.
+- **Your browser keeps its own copy** and shows it without asking the server. When the map opens, it asks the
+  server once per task for a version of the task's tiles, and puts it in each tile's address; the browser shows the
+  tiles it has kept for that version at once. A task processed again has a new version, so its tiles are fetched
+  anew the next time its map opens (a map already open shows the old ones until you reload it). Tiles asked for
+  without a version (before it has come) are checked with the server each time, a short "not modified" answer.
 - **A tile is kept per look:** the task, the layer (orthophoto, DSM, DTM, plant health), its colour map, hillshade
   and range, the crop, and whether your browser takes WebP images. Changing any of these on the map gives new tiles,
   and going back gives the kept ones. When a task is processed again, its files change and its tiles are drawn anew.
@@ -128,16 +131,6 @@ about 60 ms when the server is idle and several hundred ms under load.
   [Administration > TweakUI](administration#available-to-users).
 
 The first look at a part of the map is no faster: WebODM still draws each tile once.
-
-### Reuse Browser Copies
-
-A part of Tile Cache, off by default.
-
-Without it, your browser asks the server about every tile it already has before showing it. The answer is short,
-but it is still a trip to the server per tile. With it, the map asks the server once per task, when it opens, for a
-version of the task's tiles, and puts it in each tile's address. Your browser then shows the tiles it has kept for
-that version at once, without asking. A task processed again has a new version, so its tiles are fetched anew the
-next time the map opens.
 
 ## Speed > Load Ahead, Keep More Tiles and Fade-in Speed
 

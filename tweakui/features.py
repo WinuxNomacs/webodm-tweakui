@@ -205,18 +205,12 @@ CATEGORIES = [
                     _("The map's orthophoto, DSM and DTM tiles are kept once drawn, so they come back at once."),
                     more=_("WebODM draws every tile each time it is asked for, even one you have just seen. With "
                            "this on, TweakUI keeps the tiles it draws for you and serves them again, to you and to "
-                           "anyone else with this on, and your browser reuses its own copy while the tile is "
-                           "unchanged. A task processed again gets new tiles. The server keeps up to 1 GB of tiles, "
-                           "the least recently used going first."),
+                           "anyone else with this on. Your browser shows the tiles it has kept without asking the "
+                           "server first. A task processed again gets new tiles the next time its map opens. The "
+                           "server keeps up to 1 GB of tiles, the least recently used going first."),
                     scripts=["map_tiles.js"], admin_label=_("Tile Cache"),
                     admin_help=_("Users may have the map's tiles kept on the server once drawn (up to 1 GB in all, "
-                                 "shared by everyone with it on)."), parts=[
-                Setting("reuse_browser_copies", False, _("Reuse Browser Copies"),
-                        _("Tiles your browser already has show at once, without asking the server first."),
-                        more=_("Without it, your browser asks the server whether each tile it has kept has changed "
-                               "before showing it (a short answer, but a trip to the server per tile). With it, the "
-                               "map asks once per task when it opens; a task processed since gets new tiles.")),
-            ]),
+                                 "shared by everyone with it on) and in their browser.")),
             # Each a checkbox (off: WebODM's own) with its number beneath
             Setting("load_ahead_on", False, _("Load Ahead"),
                     _("The map loads tiles beyond the edges of the view, so they are there before you pan to them."),

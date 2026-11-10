@@ -35,7 +35,7 @@ def defaults(**changes):
     return dict({"units_in_header": False, "hide_nav_pane": False, "auto_hide_nav_pane": False, "auto_hide_delay": 500, "resize_nav_pane": False, "show_configured_option_count": False, "expand_configured_options": False, "replace_preset_menu": False, "enhanced_task_details": False,
                  "task_details_times": True, "task_details_preset": True, "task_details_options": True, "task_details_command": True,
                  "task_details_step": True, "expand_task_controls": False, "surprise_me": False, "surprise_me_interaction": True, "movable_controls": False, "other_tasks": False,
-                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "reuse_browser_copies": False, "fewer_tile_requests": False,
+                 "source_frames_2d": False, "source_frames_3d": False, "zoom_override_2d": False, "zoom_sensitivity_2d": 100, "map_search": False, "tile_cache": False, "fewer_tile_requests": False,
                  "load_ahead_on": False, "load_ahead": 25, "keep_more_tiles_on": False, "keep_more_tiles": 50, "fade_in_speed_on": False, "fade_in_speed": 0,
                  "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
@@ -334,8 +334,9 @@ class TestSettingsPage(TweakUITestCase):
         page = self.client.get("/plugins/tweakui/").content.decode()
         section = page[page.index('<section id="tweakui-map2d"'):]
         section = section[:section.index("</section>")]
-        self.assertLess(section.index('data-depends="tile_cache"'), section.index('data-setting="reuse_browser_copies"'))
-        names = ("tile_cache", "reuse_browser_copies", "load_ahead_on", "load_ahead", "keep_more_tiles_on",
+        self.assertNotIn('data-depends="tile_cache"', section)
+        self.assertNotIn("reuse_browser_copies", section)
+        names = ("tile_cache", "load_ahead_on", "load_ahead", "keep_more_tiles_on",
                  "keep_more_tiles", "fade_in_speed_on", "fade_in_speed", "fewer_tile_requests")
         order = [section.index('data-setting="%s"' % n) for n in names]
         self.assertEqual(order, sorted(order))

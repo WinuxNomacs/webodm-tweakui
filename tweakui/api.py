@@ -253,7 +253,7 @@ class CachedTiles(Tiles):
     """GET /api/plugins/tweakui/tiles/<project>/<task>/<type>/<z>/<x>/<y>[@<n>x][.<ext>]: WebODM's tile
     (app/api/tiler.py, Tiles: its permissions, a public task's to anyone, and its parameters), kept by
     tile_cache.py for 2D Map > Tile Cache. The key is the ETag; a request that has it gets a 304. With the task's
-    current version (?v=, Reuse Browser Copies) the browser may keep the tile for good"""
+    current version (?v=, which Tile Cache's map script adds) the browser may keep the tile for good"""
 
     def get(self, request, pk=None, project_pk=None, tile_type="", z="", x="", y="", scale=None, ext=None):
         if access.is_withheld(request.user, "tile_cache"):
@@ -298,7 +298,7 @@ class CachedTiles(Tiles):
 
 class TileVersionView(TaskView):
     """GET /api/plugins/tweakui/tiles/<project>/<task>/version: {version} of the task's tiles (tile_cache.version),
-    which 2D Map > Tile Cache > Reuse Browser Copies puts in their URLs; WebODM's task permissions"""
+    which 2D Map > Tile Cache puts in their URLs; WebODM's task permissions"""
 
     def get(self, request, project_pk=None, pk=None):
         if access.is_withheld(request.user, "tile_cache"):
