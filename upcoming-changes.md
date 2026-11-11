@@ -3,7 +3,6 @@
 ## Phases (current and upcoming)
 
 **Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
-- **Administration: withhold Preload Tile Panning** — as Tile Cache can be: up to 25 times the tiles drawn per rest.
 - **Small devices: a cap** — where the browser reports 4 GB or less or the screen is under 768 px wide, Preload Tile
   Panning goes at most 100% and Keep More Tiles at most 50%.
 - **Leaflet check** — the selector check also reports a WebODM whose Leaflet isn't 1.3.1 (map_tiles.js overrides
@@ -22,6 +21,12 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Administration: withhold Preload Tile Panning** (2D map review, decided 2026-11-11) — branch
+  `admin-withhold-preload`: `admin_label` and `admin_help` on `load_ahead_on` (`features.py`), so it is a checkbox
+  under Administration > TweakUI > Available to Users, between Tile Cache and Storage View; withheld, it is off on
+  the map and greyed (Distance too) on the settings page, the user's choice kept. Test `test_tweakui.py`
+  (`TestAccess`); docs `administration.md`, `map-2d.md`, CHANGELOG, the `admin` screenshot. Checked live on 4.0.0's
+  Administration > TweakUI.
 - **Basemap: Fade-in Speed** (2D map review, decided 2026-11-11) — branch `basemap-fade-in`: `map_tiles.js`
   (`isBasemap`, `tweakBasemap`, `basemapsOf`: the basemaps are the map hook's `controls.autolayers.mapConfig.baseLayers`,
   a Custom one the tile layer its layer group holds; only the fade changes on them, no redraw), tests in

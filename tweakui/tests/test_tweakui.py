@@ -2295,7 +2295,8 @@ ACCESS_PAGE = "/plugins/tweakui/admin/"
 
 
 class TestAccess(TweakUITestCase):
-    """Administration > TweakUI: superusers withhold Tile Cache, Storage View and Performance View from users (access.py)"""
+    """Administration > TweakUI: superusers withhold Tile Cache, Preload Tile Panning, Storage View and Performance View
+    from users (access.py)"""
 
     def setUp(self):
         super().setUp()
@@ -2325,14 +2326,14 @@ class TestAccess(TweakUITestCase):
         strict.login(username="testsuperuser", password="test1234")
         res = strict.patch(ACCESS, json.dumps({"storage_view": False}), content_type="application/json")
         self.assertEqual(res.status_code, status.HTTP_403_FORBIDDEN)
-        self.assertEqual(self.admin.get(ACCESS).json(), {"tile_cache": True, "storage_view": True, "performance_view": True})
+        self.assertEqual(self.admin.get(ACCESS).json(), {"tile_cache": True, "load_ahead_on": True, "storage_view": True, "performance_view": True})
 
     def test_both_are_available_until_withheld_and_only_known_features_take_a_bool(self):
-        self.assertEqual(self.withhold(storage_view=False), {"tile_cache": True, "storage_view": False, "performance_view": True})
+        self.assertEqual(self.withhold(storage_view=False), {"tile_cache": True, "load_ahead_on": True, "storage_view": False, "performance_view": True})
         for bad in ({"theme": False}, {"performance_view": "no"}, ["storage_view"]):
             res = self.admin.patch(ACCESS, json.dumps(bad), content_type="application/json")
             self.assertEqual(res.status_code, status.HTTP_400_BAD_REQUEST, bad)
-        self.assertEqual(self.withhold(storage_view=True), {"tile_cache": True, "storage_view": True, "performance_view": True})
+        self.assertEqual(self.withhold(storage_view=True), {"tile_cache": True, "load_ahead_on": True, "storage_view": True, "performance_view": True})
         body = self.admin.get(ACCESS_PAGE).content.decode()
         self.assertRegex(body, r'data-access="storage_view" checked')
 
@@ -2358,6 +2359,17 @@ class TestAccess(TweakUITestCase):
         self.assertRegex(body, r'data-setting="storage_view">')
         body = self.admin.get("/plugins/tweakui/").content.decode()
         self.assertNotIn("Turned off by your administrator.", body)
+
+    def test_withheld_preload_tile_panning_is_off_on_the_map_and_greyed_but_its_distance_is_kept(self):
+        self.patch({"load_ahead_on": True, "load_ahead": 150})
+        self.withhold(load_ahead_on=False)
+        settings = self.script_settings(self.client)
+        self.assertEqual((settings["load_ahead_on"], settings["load_ahead"]), (False, 150))
+        body = self.client.get("/plugins/tweakui/").content.decode()
+        self.assertRegex(body, r'data-setting="load_ahead_on" disabled>')
+        self.assertEqual(self.patch({"load_ahead_on": True}, self.admin).json()["load_ahead_on"], True)
+        self.withhold(load_ahead_on=True)
+        self.assertEqual(self.script_settings(self.client)["load_ahead_on"], True)
 
     def test_a_withheld_feature_s_page_and_api_answer_403_to_users_and_staff_but_not_superusers(self):
         project = Project.objects.create(owner=User.objects.get(username="testuser"), name="Mine")

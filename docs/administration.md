@@ -11,8 +11,8 @@ them. The page has two sections: [Available to Users](#available-to-users) and
 
 ### Available to Users
 
-**Available to Users** has a checkbox for each feature an administrator may withhold: **Tile Cache** (2D Map),
-**Storage View** and **Performance View**. All are ticked when TweakUI is installed, so users have them unless a superuser unticks them.
+**Available to Users** has a checkbox for each feature an administrator may withhold: **Tile Cache** and
+**Preload Tile Panning** (2D Map), **Storage View** and **Performance View**. All are ticked when TweakUI is installed, so users have them unless a superuser unticks them.
 Each change is saved at once.
 
 When a feature is unticked, for every user but superusers (staff included):
