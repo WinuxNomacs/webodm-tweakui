@@ -3,7 +3,6 @@
 ## Phases (current and upcoming)
 
 **Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
-- **Basemap: Fade-in Speed** — Fade-in Speed applies to the basemap too (Keep More Tiles doesn't: the user's choice).
 - **Administration: withhold Preload Tile Panning** — as Tile Cache can be: up to 25 times the tiles drawn per rest.
 - **Small devices: a cap** — where the browser reports 4 GB or less or the screen is under 768 px wide, Preload Tile
   Panning goes at most 100% and Keep More Tiles at most 50%.
@@ -23,6 +22,11 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Basemap: Fade-in Speed** (2D map review, decided 2026-11-11) — branch `basemap-fade-in`: `map_tiles.js`
+  (`isBasemap`, `tweakBasemap`, `basemapsOf`: the basemaps are the map hook's `controls.autolayers.mapConfig.baseLayers`,
+  a Custom one the tile layer its layer group holds; only the fade changes on them, no redraw), tests in
+  `map_tiles.test.js` ("Fade-in Speed on the basemap"), description, `docs/map-2d.md`, CHANGELOG. Checked live on
+  4.0.0 (default, switched and Custom basemaps); 3.3.2 has no task to open a map on, its basemap code is the same.
 - **2D map review: two fixes** (asked in chat, 2026-11-11) — branch `review-2d-map`; see "2D map review".
 - **Load Ahead in rings** (reported in chat, 2026-11-10: the thermal layer "still getting stuck but eventually pops
   in") — branch `load-ahead-rings`. Not reproduced as a stall: DJI Thermal's value tiles aren't Tile Cache's and take
