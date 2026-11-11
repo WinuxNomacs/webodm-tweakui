@@ -2,10 +2,11 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (proposed by the 2D map review, 2026-11-11; each waits for the user's decision, see "2D map review")
-- **Basemap: Fade-in Speed and Keep More Tiles** — apply both to the basemap too; neither asks its server for more.
+**Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
+- **Basemap: Fade-in Speed** — Fade-in Speed applies to the basemap too (Keep More Tiles doesn't: the user's choice).
 - **Administration: withhold Preload Tile Panning** — as Tile Cache can be: up to 25 times the tiles drawn per rest.
-- **Preload Tile Panning and Keep More Tiles on small devices** — a cap where a phone's memory is short.
+- **Small devices: a cap** — where the browser reports 4 GB or less or the screen is under 768 px wide, Preload Tile
+  Panning goes at most 100% and Keep More Tiles at most 50%.
 - **Leaflet check** — the selector check also reports a WebODM whose Leaflet isn't 1.3.1 (map_tiles.js overrides
   its private methods).
 
@@ -970,19 +971,20 @@ Fixed (branch `review-2d-map`, tests in `map_tiles.test.js`, 3 new; each fails o
   and no console error. DJI Thermal's thermal layer is its own layer now (`/api/plugins/dji-thermal/...inspector`),
   which TweakUI leaves alone.
 
-Proposed (open decisions):
+Proposed, then decided by the user (2026-11-11):
 - **Basemap: Fade-in Speed and Keep More Tiles.** Most of what pops in on the map is the basemap (measured with
   Preload Zoom), which no Speed setting touches, so Fade-in Speed at 0 still leaves the basemap fading over 200 ms.
   Both ask the basemap's server for nothing more. Preload Tile Panning stays off the basemap: that would prefetch
-  from someone else's server (OpenStreetMap's tile policy asks clients not to). Decision: do it, and whether the
-  settings' names and descriptions say "layers and basemap".
+  from someone else's server (OpenStreetMap's tile policy asks clients not to). **Decided: Fade-in Speed only**;
+  Keep More Tiles stays on the task's layers. Its description says it covers the basemap too.
 - **Administration > TweakUI: withhold Preload Tile Panning**, as Tile Cache can be. Without Tile Cache, each rest
-  at 200% has WebODM render up to 25 times the tiles in view, for every user with it on. Decision: add it
-  (`admin_label`), and whether Keep More Tiles too (it asks for nothing more, so probably not).
+  at 200% has WebODM render up to 25 times the tiles in view, for every user with it on. **Decided: yes**
+  (`admin_label` and `admin_help` on `load_ahead_on`); Keep More Tiles not (it asks for nothing more).
 - **Small devices.** The settings are per user, not per device: 200% chosen on a desktop applies on the user's phone
-  too, and the estimate is only for the window the settings page was opened in. Options: cap Preload Tile Panning at
-  100% and Keep More Tiles at 50% where `navigator.deviceMemory` is 4 or less or the screen is narrow; or say it in
-  the description only. Decision.
+  too, and the estimate is only for the window the settings page was opened in. **Decided: cap automatically**: where
+  `navigator.deviceMemory` is 4 or less (Chrome and Edge report it) or the screen is under 768 px wide (Bootstrap's
+  breakpoint, as WebODM's layout), Preload Tile Panning goes at most 100% and Keep More Tiles at most 50%; the
+  descriptions say so. The stored settings are unchanged; the cap is applied on the map (`map_tiles.optionsOf`).
 - **Leaflet check.** `map_tiles.js` overrides Leaflet 1.3.1's private methods (`_update`, `_isValidTile`,
   `_getTiledPixelBounds`, `_updateOpacity`...); each override falls back if a method is missing, but a newer Leaflet
   with a changed method would go unnoticed. `dev/selector-check.js` (run by `release-check` and when WebODM releases)
