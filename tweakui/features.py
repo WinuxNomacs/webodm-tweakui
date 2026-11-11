@@ -224,7 +224,10 @@ CATEGORIES = [
                            "new level's tiles still fill in as they arrive. Each uses some of the browser's memory: "
                            "the estimate under "
                            "Distance is for a window of this size."),
-                    scripts=["map_tiles.js"], parts=[
+                    scripts=["map_tiles.js"], admin_label=_("Preload Tile Panning"),
+                    admin_help=_("Users may have the map load tiles beyond the view's edges (up to 25 times the tiles "
+                                 "in view, each drawn by the server unless Tile Cache has kept it)."),
+                    parts=[
                 Setting("load_ahead", 25, _("Distance"),
                         _("How far beyond each edge, as a share of the view's width and height."),
                         number=(25, 200, 25), unit="%", estimate="load_ahead"),

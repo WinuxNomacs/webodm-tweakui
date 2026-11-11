@@ -151,6 +151,8 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
   before has loaded, so only a few wait at any time and the server isn't kept busy with far tiles when you move. That
   matters most for a layer whose tiles are slow to draw, such as DJI Thermal's thermal layer. It helps panning
   only: it loads the zoom level you are at, so after you zoom, the new level's tiles still fill in as they arrive.
+  An administrator can withhold it from users on [Administration > TweakUI](administration#available-to-users),
+  since without Tile Cache the server draws every extra tile.
 - **Keep More Tiles**, with **Amount** (25% to 100%, in steps of 25%; 50% when first ticked). WebODM keeps 2 rows of
   tiles beyond what it has loaded, on every side, and drops the rest as they leave. On a high-resolution screen,
   where WebODM uses tiles half the size, that is only a few hundred pixels, so panning back shows blank tiles while
