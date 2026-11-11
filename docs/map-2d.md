@@ -165,8 +165,7 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
 Under Distance and Amount, the settings page estimates the browser memory the extra tiles take for each layer shown,
 for a map the size of your browser window on your screen, and updates it as you move the slider or resize the window:
 "Approximately 65 MB more memory per layer" for Preload Tile Panning's loaded tiles, and "at most" for Keep More Tiles, which
-keeps tiles only where you have panned (and keeps more around Preload Tile Panning's while it is ticked). In Chrome and Edge, a
-line at the end of the group gives the device's memory, which those browsers report rounded and no higher than 8 GB.
+keeps tiles only where you have panned (and keeps more around Preload Tile Panning's while it is ticked).
 Browsers keep tiles off screen compressed, so a tile takes about 0.35 MB (measured in Chromium with 512 px tiles),
 not the 1 MB of a full image; the real figure depends on the browser and on what the tiles show.
 

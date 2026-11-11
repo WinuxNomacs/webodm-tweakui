@@ -543,13 +543,6 @@ test("the estimates say approximately how many MB per layer, Keep More's at most
     expect(settingsPage.estimateText("load_ahead", {load_ahead: 25}, 400, 300, 1)).toMatch(/^Approximately 5 MB/);
 });
 
-test("the device's memory is said only where the browser gives it, 8 GB as 8 or more", () => {
-    expect(settingsPage.deviceMemoryText({deviceMemory: 4})).toBe("This device has approximately 4 GB of memory.");
-    expect(settingsPage.deviceMemoryText({deviceMemory: 8})).toBe("This device has approximately 8 GB of memory or more.");
-    expect(settingsPage.deviceMemoryText({deviceMemory: 32})).toBe("This device has approximately 32 GB of memory.");
-    expect(settingsPage.deviceMemoryText({})).toBeNull();
-});
-
 function speedGroup() {
     document.body.innerHTML = `
       <div id="tweakui-settings"><div class="tweakui-group">
@@ -565,7 +558,7 @@ function speedGroup() {
     return document.getElementById("tweakui-settings");
 }
 
-test("the estimates follow the sliders, Preload Tile Panning's checkbox and the window's size, and the device's memory ends their group", () => {
+test("the estimates follow the sliders, Preload Tile Panning's checkbox and the window's size, with no line for the device's memory", () => {
     const root = speedGroup(), win = new EventTarget();
     Object.assign(win, {innerWidth: 1400, innerHeight: 900, devicePixelRatio: 2, navigator: {deviceMemory: 8}});
     settingsPage.addEstimates(root, win);
@@ -587,14 +580,6 @@ test("the estimates follow the sliders, Preload Tile Panning's checkbox and the 
     win.innerWidth = 700;
     win.dispatchEvent(new Event("resize"));
     expect(ahead.textContent).not.toMatch(/^Approximately 65 MB/);
-    expect(root.querySelector(".tweakui-group > p.tweakui-device-memory").textContent)
-        .toBe("This device has approximately 8 GB of memory or more.");
+    expect(root.textContent).not.toMatch(/This device has/);
 });
 
-test("a browser that doesn't give the device's memory shows only the estimates", () => {
-    const root = speedGroup(), win = new EventTarget();
-    Object.assign(win, {innerWidth: 1400, innerHeight: 900, devicePixelRatio: 1, navigator: {}});
-    settingsPage.addEstimates(root, win);
-    expect(root.querySelector(".tweakui-device-memory")).toBeNull();
-    expect(root.querySelector("[data-estimate]").hidden).toBe(false);
-});

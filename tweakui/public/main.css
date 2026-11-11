@@ -108,9 +108,8 @@ html.tweakui #side-menu > li:has(> a[href="/plugins/tweakui/"]):not(.tweakui-men
 /* A setting's More button: a link at the end of its summary; the rest of its description under it */
 .tweakui-settings .tweakui-more-toggle { white-space: nowrap; }
 .tweakui-settings .tweakui-setting p.tweakui-more { margin-top: 4px; }
-/* 2D Map > Speed: the memory estimates under its sliders, and the device's memory at the end of the group */
+/* 2D Map > Speed: the memory estimates under its sliders */
 .tweakui-settings .tweakui-setting p.tweakui-estimate { margin-top: 4px; }
-.tweakui-settings .tweakui-group p.tweakui-device-memory { margin: 0; padding: 0 12px 8px 32px; }
 .tweakui-preview-overlay { position: fixed; top: 0; right: 0; bottom: 0; left: 0; z-index: 100000; display: flex; align-items: center; justify-content: center; padding: 40px; cursor: zoom-out; }
 .tweakui-preview-overlay .modal-backdrop { position: absolute; z-index: 0; }
 .tweakui-preview-overlay figure { position: relative; z-index: 1; margin: 0; max-width: 100%; max-height: 100%; padding: 8px; border-width: 1px; border-style: solid; border-radius: 4px; display: flex; flex-direction: column; }

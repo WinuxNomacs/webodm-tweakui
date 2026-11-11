@@ -286,16 +286,8 @@
             " MB more memory per layer at most, in a window of this size.";
     }
 
-    // The device's memory, which Chrome and Edge give rounded (and usually no more than 8 GB, so 8 may be more); null
-    // elsewhere
-    function deviceMemoryText(nav) {
-        var gb = nav && nav.deviceMemory;
-        if (!(gb > 0)) return null;
-        return "This device has approximately " + gb + " GB of memory" + (gb === 8 ? " or more" : "") + ".";
-    }
-
     // Fills the estimates and keeps them up to date as a slider moves, a box or Preload Tile Panning's checkbox changes, or the
-    // window is resized; the device's memory goes at the end of their group
+    // window is resized
     function addEstimates(page, win) {
         var lines = page.querySelectorAll("[data-estimate]");
         if (!lines.length) return;
@@ -320,13 +312,6 @@
         page.addEventListener("input", update);
         page.addEventListener("change", update);
         win.addEventListener("resize", update);
-        var device = deviceMemoryText(win.navigator), group = lines[0].closest(".tweakui-group");
-        if (device && group) {
-            var p = group.ownerDocument.createElement("p");
-            p.className = "text-muted tweakui-device-memory";
-            p.textContent = device;
-            group.appendChild(p);
-        }
     }
 
     // Themes > Sample does nothing: Enter in its text field doesn't submit, and its links don't change the page's hash
@@ -406,5 +391,5 @@
 
     return {start: start, showSection: showSection, save: save, applyDepends: applyDepends,
         addPreviews: addPreviews, addMore: addMore, addEstimates: addEstimates, estimateText: estimateText,
-        loadAheadTiles: loadAheadTiles, keepMoreTiles: keepMoreTiles, deviceMemoryText: deviceMemoryText, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
+        loadAheadTiles: loadAheadTiles, keepMoreTiles: keepMoreTiles, enlarge: enlarge, inertSample: inertSample, setStatus: setStatus, numberOf: numberOf};
 });
