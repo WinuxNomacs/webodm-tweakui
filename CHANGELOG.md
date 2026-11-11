@@ -29,11 +29,11 @@
   server first; a task processed again gets new tiles the next time its map opens. A reload or another user's look
   at the same place no longer has each tile drawn again. An administrator can withhold it on Administration >
   TweakUI.
-- **Load Ahead**, **Keep More Tiles** and **Fade-in Speed** (Speed): checkboxes, each with a slider beneath, for
+- **Preload Tile Panning**, **Keep More Tiles** and **Fade-in Speed** (Speed): checkboxes, each with a slider beneath, for
   loading tiles beyond the view's edges (Distance, 25% to 200%), keeping more of them after they leave it (Amount,
   25% to 100%, columns from the view's width and rows from its height), and how long a tile takes to fade in
-  (Duration, 0 to 400 ms). Load Ahead loads the tiles in view first, so the extra tiles never hold them up, then
-  rings of a quarter of the view, nearest first. Under Distance and Amount, an estimate of the browser memory their
+  (Duration, 0 to 400 ms). Preload Tile Panning loads the tiles in view first, so the extra tiles never hold them up, then
+  rings of a quarter of the view, nearest first; it helps panning only, not zooming. Under Distance and Amount, an estimate of the browser memory their
   tiles take per layer for a window of that size, updated as the slider moves, and in Chrome and Edge the device's
   memory.
 - **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends; it can help on a slow

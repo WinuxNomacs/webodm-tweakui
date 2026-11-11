@@ -9,7 +9,7 @@
 //   already replaced is left as it is. The URL also carries the task's version (asked of .../<p>/<t>/version once per
 //   task), and the server lets the browser keep such a tile without asking again.
 // - Fewer Tile Requests: a layer asks for tiles once a zoom ends, not at each level on the way (updateWhenZooming).
-// - Load Ahead: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
+// - Preload Tile Panning: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
 //   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much). The tiles in view come first: those beyond
 //   it are asked for only once the map is at rest and every tile in view has loaded, and when the map moves or zooms
 //   the ones still loading are cancelled. Chrome asks a server for 6 tiles at a time and WebODM renders a cancelled
@@ -47,7 +47,7 @@
     var WEBODM = {keepBuffer: 2, fadeMs: 200, loadAhead: 0, keepMore: 0};
     var MARK = "__tweakuiMapTiles";
 
-    // The settings as this script uses them (Load Ahead, Keep More Tiles and Fade-in Speed each a checkbox with its number
+    // The settings as this script uses them (Preload Tile Panning, Keep More Tiles and Fade-in Speed each a checkbox with its number
     // beneath; off is WebODM's own); null when all are WebODM's own
     function optionsOf(settings) {
         var o = {
@@ -115,7 +115,7 @@
         };
     }
 
-    // Load Ahead's rings beyond the view, each a share of its size
+    // Preload Tile Panning's rings beyond the view, each a share of its size
     var RING = 0.25;
 
     // Bounds in the layer's tile pixels grown by a share of the view's size each side: a Bounds of Leaflet's prototype
@@ -131,7 +131,7 @@
         return grown;
     }
 
-    // The view's size in the layer's tile pixels, grown by a share each side (Leaflet's own, plus Load Ahead);
+    // The view's size in the layer's tile pixels, grown by a share each side (Leaflet's own, plus Preload Tile Panning);
     // Leaflet's own bounds should anything fail
     function loadAhead(layer, amount, win) {
         var original = layer._getTiledPixelBounds;
@@ -148,7 +148,7 @@
         };
     }
 
-    // Load Ahead's tiles after those in view: while the map moves, or a tile is still loading, the layer creates no tile
+    // Preload Tile Panning's tiles after those in view: while the map moves, or a tile is still loading, the layer creates no tile
     // beyond the range it has reached (its _isValidTile, which Leaflet's _update asks only of tiles it would create;
     // tiles it has stay), at first the view's own. Once Leaflet says every tile has loaded (its load event, or a move's
     // end with none left to load) the layer reaches a ring further and updates, until it has the whole share (a ring

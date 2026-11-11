@@ -242,11 +242,11 @@
         });
     }
 
-    // Memory estimates under 2D Map > Speed's Distance (Load Ahead) and Amount (Keep More Tiles), for a map filling a
+    // Memory estimates under 2D Map > Speed's Distance (Preload Tile Panning) and Amount (Keep More Tiles), for a map filling a
     // window of this size on this screen: the extra tiles one layer holds, at the memory a tile took in Chromium
     // (0.35 MB, measured on a 4.0.0 dev server: a 512-pixel image, kept compressed while off screen). The tiles are
     // counted as map_tiles.js and Leaflet do: 512-pixel tiles drawn at half size on a high-resolution screen (Leaflet's
-    // detectRetina), a range of tiles covering the view (plus Load Ahead's share each side), and Keep More's columns
+    // detectRetina), a range of tiles covering the view (plus Preload Tile Panning's share each side), and Keep More's columns
     // and rows beyond it in place of WebODM's 2
     var TILE_MB = 0.35, TILE_PX = 512, WEBODM_KEEP = 2;
 
@@ -255,13 +255,13 @@
     // The tiles a range covering px pixels may take along one side
     function span(px, side) { return Math.ceil(px / side) + 1; }
 
-    // The tiles Load Ahead loads beyond those in view, for a share of the view each side
+    // The tiles Preload Tile Panning loads beyond those in view, for a share of the view each side
     function loadAheadTiles(width, height, dpr, ahead) {
         var side = tileSide(dpr), grow = 1 + 2 * ahead;
         return span(width * grow, side) * span(height * grow, side) - span(width, side) * span(height, side);
     }
 
-    // The most tiles Keep More Tiles keeps beyond WebODM's own, around what is loaded (with Load Ahead's share)
+    // The most tiles Keep More Tiles keeps beyond WebODM's own, around what is loaded (with Preload Tile Panning's share)
     function keepMoreTiles(width, height, dpr, keep, ahead) {
         var side = tileSide(dpr), grow = 1 + 2 * ahead;
         var cols = span(width * grow, side), rows = span(height * grow, side);
@@ -275,7 +275,7 @@
         return Math.max(step, Math.round(mb / step) * step);
     }
 
-    // The text under each slider, from the page's own boxes (a percentage; Load Ahead counts only while ticked)
+    // The text under each slider, from the page's own boxes (a percentage; Preload Tile Panning counts only while ticked)
     function estimateText(kind, values, width, height, dpr) {
         var ahead = values.load_ahead_on ? values.load_ahead / 100 : 0;
         if (kind === "load_ahead") {
@@ -294,7 +294,7 @@
         return "This device has approximately " + gb + " GB of memory" + (gb === 8 ? " or more" : "") + ".";
     }
 
-    // Fills the estimates and keeps them up to date as a slider moves, a box or Load Ahead's checkbox changes, or the
+    // Fills the estimates and keeps them up to date as a slider moves, a box or Preload Tile Panning's checkbox changes, or the
     // window is resized; the device's memory goes at the end of their group
     function addEstimates(page, win) {
         var lines = page.querySelectorAll("[data-estimate]");
