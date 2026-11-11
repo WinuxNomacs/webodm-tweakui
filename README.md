@@ -34,7 +34,7 @@ Every feature is off until you turn it on, except the theme menu.
   Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
   sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), a search box for an address
   or coordinates (Map Search), and a faster map: tiles kept on the server once drawn and reused by the browser (Tile
-  Cache), tiles loaded beyond the view's edges and kept after they leave it (Load Ahead, Keep
+  Cache), tiles loaded beyond the view's edges and kept after they leave it (Preload Tile Panning, Keep
   More Tiles), a quicker fade-in (Fade-in Speed), and fewer tile requests while zooming, for a slow connection
   (Fewer Tile Requests).
 - [**3D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-3d): Source Frames on the model, and a mouse wheel

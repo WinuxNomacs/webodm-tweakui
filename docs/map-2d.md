@@ -135,21 +135,22 @@ about 60 ms when the server is idle and several hundred ms under load.
 
 The first look at a part of the map is no faster: WebODM still draws each tile once.
 
-## Speed > Load Ahead, Keep More Tiles and Fade-in Speed
+## Speed > Preload Tile Panning, Keep More Tiles and Fade-in Speed
 
 Three checkboxes for how the map's orthophoto, DSM and DTM layers load and show their tiles, each with a slider
 beneath it. Off, each is WebODM's own behaviour; the slider, greyed out until you tick it, says how far it goes. They
 work with or without Tile Cache, which makes the extra tiles cheaper for the server.
 
-- **Load Ahead**, with **Distance** (25% to 200%, in steps of 25%; 25% when first ticked). WebODM loads only the
-  tiles in view, so when you pan, the edges fill in as they come into view. Load Ahead also loads the tiles within
+- **Preload Tile Panning**, with **Distance** (25% to 200%, in steps of 25%; 25% when first ticked). WebODM loads only the
+  tiles in view, so when you pan, the edges fill in as they come into view. Preload Tile Panning also loads the tiles within
   that share of the view's width and height beyond each edge, so they are there before you pan to them. At 50%,
   opening a task's map on a dev server loaded 51 tiles instead of 29. At 100% it loads up to 9 times as many as
   WebODM, and at 200% up to 25 times. The tiles in view always come first: those beyond are asked for only once every tile in view has loaded
   and the map is still, and when you pan or zoom, those still loading are cancelled. So the extra tiles never hold
   up the ones you are looking at. They come in rings a quarter of the view wide, nearest first, each once the one
   before has loaded, so only a few wait at any time and the server isn't kept busy with far tiles when you move. That
-  matters most for a layer whose tiles are slow to draw, such as DJI Thermal's thermal layer.
+  matters most for a layer whose tiles are slow to draw, such as DJI Thermal's thermal layer. It helps panning
+  only: it loads the zoom level you are at, so after you zoom, the new level's tiles still fill in as they arrive.
 - **Keep More Tiles**, with **Amount** (25% to 100%, in steps of 25%; 50% when first ticked). WebODM keeps 2 rows of
   tiles beyond what it has loaded, on every side, and drops the rest as they leave. On a high-resolution screen,
   where WebODM uses tiles half the size, that is only a few hundred pixels, so panning back shows blank tiles while
@@ -163,8 +164,8 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
 
 Under Distance and Amount, the settings page estimates the browser memory the extra tiles take for each layer shown,
 for a map the size of your browser window on your screen, and updates it as you move the slider or resize the window:
-"Approximately 65 MB more memory per layer" for Load Ahead's loaded tiles, and "at most" for Keep More Tiles, which
-keeps tiles only where you have panned (and keeps more around Load Ahead's while it is ticked). In Chrome and Edge, a
+"Approximately 65 MB more memory per layer" for Preload Tile Panning's loaded tiles, and "at most" for Keep More Tiles, which
+keeps tiles only where you have panned (and keeps more around Preload Tile Panning's while it is ticked). In Chrome and Edge, a
 line at the end of the group gives the device's memory, which those browsers report rounded and no higher than 8 GB.
 Browsers keep tiles off screen compressed, so a tile takes about 0.35 MB (measured in Chromium with 512 px tiles),
 not the 1 MB of a full image; the real figure depends on the browser and on what the tiles show.

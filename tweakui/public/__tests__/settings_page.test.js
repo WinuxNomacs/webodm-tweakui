@@ -517,7 +517,7 @@ test("More shows the rest of a setting's description and reads Less, which hides
     expect(toggle.textContent).toBe("More");
 });
 
-test("Load Ahead's estimate counts the tiles beyond the view as Leaflet does, 512-pixel tiles at half size on a high-resolution screen", () => {
+test("Preload Tile Panning's estimate counts the tiles beyond the view as Leaflet does, 512-pixel tiles at half size on a high-resolution screen", () => {
     // 1400 x 900 at DPR 2 (256-pixel tiles): 7 x 5 tiles in view; at 100%, 18 x 12 with those beyond
     expect(settingsPage.loadAheadTiles(1400, 900, 2, 1)).toBe(18 * 12 - 7 * 5);
     // the same window at DPR 1 (512-pixel tiles): 4 x 3 in view, 10 x 7 at 100%
@@ -525,13 +525,13 @@ test("Load Ahead's estimate counts the tiles beyond the view as Leaflet does, 51
     expect(settingsPage.loadAheadTiles(1400, 900, 2, 2)).toBeGreaterThan(settingsPage.loadAheadTiles(1400, 900, 2, 1));
 });
 
-test("Keep More's estimate counts its columns and rows beyond WebODM's 2, around what Load Ahead loads", () => {
+test("Keep More's estimate counts its columns and rows beyond WebODM's 2, around what Preload Tile Panning loads", () => {
     // 7 x 5 loaded; at 100%, 2 + 6 columns and 2 + 4 rows each side, where WebODM keeps 2
     expect(settingsPage.keepMoreTiles(1400, 900, 2, 1, 0)).toBe(23 * 17 - 11 * 9);
     expect(settingsPage.keepMoreTiles(1400, 900, 2, 1, 1)).toBeGreaterThan(settingsPage.keepMoreTiles(1400, 900, 2, 1, 0));
 });
 
-test("the estimates say approximately how many MB per layer, Keep More's at most, and Load Ahead's share counts for Keep More only while ticked", () => {
+test("the estimates say approximately how many MB per layer, Keep More's at most, and Preload Tile Panning's share counts for Keep More only while ticked", () => {
     const values = {load_ahead_on: false, load_ahead: 100, keep_more_tiles: 100};
     expect(settingsPage.estimateText("load_ahead", values, 1400, 900, 2))
         .toBe("Approximately 65 MB more memory per layer, in a window of this size.");
@@ -565,7 +565,7 @@ function speedGroup() {
     return document.getElementById("tweakui-settings");
 }
 
-test("the estimates follow the sliders, Load Ahead's checkbox and the window's size, and the device's memory ends their group", () => {
+test("the estimates follow the sliders, Preload Tile Panning's checkbox and the window's size, and the device's memory ends their group", () => {
     const root = speedGroup(), win = new EventTarget();
     Object.assign(win, {innerWidth: 1400, innerHeight: 900, devicePixelRatio: 2, navigator: {deviceMemory: 8}});
     settingsPage.addEstimates(root, win);

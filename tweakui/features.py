@@ -214,12 +214,15 @@ CATEGORIES = [
                     admin_help=_("Users may have the map's tiles kept on the server once drawn (up to 1 GB in all, "
                                  "shared by everyone with it on) and in their browser.")),
             # Each a checkbox (off: WebODM's own) with its number beneath
-            Setting("load_ahead_on", False, _("Load Ahead"),
-                    _("The map loads tiles beyond the edges of the view, so they are there before you pan to them."),
+            Setting("load_ahead_on", False, _("Preload Tile Panning"),
+                    _("The map loads tiles beyond the edges of the view, so they are there before you pan to them. "
+                      "It helps panning only, not zooming."),
                     more=_("Without it, as in WebODM, only the tiles in view are loaded, so the edges fill in as you "
                            "pan. The tiles in view always load first: those beyond wait until they have, and the map "
                            "is still. More tiles are loaded (up to 9 times as many at 100%, 25 times at 200%), which "
-                           "Tile Cache makes cheaper. Each uses some of the browser's memory: the estimate under "
+                           "Tile Cache makes cheaper. It loads only the zoom level you are at, so after a zoom the "
+                           "new level's tiles still fill in as they arrive. Each uses some of the browser's memory: "
+                           "the estimate under "
                            "Distance is for a window of this size."),
                     scripts=["map_tiles.js"], parts=[
                 Setting("load_ahead", 25, _("Distance"),

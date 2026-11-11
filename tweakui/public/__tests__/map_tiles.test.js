@@ -13,7 +13,7 @@ const settingsWith = changes => {
 const opts = changes => mapTiles.optionsOf(settingsWith(changes));
 const flush = () => new Promise(r => setTimeout(r, 0));
 
-// Leaflet's Point and Bounds as far as Load Ahead uses them
+// Leaflet's Point and Bounds as far as Preload Tile Panning uses them
 function Point(x, y) { this.x = x; this.y = y; }
 Point.prototype.add = function (p) { return new Point(this.x + p.x, this.y + p.y); };
 Point.prototype.subtract = function (p) { return new Point(this.x - p.x, this.y - p.y); };
@@ -156,7 +156,7 @@ test("Fewer Tile Requests: a layer waits for a zoom to end, its URL and kept til
     expect(tileSrc(layer)).toMatch(/^\/api\/projects\/3\//);
 });
 
-test("Load Ahead: a layer loads the tiles within that share of the view beyond each edge", () => {
+test("Preload Tile Panning: a layer loads the tiles within that share of the view beyond each edge", () => {
     const map = fakeMap(), layer = fakeLayer(TILES);
     mapTiles.attach(map, opts({load_ahead: 50}));
     map.addLayer(layer);
@@ -216,7 +216,7 @@ function updatingLayer() {
     }));
 }
 
-test("Load Ahead: the tiles in view load first, those beyond once they have, and a move cancels those beyond still loading", () => {
+test("Preload Tile Panning: the tiles in view load first, those beyond once they have, and a move cancels those beyond still loading", () => {
     const layer = updatingLayer();
     const map = events(fakeMap());
     map.getCenter = () => new Point(5120, 5120);
@@ -248,7 +248,7 @@ test("Load Ahead: the tiles in view load first, those beyond once they have, and
     expect(layer.removed).toHaveLength(16);
 });
 
-test("Load Ahead: those beyond come a ring of a quarter of the view at a time, each once the last has loaded, a ring with none to load passed", () => {
+test("Preload Tile Panning: those beyond come a ring of a quarter of the view at a time, each once the last has loaded, a ring with none to load passed", () => {
     const layer = updatingLayer();
     const map = events(fakeMap());
     map.getCenter = () => new Point(5120, 5120);
