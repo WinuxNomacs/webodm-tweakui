@@ -229,7 +229,8 @@ CATEGORIES = [
                                  "in view, each drawn by the server unless Tile Cache has kept it)."),
                     parts=[
                 Setting("load_ahead", 25, _("Distance"),
-                        _("How far beyond each edge, as a share of the view's width and height."),
+                        _("How far beyond each edge, as a share of the view's width and height. At most 100% on a "
+                          "phone or a device with 4 GB of memory or less."),
                         number=(25, 200, 25), unit="%", estimate="load_ahead"),
             ]),
             Setting("keep_more_tiles_on", False, _("Keep More Tiles"),
@@ -240,7 +241,8 @@ CATEGORIES = [
                            "memory: the estimate under Amount is the most for a window of this size."),
                     scripts=["map_tiles.js"], parts=[
                 Setting("keep_more_tiles", 50, _("Amount"),
-                        _("How much more it keeps, as a share of the view's width and height."),
+                        _("How much more it keeps, as a share of the view's width and height. At most 50% on a phone "
+                          "or a device with 4 GB of memory or less."),
                         number=(25, 100, 25), unit="%", estimate="keep_more"),
             ]),
             Setting("fade_in_speed_on", False, _("Fade-in Speed"),

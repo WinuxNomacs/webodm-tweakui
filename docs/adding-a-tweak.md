@@ -199,6 +199,7 @@ a dark theme if your tweak has colours.
 | `feature(win, name, start, {when, ready})` | Starts a feature: at once, or once the page is parsed with `ready: true`; only when `when(settings, win)` says so, if given |
 | `guard(name, fn)` | Returns `fn`, but an error in it is logged as `TweakUI <name>:` and goes no further |
 | `settingsOf(win)` | The user's TweakUI settings (the defaults on a signed-out page) |
+| `smallDevice(win)`, `SMALL_DEVICE` | Whether the browser reports 4 GB of memory or less or the screen's shorter side is under 768 px, and the most (in percent) Preload Tile Panning and Keep More Tiles go there |
 | `ready(doc, fn)` | Calls `fn` once the page is parsed |
 | `el(doc, tag, className, text)` | A new element, with its text set as text (never as HTML) |
 | `whenElement(doc, win, selector, callback)` | Calls back with the element once it is on the page |

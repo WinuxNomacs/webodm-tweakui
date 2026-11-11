@@ -378,6 +378,37 @@ test("Keep More Tiles: after Leaflet's update, tiles beyond the rows above and b
     expect(current).toEqual(["a", "c", "f"]);
 });
 
+describe("Small devices", () => {
+    const device = (deviceMemory, width, height) => ({navigator: {deviceMemory}, screen: {width, height}});
+    const capped = (changes, win) => {
+        const o = mapTiles.optionsOf(settingsWith(changes), win);
+        return [o.loadAhead, o.keepMore];
+    };
+
+    test("a device reporting 4 GB or less caps Preload Tile Panning at 100% and Keep More Tiles at 50%", () => {
+        expect(capped({load_ahead: 200, keep_more_tiles: 100}, device(4, 1920, 1080))).toEqual([1, 0.5]);
+        expect(capped({load_ahead: 200, keep_more_tiles: 100}, device(2, 1920, 1080))).toEqual([1, 0.5]);
+    });
+
+    test("a screen under 768 px on its shorter side is capped too, turned sideways or not", () => {
+        expect(capped({load_ahead: 150, keep_more_tiles: 75}, device(undefined, 390, 844))).toEqual([1, 0.5]);
+        expect(capped({load_ahead: 150, keep_more_tiles: 75}, device(undefined, 844, 390))).toEqual([1, 0.5]);
+    });
+
+    test("values under the cap stay as they are and a large device isn't capped", () => {
+        expect(capped({load_ahead: 50, keep_more_tiles: 25}, device(2, 390, 844))).toEqual([0.5, 0.25]);
+        expect(capped({load_ahead: 200, keep_more_tiles: 100}, device(8, 1920, 1080))).toEqual([2, 1]);
+        expect(capped({load_ahead: 200, keep_more_tiles: 100}, device(undefined, 768, 1024))).toEqual([2, 1]);
+        expect(capped({load_ahead: 200, keep_more_tiles: 100}, {})).toEqual([2, 1]);
+        expect(capped({load_ahead: 200, keep_more_tiles: 100})).toEqual([2, 1]);
+    });
+
+    test("an unchecked setting stays off on a small device", () => {
+        expect(capped({load_ahead: 200, load_ahead_on: false, keep_more_tiles: 100, keep_more_tiles_on: false,
+                       tile_cache: true}, device(2, 390, 844))).toEqual([0, 0]);
+    });
+});
+
 describe("Fade-in Speed", () => {
     function fading(ms) {
         const frames = [];

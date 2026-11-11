@@ -34,7 +34,8 @@
   25% to 100%, columns from the view's width and rows from its height), and how long a tile takes to fade in
   (Duration, 0 to 400 ms, on the basemap too). Preload Tile Panning loads the tiles in view first, so the extra tiles never hold them up, then
   rings of a quarter of the view, nearest first; it helps panning only, not zooming. Under Distance and Amount, an estimate of the browser memory their
-  tiles take per layer for a window of that size, updated as the slider moves. An administrator can withhold Preload Tile Panning on
+  tiles take per layer for a window of that size, updated as the slider moves. On a phone or a device with 4 GB of
+  memory or less, Preload Tile Panning goes at most 100% and Keep More Tiles at most 50%. An administrator can withhold Preload Tile Panning on
   Administration > TweakUI.
 - **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends; it can help on a slow
   or unreliable connection to the server.

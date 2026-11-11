@@ -44,6 +44,18 @@
         return (win.TweakUI && win.TweakUI.settings) || {};
     }
 
+    // 2D Map > Speed on a small device: the most Preload Tile Panning and Keep More Tiles go, in percent, where the
+    // browser reports 4 GB of memory or less (navigator.deviceMemory, Chrome and Edge only) or the screen's shorter side
+    // is under 768 px (Bootstrap's breakpoint, as WebODM's layout; a phone turned sideways still counts). The settings
+    // are per user, not per device; map_tiles.js caps them on the map and settings_page.js's estimates follow.
+    var SMALL_DEVICE = {load_ahead: 100, keep_more_tiles: 50};
+
+    function smallDevice(win) {
+        var nav = win && win.navigator, screen = win && win.screen;
+        if (nav && typeof nav.deviceMemory === "number" && nav.deviceMemory > 0 && nav.deviceMemory <= 4) return true;
+        return !!(screen && screen.width > 0 && screen.height > 0 && Math.min(screen.width, screen.height) < 768);
+    }
+
     // Calls fn once the page is parsed (at once when it already is). The scripts load in the page's head
     function ready(doc, fn) {
         if (doc.readyState === "loading") doc.addEventListener("DOMContentLoaded", fn);
@@ -354,7 +366,7 @@
     }
 
     var core = {
-        report: report, guard: guard, settingsOf: settingsOf, ready: ready, feature: feature, el: el,
+        report: report, guard: guard, settingsOf: settingsOf, smallDevice: smallDevice, SMALL_DEVICE: SMALL_DEVICE, ready: ready, feature: feature, el: el,
         whenElement: whenElement, sideItem: sideItem, sideLink: sideLink, placeMenu: placeMenu, csrfToken: csrfToken,
         copyText: copyText, wholeNumber: wholeNumber, saveSettings: saveSettings, rowMenu: rowMenu, rowMenuHtml: rowMenuHtml,
         SELECTORS: SELECTORS

@@ -24,6 +24,9 @@
 //   keepBuffer, worked out each time Leaflet reads it, so it follows the view's size and the tiles' size on screen):
 //   it takes the larger, and after each _update the tiles beyond the other axis's own margin stop being current, so
 //   Leaflet drops them as it would. A wide view so keeps fewer rows above and below than columns at the sides.
+// - Small devices (core.js's smallDevice: 4 GB of memory or less, or a phone's screen): Preload Tile Panning goes at
+//   most 100% and Keep More Tiles at most 50% (core.js's SMALL_DEVICE). The settings are per user, not per device, so
+//   200% chosen on a desktop would otherwise apply on the user's phone too; the stored settings are unchanged.
 // - Fade-in Speed: Leaflet fades a tile in over 200 ms, a number in its _updateOpacity; the layer's own copy of that
 //   method takes the setting's. The basemap's layers (those of the map's Base Maps control, and a Custom one's tile
 //   layer) fade so too, and only that: the other settings leave them as they are.
@@ -51,19 +54,25 @@
     var MARK = "__tweakuiMapTiles";
 
     // The settings as this script uses them (Preload Tile Panning, Keep More Tiles and Fade-in Speed each a checkbox with its number
-    // beneath; off is WebODM's own); null when all are WebODM's own
-    function optionsOf(settings) {
+    // beneath; off is WebODM's own), capped on a small device when the window is given; null when all are WebODM's own
+    function optionsOf(settings, win) {
+        var most = win && ui.smallDevice(win) ? ui.SMALL_DEVICE : {};
         var o = {
             cache: !!settings.tile_cache,
             reuse: !!settings.tile_cache,
             fewer: !!settings.fewer_tile_requests,
-            loadAhead: settings.load_ahead_on ? share(settings.load_ahead) : 0,
-            keepMore: settings.keep_more_tiles_on ? share(settings.keep_more_tiles) : 0,
+            loadAhead: settings.load_ahead_on ? share(capped(settings.load_ahead, most.load_ahead)) : 0,
+            keepMore: settings.keep_more_tiles_on ? share(capped(settings.keep_more_tiles, most.keep_more_tiles)) : 0,
             fadeMs: settings.fade_in_speed_on && typeof settings.fade_in_speed === "number" && settings.fade_in_speed >= 0 ?
                 settings.fade_in_speed : WEBODM.fadeMs
         };
         var changed = o.cache || o.fewer || o.loadAhead > 0 || o.keepMore > 0 || o.fadeMs !== WEBODM.fadeMs;
         return changed ? o : null;
+    }
+
+    // The value, at most `most` when that is given
+    function capped(value, most) {
+        return most && typeof value === "number" ? Math.min(value, most) : value;
     }
 
     // A percentage setting as a share (0.25 for 25%); 0 when it isn't one
@@ -387,7 +396,7 @@
     }
 
     function start(doc, win) {
-        var options = optionsOf(ui.settingsOf(win)), P = win.PluginsAPI;
+        var options = optionsOf(ui.settingsOf(win), win), P = win.PluginsAPI;
         if (!options || !P || !P.Map || !P.Map.didAddControls) return;
         var known = options.reuse && win.fetch ? versions(win.fetch.bind(win)) : null;
         P.Map.didAddControls(ui.guard(NAME, function (args) {

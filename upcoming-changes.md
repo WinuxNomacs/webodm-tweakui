@@ -3,8 +3,6 @@
 ## Phases (current and upcoming)
 
 **Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
-- **Small devices: a cap** — where the browser reports 4 GB or less or the screen is under 768 px wide, Preload Tile
-  Panning goes at most 100% and Keep More Tiles at most 50%.
 - **Leaflet check** — the selector check also reports a WebODM whose Leaflet isn't 1.3.1 (map_tiles.js overrides
   its private methods).
 
@@ -21,6 +19,15 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Small devices: a cap** (2D map review, decided 2026-11-11) — branch `small-device-cap`. Where the browser
+  reports 4 GB of memory or less (`navigator.deviceMemory`) or the screen's shorter side is under 768 px (a phone
+  turned sideways still counts; a 768 × 1024 tablet doesn't), Preload Tile Panning goes at most 100% and Keep More
+  Tiles at most 50%: `core.js` (`smallDevice`, `SMALL_DEVICE`), applied in `map_tiles.optionsOf`; the settings page's
+  estimates are for the cap and add "At most 100% on this device" (`settings_page.estimateText`). Stored settings
+  unchanged. Distance's and Amount's descriptions say so. Tests `map_tiles.test.js` ("Small devices"),
+  `settings_page.test.js` (2); docs `map-2d.md`, `adding-a-tweak.md` (core helpers), CHANGELOG. Live on 4.0.0
+  (TestRGB, 3 steps in): a 390 × 844 phone loaded 42 tiles at 100% and 40 at 200%, a 900 × 900 view 136 and 408.
+  The settings page on a phone shows the capped estimates on both stacks.
 - **Administration: withhold Preload Tile Panning** (2D map review, decided 2026-11-11) — branch
   `admin-withhold-preload`: `admin_label` and `admin_help` on `load_ahead_on` (`features.py`), so it is a checkbox
   under Administration > TweakUI > Available to Users, between Tile Cache and Storage View; withheld, it is off on
