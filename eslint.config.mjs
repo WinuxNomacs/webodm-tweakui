@@ -12,7 +12,7 @@ export default [
             ecmaVersion: 5,
             sourceType: "script",
             // ES5 syntax, but the ES2015 Promise the browsers have; module and require for a UMD wrapper
-            globals: {...globals.browser, Promise: "readonly", module: "readonly", require: "readonly", PluginsAPI: "readonly"},
+            globals: {...globals.browser, Promise: "readonly", Symbol: "readonly", module: "readonly", require: "readonly", PluginsAPI: "readonly"},
         },
         // ES5 has no catch without a binding, so one left unused is no mistake
         rules: {...js.configs.recommended.rules, "no-unused-vars": ["error", {caughtErrors: "none"}]},

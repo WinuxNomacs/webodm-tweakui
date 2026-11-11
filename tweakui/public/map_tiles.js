@@ -8,6 +8,8 @@
 //   replaces createTile and reads the task from them), still gets WebODM's, and a layer whose createTile a script has
 //   already replaced is left as it is. The URL also carries the task's version (asked of .../<p>/<t>/version once per
 //   task), and the server lets the browser keep such a tile without asking again.
+//   When WebODM's map sets a new crop it makes the task's layers again, with the same URLs: a new layer whose task's
+//   crop isn't the one its version was asked with asks again, and its tiles go without a version until it comes.
 // - Fewer Tile Requests: a layer asks for tiles once a zoom ends, not at each level on the way (updateWhenZooming).
 // - Preload Tile Panning: a layer loads the tiles within a share of the view's size beyond its edges, not only those in view
 //   (its _getTiledPixelBounds, private in Leaflet 1.x, grown by that much). The tiles in view come first: those beyond
@@ -96,23 +98,38 @@
             WEBODM_TILES.test(layer._url);
     }
 
-    // Each task's tile version (Tile Cache), asked once per page; tiles asked for before it comes are
-    // checked with the server as without it
+    // Each task's tile version (Tile Cache), asked once per page and crop; tiles asked for before it comes are
+    // checked with the server as without it. stamp: the task's crop as WebODM's map has it (cropStamp), which the
+    // version depends on and the map can change; a stamp other than the one asked with asks again (and forgets the
+    // version it had), none (undefined, a layer WebODM didn't make) asks only if never asked
     function versions(fetchFn) {
         var known = {}, asked = {};
         return {
             get: function (task) { return known[task] || null; },
-            ask: function (project, task) {
-                if (!fetchFn || asked[task]) return;
-                asked[task] = true;
+            ask: function (project, task, stamp) {
+                if (!fetchFn) return;
+                if (Object.prototype.hasOwnProperty.call(asked, task) && (stamp === undefined || asked[task] === stamp)) return;
+                asked[task] = stamp;
+                delete known[task];
                 fetchFn(CACHED_TILES + encodeURIComponent(project) + "/" + encodeURIComponent(task) + "/version",
                         {credentials: "same-origin"}).then(function (res) {
                     return res.ok ? res.json() : null;
                 }).then(function (body) {
-                    if (body && typeof body.version === "string") known[task] = body.version;
+                    if (body && typeof body.version === "string" && asked[task] === stamp) known[task] = body.version;
                 }, function () { /* the tiles go without it */ });
             }
         };
+    }
+
+    // A WebODM task's crop as a string (versions' stamp); undefined without a task
+    function cropStamp(task) {
+        return task && typeof task === "object" ? JSON.stringify(task.crop || null) : undefined;
+    }
+
+    // The task WebODM's map keeps on a layer it makes (its meta), or null
+    function layerTask(layer) {
+        var meta = typeof Symbol === "function" ? layer[Symbol.for("meta")] : null;
+        return meta && meta.task ? meta.task : null;
     }
 
     // Preload Tile Panning's rings beyond the view, each a share of its size
@@ -200,7 +217,19 @@
         events.zoomstart = events.movestart;
         layer.on("load", go);
         layer.on("add", function () { layer._map.on(events); });
-        layer.on("remove", function () { layer._map.off(events); });
+        // Back on the map (Leaflet updates before its add event) or redrawn (a new colour map or hillshade), it starts
+        // again from the view, not with every ring at once
+        layer.on("remove", function () {
+            ring = 0;
+            layer._map.off(events);
+        });
+        var redraw = layer.redraw;
+        if (typeof redraw === "function") {
+            layer.redraw = function () {
+                ring = 0;
+                return redraw.apply(this, arguments);
+            };
+        }
         if (layer._map) layer._map.on(events);
     }
 
@@ -280,7 +309,7 @@
             !Object.prototype.hasOwnProperty.call(layer, "createTile")) {
             var original = layer.getTileUrl, create = layer.createTile, creating = 0;
             var from = taskOf(layer._url);
-            if (options.reuse && known && from) known.ask(from.project, from.task);
+            if (options.reuse && known && from) known.ask(from.project, from.task, cropStamp(layerTask(layer)));
             // Leaflet's createTile, which asks getTileUrl for the image's URL; replaced in turn by a script that draws
             // the tiles its own way, whose getTileUrl calls then get WebODM's URL
             layer.createTile = function () {
@@ -330,7 +359,7 @@
             if (known && args && args.tiles) {
                 args.tiles.forEach(function (t) {
                     var task = t && t.meta && t.meta.task;
-                    if (task && task.id && task.project !== undefined) known.ask(String(task.project), String(task.id));
+                    if (task && task.id && task.project !== undefined) known.ask(String(task.project), String(task.id), cropStamp(task));
                 });
             }
             attach(args && args.map, options, known, win);

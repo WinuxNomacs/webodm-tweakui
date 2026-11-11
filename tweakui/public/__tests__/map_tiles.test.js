@@ -131,6 +131,44 @@ test("Tile Cache: the task's version is asked once, and the tiles asked for once
     expect(tileSrc(layer)).toBe("/api/plugins/tweakui/tiles/3/ab-12/orthophoto/18/64084/92370?rescale=0%2C255&size=512&crop=1&v=0123abcd");
 });
 
+test("Tile Cache: a new crop on the map asks the task's version again, its tiles going without one until it comes", async () => {
+    let version = "before";
+    const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({version})}));
+    const known = mapTiles.versions(fetch), map = fakeMap();
+    const withCrop = crop => { const l = fakeLayer(TILES); l[Symbol.for("meta")] = {task: {id: "ab-12", project: 3, crop}}; return l; };
+    mapTiles.attach(map, opts({tile_cache: true}), known);
+    map.addLayer(withCrop({type: "Polygon", coordinates: [[[1, 2]]]}));
+    await flush();
+    // the same crop again (WebODM making its layers again): asked once
+    map.addLayer(withCrop({type: "Polygon", coordinates: [[[1, 2]]]}));
+    expect(fetch).toHaveBeenCalledTimes(1);
+    // another crop: the same URLs, so they go without the old version, then with the new one
+    version = "after";
+    const cropped = withCrop({type: "Polygon", coordinates: [[[3, 4]]]});
+    map.addLayer(cropped);
+    expect(fetch).toHaveBeenCalledTimes(2);
+    expect(tileSrc(cropped)).not.toMatch(/v=/);
+    await flush();
+    expect(tileSrc(cropped)).toMatch(/&v=after$/);
+    // a layer WebODM didn't make (Other Tasks' Orthophotos) asks nothing more
+    map.addLayer(fakeLayer(TILES));
+    expect(fetch).toHaveBeenCalledTimes(2);
+});
+
+test("Tile Cache: a version that comes after the crop changed again is not used", async () => {
+    const answers = [];
+    const fetch = jest.fn(() => new Promise(resolve => answers.push(resolve)));
+    const known = mapTiles.versions(fetch);
+    known.ask("3", "ab-12", "A");
+    known.ask("3", "ab-12", "B");
+    answers[0]({ok: true, json: () => Promise.resolve({version: "old"})});
+    await flush();
+    expect(known.get("ab-12")).toBeNull();
+    answers[1]({ok: true, json: () => Promise.resolve({version: "new"})});
+    await flush();
+    expect(known.get("ab-12")).toBe("new");
+});
+
 test("a version that can't be had leaves the tiles as with Tile Cache alone", async () => {
     const known = mapTiles.versions(jest.fn(() => Promise.resolve({ok: false, status: 403})));
     known.ask("3", "ab-12");
@@ -273,6 +311,35 @@ test("Preload Tile Panning: those beyond come a ring of a quarter of the view at
     expect(count()).toBe(60);
     loadAll();
     expect(count()).toBe(60);
+});
+
+test("Preload Tile Panning: a layer shown again or redrawn starts again from the view, not with every ring at once", () => {
+    const layer = updatingLayer();
+    const map = events(fakeMap());
+    map.getCenter = () => new Point(5120, 5120);
+    const count = () => Object.keys(layer._tiles).length;
+    const loadAll = () => { Object.values(layer._tiles).forEach(t => { t.loaded = 1; }); layer.fire("load"); };
+    // Leaflet's redraw: every tile removed, then an update
+    layer.redraw = function () { this._tiles = {}; this._update(); return this; };
+    mapTiles.attach(map, opts({load_ahead: 100}), null, {setTimeout: fn => fn()});
+    map.addLayer(layer);
+    layer.fire("add");
+    layer._update();
+    loadAll();
+    loadAll();
+    loadAll();
+    expect(count()).toBe(60);
+    // a new colour map: the view's tiles alone, then the rings
+    layer.redraw();
+    expect(count()).toBe(8);
+    loadAll();
+    expect(count()).toBe(24);
+    // unticked and ticked again in the Layers panel: Leaflet updates before the add event
+    layer.fire("remove");
+    layer._tiles = {};
+    layer._update();
+    layer.fire("add");
+    expect(count()).toBe(8);
 });
 
 test("Keep More Tiles: WebODM's 2 rows plus that share of the view in tiles, columns from its width and rows from its height", () => {
