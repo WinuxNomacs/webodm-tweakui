@@ -24,6 +24,9 @@
 
 ### 2D Map
 
+- **Other Tasks' Orthophotos** (Controls): each task in the Other Tasks panel has WebODM's **Side By Side** button,
+  which splits the map with WebODM's movable divider, that task's orthophoto on the right and the task's own on the
+  left.
 - **Tile Cache** (Speed): the map's orthophoto, DSM and DTM tiles are kept on the server once WebODM has drawn them
   (up to 1 GB, shared by everyone with it on), and your browser shows the copies it has kept without asking the
   server first; a task processed again gets new tiles the next time its map opens. A reload or another user's look

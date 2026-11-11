@@ -17,13 +17,20 @@ the mouse or a finger, anywhere within the map. A panel that closes reopens in i
 
 Off by default.
 
-![The Other Tasks panel with another task's orthophoto shown over the task's own](../tweakui/public/previews/other-tasks.webp)
+![The Other Tasks panel, with another task's orthophoto side by side with the task's own](../tweakui/public/previews/other-tasks.webp)
 
 On a task's map, a button below Layers opens an **Other Tasks** panel listing the project's other tasks that have
 an orthophoto. Check one to show its orthophoto over the task's own (cropped as in its own task), and set its opacity
 with the slider beside it, e.g. to compare before and after. None is shown when the map opens, and nothing is
 remembered. A project's own map (Dashboard > the project's **View Map**) already lists every task's layers, so it
 has no such button.
+
+Each row's **Side By Side** button, the one WebODM's Layers panel has beside each orthophoto, splits the map with
+WebODM's own divider: that task's orthophoto on the right of the bar, the task's own on the left. Drag the bar (with
+the mouse or a finger) to swipe between them. The other ticked tasks' orthophotos are hidden meanwhile, and a task
+not ticked is shown just for the comparison. Click the button again (its arrow) or untick the task to end it, and
+everything is as it was. One layer is compared at a time, as in WebODM: another row's button, or Side By Side in the
+Layers panel, takes over.
 
 ## Controls > Source Frames
 
