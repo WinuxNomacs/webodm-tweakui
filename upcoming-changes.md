@@ -3,8 +3,6 @@
 ## Phases (current and upcoming)
 
 **Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
-- **Leaflet check** — the selector check also reports a WebODM whose Leaflet isn't 1.3.1 (map_tiles.js overrides
-  its private methods).
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -19,6 +17,12 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Leaflet check** (2D map review, 2026-11-11) — branch `leaflet-check`: `map_tiles.js` names the Leaflet it is
+  written for (`LEAFLET`, 1.3.1); `dev/selector-check.js` reads it (`readLeaflet`) and, on the map, compares
+  `L.version`, failing on another (`leafletLine`). Test `dev/__tests__/selector-check.test.js`; docs `developing.md`,
+  CLAUDE.md, the `release-check` skill, CHANGELOG. Run on 4.0.0: "ok map_tiles: Leaflet 1.3.1". On 3.3.2 (no task of
+  its own) the check's test task didn't finish within its 10 minutes, so it stopped before the map (its project
+  deleted); 3.3.2's Dashboard has Leaflet 1.3.1.
 - **Small devices: a cap** (2D map review, decided 2026-11-11) — branch `small-device-cap`. Where the browser
   reports 4 GB of memory or less (`navigator.deviceMemory`) or the screen's shorter side is under 768 px (a phone
   turned sideways still counts; a 768 × 1024 tablet doesn't), Preload Tile Panning goes at most 100% and Keep More

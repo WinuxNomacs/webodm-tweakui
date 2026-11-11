@@ -3,6 +3,8 @@
 // `TW_USER=... TW_PASSWORD=... npm run selector-check`, by default against the 4.0.0 dev server
 // (TW_BASE=http://localhost:8005). It opens the Dashboard, a task's panel and its Task Options dialog, the task's 2D map
 // and its 3D view, and lists each selector it finds or not, by script and name; it exits with 1 when one is missing.
+// On the map it also compares WebODM's Leaflet with the version map_tiles.js is written for (its LEAFLET), which
+// overrides Leaflet's private methods, and fails on another.
 // It uses the account's own data, read only: the first completed task with an orthophoto and a textured model (or
 // TW_TASK=<project>/<task>). With none, it processes WebODM's own 5 test images (TW_IMAGES, by default
 // ignored/WebODM/nodeodm/fixtures/test_images; a minute or two) in a project "Selector check", deleted afterwards,
@@ -45,6 +47,21 @@ function readSelectors(dir) {
     return all;
 }
 
+// The Leaflet version map_tiles.js is written for (its LEAFLET)
+function readLeaflet(dir) {
+    const m = fs.readFileSync(path.join(dir, "map_tiles.js"), "utf8").match(/\bvar LEAFLET = "([^"]+)";/);
+    if (!m) throw new Error("map_tiles.js has no LEAFLET");
+    return m[1];
+}
+
+// The line reporting WebODM's Leaflet (actual: L.version on its map, null when there is none) and whether it is the one
+// map_tiles.js is written for
+function leafletLine(expected, actual) {
+    if (actual === expected) return {ok: true, text: `  ok      map_tiles: Leaflet ${actual}`};
+    return {ok: false, text: `  CHANGED map_tiles: WebODM's Leaflet is ${actual || "not found"}, map_tiles.js is written for ${expected}: ` +
+        "check its overrides of Leaflet's private methods (_update, _isValidTile, _getTiledPixelBounds, _updateOpacity...), then its LEAFLET"};
+}
+
 // The checks, by page: [{script, name, selector, within, className, admin}]; scripts with no entry in WHERE
 function plan(selectors) {
     const byPage = {}, unplaced = [];
@@ -77,6 +94,7 @@ async function main() {
     const user = process.env.TW_USER, password = process.env.TW_PASSWORD;
     if (!user || !password) throw new Error("Set TW_USER and TW_PASSWORD to a WebODM account (the dev server's)");
     const {byPage, unplaced} = plan(readSelectors(PUBLIC));
+    const leaflet = readLeaflet(PUBLIC);
 
     const {chromium} = require("playwright");
     const base = (process.env.TW_BASE || "http://localhost:8005").replace(/\/$/, "");
@@ -147,15 +165,21 @@ async function main() {
         for (const name of PAGES) {
             const checks = byPage[name];
             if (!checks.length) continue;
-            let results;
+            let results, version = null;
             try {
                 await open[name]();
                 results = await page.evaluate(found, checks);
+                if (name === "map") version = await page.evaluate(() => (window.L && window.L.version) || null);
             } catch (e) {
                 console.log(`${name}: could not open it (${e.message.split("\n")[0]})`);
                 results = checks.map(() => false);
             }
             console.log(name);
+            if (name === "map") {
+                const line = leafletLine(leaflet, version);
+                if (!line.ok) failed++;
+                console.log(line.text);
+            }
             checks.forEach((c, i) => {
                 if (!results[i]) failed++;
                 console.log(`  ${results[i] ? "ok     " : "MISSING"} ${c.script}.${c.name}: ${c.within ? c.within + " ... " : ""}${c.selector}` +
@@ -211,7 +235,7 @@ async function processTestImages(page, api, base, csrf, project) {
     throw new Error("The test task took more than 10 minutes");
 }
 
-module.exports = {readSelectors, plan, WHERE, PUBLIC};
+module.exports = {readSelectors, readLeaflet, leafletLine, plan, WHERE, PUBLIC};
 
 if (require.main === module) {
     main().then(failed => process.exit(failed ? 1 : 0), e => { console.error(e.message || e); process.exit(2); });

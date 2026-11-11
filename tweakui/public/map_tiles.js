@@ -43,6 +43,9 @@
 
     // The WebODM elements it relies on, to check against a new WebODM: none (the map comes through the map hook)
     var SELECTORS = {};
+    // The Leaflet its overrides of private methods are written for (WebODM 3.3.2's and 4.0.0's): each falls back when a
+    // method is missing, but a changed one would go unnoticed, so dev/selector-check.js reports a WebODM with another
+    var LEAFLET = "1.3.1";
     var NAME = "map_tiles";
 
     // WebODM's tile URL (app/api/urls.py), up to the tile's z/x/y: what goes before /api (an origin), the project, the
@@ -413,5 +416,5 @@
 
     return {start: start, attach: attach, tweak: tweak, optionsOf: optionsOf, cachedUrl: cachedUrl, taskOf: taskOf,
             withoutCacheParam: withoutCacheParam, isWebODMTiles: isWebODMTiles, basemapsOf: basemapsOf, keepRows: keepRows, keepMargins: keepMargins, versions: versions,
-            SELECTORS: SELECTORS};
+            SELECTORS: SELECTORS, LEAFLET: LEAFLET};
 });

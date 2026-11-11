@@ -1,5 +1,5 @@
 // The selector check's lists (dev/selector-check.js): the browser run itself is run against a WebODM
-const {readSelectors, plan, WHERE, PUBLIC} = require("../selector-check");
+const {readSelectors, readLeaflet, leafletLine, plan, WHERE, PUBLIC} = require("../selector-check");
 
 const selectors = readSelectors(PUBLIC);
 
@@ -31,4 +31,13 @@ test("a script with selectors and no page is reported, and a relative selector i
     expect(unplaced).toEqual(["new_tweak"]);
     expect(byPage.task.find(c => c.script === "task_details" && c.name === "rows").within).toBe(selectors.task_details.table);
     expect(byPage.model.find(c => c.script === "source_frames").name).toBe("modelView");
+});
+
+test("the map's Leaflet is checked against the version map_tiles.js is written for, and another fails", () => {
+    expect(readLeaflet(PUBLIC)).toBe(require("../../tweakui/public/map_tiles").LEAFLET);
+    expect(leafletLine("1.3.1", "1.3.1")).toEqual({ok: true, text: "  ok      map_tiles: Leaflet 1.3.1"});
+    const changed = leafletLine("1.3.1", "1.9.4");
+    expect(changed.ok).toBe(false);
+    expect(changed.text).toMatch(/^ {2}CHANGED map_tiles: WebODM's Leaflet is 1\.9\.4, map_tiles\.js is written for 1\.3\.1/);
+    expect(leafletLine("1.3.1", null).text).toMatch(/Leaflet is not found/);
 });
