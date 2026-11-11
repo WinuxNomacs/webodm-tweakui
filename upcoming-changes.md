@@ -3,14 +3,14 @@
 ## Phases (current and upcoming)
 
 **Up next**
+- **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11; DJI Thermal's done 2026-11-12) — the
+  comparison on DJI Thermal's `split.js` divider: turned by a right-click or a button, the compared orthophoto on
+  either side. First a fix in webodm-dji-thermal. See "Other Tasks: divider orientation and side".
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
 
 **Later**
-- **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11) — on hold by the user: they are building
-  it in the dji-thermal-ui project, and TweakUI borrows that code once it's done. See "Other Tasks: divider
-  orientation and side".
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
@@ -988,8 +988,31 @@ WebODM's Side By Side.
 
 Decided by the user (2026-11-11):
 - **A rotate button too**, on the divider, beside right-click, so it works on touch screens.
-- **On hold**: the user is building this in the dji-thermal-ui project; borrow its code once done. Where the side
-  picker goes is left to that work.
+- ~~On hold~~: built in webodm-dji-thermal (commit 85b88b9, `dji-thermal/public/split.js` and `split.css`), to be
+  reused.
+
+Review of DJI Thermal's divider (2026-11-12): `split.js` needs only Leaflet (passed in), is ES5 and plugin-agnostic,
+meant to be copied with `split.css`: layers on a side (`add(layer, "after"|"before")`, `setSide`), upright or across
+(right-click on the handle, `turn()`), dragged by mouse or touch, change events, clips taken away when a layer
+leaves. Found:
+1. DJI Thermal's Swipe announces itself (`sideBySideChanged(layer, true)` then `false`) only while WebODM's own Swipe
+   is on (`inspector.js` `leaveWebodmSwipe`), so TweakUI's divider would stay when DJI Thermal's starts.
+2. `split.js` doesn't follow `layeradd`: a layer re-added (a new container) shows unclipped until the map moves.
+3. Both plugins' copies share `window.SplitDivider` and the `.split-divider` classes: harmless while identical, so
+   the copies stay identical (fixes made in DJI Thermal first, its commit noted in TweakUI).
+4. Smaller: colours in `split.css` are fixed (white, as WebODM's own divider); the handle has no keyboard control;
+   its tests need Leaflet itself (TweakUI adds `leaflet` 1.3.1, dev only, pinned to WebODM's).
+
+Decided by the user (2026-11-12):
+- **The side and turn buttons in the row, as DJI Thermal**: while a task is compared, its row shows a side button
+  ("Right"/"Left", "Below"/"Above") and a turn button beside Side By Side; right-click on the handle still turns it.
+  (This replaces "a rotate button on the divider" above.)
+- **Fix 1 and 2 in webodm-dji-thermal first** (a branch merged into its main, not pushed), then TweakUI copies the
+  identical files.
+
+Phases: (a) webodm-dji-thermal: its Swipe always announces itself; `split.js` follows `layeradd`. (b) TweakUI:
+`split.js` and `split.css` copied, `other_tasks.js` on them (announcing itself through `sideBySideChanged` as DJI
+Thermal does, and ending on another's), the row's side and turn buttons, tests, docs, screenshot.
 
 ## Other Tasks: Side By Side
 
