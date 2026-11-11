@@ -543,6 +543,29 @@ test("the estimates say approximately how many MB per layer, Keep More's at most
     expect(settingsPage.estimateText("load_ahead", {load_ahead: 25}, 400, 300, 1)).toMatch(/^Approximately 5 MB/);
 });
 
+test("on a small device the estimates are for the cap, and say it", () => {
+    const most = {load_ahead: 100, keep_more_tiles: 50};
+    const values = {load_ahead_on: true, load_ahead: 200, keep_more_tiles: 100};
+    expect(settingsPage.estimateText("load_ahead", values, 1400, 900, 2, most))
+        .toBe(settingsPage.estimateText("load_ahead", {load_ahead: 100}, 1400, 900, 2) + " At most 100% on this device.");
+    expect(settingsPage.estimateText("keep_more", values, 1400, 900, 2, most))
+        .toBe(settingsPage.estimateText("keep_more", {load_ahead_on: true, load_ahead: 100, keep_more_tiles: 50}, 1400, 900, 2) +
+              " At most 50% on this device.");
+    // under the cap: as anywhere else
+    const low = {load_ahead_on: false, load_ahead: 50, keep_more_tiles: 25};
+    expect(settingsPage.estimateText("load_ahead", low, 1400, 900, 2, most)).toBe(settingsPage.estimateText("load_ahead", low, 1400, 900, 2));
+});
+
+test("a phone's settings page shows the capped estimates", () => {
+    const root = speedGroup(), win = new EventTarget();
+    Object.assign(win, {innerWidth: 390, innerHeight: 844, devicePixelRatio: 3, navigator: {}, screen: {width: 390, height: 844}});
+    root.querySelector("input[data-setting='load_ahead']").value = "200";
+    settingsPage.addEstimates(root, win);
+    const [ahead, keep] = root.querySelectorAll("[data-estimate]");
+    expect(ahead.textContent).toMatch(/At most 100% on this device\.$/);
+    expect(keep.textContent).toMatch(/At most 50% on this device\.$/);
+});
+
 function speedGroup() {
     document.body.innerHTML = `
       <div id="tweakui-settings"><div class="tweakui-group">

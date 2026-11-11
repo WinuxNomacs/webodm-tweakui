@@ -276,7 +276,18 @@
     }
 
     // The text under each slider, from the page's own boxes (a percentage; Preload Tile Panning counts only while ticked)
-    function estimateText(kind, values, width, height, dpr) {
+    // On a small device (most: core.js's SMALL_DEVICE) the map goes no further than the cap, and the line says so
+    function estimateText(kind, values, width, height, dpr, most) {
+        var name = kind === "load_ahead" ? "load_ahead" : "keep_more_tiles";
+        var cap = most && most[name] < values[name] ? " At most " + most[name] + "% on this device." : "";
+        if (most) {
+            values = {load_ahead_on: values.load_ahead_on, load_ahead: Math.min(values.load_ahead, most.load_ahead),
+                keep_more_tiles: Math.min(values.keep_more_tiles, most.keep_more_tiles)};
+        }
+        return estimateOf(kind, values, width, height, dpr) + cap;
+    }
+
+    function estimateOf(kind, values, width, height, dpr) {
         var ahead = values.load_ahead_on ? values.load_ahead / 100 : 0;
         if (kind === "load_ahead") {
             return "Approximately " + megabytes(loadAheadTiles(width, height, dpr, values.load_ahead / 100)) +
@@ -304,7 +315,8 @@
                 keep_more_tiles: value("keep_more_tiles")};
             var dpr = win.devicePixelRatio || 1;
             each(lines, function (line) {
-                line.textContent = estimateText(line.getAttribute("data-estimate"), values, win.innerWidth, win.innerHeight, dpr);
+                line.textContent = estimateText(line.getAttribute("data-estimate"), values, win.innerWidth, win.innerHeight, dpr,
+                    ui.smallDevice(win) ? ui.SMALL_DEVICE : null);
                 line.hidden = false;
             });
         }

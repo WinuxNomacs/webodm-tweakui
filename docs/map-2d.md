@@ -166,10 +166,16 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
   the basemap too (the map under the task's layers, chosen with the map's Base Maps button, a Custom one included),
   so the whole map fades alike; the other two leave the basemap as WebODM has it.
 
+On a phone or a small tablet (the screen's shorter side under 768 px, turned sideways or not) or a device whose
+browser reports 4 GB of memory or less (Chrome and Edge report it; Firefox and Safari don't), Preload Tile Panning
+goes at most 100% and Keep More Tiles at most 50%. Your settings are yours on every device you use, so 200% chosen on
+a desktop would otherwise load as much on your phone; the settings themselves stay as you chose them.
+
 Under Distance and Amount, the settings page estimates the browser memory the extra tiles take for each layer shown,
 for a map the size of your browser window on your screen, and updates it as you move the slider or resize the window:
 "Approximately 65 MB more memory per layer" for Preload Tile Panning's loaded tiles, and "at most" for Keep More Tiles, which
-keeps tiles only where you have panned (and keeps more around Preload Tile Panning's while it is ticked).
+keeps tiles only where you have panned (and keeps more around Preload Tile Panning's while it is ticked). On a small
+device, the estimate is for the cap, and says "At most 100% on this device".
 Browsers keep tiles off screen compressed, so a tile takes about 0.35 MB (measured in Chromium with 512 px tiles),
 not the 1 MB of a full image; the real figure depends on the browser and on what the tiles show.
 
