@@ -2,8 +2,12 @@
 
 ## Phases (current and upcoming)
 
-**Up next**
-- Nothing planned: new requests go in `new.md`.
+**Up next** (proposed by the 2D map review, 2026-11-11; each waits for the user's decision, see "2D map review")
+- **Basemap: Fade-in Speed and Keep More Tiles** — apply both to the basemap too; neither asks its server for more.
+- **Administration: withhold Preload Tile Panning** — as Tile Cache can be: up to 25 times the tiles drawn per rest.
+- **Preload Tile Panning and Keep More Tiles on small devices** — a cap where a phone's memory is short.
+- **Leaflet check** — the selector check also reports a WebODM whose Leaflet isn't 1.3.1 (map_tiles.js overrides
+  its private methods).
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -18,6 +22,7 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **2D map review: two fixes** (asked in chat, 2026-11-11) — branch `review-2d-map`; see "2D map review".
 - **Load Ahead in rings** (reported in chat, 2026-11-10: the thermal layer "still getting stuck but eventually pops
   in") — branch `load-ahead-rings`. Not reproduced as a stall: DJI Thermal's value tiles aren't Tile Cache's and take
   ~0.7 s each, so a new zoom level fills in over 2-3 s with Load Ahead on or off; but at 200% each rest asked for
@@ -941,6 +946,49 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## 2D map review (asked in chat, 2026-11-11)
+
+The user asked for a review of the plugin's 2D map work for bugs and UX breakdowns, fixing the obvious ones and
+planning the rest. Read: `map_tiles.js`, `tile_cache.py`, `api.py` (CachedTiles, TileVersionView), `zoom_override.js`,
+`other_tasks.js`, against WebODM's `Map.jsx` (both versions) and Leaflet 1.3.1 (both ship it; `_updateOpacity`
+matches TweakUI's copy but its 200 ms).
+
+Fixed (branch `review-2d-map`, tests in `map_tiles.test.js`, 3 new; each fails on the old code):
+- **Tile Cache showed the old crop after a new one was drawn**, until a reload. WebODM's crop button saves the crop
+  and makes the task's layers again (`loadImageryLayers`), with the same tile URLs once `cache` is dropped (`crop=1`
+  either way), which carried the version asked when the page opened: the browser served the tiles it kept for good
+  (`immutable`). `versions.ask` now takes the crop (`cropStamp`, from WebODM's `Symbol.for("meta")` on the layer, set
+  before it is added in both versions) and asks again when it differs, the tiles going without a version until it
+  comes; an answer for an older crop is dropped. A layer without meta (Other Tasks' Orthophotos) asks once, as before.
+  Not exercised live: it needs a crop saved on one of the user's tasks.
+- **Preload Tile Panning asked for every ring at once after a layer was shown again or redrawn** (ticked again in
+  the Layers panel; a new colour map or hillshade): its ring count was reset only by a move. Leaflet updates before a
+  layer's add event, so the rings reset on its remove and in its redraw. Live on 4.0.0 (TestRGB, zoom 22, 200%, the
+  old script served to the same browser through a route): 72 tiles at once before, 28 (the view) after, then the rings.
+- Smoke check on 4.0.0 with every Speed setting on: pan, zoom and redraw on TestRGB and TestThermal, no failed tile
+  and no console error. DJI Thermal's thermal layer is its own layer now (`/api/plugins/dji-thermal/...inspector`),
+  which TweakUI leaves alone.
+
+Proposed (open decisions):
+- **Basemap: Fade-in Speed and Keep More Tiles.** Most of what pops in on the map is the basemap (measured with
+  Preload Zoom), which no Speed setting touches, so Fade-in Speed at 0 still leaves the basemap fading over 200 ms.
+  Both ask the basemap's server for nothing more. Preload Tile Panning stays off the basemap: that would prefetch
+  from someone else's server (OpenStreetMap's tile policy asks clients not to). Decision: do it, and whether the
+  settings' names and descriptions say "layers and basemap".
+- **Administration > TweakUI: withhold Preload Tile Panning**, as Tile Cache can be. Without Tile Cache, each rest
+  at 200% has WebODM render up to 25 times the tiles in view, for every user with it on. Decision: add it
+  (`admin_label`), and whether Keep More Tiles too (it asks for nothing more, so probably not).
+- **Small devices.** The settings are per user, not per device: 200% chosen on a desktop applies on the user's phone
+  too, and the estimate is only for the window the settings page was opened in. Options: cap Preload Tile Panning at
+  100% and Keep More Tiles at 50% where `navigator.deviceMemory` is 4 or less or the screen is narrow; or say it in
+  the description only. Decision.
+- **Leaflet check.** `map_tiles.js` overrides Leaflet 1.3.1's private methods (`_update`, `_isValidTile`,
+  `_getTiledPixelBounds`, `_updateOpacity`...); each override falls back if a method is missing, but a newer Leaflet
+  with a changed method would go unnoticed. `dev/selector-check.js` (run by `release-check` and when WebODM releases)
+  also reports WebODM's Leaflet version when it isn't 1.3.1. No decision needed.
+- Noted, not planned: Tile Cache prunes inside a tile request, about once per 50 MB written per process; a full scan
+  took 6 ms for 1,946 tiles, so about 0.1 s at the 1 GB limit.
 
 ## Map speed: Preload Zoom Out and In (dropped) (asked in chat, 2026-11-10)
 
