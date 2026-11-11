@@ -11,7 +11,7 @@ and committed.
 1. **The tests** (the `test` skill), including WebODM's `app.tests.test_plugins`, on 4.0.0 and 3.3.2.
    **The selector check** on each stack: `TW_USER=... TW_PASSWORD=... npm run selector-check` (and `TW_BASE=
    http://localhost:8006` for 3.3.2). Every selector found, exit 0; a missing one means that feature's script needs
-   updating for that WebODM. Run it too when WebODM releases a new version, against a stack of that version.
+   updating for that WebODM, and a CHANGED Leaflet that `map_tiles.js`'s overrides need checking. Run it too when WebODM releases a new version, against a stack of that version.
 2. **The zip:** `dev/package.sh`. Check its listing: one root folder `tweakui/` with `manifest.json`, `plugin.py`,
    `LICENSE`; no `tests/`, `public/__tests__/`, `node_modules` or `__pycache__`. Note the sha256.
 3. **WebODM without the mounted plugin:** `TW_PLUGIN_DIR=<an empty folder in the scratchpad> dev/webodm.sh up

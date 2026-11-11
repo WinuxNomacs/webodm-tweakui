@@ -35,7 +35,9 @@ be restarted for changes to Python code and templates.
   (and the same in `tw3-webapp` for 3.3.2).
 - `npm test` (Jest), `npm run lint -- tweakui dev` (ESLint), `.venv/bin/ruff check .` (Ruff).
 - `TW_USER=... TW_PASSWORD=... npm run selector-check` (`dev/selector-check.js`): opens a running WebODM's Dashboard,
-  Task Options dialog, 2D map and 3D view and reports each element in the scripts' `SELECTORS` it doesn't find. Run it
+  Task Options dialog, 2D map and 3D view and reports each element in the scripts' `SELECTORS` it doesn't find, and a
+  Leaflet other than the one `map_tiles.js` is written for (its `LEAFLET`, 1.3.1), since it overrides Leaflet's private
+  methods. Run it
   against a new WebODM version before saying TweakUI works there. It reads the user's first completed task; with
   none, it processes WebODM's own test images in a project of its own and deletes it afterwards.
 

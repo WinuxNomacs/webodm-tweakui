@@ -98,7 +98,8 @@ The `test`, `live-check` and `release-check` skills in `.claude/skills` have the
   A feature change that changes what a shot shows retakes it; a new feature gets a shot in its list.
 - Docs: `npm run docs:build` (fails on a dead link); `npm run docs:dev` serves them with live reload.
 - Selector check: `TW_USER=... TW_PASSWORD=... npm run selector-check` (`dev/selector-check.js`, `TW_BASE` as for
-  screenshots) reports each script's `SELECTORS` missing from WebODM's pages; run by `release-check` and when WebODM
+  screenshots) reports each script's `SELECTORS` missing from WebODM's pages, and a Leaflet other than `map_tiles.js`'s
+  `LEAFLET`; run by `release-check` and when WebODM
   releases. A script with selectors needs its page in that file's `WHERE` (a Jest test checks).
 - Ruff: `.venv/bin/ruff check .`
 - Live checks: headless Playwright (Node) against http://localhost:8005 (4.0.0) and http://localhost:8006 (3.3.2)

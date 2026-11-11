@@ -186,4 +186,5 @@ just above About in the side menu), except the theme menu. Experimental; runs on
 
 - [Adding a Tweak](https://winuxnomacs.github.io/webodm-tweakui/adding-a-tweak) and `CONTRIBUTING.md`: how to add a
   tweak, with a worked example.
-- `npm run selector-check` checks a WebODM for every page element TweakUI's scripts rely on, for a new WebODM version.
+- `npm run selector-check` checks a WebODM for every page element TweakUI's scripts rely on, for a new WebODM version,
+  and for the Leaflet version the map's Speed settings are written for.
