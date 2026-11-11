@@ -13,6 +13,8 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Not doing**
+- **Preload Zoom Out and Preload Zoom In** — tried and dropped by the user (2026-11-11); built on branch
+  `zoom-preload` (commit `b84a84b`), left unmerged. See "Map speed: Preload Zoom Out and In (dropped)".
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
@@ -939,6 +941,26 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+## Map speed: Preload Zoom Out and In (dropped) (asked in chat, 2026-11-10)
+
+Asked after "how expensive would it be to preload zoom in and out?": both, 1 to 3 levels, under 2D Map > Speed, on a
+branch kept apart until the user decided. Built on `zoom-preload` (`b84a84b`, code, tests and docs): once the map
+is still and every tile loaded, `map_tiles.js` `preloadZoom` loaded each WebODM tile layer's levels out (the centred
+view) and in (the whole view) in images it held, 4 at a time, so Leaflet's image of the same URL showed at once.
+
+The user saw no less pop-in at the screen edges with it at 3 levels than with it off. Measured (2026-11-11, 4.0.0,
+TestRGB, 1400×900 at DPR 2, Tile Cache on, wheel zooms): it worked for the task's layer (every new orthophoto tile
+held and shown in ~0 ms, against 100–360 ms off), but:
+- what pops in at the edges is mostly the basemap (Google satellite, 50–110 ms a tile), which no Speed setting
+  touches; the orthophoto covers only part of the view at those zooms;
+- zooming in, Leaflet stretches the old level over the view, so edges go blank mainly when zooming out;
+- with Tile Cache a level already seen is instant from the browser's cache, so it helped only a level's first visit;
+- a preloaded tile still fades in (200 ms unless Fade-in Speed).
+Offered: preload the basemap too (1 level out, or the same levels; OpenStreetMap's tile server skipped, its policy
+asks clients not to prefetch). The user dropped it instead.
+Probe note: a probe that wraps a layer's `createTile` makes `preloadZoom` stand down (it leaves replaced
+`createTile`s alone, for DJI Thermal); watch `tileloadstart` instead.
 
 ## Map speed: loading and showing tiles (asked in chat, 2026-11-10)
 
