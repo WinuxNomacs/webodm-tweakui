@@ -137,7 +137,7 @@ The first look at a part of the map is no faster: WebODM still draws each tile o
 
 ## Speed > Preload Tile Panning, Keep More Tiles and Fade-in Speed
 
-Three checkboxes for how the map's orthophoto, DSM and DTM layers load and show their tiles, each with a slider
+Three checkboxes for how the map's orthophoto, DSM and DTM layers load and show their tiles (Fade-in Speed the basemap's too), each with a slider
 beneath it. Off, each is WebODM's own behaviour; the slider, greyed out until you tick it, says how far it goes. They
 work with or without Tile Cache, which makes the extra tiles cheaper for the server.
 
@@ -160,7 +160,9 @@ work with or without Tile Cache, which makes the extra tiles cheaper for the ser
   columns. It asks the server for nothing more; only the tiles you have already loaded are kept.
 - **Fade-in Speed**, with **Duration** (0, 50, 100, 200, 300 or 400 ms; 0 when first ticked). How long a tile takes
   to fade in once it arrives. 200 ms is WebODM's own; 0 shows each tile the moment it arrives, and 300 or 400 fade it
-  in more gently. It doesn't load anything faster or slower, only changes how soon a tile appears.
+  in more gently. It doesn't load anything faster or slower, only changes how soon a tile appears. It applies to
+  the basemap too (the map under the task's layers, chosen with the map's Base Maps button, a Custom one included),
+  so the whole map fades alike; the other two leave the basemap as WebODM has it.
 
 Under Distance and Amount, the settings page estimates the browser memory the extra tiles take for each layer shown,
 for a map the size of your browser window on your screen, and updates it as you move the slider or resize the window:

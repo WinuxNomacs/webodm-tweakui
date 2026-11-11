@@ -241,7 +241,7 @@ CATEGORIES = [
                         number=(25, 100, 25), unit="%", estimate="keep_more"),
             ]),
             Setting("fade_in_speed_on", False, _("Fade-in Speed"),
-                    _("Changes how long a tile takes to fade in once it arrives."),
+                    _("Changes how long a tile takes to fade in once it arrives, on the basemap too."),
                     more=_("Without it, as in WebODM, a tile fades in over 200 ms. Shorter shows each tile sooner, "
                            "longer fades it in more gently; it doesn't load any faster."),
                     scripts=["map_tiles.js"], parts=[

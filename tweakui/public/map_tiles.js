@@ -25,7 +25,8 @@
 //   it takes the larger, and after each _update the tiles beyond the other axis's own margin stop being current, so
 //   Leaflet drops them as it would. A wide view so keeps fewer rows above and below than columns at the sides.
 // - Fade-in Speed: Leaflet fades a tile in over 200 ms, a number in its _updateOpacity; the layer's own copy of that
-//   method takes the setting's.
+//   method takes the setting's. The basemap's layers (those of the map's Base Maps control, and a Custom one's tile
+//   layer) fade so too, and only that: the other settings leave them as they are.
 // The map hook comes before WebODM adds its layers (once its tiles.json requests return), so the map's addLayer is
 // wrapped; a layer already there is changed and redrawn. Other Tasks' Orthophotos' layers are WebODM's tiles too.
 // UMD, so Jest can load it.
@@ -335,17 +336,52 @@
         return true;
     }
 
-    function attach(map, options, known, win) {
+    // Whether a layer is the basemap's: one of `bases` (the Base Maps control's layers) that draws tiles, or a tile
+    // layer within one (Custom's, a layer group that holds the tile layer of the URL asked for)
+    function isBasemap(layer, bases) {
+        if (!layer || typeof layer.createTile !== "function" || isWebODMTiles(layer)) return false;
+        for (var i = 0; i < bases.length; i++) {
+            var base = bases[i];
+            if (base === layer || (base && typeof base.hasLayer === "function" && base.hasLayer(layer))) return true;
+        }
+        return false;
+    }
+
+    // Fade-in Speed on a basemap layer; false when it already was or the speed is WebODM's own
+    function tweakBasemap(layer, options, win) {
+        if (layer[MARK] || options.fadeMs === WEBODM.fadeMs) return false;
+        layer[MARK] = true;
+        fadeIn(layer, options.fadeMs, win || (typeof window !== "undefined" ? window : null));
+        return true;
+    }
+
+    // The layers of the map's Base Maps control (Leaflet.Autolayers, WebODM's `autolayers` control); none without one
+    function basemapsOf(autolayers) {
+        var given = autolayers && autolayers.mapConfig && autolayers.mapConfig.baseLayers, out = [];
+        if (given && typeof given === "object") {
+            for (var name in given) {
+                if (Object.prototype.hasOwnProperty.call(given, name) && given[name]) out.push(given[name]);
+            }
+        }
+        return out;
+    }
+
+    // bases: the basemap's layers (basemapsOf), which only Fade-in Speed changes
+    function attach(map, options, known, win, bases) {
         if (!map || map[MARK]) return;
         map[MARK] = true;
-        var addLayer = map.addLayer, change = ui.guard(NAME, tweak);
+        bases = bases || [];
+        var addLayer = map.addLayer, change = ui.guard(NAME, tweak), changeBasemap = ui.guard(NAME, tweakBasemap);
         map.addLayer = function (layer) {
             if (isWebODMTiles(layer)) change(layer, options, known, win);
+            else if (isBasemap(layer, bases)) changeBasemap(layer, options, win);
             return addLayer.apply(this, arguments);
         };
         if (typeof map.eachLayer === "function") {
             map.eachLayer(function (layer) {
-                if (isWebODMTiles(layer) && change(layer, options, known, win) && layer.redraw) layer.redraw();
+                if (isWebODMTiles(layer)) {
+                    if (change(layer, options, known, win) && layer.redraw) layer.redraw();
+                } else if (isBasemap(layer, bases)) changeBasemap(layer, options, win);
             });
         }
     }
@@ -362,11 +398,11 @@
                     if (task && task.id && task.project !== undefined) known.ask(String(task.project), String(task.id), cropStamp(task));
                 });
             }
-            attach(args && args.map, options, known, win);
+            attach(args && args.map, options, known, win, basemapsOf(args && args.controls && args.controls.autolayers));
         }));
     }
 
     return {start: start, attach: attach, tweak: tweak, optionsOf: optionsOf, cachedUrl: cachedUrl, taskOf: taskOf,
-            withoutCacheParam: withoutCacheParam, isWebODMTiles: isWebODMTiles, keepRows: keepRows, keepMargins: keepMargins, versions: versions,
+            withoutCacheParam: withoutCacheParam, isWebODMTiles: isWebODMTiles, basemapsOf: basemapsOf, keepRows: keepRows, keepMargins: keepMargins, versions: versions,
             SELECTORS: SELECTORS};
 });
