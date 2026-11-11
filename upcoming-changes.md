@@ -2,12 +2,15 @@
 
 ## Phases (current and upcoming)
 
-**Up next** (from the 2D map review, 2026-11-11, decided by the user; see "2D map review")
+**Up next**
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
 
 **Later**
+- **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11) — on hold by the user: they are building
+  it in the dji-thermal-ui project, and TweakUI borrows that code once it's done. See "Other Tasks: divider
+  orientation and side".
 - **Global Controls: Temperature in Header** — deferred by the user (2026-11-07) until WebODM offers Fahrenheit or a
   cleaner hook; see "Global Controls: units and temperature in the header".
 
@@ -17,6 +20,12 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Other Tasks: Side By Side** (asked in chat, 2026-11-11; decided: others hidden meanwhile, part of Other Tasks'
+  Orthophotos) — branch `other-tasks-side-by-side`: `other_tasks.js` (`toggleSide`, `startSide`, `endSide`, a
+  listener on `PluginsAPI.Map.onSideBySideChanged`), `main.css`; tests `other_tasks.test.js` ("Side By Side", 4);
+  description, docs `map-2d.md`, README, CHANGELOG, the `other-tasks` screenshot. Live on 4.0.0 (TestRGB with
+  TestThermal): the divider splits the map and drags, ending puts everything back, and WebODM's own Side By Side
+  takes over. 3.3.2 has no task to open a map on; its Side By Side code is the same. See "Other Tasks: Side By Side".
 - **Leaflet check** (2D map review, 2026-11-11) — branch `leaflet-check`: `map_tiles.js` names the Leaflet it is
   written for (`LEAFLET`, 1.3.1); `dev/selector-check.js` reads it (`readLeaflet`) and, on the map, compares
   `L.version`, failing on another (`leafletLine`). Test `dev/__tests__/selector-check.test.js`; docs `developing.md`,
@@ -967,6 +976,43 @@
     3.3.2; headless browser on :8005 and :8006 (welcome page, no account yet): `main.js`/`main.css` load, `html.tweakui` set.
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
+
+
+## Other Tasks: divider orientation and side
+
+Asked in chat (2026-11-11): right-clicking the Side By Side divider flips it between vertical and horizontal, and a
+control picks which side of it the compared orthophoto is on. WebODM's divider (vendor Leaflet.SideBySide) is
+vertical only and always puts the sided layer on the right, so this needs TweakUI's own divider for Other Tasks
+(clipping the compared layer to the right, left, top or bottom), looking like WebODM's and still giving way to
+WebODM's Side By Side.
+
+Decided by the user (2026-11-11):
+- **A rotate button too**, on the divider, beside right-click, so it works on touch screens.
+- **On hold**: the user is building this in the dji-thermal-ui project; borrow its code once done. Where the side
+  picker goes is left to that work.
+
+## Other Tasks: Side By Side
+
+Asked in chat (2026-11-11): add WebODM's comparison divider to the Other Tasks panel, so a ticked task's orthophoto
+can be swiped against the task's own. Builds on Controls > Other Tasks' Orthophotos (`other_tasks.js`).
+
+How: WebODM's Layers panel has a Side By Side button on each raster layer, which sends
+`PluginsAPI.Map.sideBySideChanged(layer, side)` (an official Map event, `classes/plugins/Map.js`). Map.jsx answers it
+with `L.control.sideBySide([], rightLayers)` (vendor Leaflet.SideBySide: a range input over the map, touch too): the
+sided layer is clipped to the right of the bar, everything else shows on the left. One layer at a time: WebODM's own
+layers turn their side off when another is sided. The same in 3.3.2 and 4.0.0 (diffed). TweakUI sends the event for
+an Other Tasks layer: no change to WebODM.
+
+Decided by the user (2026-11-11):
+- **The other ticked Other Tasks orthophotos are hidden while one is compared**, and come back when it ends; their
+  checkboxes stay ticked.
+- **Part of Other Tasks' Orthophotos**, no setting of its own.
+
+Design (conventional, not asked): the button is WebODM's (`fa-divide fa-rotate-90`, `fa-chevron-right` while on,
+title "Side By Side"), after the opacity slider. Clicking it on an unticked row shows that orthophoto for the
+comparison and hides it again after, as WebODM's does. The comparison ends with the button, unticking the row, the
+Side By Side button of another row, or WebODM's own Side By Side on another layer (its event, listened to); closing
+the panel leaves it on, as closing WebODM's Layers panel does.
 
 ## 2D map review (asked in chat, 2026-11-11)
 

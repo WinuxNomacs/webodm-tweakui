@@ -161,3 +161,100 @@ test("with Other Tasks on, the map hook adds the control in the top right corner
     otherTasks.start(document, {TweakUI: {settings: {other_tasks: false}}, PluginsAPI: {Map: {didAddControls: off}}});
     expect(off).not.toHaveBeenCalled();
 });
+
+describe("Side By Side", () => {
+    // A map that knows its layers, the layers with a container and a zIndex as Leaflet's, and WebODM's plugin API's
+    // sideBySideChanged with its listeners
+    function setup() {
+        const L = fakeLeaflet();
+        L.tileLayer = jest.fn((url, options) => ({url, options, opacity: 1, container: {style: {clip: ""}},
+            setOpacity(o) { this.opacity = o; }, getContainer() { return this.container; },
+            setZIndex(z) { this.options.zIndex = z; }}));
+        const on = new Set();
+        const map = {addLayer: jest.fn(l => on.add(l)), removeLayer: jest.fn(l => on.delete(l)), hasLayer: l => on.has(l), addControl: jest.fn()};
+        const listeners = [];
+        const P = {Map: {sideBySideChanged: jest.fn((layer, side) => listeners.some(f => f(layer, side))),
+                         onSideBySideChanged: f => listeners.push(f)}};
+        const fetch = respond({
+            "/api/projects/3/tasks/?": [{id: "b", project: 3, name: "B"}, {id: "c", project: 3, name: "C"}],
+            "/api/projects/3/tasks/b/orthophoto/metadata": metadata,
+            "/api/projects/3/tasks/c/orthophoto/metadata": metadata
+        });
+        const panel = otherTasks.build(document, L, map, own, fetch, P);
+        const row = id => panel.container.querySelector(`[data-task="${id}"]`);
+        const tick = id => { const c = row(id).querySelector("input[type=checkbox]"); c.checked = !c.checked; c.dispatchEvent(new Event("change")); };
+        const side = id => row(id).querySelector(".tweakui-other-task-side");
+        return {L, map, P, on, panel, row, tick, side};
+    }
+
+    test("each row has WebODM's Side By Side button, after the opacity", async () => {
+        const {panel, side} = setup();
+        await panel.open();
+        expect(side("b").title).toBe("Side By Side");
+        expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-divide fa-rotate-90");
+        expect(side("b").previousSibling.className).toBe("tweakui-other-task-opacity");
+    });
+
+    test("on an unticked row it shows that orthophoto on the divider's right and hides the others, then puts all back", async () => {
+        const {map, P, on, panel, row, tick, side} = setup();
+        await panel.open();
+        tick("c");
+        await flush();
+        const c = map.addLayer.mock.calls[0][0];
+        side("b").click();
+        await flush();
+        const b = panel.layers.b;
+        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(true);
+        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(b, true);
+        expect([...on]).toEqual([b]);
+        expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-chevron-right");
+        expect(side("b").getAttribute("aria-pressed")).toBe("true");
+        // WebODM's divider clips it and raises it; ending puts that back too
+        b.container.style.clip = "rect(0px, 900px, 600px, 450px)";
+        b.setZIndex(10101);
+        side("b").click();
+        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(b, false);
+        expect([...on]).toEqual([c]);
+        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(false);
+        expect(b.container.style.clip).toBe("");
+        expect(b.options.zIndex).toBe(100);
+        expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-divide fa-rotate-90");
+    });
+
+    test("a row ticked before stays ticked after, and unticking the compared row ends the comparison", async () => {
+        const {P, on, panel, row, tick, side} = setup();
+        await panel.open();
+        tick("b");
+        await flush();
+        side("b").click();
+        await flush();
+        side("b").click();
+        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(true);
+        expect([...on]).toEqual([panel.layers.b]);
+        side("b").click();
+        await flush();
+        tick("b");
+        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(panel.layers.b, false);
+        expect(on.size).toBe(0);
+    });
+
+    test("another row's button, or WebODM's own Side By Side on another layer, ends the comparison", async () => {
+        const {P, on, panel, side} = setup();
+        await panel.open();
+        side("b").click();
+        await flush();
+        side("c").click();
+        await flush();
+        const {b, c} = panel.layers;
+        expect(P.Map.sideBySideChanged.mock.calls.slice(-2)).toEqual([[b, false], [c, true]]);
+        expect([...on]).toEqual([c]);
+        // WebODM's Layers panel sides its orthophoto: ours ends after WebODM's handler
+        const webodmLayer = {};
+        P.Map.sideBySideChanged(webodmLayer, true);
+        expect(on.has(c)).toBe(true);
+        await flush();
+        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(c, false);
+        expect(on.size).toBe(0);
+        expect(side("c").getAttribute("aria-pressed")).toBe("false");
+    });
+});

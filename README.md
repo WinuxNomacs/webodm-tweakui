@@ -30,8 +30,8 @@ Every feature is off until you turn it on, except the theme menu.
   with a live preview (imported and exported as JSON) or themes an administrator publishes to every user; a sample of
   WebODM's controls in the current theme, and a theme menu in the header.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
-  (Movable Panels), the project's other tasks' orthophotos over the task's own (Other Tasks'
-  Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
+  (Movable Panels), the project's other tasks' orthophotos over the task's own or side by side with it, with a
+  divider to drag (Other Tasks' Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
   sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), a search box for an address
   or coordinates (Map Search), and a faster map: tiles kept on the server once drawn and reused by the browser (Tile
   Cache), tiles loaded beyond the view's edges and kept after they leave it (Preload Tile Panning, Keep
