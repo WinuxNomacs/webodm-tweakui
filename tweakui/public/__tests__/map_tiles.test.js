@@ -416,6 +416,57 @@ describe("Fade-in Speed", () => {
     });
 });
 
+describe("Fade-in Speed on the basemap", () => {
+    const OSM = "https://tile.openstreetmap.org/{z}/{x}/{y}.png";
+    // WebODM's Base Maps control: its basemaps by label, Custom a layer group that holds the tile layer asked for
+    function control(custom) {
+        return {mapConfig: {baseLayers: {"Google Maps Hybrid": fakeLayer(OSM), Custom: custom, None: {hasLayer: () => false}}}};
+    }
+    const group = () => { const held = []; return {held, hasLayer: l => held.includes(l)}; };
+
+    test("a basemap already on the map, one chosen later and a Custom one fade as set, and nothing else changes on them", () => {
+        const custom = group(), bases = control(custom), first = bases.mapConfig.baseLayers["Google Maps Hybrid"];
+        const later = fakeLayer(OSM), customTiles = fakeLayer(OSM);
+        bases.mapConfig.baseLayers.Esri = later;
+        const bounds = new Map([first, later, customTiles].map(l => [l, l._getTiledPixelBounds]));
+        const map = fakeMap([first]);
+        mapTiles.attach(map, opts({fade_in_speed: 0, tile_cache: true, fewer_tile_requests: true, load_ahead: 50, keep_more_tiles: 50}),
+                        null, {}, mapTiles.basemapsOf(bases));
+        map.addLayer(later);
+        custom.held.push(customTiles);
+        map.addLayer(customTiles);
+        [first, later, customTiles].forEach(l => {
+            expect(Object.prototype.hasOwnProperty.call(l, "_updateOpacity")).toBe(true);
+            expect(l.redraw).not.toHaveBeenCalled();
+            expect(l.options.updateWhenZooming).toBe(true);
+            expect(l.options.keepBuffer).toBe(2);
+            expect(l._getTiledPixelBounds).toBe(bounds.get(l));
+            expect(tileSrc(l)).toBe("https://tile.openstreetmap.org/18/64084/92370.png");
+        });
+    });
+
+    test("a tile layer that isn't the basemap's is left alone, and at WebODM's own 200 ms so is the basemap", () => {
+        const bases = control(group()), basemap = bases.mapConfig.baseLayers["Google Maps Hybrid"], other = fakeLayer(OSM);
+        const map = fakeMap();
+        mapTiles.attach(map, opts({fade_in_speed: 0}), null, {}, mapTiles.basemapsOf(bases));
+        map.addLayer(other);
+        expect(Object.prototype.hasOwnProperty.call(other, "_updateOpacity")).toBe(false);
+        const own = fakeMap();
+        mapTiles.attach(own, opts({fade_in_speed: 200, tile_cache: true}), null, {}, mapTiles.basemapsOf(control(group())));
+        own.addLayer(basemap);
+        expect(Object.prototype.hasOwnProperty.call(basemap, "_updateOpacity")).toBe(false);
+    });
+
+    test("the map hook finds the basemaps in WebODM's Base Maps control", () => {
+        const hook = jest.fn(), bases = control(group()), basemap = bases.mapConfig.baseLayers["Google Maps Hybrid"];
+        mapTiles.start({}, {TweakUI: {settings: settingsWith({fade_in_speed: 100})}, PluginsAPI: {Map: {didAddControls: hook}}, document: {}});
+        const map = fakeMap([basemap]);
+        hook.mock.calls[0][0]({map, tiles: [], controls: {autolayers: bases}});
+        expect(Object.prototype.hasOwnProperty.call(basemap, "_updateOpacity")).toBe(true);
+        expect(mapTiles.basemapsOf(undefined)).toEqual([]);
+    });
+});
+
 test("the map hook is used only when a setting differs from WebODM's own, and asks the map's tasks' versions", async () => {
     const hook = jest.fn();
     const fetch = jest.fn(() => Promise.resolve({ok: true, json: () => Promise.resolve({version: "v1"})}));
