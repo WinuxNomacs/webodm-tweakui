@@ -18,6 +18,9 @@ and committed.
    --force-recreate webapp worker` (4.0.0), and wait for http://localhost:8005 to answer. TweakUI's changes are gone.
    WebODM logs "Cleaned [tweakui] plugin from database": only its row in the plugin list, not its data stores
    (users' settings and themes are kept). Ask the user first: this restarts their 4.0.0 stack.
+   If `/webodm/app/media/plugins/tweakui` exists (the mounted copy's Tile Cache keeps its tiles there), the upload
+   is refused ("already exist"): WebODM installs an uploaded plugin in that folder. Move it aside in `tw-webapp`
+   (`mv /webodm/app/media/plugins/tweakui /webodm/app/media/tweakui-tilecache-aside`) and back after step 6.
 4. **Install the zip as a user would:** log in as the dev admin (the `live-check` skill), Administration >
    Plugins, upload the zip (only the plugin directory sends a sha256 for WebODM to check). Restart the webapp if WebODM asks to.
 5. **Live check on the installed copy** (the `live-check` skill): every feature in the README. Expected: a 404 for a
