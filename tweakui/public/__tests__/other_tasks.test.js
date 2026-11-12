@@ -111,17 +111,25 @@ test("a project without other orthophotos, or tasks that cannot be listed, say s
     expect(panel.container.querySelector(".tweakui-other-tasks-list").textContent).toBe("Could not load the tasks: Error 403");
 });
 
-test("an orthophoto that cannot be loaded unchecks its task", async () => {
+test("an orthophoto that cannot be loaded unchecks its task and says why beneath it, until the next try", async () => {
     const map = fakeMap();
     const panel = otherTasks.build(document, fakeLeaflet(), map, own, respond({"/api/projects/3/tasks/?": [{id: "b", project: 3, name: "B"}]}));
     await panel.open();
     const checkbox = panel.container.querySelector("input[type=checkbox]");
+    const failure = panel.container.querySelector(".tweakui-other-task-failure");
+    expect(failure.hidden).toBe(true);
     checkbox.checked = true;
     checkbox.dispatchEvent(new Event("change"));
     await flush();
     expect(checkbox.checked).toBe(false);
     expect(checkbox.disabled).toBe(false);
     expect(map.addLayer).not.toHaveBeenCalled();
+    expect(failure.hidden).toBe(false);
+    expect(failure.textContent).toBe("Could not load the orthophoto: Error 404");
+    expect(checkbox.parentNode.title).toBe("B");
+    checkbox.checked = true;
+    checkbox.dispatchEvent(new Event("change"));
+    expect(failure.hidden).toBe(true);
 });
 
 test("an orthophoto whose metadata makes no layer (no bounds) unchecks its task, ready to try again", async () => {
@@ -137,7 +145,7 @@ test("an orthophoto whose metadata makes no layer (no bounds) unchecks its task,
     await flush();
     expect(checkbox.checked).toBe(false);
     expect(checkbox.disabled).toBe(false);
-    expect(checkbox.parentNode.title).toMatch(/^Could not load the orthophoto: /);
+    expect(panel.container.querySelector(".tweakui-other-task-failure").textContent).toMatch(/^Could not load the orthophoto: /);
     expect(map.addLayer).not.toHaveBeenCalled();
 });
 

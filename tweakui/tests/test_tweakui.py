@@ -607,6 +607,22 @@ class TestThemes(TweakUITestCase):
         self.assertIn("html .dropdown-menu > li > a{color: %s !important;}" % PRESETS["nord"]["colors"]["primary"],
                       self.theme_css())
 
+    def test_a_dark_theme_inverts_the_map_s_image_icon_buttons_on_the_inverse_of_its_colours_and_a_light_one_does_not(self):
+        from coreplugins.tweakui.themes import IMAGE_BUTTONS
+        self.patch({"theme": "catppuccin-mocha"})  # secondary #1e1e2e, hovered (WebODM's scalebyiv 0.9) #1b1b29
+        css = self.theme_css()
+        for selector in IMAGE_BUTTONS:
+            self.assertIn("html .leaflet-control %s," % selector if selector != IMAGE_BUTTONS[-1]
+                          else "html .leaflet-control %s{filter: invert(1)" % selector, css)
+        self.assertIn("{filter: invert(1); background-color: #e1e1d1 !important; border-color: #e1e1d1 !important;}", css)
+        self.assertIn("objdetect-button:hover{background-color: #e4e4d6 !important;", css)
+        self.patch({"theme": "catppuccin-latte"})
+        self.assertNotIn("invert(1)", self.theme_css())
+
+    def test_crop_s_icon_takes_the_button_s_text_colour_over_webodm_s_hard_coded_one(self):
+        self.patch({"theme": "nord"})
+        self.assertIn("html .leaflet-control.crop-button i{color: inherit;}", self.theme_css())
+
     def test_the_header_text_stands_out_and_light_presets_have_a_header_dark_enough_for_the_white_logo(self):
         from coreplugins.tweakui.themes import PRESETS, _luminance
         for preset in PRESETS.values():

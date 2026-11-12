@@ -21,7 +21,8 @@ Off by default.
 
 On a task's map, a button below Layers opens an **Ortho Overlays** panel listing the project's other tasks that have
 an orthophoto. Check one to show its orthophoto over the task's own (cropped as in its own task), and set its opacity
-with the slider beside it, e.g. to compare before and after. None is shown when the map opens, and nothing is
+with the slider beside it, e.g. to compare before and after. An orthophoto that can't be loaded unticks, and a line
+beneath its row says why until the next try. None is shown when the map opens, and nothing is
 remembered. A project's own map (Dashboard > the project's **View Map**) already lists every task's layers, so it
 has no such button.
 

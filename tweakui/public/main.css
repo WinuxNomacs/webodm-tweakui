@@ -245,6 +245,8 @@ html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 /* While compared: its side of the divider and the divider's direction, on a line of their own beneath the row */
 .tweakui-other-tasks .tweakui-other-task-split { flex-basis: 100%; display: flex; justify-content: flex-end; gap: 4px; margin-bottom: 4px; }
 .tweakui-other-tasks .tweakui-other-task-split[hidden] { display: none; }
+.tweakui-other-tasks .tweakui-other-task-failure { flex-basis: 100%; margin-bottom: 4px; white-space: normal; }
+.tweakui-other-tasks .tweakui-other-task-failure[hidden] { display: none; }
 
 /* 2D Map > Map Search (map_search.js): the button (Leaflet's bar), and the box it opens in its place */
 .leaflet-control.tweakui-map-search a.tweakui-map-search-button { display: flex; align-items: center; justify-content: center; font-size: 14px; }

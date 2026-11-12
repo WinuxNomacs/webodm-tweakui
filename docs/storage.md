@@ -24,7 +24,8 @@ Use **Compact** or **Delete** in a row's **•••** menu, at its end, or sele
 the bar's **Compact** or **Delete** (selecting a project includes all its tasks). Before anything is done, a confirmation lists what will be
 removed and how much space it frees. Compact deletes a completed task's photos and keeps its maps and models (the task
 can no longer be restarted). The work is done by WebODM itself, as from the Dashboard, with its own permissions and
-quota.
+quota. While a Delete, a Compact or an Import runs, the browser asks before you leave the page, which would stop it
+halfway.
 
 ## Backup and Import
 
