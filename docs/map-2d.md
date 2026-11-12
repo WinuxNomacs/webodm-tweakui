@@ -25,12 +25,19 @@ with the slider beside it, e.g. to compare before and after. None is shown when 
 remembered. A project's own map (Dashboard > the project's **View Map**) already lists every task's layers, so it
 has no such button.
 
-Each row's **Side By Side** button, the one WebODM's Layers panel has beside each orthophoto, splits the map with
-WebODM's own divider: that task's orthophoto on the right of the bar, the task's own on the left. Drag the bar (with
-the mouse or a finger) to swipe between them. The other ticked tasks' orthophotos are hidden meanwhile, and a task
-not ticked is shown just for the comparison. Click the button again (its arrow) or untick the task to end it, and
-everything is as it was. One layer is compared at a time, as in WebODM: another row's button, or Side By Side in the
-Layers panel, takes over.
+Each row's **Side By Side** button, the one WebODM's Layers panel has beside each orthophoto, splits the map with a
+divider: that task's orthophoto on one side of the bar, the task's own on the other. Drag the bar's round handle (with
+the mouse or a finger) to swipe between them. While a task is compared, a line beneath its row has two buttons:
+
+- **Right** (or **Left**, **Below**, **Above**): the side its orthophoto is on; click it for the other side.
+- The **turn** button (its icon the bar's grip lines) turns the divider horizontal or vertical, as a right-click on
+  the handle does.
+
+The side and the direction are kept for the next comparison until the page is left. The other ticked tasks'
+orthophotos are hidden meanwhile, and a task not ticked is shown just for the comparison. Click Side By Side again
+(its arrow) or untick the task to end it, and everything is as it was. One divider is shown at a time: another row's
+button, Side By Side in WebODM's Layers panel, or the Thermal Inspector's Swipe (DJI Thermal Analyzer plugin) takes
+over, and starting a comparison here turns theirs off.
 
 ## Controls > Source Frames
 

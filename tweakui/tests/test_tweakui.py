@@ -83,17 +83,20 @@ class TestThePlugin(TweakUITestCase):
         res = self.client.get("/dashboard/")
         self.assertEqual(res.status_code, status.HTTP_200_OK)
         for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
-                     "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js", "map_search.js", "surprise_me.js"):
+                     "movable_controls.js", "vendor/split/split.js", "other_tasks.js", "pick3d.js", "source_frames.js",
+                     "zoom_override.js", "map_search.js", "surprise_me.js"):
             self.assertContains(res, "<script src='/plugins/tweakui/%s'></script>" % name, html=True)
         html = res.content.decode()
         # The settings, then the helpers (core.js), before every other script
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/core.js"))
         for name in plugin_scripts()[2:]:
             self.assertLess(html.index("/plugins/tweakui/core.js"), html.index("/plugins/tweakui/" + name), name)
+        # The divider before Other Tasks, which uses it
+        self.assertLess(html.index("/plugins/tweakui/vendor/split/split.js"), html.index("/plugins/tweakui/other_tasks.js"))
         # The 3D pick before the scripts that use it
         for name in ("source_frames.js", "zoom_override.js"):
             self.assertLess(html.index("/plugins/tweakui/pick3d.js"), html.index("/plugins/tweakui/" + name))
-        for name in ("main.css", "theme.css"):
+        for name in ("main.css", "theme.css", "vendor/split/split.css"):
             self.assertContains(res, "<link href='/plugins/tweakui/%s' rel='stylesheet' type='text/css'>" % name,
                                 html=True)
 
@@ -101,7 +104,7 @@ class TestThePlugin(TweakUITestCase):
         for name in ("settings.js", "core.js", "main.js", "task_options.js", "theme_menu.js", "units_menu.js",
                      "movable_controls.js", "other_tasks.js", "pick3d.js", "source_frames.js", "zoom_override.js",
                      "map_search.js", "surprise_me.js", "settings_page.js", "vendor/fireworks-js/fireworks.umd.js",
-                     "main.css", "theme.css"):
+                     "vendor/split/split.js", "main.css", "theme.css", "vendor/split/split.css"):
             res = self.client.get("/plugins/tweakui/" + name)
             self.assertEqual(res.status_code, status.HTTP_200_OK, name)
 
