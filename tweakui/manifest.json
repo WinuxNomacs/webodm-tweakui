@@ -2,7 +2,7 @@
 	"name": "TweakUI",
 	"webodmMinVersion": "3.3.2",
 	"description": "Small enhancements to WebODM's interface.",
-	"version": "1.0.0",
+	"version": "1.1.0",
 	"author": "Winux Nomacs",
 	"repository": "https://github.com/WinuxNomacs/webodm-tweakui",
 	"tags": ["ui"],

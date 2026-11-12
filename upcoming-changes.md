@@ -19,6 +19,15 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Release 1.1.0** (2026-11-12, asked: cut it, push it, and the WebODM-Plugins pull request) — branch
+  `release/1.1.0`: manifest 1.1.0 (still experimental), CHANGELOG `1.1.0 (2026-11-12)` (a Performance View line a
+  later change overtook dropped). `dist/tweakui-1.1.0.zip`, sha256
+  `ec05022817074cfa68ab2225955bd47861b85d709e94c0070835b3a469ba11b7`. Checks: Django with WebODM's `test_plugins`
+  (167 on 4.0.0 and 167 on 3.3.2), Jest 422, ESLint, Ruff, docs build, selector check on both stacks (every selector
+  found); installed from the zip through Administration > Plugins on 4.0.0 (without the mounted folder) and every
+  page swept with every feature on, desktop and phone; upgraded 1.0.0 to 1.1.0 on WebODM's Windows app and swept
+  there too (Tile Cache left off). The dev Tile Cache's folder (`media/plugins/tweakui`) is where WebODM installs an
+  uploaded plugin, so it blocked the upload until moved aside (now in the `release-check` skill).
 - **Release review: decisions A, B and D** (decided 2026-11-12) — branch `release-decisions`. A: `themes.py`
   (`IMAGE_BUTTONS`, `_image_buttons_css`, `_invert`, `_scale`; Crop's icon `color: inherit`), tests in
   `test_tweakui.py`; B: `storage_page.js` (`state.unfinished`, a `beforeunload` listener), tests in
