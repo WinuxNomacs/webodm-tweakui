@@ -178,19 +178,25 @@ test("on the 2D map each click moves the one spot there, and is TweakUI's alone 
     const control = document.createElement("div");
     control.className = "leaflet-control";
     container.appendChild(control);
+    // A divider's handle (split.js), as Ortho Overlays and DJI Thermal put on the map
+    const divider = document.createElement("div");
+    divider.className = "split-divider";
+    divider.appendChild(document.createElement("div"));
+    container.appendChild(divider);
     const tool = sf.mapTool(L, map);
     const onSpot = jest.fn();
     const mapClick = jest.fn();
     container.addEventListener("click", mapClick);
     tool.start(onSpot);
-    // A drag that pans the map is not a click, nor one on a control
+    // A drag that pans the map is not a click, nor one on a control or a divider's handle
     click(container, 10, 20, 30);
     click(control, 300, 300);
+    click(divider.firstChild, 400, 300);
     expect(onSpot).not.toHaveBeenCalled();
     click(container, 10, 20);
     expect(onSpot).toHaveBeenLastCalledWith({type: "Point", coordinates: [10, 20]});
-    // Not a layer's popup of WebODM's
-    expect(mapClick).toHaveBeenCalledTimes(1);
+    // Not a layer's popup of WebODM's (the clicks on the control and the divider are theirs)
+    expect(mapClick).toHaveBeenCalledTimes(2);
     click(container, 50, 60);
     expect(onSpot).toHaveBeenLastCalledWith({type: "Point", coordinates: [50, 60]});
     expect(map.added.map(l => [l.kind, l.latlngs])).toEqual([["circle", {lat: 60, lng: 50}]]);
@@ -198,7 +204,7 @@ test("on the 2D map each click moves the one spot there, and is TweakUI's alone 
     expect(map.added).toEqual([]);
     click(container, 70, 70);
     expect(onSpot).toHaveBeenCalledTimes(2);
-    expect(mapClick).toHaveBeenCalledTimes(2);
+    expect(mapClick).toHaveBeenCalledTimes(3);
 });
 
 function controlled(byTask) {

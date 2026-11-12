@@ -12,7 +12,9 @@ import tempfile
 from unittest import mock
 
 from django.contrib.auth.models import User
+from django.db import connection
 from django.test import Client
+from django.test.utils import CaptureQueriesContext
 from django.utils.html import escape
 from rest_framework import status
 
@@ -39,6 +41,11 @@ def defaults(**changes):
                  "load_ahead_on": False, "load_ahead": 25, "keep_more_tiles_on": False, "keep_more_tiles": 50, "fade_in_speed_on": False, "fade_in_speed": 0,
                  "zoom_override_3d": False, "zoom_sensitivity_3d": 100, "storage_view": False, "performance_view": False, "performance_refresh": 3, "performance_history": 5, "show_theme_menu": True, "theme": "webodm"},
                 **changes)
+
+
+def PRESET_COLORS():
+    from coreplugins.tweakui.themes import PRESETS
+    return dict(PRESETS["nord"]["colors"])
 
 
 class TweakUITestCase(BootTestCase):
@@ -132,6 +139,19 @@ class TestSettings(TweakUITestCase):
         store = UserDataStore("tweakui", User.objects.get(username="testuser"))
         self.assertEqual(store.get_json("settings"), defaults(show_configured_option_count=True))
         self.assertEqual(self.client.get(API).json(), defaults(show_configured_option_count=True))
+
+    def test_a_save_locks_the_user_s_row_before_it_reads_and_writes_so_saves_at_once_take_turns(self):
+        # Two settings ticked quickly each read the settings, change one and write them all back: without the lock
+        # the later write put back the other's setting as it was (seen live: most of six saves at once were lost)
+        for request in (lambda: self.patch({"map_search": True}),
+                        lambda: self.client.post("/api/plugins/tweakui/themes", json.dumps(
+                            {"name": "Locked", "colors": PRESET_COLORS()}), content_type="application/json")):
+            with CaptureQueriesContext(connection) as queries:
+                self.assertLess(request().status_code, 300)
+            sql = [q["sql"] for q in queries.captured_queries]
+            lock = next(i for i, q in enumerate(sql) if "FOR UPDATE" in q and "auth_user" in q)
+            read = next(i for i, q in enumerate(sql) if "app_plugindatum" in q)
+            self.assertLess(lock, read)
 
     def test_each_user_has_their_own_settings(self):
         self.patch({"show_configured_option_count": True})

@@ -3,6 +3,8 @@
 ## Phases (current and upcoming)
 
 **Up next**
+- **Release review: decisions** (asked in chat, 2026-11-12) — four things a user would notice, each waiting on the
+  user's yes or no; see "Release review" (Proposed).
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -17,6 +19,10 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Release review: clear bugs** (asked in chat, 2026-11-12) — branch `release-review`: lost saves (`api.py`
+  `one_at_a_time`, test in `test_tweakui.py` `TestSettings`), Ortho Overlays' second layer (`other_tasks.js` `show`,
+  test in `other_tasks.test.js` "Side By Side"), Source Frames on a divider (`source_frames.js` `mapTool`, test in
+  `source_frames.test.js`); CHANGELOG. See "Release review".
 - **"Other Tasks" renamed "Ortho Overlays"** (asked directly, 2026-11-12) — branch `rename-ortho-overlays`: the map's
   button and panel title and the setting's name (was Other Tasks' Orthophotos), so they match. The setting's key
   (`other_tasks`), the scripts, CSS classes and the screenshot's file name are unchanged, so saved settings carry
@@ -992,6 +998,60 @@
   - Checkouts: `ignored/WebODM` at `v4.0.0` (was `master`), worktree `ignored/WebODM-3.3.2`, `ignored/WebODM-Docs`.
 
 
+
+## Release review (asked in chat, 2026-11-12)
+
+The user: "The code is nearing release. Review the project for bugs and potential ui experience breakdowns that can
+negatively impact the user. Fix any obvious bugs along the way but plan anything more involved in planned phases."
+Earlier reviews covered the whole plugin (2026-11-07, "Before the first release"), the pages' UX (2026-11-09) and the
+2D map (2026-11-11); this one read what came after or wasn't covered (`api.py`, `access.py`, `settings.py`,
+`tile_cache.py`, `custom_themes.py`, `performance.py`'s live and removal paths, `task_log.py`, `core.js`, `main.js`,
+`settings_page.js`, `admin_page.js`, `map_tiles.js`, `other_tasks.js`, `map_search.js`, `source_frames.js`,
+`nav_pane.js`, `preset_menu.js`, `storage_page.js`, `performance_page.js`'s refresh loop) and swept every page live
+with every feature on (Dashboard with a task open, each settings category, Storage, Performance, Administration, a
+task's map, a project's map, the 3D view) at 1400 px and 390 px, on 4.0.0 (Catppuccin Mocha) and 3.3.2 (no task to
+open a map on): no console error, no failed TweakUI request, nothing wider than the screen.
+
+*What holds up:* every API view checks its permissions (superusers, withheld features, WebODM's task permissions for
+tiles and frames); names reaching HTML are escaped (Storage, Performance); themes are checked `#rrggbb` before CSS;
+a deleted theme falls back to WebODM's; the Performance page stops refreshing in a hidden tab and never asks twice at
+once; Map Search keeps to Nominatim's one request a second and drops stale answers; Source Frames cancels a spot's
+requests when a newer one comes; logs are read once per change (cached).
+
+**Fixed** (branch `release-review`, each test failing on the old code):
+1. **Saves at the same moment undid each other.** `settings.update` (and the themes' and Administration's writes)
+   read the whole value from the data store, changed a part and wrote it all back: two PATCHes at once kept only the
+   later one's change, both answered "Saved". Live, 6 settings saved at once, 10 times: 50 of 60 changes lost on
+   4.0.0, 48 on 3.3.2. The saving views now lock the user's row first (`api.one_at_a_time`, `select_for_update` on
+   Django's user; a no-op on SQLite, which serialises writes itself): 0 of 60 lost on both. Administration's global
+   values are locked on the acting superuser's row, which serialises one admin's quick changes (two admins at the
+   same instant still could race; not worth a global lock).
+2. **Ortho Overlays: a second layer nothing could remove.** Side By Side pressed while the row's orthophoto was still
+   loading (its checkbox greyed) asked for the metadata again and made another layer; the first stayed on the map
+   after unticking. The ask in flight is now shared.
+3. **Source Frames: a click on a divider's handle dropped a spot** under it (split.js's divider, Ortho Overlays' or
+   DJI Thermal's): `.split-divider` is skipped as Leaflet's controls are.
+
+**Proposed** (each changes what a user sees; decisions open):
+- **A. Dark themes: WebODM's map buttons with image icons are nearly invisible.** Layers, Base Maps, Add Overlay,
+  Measure and Fullscreen draw their icons as dark background images (SVG/PNG in WebODM's and Leaflet's CSS), and
+  WebODM's theme paints the buttons in the theme's secondary colour: with a dark preset (Catppuccin Mocha, Dracula,
+  Nord...) the icons are dark on dark; Crop's shows dark too. TweakUI's own map buttons (font icons) are fine. The
+  same happens with WebODM's own theme set to dark colours, so it's WebODM's, but TweakUI's presets make it common.
+  Proposed: for a theme whose secondary colour is dark, `colors_css` gives those buttons a light icon: `filter:
+  invert(1)` on the button with its background set to the inverse of the secondary colour (worked out in Python), so
+  the icon turns light and the button keeps the theme's colour exactly. Selectors listed in `themes.py` and in the
+  selector check.
+- **B. Storage: leaving the page mid-import or mid-delete abandons it silently.** An import uploads in chunks and a
+  Delete or Compact goes one request after another: closing or leaving the page stops it halfway with no warning.
+  Proposed: the browser's "Leave site?" prompt while an import, delete or compact is running (not Backup All, whose
+  downloads the browser carries on).
+- **C. Storage: Backup All may stop after the first download.** Browsers ask before a site downloads several files on
+  its own (Chrome's "Automatic downloads" prompt); a user who misses it gets one backup while the status says all
+  started. Proposed: the status line says the browser may ask to allow several downloads. To verify in a visible
+  browser first (headless shows no prompt).
+- **D. Ortho Overlays: an orthophoto that can't load unticks silently**, its reason only in the row's tooltip.
+  Proposed: a short line in the row ("Could not load the orthophoto: Error 404"), gone on the next try.
 
 ## Other Tasks: divider orientation and side
 

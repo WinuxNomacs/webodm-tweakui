@@ -128,7 +128,9 @@
             L.DomEvent.disableScrollPropagation(container);
         }
 
-        var loaded = false, layers = {}, rows = {};
+        // loading: each task's orthophoto while its metadata is asked for, so a second ask (its Side By Side pressed
+        // meanwhile) waits for the same layer rather than making another that nothing could take off the map
+        var loaded = false, layers = {}, rows = {}, loading = {};
         // The comparison: {key, layer, hidden (the other layers hidden for it), ticked (its row ticked only for it)};
         // the divider's direction and the compared layer's side are kept from one comparison to the next
         var sided = null, split = null, side = "after", vertical = true;
@@ -235,10 +237,11 @@
                 map.addLayer(layers[key]);
                 return Promise.resolve(layers[key]);
             }
+            if (loading[key]) return loading[key];
             checkbox.disabled = true;
             var url = "/api/projects/" + t.project + "/tasks/" + t.id + "/orthophoto/metadata" + (t.crop ? "?crop=1" : "");
             // An orthophoto whose metadata can't make a layer (no bounds) fails as one that can't be loaded
-            return getJSON(fetchFn, url).then(function (meta) {
+            loading[key] = getJSON(fetchFn, url).then(function (meta) {
                 var layer = layerFor(L, t, meta, index);
                 layer.__tweakuiZIndex = layer.options.zIndex;
                 checkbox.disabled = false;
@@ -250,7 +253,11 @@
                 checkbox.disabled = false;
                 checkbox.checked = false;
                 checkbox.parentNode.title = "Could not load the orthophoto: " + e.message;
+            }).then(function (layer) {
+                delete loading[key];
+                return layer;
             });
+            return loading[key];
         }
 
         function row(t, index) {

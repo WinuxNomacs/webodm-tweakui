@@ -196,6 +196,28 @@ describe("Side By Side", () => {
     }
     afterEach(() => { document.body.innerHTML = ""; });
 
+    test("pressed while its orthophoto loads, it waits for that layer and makes no second one", async () => {
+        const {map, panel, checkbox, tick, side, divider} = setup();
+        await panel.open();
+        const layers = [], make = Leaflet.tileLayer;
+        Leaflet.tileLayer = (...args) => { const l = make(...args); layers.push(l); return l; };
+        try {
+            tick("b");
+            expect(checkbox("b").disabled).toBe(true);
+            side("b").click();
+            await flush();
+        } finally {
+            Leaflet.tileLayer = make;
+        }
+        expect(layers).toHaveLength(1);
+        expect(divider()).not.toBeNull();
+        side("b").click();
+        tick("b");
+        expect(map.hasLayer(layers[0])).toBe(false);
+        await flush();
+        map.remove();
+    });
+
     test("each row has WebODM's Side By Side button, after the opacity, and its side and turn buttons only while compared", async () => {
         const {panel, row, side} = setup();
         await panel.open();
