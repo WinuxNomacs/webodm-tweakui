@@ -232,7 +232,7 @@ html.tweakui-movable .leaflet-control-measure h3 { cursor: move; touch-action: n
 html.tweakui-movable .leaflet-control.tweakui-moved { z-index: 1001 !important; }
 html.tweakui-dragging, html.tweakui-dragging * { user-select: none; }
 
-/* 2D Map > Other Tasks (other_tasks.js): the button, and each task's row in the panel (WebODM's Layers panel styles
+/* 2D Map > Ortho Overlays (other_tasks.js): the button, and each task's row in the panel (WebODM's Layers panel styles
    the rest) */
 .leaflet-control.tweakui-other-tasks a.tweakui-other-tasks-button { display: flex; align-items: center; justify-content: center; font-size: 15px; }
 .leaflet-control.tweakui-other-tasks .open a.tweakui-other-tasks-button { display: none; }

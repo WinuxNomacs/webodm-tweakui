@@ -1,5 +1,5 @@
-// 2D Map > Other Tasks' Orthophotos: on a task's map (not a project's map, which has every task's layers), a button below Layers
-// opens an "Other Tasks" panel: the project's other tasks with an orthophoto, each with a checkbox that shows its
+// 2D Map > Ortho Overlays: on a task's map (not a project's map, which has every task's layers), a button below Layers
+// opens an "Ortho Overlays" panel: the project's other tasks with an orthophoto, each with a checkbox that shows its
 // orthophoto over the task's own layers (cropped as its task is) and an opacity slider. None is shown on opening and
 // nothing is remembered. The panel takes the classes of WebODM's Layers panel, so it looks like it (and Movable
 // Panels drags it by its title). Leaflet comes from the map hook's dependencies, as WebODM's plugins get it; the
@@ -109,14 +109,14 @@
         var wrapper = el(doc, "div");
         var button = el(doc, "a", "leaflet-bar-part theme-secondary tweakui-other-tasks-button");
         button.href = "#";
-        button.title = "Other Tasks";
+        button.title = "Ortho Overlays";
         button.setAttribute("role", "button");
         button.appendChild(el(doc, "i", "fa fa-images"));
         var panel = el(doc, "div", "layers-control-panel tweakui-other-tasks-panel");
         var close = el(doc, "span", "close-button");
         close.title = "Close";
         panel.appendChild(close);
-        panel.appendChild(el(doc, "div", "title", "Other Tasks"));
+        panel.appendChild(el(doc, "div", "title", "Ortho Overlays"));
         panel.appendChild(el(doc, "hr"));
         var list = el(doc, "div", "tweakui-other-tasks-list");
         panel.appendChild(list);

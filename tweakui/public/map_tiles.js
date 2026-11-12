@@ -31,7 +31,7 @@
 //   method takes the setting's. The basemap's layers (those of the map's Base Maps control, and a Custom one's tile
 //   layer) fade so too, and only that: the other settings leave them as they are.
 // The map hook comes before WebODM adds its layers (once its tiles.json requests return), so the map's addLayer is
-// wrapped; a layer already there is changed and redrawn. Other Tasks' Orthophotos' layers are WebODM's tiles too.
+// wrapped; a layer already there is changed and redrawn. Ortho Overlays' layers are WebODM's tiles too.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;

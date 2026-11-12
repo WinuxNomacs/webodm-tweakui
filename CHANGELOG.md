@@ -18,13 +18,13 @@
   Times**, **Matching Preset**, **Option Bubbles**, **ODX Command** and **Current Processing Stage**; Expand Task
   Controls is **Task Buttons When Minimized**; Surprise Me's Enable Interaction is **Rockets on Right-click**; Show
   Theme Menu is **Theme Menu**; on the 2D Map, Movable Controls, Compare Orthophotos from Other Tasks, Zoom
-  Override and Add Search Button are **Movable Panels**, **Other Tasks' Orthophotos**, **Deeper Zoom** and **Map
+  Override and Add Search Button are **Movable Panels**, **Ortho Overlays** (the map's Other Tasks button and panel too), **Deeper Zoom** and **Map
   Search**; the 3D Map's Zoom Override is **Zoom to Pointer**; Show Storage View and Show Performance View are
   **Storage View** and **Performance View**. The documentation's old links still lead to them.
 
 ### 2D Map
 
-- **Other Tasks' Orthophotos** (Controls): each task in the Other Tasks panel has a **Side By Side** button, which
+- **Ortho Overlays** (Controls): each task in the Ortho Overlays panel has a **Side By Side** button, which
   splits the map with a divider you drag, that task's orthophoto on one side and the task's own on the other. Beneath
   the compared task, a button picks its side and another turns the divider horizontal or vertical (as a right-click
   on its handle does). WebODM's own Side By Side and DJI Thermal Analyzer's Swipe take turns with it.

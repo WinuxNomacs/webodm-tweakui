@@ -31,7 +31,7 @@ Every feature is off until you turn it on, except the theme menu.
   WebODM's controls in the current theme, and a theme menu in the header.
 - [**2D Map**](https://winuxnomacs.github.io/webodm-tweakui/map-2d): panels you can drag anywhere within the map
   (Movable Panels), the project's other tasks' orthophotos over the task's own or side by side with it, with a
-  divider to drag, horizontal or vertical, on the side you choose (Other Tasks' Orthophotos), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
+  divider to drag, horizontal or vertical, on the side you choose (Ortho Overlays), the task's photos that show a clicked spot (Source Frames), 3 more zoom steps and the wheel's zoom
   sensitivity, also set from a button on the map (Deeper Zoom, Zoom Sensitivity), a search box for an address
   or coordinates (Map Search), and a faster map: tiles kept on the server once drawn and reused by the browser (Tile
   Cache), tiles loaded beyond the view's edges and kept after they leave it (Preload Tile Panning, Keep
@@ -97,7 +97,7 @@ TweakUI exists thanks to these projects and the people behind them.
   [ODM](https://github.com/OpenDroneMap/ODM) by the OpenDroneMap community, WebODM 3's.
 - **Included in TweakUI**: [fireworks-js](https://fireworks.js.org/) by Vitalij Ryndin (MIT licence), Surprise
   Me's fireworks, in `tweakui/public/vendor/fireworks-js/` with its [LICENSE](tweakui/public/vendor/fireworks-js/LICENSE);
-  and the Other Tasks comparison's divider, `split.js` from the
+  and the Ortho Overlays comparison's divider, `split.js` from the
   [DJI Thermal Analyzer](https://github.com/WinuxNomacs/webodm-dji-thermal) plugin (AGPL-3.0), in
   `tweakui/public/vendor/split/`.
 - **What TweakUI builds on through WebODM**: [Leaflet](https://leafletjs.com/) (the 2D map) by Volodymyr Agafonkin,

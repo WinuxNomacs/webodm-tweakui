@@ -91,7 +91,7 @@ class TestThePlugin(TweakUITestCase):
         self.assertLess(html.index("/plugins/tweakui/settings.js"), html.index("/plugins/tweakui/core.js"))
         for name in plugin_scripts()[2:]:
             self.assertLess(html.index("/plugins/tweakui/core.js"), html.index("/plugins/tweakui/" + name), name)
-        # The divider before Other Tasks, which uses it
+        # The divider before Ortho Overlays, which uses it
         self.assertLess(html.index("/plugins/tweakui/vendor/split/split.js"), html.index("/plugins/tweakui/other_tasks.js"))
         # The 3D pick before the scripts that use it
         for name in ("source_frames.js", "zoom_override.js"):

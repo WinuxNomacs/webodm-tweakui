@@ -57,7 +57,7 @@ test("opening the panel lists the project's other tasks with an orthophoto, each
     expect(wrapper.className).toBe("");
     panel.container.querySelector(".tweakui-other-tasks-button").click();
     expect(wrapper.className).toBe("open");
-    expect(panel.container.querySelector(".title").textContent).toBe("Other Tasks");
+    expect(panel.container.querySelector(".title").textContent).toBe("Ortho Overlays");
     await flush();
     const rows = panel.container.querySelectorAll(".tweakui-other-task");
     expect(Array.from(rows).map(r => r.textContent)).toEqual(["TestThermal", "Task #c"]);
@@ -141,7 +141,7 @@ test("an orthophoto whose metadata makes no layer (no bounds) unchecks its task,
     expect(map.addLayer).not.toHaveBeenCalled();
 });
 
-test("with Other Tasks on, the map hook adds the control in the top right corner of a task's map only", () => {
+test("with Ortho Overlays on, the map hook adds the control in the top right corner of a task's map only", () => {
     const hook = jest.fn();
     const win = loc => ({TweakUI: {settings: {other_tasks: true}}, PluginsAPI: {Map: {didAddControls: hook}},
         location: {pathname: loc}, fetch: jest.fn()});

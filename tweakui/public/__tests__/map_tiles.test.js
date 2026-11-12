@@ -150,7 +150,7 @@ test("Tile Cache: a new crop on the map asks the task's version again, its tiles
     expect(tileSrc(cropped)).not.toMatch(/v=/);
     await flush();
     expect(tileSrc(cropped)).toMatch(/&v=after$/);
-    // a layer WebODM didn't make (Other Tasks' Orthophotos) asks nothing more
+    // a layer WebODM didn't make (Ortho Overlays) asks nothing more
     map.addLayer(fakeLayer(TILES));
     expect(fetch).toHaveBeenCalledTimes(2);
 });
