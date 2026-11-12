@@ -1,8 +1,11 @@
 import json
 import os
+from contextlib import contextmanager
 
 from django.conf import settings as django_settings
+from django.contrib.auth import get_user_model
 from django.core.exceptions import ValidationError
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseNotModified
 from django.utils.cache import patch_vary_headers
 from django.utils.text import slugify
@@ -18,6 +21,18 @@ from app.models import Task
 from . import access, custom_themes, frames, performance, settings, storage, themes, tile_cache
 
 
+@contextmanager
+def one_at_a_time(user):
+    """A change to what the data stores keep (read, changed and written whole), made while the user's row is locked:
+    two requests at once (two settings ticked quickly) take turns rather than each writing over the other's change.
+    The user's own settings and themes; also Administration's features and published themes, which one superuser's
+    quick changes would race alike. On SQLite, which WebODM can also run on, the lock does nothing and writes take
+    turns anyway"""
+    with transaction.atomic():
+        list(get_user_model().objects.select_for_update().filter(pk=user.pk).values_list("pk", flat=True))
+        yield
+
+
 class SettingsView(APIView):
     """GET and PATCH /api/plugins/tweakui/settings: the logged-in user's own settings"""
     permission_classes = (permissions.IsAuthenticated,)
@@ -27,7 +42,8 @@ class SettingsView(APIView):
 
     def patch(self, request):
         try:
-            return Response(settings.update(request.user, request.data))
+            with one_at_a_time(request.user):
+                return Response(settings.update(request.user, request.data))
         except settings.InvalidSettings as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -42,7 +58,8 @@ class ThemesView(APIView):
 
     def post(self, request):
         try:
-            return Response(custom_themes.create(request.user, request.data), status=status.HTTP_201_CREATED)
+            with one_at_a_time(request.user):
+                return Response(custom_themes.create(request.user, request.data), status=status.HTTP_201_CREATED)
         except custom_themes.InvalidTheme as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -54,7 +71,8 @@ class ThemeView(APIView):
 
     def put(self, request, theme_id=None):
         try:
-            return Response(custom_themes.update(request.user, theme_id, request.data))
+            with one_at_a_time(request.user):
+                return Response(custom_themes.update(request.user, theme_id, request.data))
         except custom_themes.InvalidTheme as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
         except custom_themes.NoSuchTheme:
@@ -62,7 +80,8 @@ class ThemeView(APIView):
 
     def delete(self, request, theme_id=None):
         try:
-            custom_themes.delete(request.user, theme_id)
+            with one_at_a_time(request.user):
+                custom_themes.delete(request.user, theme_id)
         except custom_themes.NoSuchTheme:
             raise exceptions.NotFound() from None
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -88,7 +107,8 @@ class ThemesImportView(APIView):
 
     def post(self, request):
         try:
-            return Response(custom_themes.import_themes(request.user, request.data))
+            with one_at_a_time(request.user):
+                return Response(custom_themes.import_themes(request.user, request.data))
         except custom_themes.InvalidTheme as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -134,7 +154,8 @@ class AccessView(APIView):
 
     def patch(self, request):
         try:
-            return Response(access.update(request.data))
+            with one_at_a_time(request.user):
+                return Response(access.update(request.data))
         except access.InvalidAccess as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
@@ -160,7 +181,8 @@ class PublishedView(APIView):
         if not isinstance(theme_id, str):
             return Response({"detail": "Expected the id of one of your themes"}, status=status.HTTP_400_BAD_REQUEST)
         try:
-            theme, replaced = custom_themes.publish(request.user, theme_id)
+            with one_at_a_time(request.user):
+                theme, replaced = custom_themes.publish(request.user, theme_id)
         except custom_themes.NoSuchTheme:
             raise exceptions.NotFound() from None
         except custom_themes.InvalidTheme as e:
@@ -175,7 +197,8 @@ class PublishedThemeView(APIView):
 
     def delete(self, request, theme_id=None):
         try:
-            custom_themes.delete_published(theme_id)
+            with one_at_a_time(request.user):
+                custom_themes.delete_published(theme_id)
         except custom_themes.NoSuchTheme:
             raise exceptions.NotFound() from None
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -188,7 +211,8 @@ class PublishedImportView(APIView):
 
     def post(self, request):
         try:
-            return Response(custom_themes.import_published(request.data))
+            with one_at_a_time(request.user):
+                return Response(custom_themes.import_published(request.data))
         except custom_themes.InvalidTheme as e:
             return Response({"detail": str(e)}, status=status.HTTP_400_BAD_REQUEST)
 
