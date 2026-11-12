@@ -172,7 +172,7 @@ CATEGORIES = [
                     _("Drag the map's panels (Layers, Base Maps, Measure, Contours…) anywhere within the map."),
                     more=_("A panel is dragged by its title. A panel that closes reopens in its usual place."),
                     preview="movable-controls", scripts=["movable_controls.js"]),
-            Setting("other_tasks", False, _("Other Tasks' Orthophotos"),
+            Setting("other_tasks", False, _("Ortho Overlays"),
                     _("On a task's map, show another task's orthophoto over this one's."),
                     more=_("A button below Layers lists the project's other tasks that have an orthophoto. Check one "
                            "to show it over this task's, with its own opacity slider. Its Side By Side button splits "

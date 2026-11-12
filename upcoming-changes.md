@@ -17,6 +17,11 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **"Other Tasks" renamed "Ortho Overlays"** (asked directly, 2026-11-12) — branch `rename-ortho-overlays`: the map's
+  button and panel title and the setting's name (was Other Tasks' Orthophotos), so they match. The setting's key
+  (`other_tasks`), the scripts, CSS classes and the screenshot's file name are unchanged, so saved settings carry
+  over. `other_tasks.js`, `features.py`, comments, tests, docs `map-2d.md`, README, CHANGELOG, the `other-tasks`
+  screenshot.
 - **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11; decided 2026-11-12) — (a)
   webodm-dji-thermal branch `split-take-turns`, merged there (58847cc): its Swipe tells WebODM's split event each
   time (`announceSwipe`), `split.js` follows `layeradd`; checked live on :8002 (WebODM's, the Inspector's and another

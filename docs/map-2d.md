@@ -8,18 +8,18 @@ Off by default.
 
 ![A map panel dragged away from its usual place](../tweakui/public/previews/movable-controls.webp)
 
-Drag the map's panels (Layers, Base Maps, Measure, Contours, Object Detection, Other Tasks) by their title, with
+Drag the map's panels (Layers, Base Maps, Measure, Contours, Object Detection, Ortho Overlays) by their title, with
 the mouse or a finger, anywhere within the map. A panel that closes reopens in its usual place.
 
 <div id="controls-compare-orthophotos-from-other-tasks"></div>
 
-## Controls > Other Tasks' Orthophotos
+## Controls > Ortho Overlays
 
 Off by default.
 
-![The Other Tasks panel, with another task's orthophoto side by side with the task's own](../tweakui/public/previews/other-tasks.webp)
+![The Ortho Overlays panel, with another task's orthophoto side by side with the task's own](../tweakui/public/previews/other-tasks.webp)
 
-On a task's map, a button below Layers opens an **Other Tasks** panel listing the project's other tasks that have
+On a task's map, a button below Layers opens an **Ortho Overlays** panel listing the project's other tasks that have
 an orthophoto. Check one to show its orthophoto over the task's own (cropped as in its own task), and set its opacity
 with the slider beside it, e.g. to compare before and after. None is shown when the map opens, and nothing is
 remembered. A project's own map (Dashboard > the project's **View Map**) already lists every task's layers, so it
