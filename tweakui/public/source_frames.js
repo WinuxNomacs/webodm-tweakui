@@ -516,10 +516,11 @@
 
     // The 2D map's tool: each click moves the spot (a marker of Leaflet's) there. While it is on, a click on the
     // map is TweakUI's alone (WebODM's map opens a layer's popup on a click): it is taken in the capture phase,
-    // unless it ends a drag (the map pans) or lands on a control or TweakUI's label or window
+    // unless it ends a drag (the map pans) or lands on a control, a divider (split.js's, Ortho Overlays' or DJI
+    // Thermal's) or TweakUI's label or window
     function mapTool(L, map) {
         var marker = null, on = null, box = map.getContainer();
-        var SKIP = ".leaflet-control, .leaflet-popup, .tweakui-sf-label, .tweakui-sf-window";
+        var SKIP = ".leaflet-control, .leaflet-popup, .split-divider, .tweakui-sf-label, .tweakui-sf-window";
         function ours(e) { return !(e.target && e.target.closest && e.target.closest(SKIP)); }
         function stop() {
             if (on) {
