@@ -3,9 +3,6 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11; DJI Thermal's done 2026-11-12) — the
-  comparison on DJI Thermal's `split.js` divider: turned by a right-click or a button, the compared orthophoto on
-  either side. First a fix in webodm-dji-thermal. See "Other Tasks: divider orientation and side".
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -20,6 +17,19 @@
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Other Tasks: divider orientation and side** (asked in chat, 2026-11-11; decided 2026-11-12) — (a)
+  webodm-dji-thermal branch `split-take-turns`, merged there (58847cc): its Swipe tells WebODM's split event each
+  time (`announceSwipe`), `split.js` follows `layeradd`; checked live on :8002 (WebODM's, the Inspector's and another
+  plugin's dividers take turns). (b) TweakUI branch `other-tasks-divider`: `vendor/split/` (split.js and split.css
+  copied unchanged from c012b46 (58847cc, then the fix for a click after a drag), with a README; its tests `__tests__/split.test.js`; `leaflet` 1.3.1 dev only),
+  loaded before `other_tasks.js` (`features.py`) and with the stylesheets (`plugin.py`); `other_tasks.js` compares on
+  it (`announce`, `startSide`, `endSide`, `swapSide`; the row's side and turn buttons, `main.css`); tests
+  `other_tasks.test.js` ("Side By Side", on a real Leaflet map), `test_tweakui.py` (the files served and their
+  order); docs `map-2d.md`, README (and its Thanks), CHANGELOG, the `other-tasks` screenshot. Live on 4.0.0 (TestRGB
+  with TestThermal): sides, turn, drag, right-click, and taking turns with WebODM's own Side By Side.
+  Fixed before the merge (reported in chat, 2026-11-12, with a screenshot of WebODM's layer popup): letting go of the
+  divider off its handle clicked the map; `split.js` now swallows that click (webodm-dji-thermal R23, c012b46).
+  Reproduced and checked live on 4.0.0: let go above the handle, no popup; a plain click still opens it.
 - **Other Tasks: Side By Side** (asked in chat, 2026-11-11; decided: others hidden meanwhile, part of Other Tasks'
   Orthophotos) — branch `other-tasks-side-by-side`: `other_tasks.js` (`toggleSide`, `startSide`, `endSide`, a
   listener on `PluginsAPI.Map.onSideBySideChanged`), `main.css`; tests `other_tasks.test.js` ("Side By Side", 4);

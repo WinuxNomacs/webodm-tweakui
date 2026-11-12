@@ -5,17 +5,19 @@
 // Panels drags it by its title). Leaflet comes from the map hook's dependencies, as WebODM's plugins get it; the
 // layers are built as WebODM's map builds an orthophoto's (Map.jsx: 512-px tiles, rescaled to the RGB bands'
 // statistics).
-// Side By Side: each row's button, WebODM's own (its Layers panel has one on each raster layer), sends
-// PluginsAPI.Map.sideBySideChanged(layer, true), and WebODM's map splits itself with its movable divider: that layer
-// on the right, the task's own on the left. The other ticked rows' layers are hidden meanwhile, and a row ticked only
-// for it is unticked after. One layer at a time, as in WebODM: WebODM's own Side By Side on another layer ends ours.
+// Side By Side: each row's button (WebODM's icon, as its Layers panel has on each raster layer) shows that layer on one
+// side of a divider (vendor/split/split.js, DJI Thermal's: dragged, upright or across, turned by a right-click on its
+// handle) and the task's own on the other; while compared, a line beneath the row chooses the side and turns the
+// divider. The other ticked rows' layers are hidden meanwhile, and a row ticked only for it is unticked after. One
+// divider at a time: starting tells WebODM's split event (PluginsAPI.Map.sideBySideChanged), which turns WebODM's own
+// Side By Side off and DJI Thermal's Inspector's divider too, and either of those starting ends ours.
 // UMD, so Jest can load it.
 (function (root, factory) {
     var node = typeof module === "object" && module.exports;
-    var api = factory(node ? require("./core") : root.TweakUI);
+    var api = factory(node ? require("./core") : root.TweakUI, node ? require("./vendor/split/split.js") : root.SplitDivider);
     if (node) module.exports = api;
     else if (root.document) root.TweakUI.feature(root, "other_tasks", api.start);
-})(typeof window !== "undefined" ? window : this, function (ui) {
+})(typeof window !== "undefined" ? window : this, function (ui, Split) {
     "use strict";
 
     // The WebODM elements it relies on, to check against a new WebODM: none (its control comes through the map hook,
@@ -23,6 +25,7 @@
     var SELECTORS = {};
     var NAME = "other_tasks";
     var el = ui.el;
+    // Split: the divider (vendor/split/split.js, loaded before this script)
 
     var TILESIZE = 512;
     // Above the task's own layers (WebODM gives them 11 to 14)
@@ -126,26 +129,53 @@
         }
 
         var loaded = false, layers = {}, rows = {};
-        // The comparison: {key, layer, hidden (the other layers hidden for it), ticked (its row ticked only for it)}
-        var sided = null;
+        // The comparison: {key, layer, hidden (the other layers hidden for it), ticked (its row ticked only for it)};
+        // the divider's direction and the compared layer's side are kept from one comparison to the next
+        var sided = null, split = null, side = "after", vertical = true;
 
-        function sideBySide(layer, side) {
-            if (P && P.Map && P.Map.sideBySideChanged) P.Map.sideBySideChanged(layer, side);
+        function divider() {
+            if (!split) {
+                split = Split.create(L, map, {doc: doc, vertical: vertical});
+                split.on("change", function (e) {
+                    vertical = e.vertical;
+                    if (e.reason === "turn" && sided) showSplitButtons(rows[sided.key]);
+                });
+            }
+            return split;
         }
 
-        // Ends the comparison: WebODM told (unless it is WebODM that ended it), the hidden layers back, and the row
-        // unticked if it was ticked only for it
-        function endSide(tell) {
+        // Told to everyone listening to WebODM's split event (as DJI Thermal's Inspector does): WebODM's own Side By
+        // Side turns off, the way its Layers panel turns it off when another layer is sided, and so does another
+        // plugin's divider that listens alike; the layer is then taken off WebODM's split again
+        function announce(layer) {
+            if (!P || !P.Map || !P.Map.sideBySideChanged) return;
+            P.Map.sideBySideChanged(layer, true);
+            P.Map.sideBySideChanged(layer, false);
+            if (layer.setZIndex) layer.setZIndex(layer.__tweakuiZIndex);       // brought to the front there
+            setTimeout(ui.guard(NAME, function () { if (split && sided) split.update(); }), 0);   // after WebODM's control is gone
+        }
+
+        // The compared row's side and turn buttons, as the divider is now
+        function showSplitButtons(r) {
+            var name = Split.sideName(side, vertical), other = Split.sideName(side === "before" ? "after" : "before", vertical);
+            r.sideButton.innerHTML = '<i class="fa fa-exchange-alt' + (vertical ? "" : " fa-rotate-90") + '"></i> ' + name;
+            r.sideButton.title = "It shows " + name.toLowerCase() + " of the divider: click to show it " + other.toLowerCase();
+            r.turnButton.innerHTML = '<i class="fa ' + (vertical ? "fa-grip-lines-vertical" : "fa-grip-lines") + '"></i>';
+            r.turnButton.title = "Turn the divider " + (vertical ? "horizontal" : "vertical") + " (or right-click its handle)";
+            r.splitButtons.hidden = false;
+        }
+
+        // Ends the comparison: the divider gone with its clip, the hidden layers back, and the row unticked if it was
+        // ticked only for it
+        function endSide() {
             var s = sided;
             if (!s) return;
             sided = null;
             var r = rows[s.key];
             r.side.querySelector("i").className = SIDE_OFF;
             r.side.setAttribute("aria-pressed", "false");
-            if (tell) sideBySide(s.layer, false);
-            var container = s.layer.getContainer && s.layer.getContainer();
-            if (container) container.style.clip = "";
-            if (s.layer.setZIndex) s.layer.setZIndex(s.layer.__tweakuiZIndex);
+            r.splitButtons.hidden = true;
+            if (split) split.remove(s.layer);
             s.hidden.forEach(function (key) {
                 if (rows[key].checkbox.checked && layers[key]) map.addLayer(layers[key]);
             });
@@ -158,17 +188,19 @@
         function startSide(key, layer, ticked) {
             var hidden = Object.keys(layers).filter(function (k) { return k !== key && map.hasLayer(layers[k]); });
             hidden.forEach(function (k) { map.removeLayer(layers[k]); });
+            announce(layer);
             sided = {key: key, layer: layer, hidden: hidden, ticked: ticked};
             rows[key].side.querySelector("i").className = SIDE_ON;
             rows[key].side.setAttribute("aria-pressed", "true");
-            sideBySide(layer, true);
+            divider().add(layer, side);
+            showSplitButtons(rows[key]);
         }
 
         // The row's Side By Side button: starts its comparison (ending another first), or ends it
         function toggleSide(t, index) {
             var key = String(t.id), r = rows[key];
-            if (sided && sided.key === key) return endSide(true);
-            endSide(true);
+            if (sided && sided.key === key) return endSide();
+            endSide();
             var ticked = !r.checkbox.checked;
             if (ticked) r.checkbox.checked = true;
             return show(t, index, r.checkbox, r.slider).then(function (layer) {
@@ -176,10 +208,18 @@
             });
         }
 
-        // WebODM's own Side By Side on another layer: ours ends, as WebODM's layers do (after WebODM's own handler)
+        function swapSide() {
+            side = side === "before" ? "after" : "before";
+            if (!sided) return;
+            divider().setSide(sided.layer, side);
+            showSplitButtons(rows[sided.key]);
+        }
+
+        // WebODM's own Side By Side on a layer, or another plugin's divider (DJI Thermal's Inspector tells it alike):
+        // ours ends. Our own announcement comes before the comparison starts, so it isn't taken for another's
         if (P && P.Map && P.Map.onSideBySideChanged) {
-            P.Map.onSideBySideChanged(ui.guard(NAME, function (layer, side) {
-                if (side && sided && layer !== sided.layer) setTimeout(ui.guard(NAME, function () { endSide(true); }), 0);
+            P.Map.onSideBySideChanged(ui.guard(NAME, function (layer, on) {
+                if (on && sided && layer !== sided.layer) endSide();
             }));
         }
 
@@ -237,10 +277,23 @@
             side.setAttribute("aria-pressed", "false");
             side.setAttribute("aria-label", "Side By Side with " + name);
             side.appendChild(el(doc, "i", SIDE_OFF));
-            rows[String(t.id)] = {checkbox: checkbox, slider: slider, side: side};
+            // While compared, a line beneath: its side of the divider, and the divider's direction
+            var splitButtons = el(doc, "div", "tweakui-other-task-split");
+            splitButtons.hidden = true;
+            var sideButton = el(doc, "button", "btn btn-default btn-xs tweakui-other-task-swap");
+            sideButton.type = "button";
+            var turnButton = el(doc, "button", "btn btn-default btn-xs tweakui-other-task-turn");
+            turnButton.type = "button";
+            turnButton.setAttribute("aria-label", "Turn the divider");
+            splitButtons.appendChild(sideButton);
+            splitButtons.appendChild(turnButton);
+            sideButton.addEventListener("click", function () { swapSide(); });
+            turnButton.addEventListener("click", function () { divider().turn(); });
+            rows[String(t.id)] = {checkbox: checkbox, slider: slider, side: side, splitButtons: splitButtons,
+                                  sideButton: sideButton, turnButton: turnButton};
             checkbox.addEventListener("change", function () {
                 if (checkbox.checked) return show(t, index, checkbox, slider);
-                if (sided && sided.key === String(t.id)) endSide(true);
+                if (sided && sided.key === String(t.id)) endSide();
                 if (layers[String(t.id)]) map.removeLayer(layers[String(t.id)]);
             });
             side.addEventListener("click", function (e) {
@@ -253,6 +306,7 @@
             r.appendChild(label);
             r.appendChild(slider);
             r.appendChild(side);
+            r.appendChild(splitButtons);
             return r;
         }
 
@@ -281,7 +335,8 @@
         button.addEventListener("click", function (e) { e.preventDefault(); open(); });
         close.addEventListener("click", hide);
 
-        return {container: container, open: open, close: hide, layers: layers, endSide: endSide};
+        return {container: container, open: open, close: hide, layers: layers, endSide: endSide,
+                divider: function () { return split; }};
     }
 
     // On a task's map, adds the control below the others in the top right corner

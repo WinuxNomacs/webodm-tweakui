@@ -253,8 +253,11 @@ const SHOTS = [
             await s.openMap();
             await s.page.click(".tweakui-other-tasks-button");
             await s.page.waitForSelector(".tweakui-other-task, .tweakui-other-tasks-message:not(:has-text('Loading'))", {timeout: 15000});
-            // The first task side by side with the task's own
-            if (await s.page.$(".tweakui-other-task-side")) await s.page.click(".tweakui-other-task-side");
+            // The first task side by side with the task's own, the divider horizontal
+            if (await s.page.$(".tweakui-other-task-side")) {
+                await s.page.click(".tweakui-other-task-side");
+                await s.page.click(".tweakui-other-task-turn");
+            }
             await s.page.waitForTimeout(4000);
             return "page";
         },

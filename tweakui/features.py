@@ -176,8 +176,9 @@ CATEGORIES = [
                     _("On a task's map, show another task's orthophoto over this one's."),
                     more=_("A button below Layers lists the project's other tasks that have an orthophoto. Check one "
                            "to show it over this task's, with its own opacity slider. Its Side By Side button splits "
-                           "the map with a divider you drag: that orthophoto on the right, this task's on the left."),
-                    preview="other-tasks", scripts=["other_tasks.js"]),
+                           "the map with a divider you drag: that orthophoto on one side, this task's on the other. "
+                           "Choose the side, and turn the divider horizontal or vertical (or right-click it)."),
+                    preview="other-tasks", scripts=["vendor/split/split.js", "other_tasks.js"]),
             Setting("source_frames_2d", False, _("Source Frames"),
                     _("Click the map to list the task's photos that show that spot."),
                     more=_("A button beside Share turns it on. A window lists the photos best first, with each "

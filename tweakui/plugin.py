@@ -23,7 +23,7 @@ class Plugin(PluginBase):
         return features.scripts()
 
     def include_css_files(self):
-        return ["main.css", "theme.css"]
+        return ["main.css", "theme.css", "vendor/split/split.css"]
 
     def app_mount_points(self):
         @login_required

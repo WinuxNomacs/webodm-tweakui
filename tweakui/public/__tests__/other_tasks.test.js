@@ -163,98 +163,143 @@ test("with Other Tasks on, the map hook adds the control in the top right corner
 });
 
 describe("Side By Side", () => {
-    // A map that knows its layers, the layers with a container and a zIndex as Leaflet's, and WebODM's plugin API's
-    // sideBySideChanged with its listeners
+    const Leaflet = require("leaflet");
+    // A real Leaflet map (the divider clips the layers' containers in its pixels), and WebODM's plugin API's split
+    // event with its listeners (WebODM's own map, its Layers panel and DJI Thermal's Inspector listen)
     function setup() {
-        const L = fakeLeaflet();
-        L.tileLayer = jest.fn((url, options) => ({url, options, opacity: 1, container: {style: {clip: ""}},
-            setOpacity(o) { this.opacity = o; }, getContainer() { return this.container; },
-            setZIndex(z) { this.options.zIndex = z; }}));
-        const on = new Set();
-        const map = {addLayer: jest.fn(l => on.add(l)), removeLayer: jest.fn(l => on.delete(l)), hasLayer: l => on.has(l), addControl: jest.fn()};
+        const div = document.createElement("div");
+        document.body.appendChild(div);
+        const map = Leaflet.map(div, {zoomControl: false}).setView([46.845, -91.985], 18);
+        map.getSize = () => Leaflet.point(1000, 800);
+        div.getBoundingClientRect = () => ({left: 0, top: 0, width: 1000, height: 800});
+        map.setView([46.845, -91.985], 18, {animate: false});
         const listeners = [];
-        const P = {Map: {sideBySideChanged: jest.fn((layer, side) => listeners.some(f => f(layer, side))),
+        const P = {Map: {sideBySideChanged: jest.fn((layer, on) => listeners.some(f => f(layer, on))),
                          onSideBySideChanged: f => listeners.push(f)}};
         const fetch = respond({
             "/api/projects/3/tasks/?": [{id: "b", project: 3, name: "B"}, {id: "c", project: 3, name: "C"}],
             "/api/projects/3/tasks/b/orthophoto/metadata": metadata,
             "/api/projects/3/tasks/c/orthophoto/metadata": metadata
         });
-        const panel = otherTasks.build(document, L, map, own, fetch, P);
+        const panel = otherTasks.build(document, Leaflet, map, own, fetch, P);
+        div.appendChild(panel.container);
         const row = id => panel.container.querySelector(`[data-task="${id}"]`);
-        const tick = id => { const c = row(id).querySelector("input[type=checkbox]"); c.checked = !c.checked; c.dispatchEvent(new Event("change")); };
+        const checkbox = id => row(id).querySelector("input[type=checkbox]");
+        const tick = id => { checkbox(id).checked = !checkbox(id).checked; checkbox(id).dispatchEvent(new Event("change")); };
         const side = id => row(id).querySelector(".tweakui-other-task-side");
-        return {L, map, P, on, panel, row, tick, side};
+        // A layer's clip; "" off the map, where Leaflet takes its container away
+        const clip = layer => (layer.getContainer() ? layer.getContainer().style.clip : "");
+        const nw = () => map.containerPointToLayerPoint([0, 0]);
+        const rect = (t, r, b, l) => `rect(${nw().y + t}px, ${nw().x + r}px, ${nw().y + b}px, ${nw().x + l}px)`;
+        const divider = () => div.querySelector(".split-divider");
+        return {map, P, panel, row, checkbox, tick, side, clip, rect, divider};
     }
+    afterEach(() => { document.body.innerHTML = ""; });
 
-    test("each row has WebODM's Side By Side button, after the opacity", async () => {
-        const {panel, side} = setup();
+    test("each row has WebODM's Side By Side button, after the opacity, and its side and turn buttons only while compared", async () => {
+        const {panel, row, side} = setup();
         await panel.open();
         expect(side("b").title).toBe("Side By Side");
         expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-divide fa-rotate-90");
         expect(side("b").previousSibling.className).toBe("tweakui-other-task-opacity");
+        expect(row("b").querySelector(".tweakui-other-task-split").hidden).toBe(true);
     });
 
-    test("on an unticked row it shows that orthophoto on the divider's right and hides the others, then puts all back", async () => {
-        const {map, P, on, panel, row, tick, side} = setup();
+    test("on an unticked row it shows that orthophoto right of a divider and hides the others, then puts all back", async () => {
+        const {map, P, panel, row, checkbox, tick, side, clip, rect, divider} = setup();
         await panel.open();
         tick("c");
         await flush();
-        const c = map.addLayer.mock.calls[0][0];
+        const c = panel.layers.c;
         side("b").click();
         await flush();
         const b = panel.layers.b;
-        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(true);
-        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(b, true);
-        expect([...on]).toEqual([b]);
+        expect(checkbox("b").checked).toBe(true);
+        expect([map.hasLayer(b), map.hasLayer(c)]).toEqual([true, false]);
+        // WebODM's split event told (so WebODM's or another plugin's divider goes), left at once; its stacking kept
+        expect(P.Map.sideBySideChanged.mock.calls).toEqual([[b, true], [b, false]]);
+        expect(b.options.zIndex).toBe(100);
+        expect(divider().className).toContain("split-divider-vertical");
+        expect(clip(b)).toBe(rect(0, 1000, 800, 500));
         expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-chevron-right");
         expect(side("b").getAttribute("aria-pressed")).toBe("true");
-        // WebODM's divider clips it and raises it; ending puts that back too
-        b.container.style.clip = "rect(0px, 900px, 600px, 450px)";
-        b.setZIndex(10101);
+        expect(row("b").querySelector(".tweakui-other-task-split").hidden).toBe(false);
         side("b").click();
-        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(b, false);
-        expect([...on]).toEqual([c]);
-        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(false);
-        expect(b.container.style.clip).toBe("");
-        expect(b.options.zIndex).toBe(100);
+        expect(divider()).toBe(null);
+        expect(clip(b)).toBe("");
+        expect([map.hasLayer(b), map.hasLayer(c), checkbox("b").checked]).toEqual([false, true, false]);
         expect(side("b").querySelector("i").className).toBe("fa fa-fw fa-divide fa-rotate-90");
+        expect(row("b").querySelector(".tweakui-other-task-split").hidden).toBe(true);
+        await flush();
+        map.remove();
+    });
+
+    test("its side and the divider's direction are chosen in the row, or by a right-click on the handle, and kept for the next", async () => {
+        const {map, panel, row, side, clip, rect, divider} = setup();
+        await panel.open();
+        side("b").click();
+        await flush();
+        const b = panel.layers.b, swap = () => row("b").querySelector(".tweakui-other-task-swap"),
+            turn = () => row("b").querySelector(".tweakui-other-task-turn");
+        expect(swap().textContent.trim()).toBe("Right");
+        expect(turn().title).toBe("Turn the divider horizontal (or right-click its handle)");
+        swap().click();
+        expect(clip(b)).toBe(rect(0, 500, 800, 0));
+        expect(swap().textContent.trim()).toBe("Left");
+        expect(swap().title).toBe("It shows left of the divider: click to show it right");
+        turn().click();
+        expect(divider().className).toContain("split-divider-across");
+        expect(clip(b)).toBe(rect(0, 1000, 400, 0));
+        expect(swap().textContent.trim()).toBe("Above");
+        expect(swap().querySelector("i").className).toBe("fa fa-exchange-alt fa-rotate-90");
+        // A right-click on the handle turns it upright again, and the row says so
+        const menu = new MouseEvent("contextmenu", {bubbles: true, cancelable: true});
+        divider().querySelector(".split-divider-handle").dispatchEvent(menu);
+        expect(menu.defaultPrevented).toBe(true);
+        expect(swap().textContent.trim()).toBe("Left");
+        expect(turn().title).toBe("Turn the divider horizontal (or right-click its handle)");
+        // The next comparison, of another task, keeps the side and the direction
+        side("c").click();
+        await flush();
+        expect(clip(b)).toBe("");
+        expect(clip(panel.layers.c)).toBe(rect(0, 500, 800, 0));
+        expect(row("c").querySelector(".tweakui-other-task-swap").textContent.trim()).toBe("Left");
+        await flush();
+        map.remove();
     });
 
     test("a row ticked before stays ticked after, and unticking the compared row ends the comparison", async () => {
-        const {P, on, panel, row, tick, side} = setup();
+        const {map, panel, checkbox, tick, side, divider} = setup();
         await panel.open();
         tick("b");
         await flush();
         side("b").click();
         await flush();
         side("b").click();
-        expect(row("b").querySelector("input[type=checkbox]").checked).toBe(true);
-        expect([...on]).toEqual([panel.layers.b]);
+        expect(checkbox("b").checked).toBe(true);
+        expect(map.hasLayer(panel.layers.b)).toBe(true);
         side("b").click();
         await flush();
         tick("b");
-        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(panel.layers.b, false);
-        expect(on.size).toBe(0);
+        expect(divider()).toBe(null);
+        expect(map.hasLayer(panel.layers.b)).toBe(false);
+        await flush();
+        map.remove();
     });
 
-    test("another row's button, or WebODM's own Side By Side on another layer, ends the comparison", async () => {
-        const {P, on, panel, side} = setup();
+    test("WebODM's own Side By Side, or another plugin's divider telling the same event, ends the comparison", async () => {
+        const {map, P, panel, side, clip, divider} = setup();
         await panel.open();
         side("b").click();
         await flush();
-        side("c").click();
+        const b = panel.layers.b;
+        // WebODM's Layers panel sides its orthophoto (or DJI Thermal's Inspector starts its divider)
+        P.Map.sideBySideChanged({}, true);
+        expect(divider()).toBe(null);
+        expect(clip(b)).toBe("");
+        expect(map.hasLayer(b)).toBe(false);
+        expect(side("b").getAttribute("aria-pressed")).toBe("false");
         await flush();
-        const {b, c} = panel.layers;
-        expect(P.Map.sideBySideChanged.mock.calls.slice(-2)).toEqual([[b, false], [c, true]]);
-        expect([...on]).toEqual([c]);
-        // WebODM's Layers panel sides its orthophoto: ours ends after WebODM's handler
-        const webodmLayer = {};
-        P.Map.sideBySideChanged(webodmLayer, true);
-        expect(on.has(c)).toBe(true);
-        await flush();
-        expect(P.Map.sideBySideChanged).toHaveBeenLastCalledWith(c, false);
-        expect(on.size).toBe(0);
-        expect(side("c").getAttribute("aria-pressed")).toBe("false");
+        map.remove();
     });
 });
