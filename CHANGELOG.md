@@ -1,6 +1,9 @@
 # Changelog
 
-## Unreleased
+## 1.1.0 (2026-11-12)
+
+Runs on WebODM 3.3.2 and later (tested on 3.3.2 and 4.0.0). Settings renamed in this release keep what you had
+turned on.
 
 ### Settings Page
 
@@ -113,8 +116,6 @@
 - Performance View > Recent Task History: **Remove Photos From Task** beside Copy Names and **Remove Photo** beside
   each name in a completed task's Photos Left Out delete those photos from the task, and the task stops using the
   processing node's copy of it, so its next Restart goes without them.
-- Performance View: Refresh, Refresh Every and History Length moved from the top of the page to just above Recent
-  Processing, the two sliders under Refresh.
 
 ## 1.0.0 (2026-11-09)
 
