@@ -21,6 +21,9 @@
   Override and Add Search Button are **Movable Panels**, **Ortho Overlays** (the map's Other Tasks button and panel too), **Deeper Zoom** and **Map
   Search**; the 3D Map's Zoom Override is **Zoom to Pointer**; Show Storage View and Show Performance View are
   **Storage View** and **Performance View**. The documentation's old links still lead to them.
+- Two settings saved at the same moment (two checkboxes ticked quickly, or two browser tabs) no longer undo each
+  other: only the later one's change was kept, though both said Saved. The same for your themes and for
+  Administration > TweakUI's changes.
 
 ### 2D Map
 
@@ -43,6 +46,10 @@
   Administration > TweakUI.
 - **Fewer Tile Requests** (Speed): while zooming, the map asks for tiles once the zoom ends; it can help on a slow
   or unreliable connection to the server.
+- Ortho Overlays: a task's Side By Side pressed while its orthophoto is still loading no longer leaves a second copy
+  of that orthophoto on the map that unticking couldn't remove.
+- Source Frames: with it on, a click on a divider's handle (Ortho Overlays' Side By Side, DJI Thermal Analyzer's
+  Swipe) no longer drops a spot under it.
 
 ### Administration
 
