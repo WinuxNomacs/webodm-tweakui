@@ -303,6 +303,63 @@ describe("Backup and Import", () => {
         expect(document.querySelectorAll("a[hidden]").length).toBe(0);
     });
 
+    // Whether the browser would ask before leaving the page (its beforeunload event cancelled)
+    const leaveAsks = () => {
+        const ev = new Event("beforeunload", {cancelable: true});
+        window.dispatchEvent(ev);
+        return ev.defaultPrevented;
+    };
+
+    test("the browser asks before leaving the page while an import, a delete or a compact runs, and not once it is done", async () => {
+        const root = page(), answers = [];
+        const done = data => answers.shift()({ok: true, status: 200, json: () => Promise.resolve(data)});
+        const fetchFn = jest.fn(url => url === "/api/plugins/tweakui/storage" ? json(report())
+            : new Promise(resolve => { answers.push(resolve); }));
+        const view = storagePage.start(document, window, fetchFn);
+        await view.loaded;
+        expect(leaveAsks()).toBe(false);
+        const importing = view.importFiles("10", [new File([new Uint8Array(3)], "a.zip")]);
+        await flush();
+        expect(leaveAsks()).toBe(true);
+        done({id: "new"});
+        await importing;
+        expect(leaveAsks()).toBe(false);
+        click(row(root, '[data-project="10"] [data-act=open-project]'));
+        for (const act of ["delete-project", "compact-task"]) {
+            click(row(root, act === "delete-project" ? '[data-project="11"] [data-act=delete-project]' : '[data-task="t1"] [data-act=compact-task]'));
+            await flush(); await flush();
+            if (act === "compact-task") done({});  // the breakdown it measures first
+            await flush(); await flush();
+            click(root.querySelector("[data-act=confirm-yes]"));
+            await flush();
+            expect(leaveAsks()).toBe(true);
+            done({});
+            for (let i = 0; i < 4; i++) await flush();
+            expect(leaveAsks()).toBe(false);
+        }
+    });
+
+    test("Backup All does not ask before leaving: the browser carries its downloads on", async () => {
+        downloads();
+        const pauses = [], wait = window.setTimeout;
+        jest.spyOn(window, "setTimeout").mockImplementation((fn, ms) => {
+            if (ms === storagePage.BACKUP_PAUSE) { pauses.push(fn); return 0; }
+            return wait(fn, ms);
+        });
+        const {root} = await started(report());
+        click(row(root, '[data-project="11"] [data-act=open-project]'));
+        tick(row(root, '[data-project="10"] [data-act=tick-project]'));
+        tick(row(root, '[data-task="t3"] input'));
+        const backingUp = root.querySelector("[data-act=backup-selected]");
+        click(backingUp);
+        await flush();
+        expect(pauses.length).toBe(1);
+        expect(leaveAsks()).toBe(false);
+        pauses[0]();
+        for (let i = 0; i < 3; i++) await flush();
+        expect(root.querySelector(".tweakui-storage-status").textContent).toMatch(/^2 backups started/);
+    });
+
     test("each project's menu has Import, which opens the file chooser for zips", async () => {
         const {root} = await started(report());
         const input = root.querySelector(".tweakui-storage-file");

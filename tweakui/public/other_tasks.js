@@ -238,6 +238,8 @@
                 return Promise.resolve(layers[key]);
             }
             if (loading[key]) return loading[key];
+            var failure = rows[key] && rows[key].failure;
+            if (failure) failure.hidden = true;
             checkbox.disabled = true;
             var url = "/api/projects/" + t.project + "/tasks/" + t.id + "/orthophoto/metadata" + (t.crop ? "?crop=1" : "");
             // An orthophoto whose metadata can't make a layer (no bounds) fails as one that can't be loaded
@@ -252,7 +254,10 @@
             }).then(null, function (e) {
                 checkbox.disabled = false;
                 checkbox.checked = false;
-                checkbox.parentNode.title = "Could not load the orthophoto: " + e.message;
+                if (failure) {
+                    failure.textContent = "Could not load the orthophoto: " + e.message;
+                    failure.hidden = false;
+                }
             }).then(function (layer) {
                 delete loading[key];
                 return layer;
@@ -294,10 +299,13 @@
             turnButton.setAttribute("aria-label", "Turn the divider");
             splitButtons.appendChild(sideButton);
             splitButtons.appendChild(turnButton);
+            // Why its orthophoto couldn't be loaded, beneath, until the next try
+            var failure = el(doc, "div", "tweakui-other-task-failure text-danger");
+            failure.hidden = true;
             sideButton.addEventListener("click", function () { swapSide(); });
             turnButton.addEventListener("click", function () { divider().turn(); });
             rows[String(t.id)] = {checkbox: checkbox, slider: slider, side: side, splitButtons: splitButtons,
-                                  sideButton: sideButton, turnButton: turnButton};
+                                  sideButton: sideButton, turnButton: turnButton, failure: failure};
             checkbox.addEventListener("change", function () {
                 if (checkbox.checked) return show(t, index, checkbox, slider);
                 if (sided && sided.key === String(t.id)) endSide();
@@ -314,6 +322,7 @@
             r.appendChild(slider);
             r.appendChild(side);
             r.appendChild(splitButtons);
+            r.appendChild(failure);
             return r;
         }
 

@@ -25,6 +25,12 @@
   other: only the later one's change was kept, though both said Saved. The same for your themes and for
   Administration > TweakUI's changes.
 
+### Themes
+
+- With a dark theme, the map's buttons whose icon is an image (Layers, Base Maps, Add Overlay, Measure, Fullscreen,
+  and the Contours and Object Detection plugins') show it light instead of dark on dark, and Crop's icon takes the
+  theme's text colour.
+
 ### 2D Map
 
 - **Ortho Overlays** (Controls): each task in the Ortho Overlays panel has a **Side By Side** button, which
@@ -48,6 +54,8 @@
   or unreliable connection to the server.
 - Ortho Overlays: a task's Side By Side pressed while its orthophoto is still loading no longer leaves a second copy
   of that orthophoto on the map that unticking couldn't remove.
+- Ortho Overlays: an orthophoto that can't be loaded says why in a line beneath its row ("Could not load the
+  orthophoto: Error 404"), gone on the next try, instead of only in a tooltip.
 - Source Frames: with it on, a click on a divider's handle (Ortho Overlays' Side By Side, DJI Thermal Analyzer's
   Swipe) no longer drops a spot under it.
 
@@ -86,6 +94,8 @@
   Restart, where the Dashboard offers it).
 - Storage View: the bar above the projects says "Select one or multiple tasks or projects to back up, compact or
   delete them." until something is selected.
+- Storage View: while a Delete, a Compact or an Import runs, the browser asks before you leave the page, which would
+  stop it halfway.
 - Performance View: the graphs' readings survive a reload of the page (Ctrl+R or F5) in the same browser tab (its
   session storage); nothing is measured while the page isn't open.
 - Performance View: each graph has its scale inside it (its top, 0, a line at half height, in 11px labels) and, for a

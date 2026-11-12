@@ -3,8 +3,7 @@
 ## Phases (current and upcoming)
 
 **Up next**
-- **Release review: decisions** (asked in chat, 2026-11-12) — four things a user would notice, each waiting on the
-  user's yes or no; see "Release review" (Proposed).
+- Nothing planned.
 
 **Then**
 - **Map speed: 3D Point Budget** — maybe later, as the user said (2026-11-09).
@@ -14,11 +13,21 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Not doing**
+- **Storage: a hint for Backup All's downloads** (release review C) — not a concern to the user (2026-11-12).
 - **Preload Zoom Out and Preload Zoom In** — tried and dropped by the user (2026-11-11); built on branch
   `zoom-preload` (commit `b84a84b`), left unmerged. See "Map speed: Preload Zoom Out and In (dropped)".
 - **Diagnostic: Logs View** — dropped by the user (2026-11-09); see "Diagnostic: Logs View (dropped)".
 
 **Done**
+- **Release review: decisions A, B and D** (decided 2026-11-12) — branch `release-decisions`. A: `themes.py`
+  (`IMAGE_BUTTONS`, `_image_buttons_css`, `_invert`, `_scale`; Crop's icon `color: inherit`), tests in
+  `test_tweakui.py`; B: `storage_page.js` (`state.unfinished`, a `beforeunload` listener), tests in
+  `storage_page.test.js` ("Backup and Import"); D: `other_tasks.js` (`.tweakui-other-task-failure`), `main.css`,
+  tests in `other_tasks.test.js`. Docs `themes.md`, `storage.md`, `map-2d.md`, CHANGELOG. Live on 4.0.0: light
+  icons on Solarized Dark; a held import prompts on leaving (none when idle, nothing imported); a metadata 404
+  shows the line at 1400 and 390 px and a retry clears it. 3.3.2: Django tests (no task map; Storage View off for
+  its admin). The image buttons' selectors aren't in the selector check, which reads the scripts' lists: a
+  missing one only leaves that icon dark.
 - **Release review: clear bugs** (asked in chat, 2026-11-12) — branch `release-review`: lost saves (`api.py`
   `one_at_a_time`, test in `test_tweakui.py` `TestSettings`), Ortho Overlays' second layer (`other_tasks.js` `show`,
   test in `other_tasks.test.js` "Side By Side"), Source Frames on a divider (`source_frames.js` `mapTool`, test in
@@ -1032,7 +1041,8 @@ requests when a newer one comes; logs are read once per change (cached).
 3. **Source Frames: a click on a divider's handle dropped a spot** under it (split.js's divider, Ortho Overlays' or
    DJI Thermal's): `.split-divider` is skipped as Leaflet's controls are.
 
-**Proposed** (each changes what a user sees; decisions open):
+**Proposed** (each changes what a user sees). Decided 2026-11-12: A, B and D built as proposed (branch
+`release-decisions`); C not done, not a concern to the user.
 - **A. Dark themes: WebODM's map buttons with image icons are nearly invisible.** Layers, Base Maps, Add Overlay,
   Measure and Fullscreen draw their icons as dark background images (SVG/PNG in WebODM's and Leaflet's CSS), and
   WebODM's theme paints the buttons in the theme's secondary colour: with a dark preset (Catppuccin Mocha, Dracula,

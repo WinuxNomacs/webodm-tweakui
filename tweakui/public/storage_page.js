@@ -383,7 +383,7 @@
         fetchFn = fetchFn || (win.fetch && win.fetch.bind(win));
         var api = page.getAttribute("data-api");
         var state = {report: null, index: {projects: {}, tasks: {}}, open: {projects: {}, tasks: {}},
-            selected: {projects: {}, tasks: {}}, breakdowns: {}, working: false};
+            selected: {projects: {}, tasks: {}}, breakdowns: {}, working: false, unfinished: false};
         var fileInput = page.querySelector(".tweakui-storage-file"), importTo = null;
 
         function load() {
@@ -422,11 +422,11 @@
         function act(action) {
             var list = requests(action);
             if (!list.length) return Promise.resolve();
-            state.working = true;
+            state.working = state.unfinished = true;
             renderSelection(page, state);
             setStatus(page, (action.compact ? "Compacting " : "Deleting ") + list.length + (list.length === 1 ? " item" : " items") + "...");
             return run(fetchFn, doc, list).then(function (failed) {
-                state.working = false;
+                state.working = state.unfinished = false;
                 if (failed.length) setStatus(page, "Not done: " + failed.join("; "), true);
                 else setStatus(page, action.compact ? "Compacting started; sizes update once WebODM is done." : "Deleted.");
                 if (!action.compact) { state.selected = {projects: {}, tasks: {}}; }
@@ -471,7 +471,7 @@
             files = Array.prototype.slice.call(files || []);
             if (!files.length) return Promise.resolve();
             var failed = [], done = 0;
-            state.working = true;
+            state.working = state.unfinished = true;
             render(page, state);
             return files.reduce(function (chain, file, i) {
                 return chain.then(function () {
@@ -482,7 +482,7 @@
                     }).then(function () { done++; }, function (err) { failed.push(file.name + ": " + err.message); });
                 });
             }, Promise.resolve()).then(function () {
-                state.working = false;
+                state.working = state.unfinished = false;
                 if (failed.length) setStatus(page, "Not imported: " + failed.join("; "), true);
                 else setStatus(page, "Uploaded " + done + (done === 1 ? " zip" : " zips") + "; WebODM is importing " +
                     (done === 1 ? "it" : "them") + ".");
@@ -497,6 +497,14 @@
                 if (to) importFiles(to, files).then(function () { fileInput.value = ""; });
             });
         }
+
+        // Leaving the page stops an import, delete or compact halfway: the browser asks first while one runs (not
+        // Backup All, whose downloads the browser carries on)
+        win.addEventListener("beforeunload", function (ev) {
+            if (!state.unfinished) return;
+            ev.preventDefault();
+            ev.returnValue = "";
+        });
 
         // Each row's "•••" menu
         ui.rowMenu(doc, win, page, NAME);

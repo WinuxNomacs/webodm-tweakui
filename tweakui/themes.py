@@ -34,6 +34,15 @@ def _mix(color, background, amount):
     return "#" + "".join("%02x" % round(x * amount + y * (1 - amount)) for x, y in zip(a, b))
 
 
+def _invert(color):
+    return "#" + "".join("%02x" % (255 - int(color[i:i + 2], 16)) for i in (1, 3, 5))
+
+
+def _scale(color, factor):
+    """color with each channel scaled, as WebODM's scalebyiv tag does (its theme's hover colours)"""
+    return "#" + "".join("%02x" % min(255, int(int(color[i:i + 2], 16) * factor)) for i in (1, 3, 5))
+
+
 def _preset(name, text, base, panel, header, border, link, button, muted, red, yellow, green):
     """A preset from a scheme's palette: buttons show their label in the base colour (as WebODM's theme does), the
     header's text is the text or base colour, whichever stands out more on it, and failed and success notifications
@@ -158,6 +167,32 @@ WHITE_PANELS = (
 )
 
 
+# WebODM's map buttons whose icon is a dark image (Leaflet's, WebODM's and its core plugins'), which WebODM's theme
+# paints in its secondary colour: dark on dark with a dark theme
+IMAGE_BUTTONS = (
+    ".leaflet-control-layers-control-button",
+    ".leaflet-control-layers-toggle",
+    ".leaflet-control-add-overlay-button",
+    ".leaflet-control-measure-toggle",
+    ".leaflet-control-fullscreen-button",
+    ".leaflet-control-contours-button",
+    ".leaflet-control-objdetect-button",
+)
+
+
+def _image_buttons_css(colors):
+    """With a dark secondary colour, IMAGE_BUTTONS are drawn inverted on the inverse of WebODM's colours for them, so
+    the icon turns light and the button keeps the theme's colour, hovered too"""
+    if _luminance(colors["secondary"]) >= 128:
+        return ""
+    buttons = ",\n".join("html .leaflet-control %s" % s for s in IMAGE_BUTTONS)
+    hovered = ",\n".join("html .leaflet-control %s:hover" % s for s in IMAGE_BUTTONS)
+    color, hover = _invert(colors["secondary"]), _invert(_scale(colors["secondary"], 0.9))
+    return ("%s{filter: invert(1); background-color: %s !important; border-color: %s !important;}\n"
+            "%s{background-color: %s !important; border-color: %s !important;}\n"
+            % (buttons, color, color, hovered, hover, hover))
+
+
 # Rules of WebODM's theme a preset leaves out, so WebODM's own theme applies there
 KEEP_WEBODM = (".admin-area",)
 
@@ -193,7 +228,7 @@ def preset_css(preset_id):
 
 def colors_css(colors):
     """The stylesheet for a theme's 13 colours (checked #rrggbb): WebODM's theme with them, then the white panels'
-    text colour and the dropdown menus' text"""
+    text colour, the dropdown menus' text and the map buttons' icons"""
     context = {"SETTINGS": SimpleNamespace(theme=SimpleNamespace(**colors))}
     css = _prefix_selectors(render_to_string("app/theme.css", context))
     dark = min(colors["primary"], colors["secondary"], key=_luminance)
@@ -201,7 +236,9 @@ def colors_css(colors):
     # WebODM's theme gives the dropdown menus' items its text colour, but WebODM's main.scss sets them to #222
     # !important, which would be dark on a dark preset's menu background: give them the theme's text colour
     css += "html .dropdown-menu > li > a{color: %s !important;}\n" % colors["primary"]
-    return css
+    # WebODM's MapView.scss sets Crop's icon to #191919 whatever the theme: give it the button's text colour
+    css += "html .leaflet-control.crop-button i{color: inherit;}\n"
+    return css + _image_buttons_css(colors)
 
 
 def theme_css(request):

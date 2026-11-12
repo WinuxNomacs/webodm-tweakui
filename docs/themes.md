@@ -70,7 +70,9 @@ in each WebODM version. Places WebODM always shows in white keep their white bac
 there only work on white) with readable text: the map's layers panel, the Contours and Object Detection panels,
 and the content of Administration, which keeps WebODM's own theme. Light presets have a header in their accent
 colour, as WebODM's logo is white. Dropdown menus show their items in the preset's text colour (WebODM fixes them
-to near-black, which a dark preset's menu background would hide).
+to near-black, which a dark preset's menu background would hide). With a dark theme, the map's buttons whose icon
+is an image (Layers, Base Maps, Add Overlay, Measure, Fullscreen, Contours, Object Detection) show it light, the
+button keeping the theme's colour, and Crop's icon takes the theme's text colour.
 
 <div id="theme-menu-show-theme-menu"></div>
 
