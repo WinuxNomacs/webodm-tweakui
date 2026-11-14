@@ -13,6 +13,12 @@
   cleaner hook; see "Global Controls: units and temperature in the header".
 
 **Not doing**
+- **Custom 3D model in a task** (replace a task's textured model with one from ODM or RealityScan) — investigated
+  and not implemented, the user's decision (2026-11-13). A plugin could do it without changing WebODM (write the
+  files into the task's `odm_texturing`, then `update_available_assets_field`, `update_size`,
+  `clear_task_assets_cache`), but neither GLB nor OBJ carries the placement (WebODM's own GLBs are Z-up with a
+  `CESIUM_RTC` offset, the CRS is the task's), the web container has no OBJ to GLB converter, and the 3D view loads
+  the model whole (no levels of detail), so a model of millions of faces is out of reach.
 - **Storage: a hint for Backup All's downloads** (release review C) — not a concern to the user (2026-11-12).
 - **Preload Zoom Out and Preload Zoom In** — tried and dropped by the user (2026-11-11); built on branch
   `zoom-preload` (commit `b84a84b`), left unmerged. See "Map speed: Preload Zoom Out and In (dropped)".
